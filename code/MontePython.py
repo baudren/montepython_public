@@ -20,7 +20,7 @@ import parser	# parsing the input command line
 import io	# all the input/output mechanisms
 import mcmc	# the actual Monte Carlo chain procedure, along with the useful functions
 import data	# data handling
-import analyze	# analysis module, only invoked if asked in the command line
+#import analyze	# analysis module, only invoked if asked in the command line
 
 import os,sys
 
@@ -53,6 +53,7 @@ def main():
   # will extract information from it (plots to compute, chains to analyse,
   # etc...)
   if command_line.files is not None:
+    import analyze	# analysis module, only invoked if asked in the command line
     analyze.info(command_line.files,command_line.bins)
     exit()
 
