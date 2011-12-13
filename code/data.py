@@ -5,15 +5,22 @@ from collections import OrderedDict as od
 from datetime    import date
 
 import mcmc
+import io
 
 class data:
 
-  def __init__(self,param,path,default=True):
+  def __init__(self,command_line,path,default=True):
+    # First of all, distinguish between the two cases, genuine initialization
+    # or comparison with existing data
+    if default:
+      self.param = command_line.par
+    else:
+      self.param = command_line.folder+'/log.param'
+
     # Initialisation of all the data needed to run the Boltzmann code
     # First apply default parameters,
     # Then try and modify according to command_line.param custom parameter file
     # Finally overwrites with special command_line arguments.
-
     rd.seed()
     self.params=od()
     self.param_names=[]
@@ -21,9 +28,9 @@ class data:
     self.args={}
 
     try:
-      param_file = open(param,'r')
+      param_file = open(self.param,'r')
     except IOError:
-      print "\n /|\  Error in initializing the data class,\n/_o_\ parameter file {0} does not point to a file".format(param)
+      print "\n /|\  Error in initializing the data class,\n/_o_\ parameter file {0} does not point to a file".format(self.param)
       exit()
     self._read_file(param_file)
 
@@ -48,6 +55,13 @@ class data:
 	sys.stdout.write(self.exp[i]+',\t')
       sys.stdout.write('\n')
       
+      # logging the parameter file (only if folder does not exist !)
+      if command_line.folder[-1]!='/':
+	command_line.folder+='/'
+      if not os.path.exists(command_line.folder):
+	os.mkdir(command_line.folder)
+        io.log_parameters(self,command_line)
+      
       self.lkl=dict()
       
       # adding the likelihood directory to the path, to import the module
@@ -62,7 +76,10 @@ class data:
 	if folder not in sys.path:
 	  sys.path.insert(0, folder)
 	exec "import %s" % elem
-	exec "self.lkl['%s'] = %s.%s('%s/%s.data')"% (elem,elem,elem,folder,elem)
+	if self.param.find('log.param')==-1:
+	  exec "self.lkl['%s'] = %s.%s('%s/%s.data',command_line)"% (elem,elem,elem,folder,elem)
+	else:
+	  exec "self.lkl['%s'] = %s.%s(self.param)"% (elem,elem,elem)
 
   def __cmp__(self,other):
     self.uo_params  = {}

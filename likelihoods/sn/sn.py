@@ -1,21 +1,19 @@
 import os
 import numpy as np
+from likelihood_class import likelihood
 
-class sn():
+class sn(likelihood):
   
-  def __init__(self,path):
+  def __init__(self,path,command_line=False):
 
-    abs_folder = os.path.dirname(os.path.abspath(path))+'/'
+    likelihood.__init__(self,path,command_line)
 
-    # parsing param file
-    for line in open(path,'r'):
-      if line.find('#')==-1:
-	if line.find('sn.')!=-1:
-	  exec(line.replace('sn.','self.'))
-      
+    #abs_folder = os.path.dirname(os.path.abspath(path))+'/'
+    
+
     self.z	= np.array([],'float64')
     self.moduli = np.array([],'float64')
-    for line in open(abs_folder+self.z_mu_dmu,'r'):
+    for line in open(self.z_mu_dmu,'r'):
       self.z		= np.append(self.z,float(line.split()[1]))
       self.moduli 	= np.append(self.z,float(line.split()[2]))
 
@@ -27,7 +25,7 @@ class sn():
 
     covmat = np.zeros((np.shape(self.z)[0],np.shape(self.z)[0]),'float64')
     i=0
-    for line in open(abs_folder+covmat_filename,'r'):
+    for line in open(covmat_filename,'r'):
       covmat[i] = line.split()
       i+=1
 

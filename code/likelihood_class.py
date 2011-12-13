@@ -9,26 +9,42 @@ import os,sys
 # initialization
 class likelihood():
 
-  def __init__(self,path,data=None):
-    raise NotImplementedError('Must implement method __init__() in your likelihood')
+  def __init__(self,path,command_line=False):
+
+    self.folder = sys.path[0]+'/'
+    self._read_from_file(path)
+    if ((command_line is not False) and (os.path.exists(command_line.folder+'/log.dat') is False)):
+      self._store_lkl_params(command_line)
 
   def _loglkl(self,_cosmo,data):
     raise NotImplementedError('Must implement method _loglkl() in your likelihood')
 
-  def _store_lkl_params(self,data):
-    pass
+  def _store_lkl_params(self,command_line):
+    log = open(command_line.folder+'log.param','a')
+    tolog = open(self.path,'r')
+    log.write("\n#-----Likelihood-{0}-----\n\n".format(self.__class__.__name__))
+    for line in tolog:
+      log.write(line)
+    tolog.seek(0)
+    tolog.close()
+    log.close()
 
-  def _read_from_file(self,path,name):
+
+  def _read_from_file(self,path):
+    name = self.__class__.__name__
+    self.path = path
     if os.path.isfile(path):
-      for line in open(path,'r'):
+      data_file = open(path,'r')
+      for line in data_file:
 	if line.find('#')==-1:
 	  if line.find(name+'.')!=-1:
 	    exec(line.replace(name+'.','self.'))
+      data_file.seek(0)
+      data_file.close()
 
 
 
-class likelihood_clik(likelihood):
+class likelihood_prior(likelihood):
 
-  def __init__(self,path):
-    raise NotImplementedError('Must implement method __init__() in your likelihood')
-
+  def _loglkl(self):
+    raise NotImplementedError('Must implement method __loglkl() in your likelihood')

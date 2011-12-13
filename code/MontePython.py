@@ -62,7 +62,7 @@ def main():
   # updated at the end of the run as well.
   if command_line.restart is not None:
     command_line.par = command_line.restart.split('/')[0]+'/log.param'
-    Data = data.data(command_line.par,path)
+    Data = data.data(command_line,path)
 
   # Else, fill in data, starting from default_path, then custom parameter file,
   # then additionnal command line arguments.
@@ -70,9 +70,9 @@ def main():
   # param, and compare the two instances. If different, displays a warning.
   else:
     if command_line.par != command_line.folder+'/log.param':
-      Data=data.data(command_line.par,path)
-      if os.path.isdir(command_line.folder):
-	Data_old=data.data(command_line.folder+'/log.param',path,False)
+      Data=data.data(command_line,path)
+      if os.path.exists(command_line.folder+'/log.dat'):
+	Data_old=data.data(command_line,path,False)
 	if Data!=Data_old:
 	  print '\n /|\  You are starting a chain in {0} with different parameters\n/_o_\ than used previously.\n      Exiting'.format(command_line.folder)
 
@@ -85,9 +85,7 @@ def main():
       exit()
 
   # Logging all configuration
-  out,log,Data.out_name=io.create_output_files(command_line)
-  if ((command_line.restart is None) and (command_line.par.find('log.param')==-1)):
-    io.log_parameters(Data,path,command_line)
+  io.create_output_files(command_line,Data)
 
   # Load up the cosmological backbone. For the moment, only Class has been wrapped.
   _cosmo=Class()
@@ -96,12 +94,12 @@ def main():
   io.class_output(Data)
 
   # Main chain
-  rate,min_LogLike=mcmc.chain(_cosmo,Data,command_line,out)
+  rate,min_LogLike=mcmc.chain(_cosmo,Data,command_line)
   
   # Closing up and loggin the result of the chain stuff
-  out.close()
-  io.write_log(log,out,Data.param_names,rate,min_LogLike)
-  log.close()
+  Data.out.close()
+  io.write_log(Data,rate,min_LogLike)
+  Data.log.close()
 
 #-----------------MAIN-CALL---------------------------------------------
 

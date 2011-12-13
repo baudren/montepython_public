@@ -1,19 +1,11 @@
 import os
-from likelihood_class import likelihood 
+from likelihood_class import likelihood_prior
 
-class hst(likelihood):
+class hst(likelihood_prior):
 
-  def __init__(self,path='hst.data'):
-
-    self._read_from_file(path,'hst')
-
-    #if path is not None:
-      #for line in open(path,'r'):
-	#if line.find('#')==-1:
-	  #if line.find('hst.')!=-1:
-	    #exec(line.replace('hst.','self.'))
-
-
+  # initialisation of the class is done within the parent likelihood_prior. For
+  # this case, it does not differ, actually, from the __init__ method in
+  # likelihood class. 
   def _loglkl(self,_cosmo,data):
 
     h   = _cosmo._h()

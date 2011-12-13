@@ -23,10 +23,11 @@ def compute_lkl(_cosmo,Data):
   for likelihood in Data.lkl.itervalues():
     try:
       loglike+=likelihood._loglkl(_cosmo,Data)
-    except:
+    except AttributeError :
       print '\n  Failure in likelihood {0}'.format(likelihood)
       return True,0
   
+    loglike+=likelihood._loglkl(_cosmo,Data)
   # Clean the cosmological strucutre
   _cosmo._struct_cleanup(set(["lensing","nonlinear","spectra","primordial","transfer","perturb","thermodynamics","background","bessel"]))
 
@@ -108,7 +109,7 @@ def jump(data,Direction,Range):
 
 
 #---------------MCMC-CHAIN----------------------------------------------
-def chain(_cosmo,data,command_line,out):
+def chain(_cosmo,data,command_line):
   # initialisation
   loglike=0
   failure=False
@@ -133,7 +134,7 @@ def chain(_cosmo,data,command_line,out):
     print '/_o_\  You might want to change your starting values, or pick default ones!'
     exit()
 
-  min_loglike = loglike
+  max_loglike = loglike
 
   acc,rej=0.0,0.0	#acceptance and rejection number count
   io.print_parameters(sys.stdout,data.param_names)
@@ -151,11 +152,11 @@ def chain(_cosmo,data,command_line,out):
       continue
     alpha=np.exp(newloglike-loglike)
     if ((alpha>1) or (rd.uniform(0,1) < alpha)): #accept step
-      io.print_theta([out,sys.stdout],N,loglike,data)
+      io.print_theta([data.out,sys.stdout],N,loglike,data)
       args=newargs
       loglike=newloglike
-      if loglike > min_loglike:
-	min_loglike = loglike
+      if loglike > max_loglike:
+	max_loglike = loglike
       data.theta=theta_new
       acc+=1.0
       N=1
@@ -163,16 +164,12 @@ def chain(_cosmo,data,command_line,out):
       rej+=1.0
       N+=1
     if acc % data.write_step ==0:
-      out = io.refresh_file(out,data.out_name)
+      io.refresh_file(data)
     if (failed >= 98):
       print ' /|\   The computation failed too many times, \n'
       print '/_o_\  Please check the values of your parameters'
   if N>1:
-    io.print_theta([out,sys.stdout],N-1,loglike,data)
+    io.print_theta([data.out,sys.stdout],N-1,loglike,data)
   rate=acc/(acc+rej)
   print '#{0} steps done, acceptance rate:'.format(command_line.N),rate
-  return rate,min_loglike
-
-def clik_loglikelihood(_clik,cl):
-  loglkl=_clik(cl)
-  return loglkl
+  return rate,max_loglike

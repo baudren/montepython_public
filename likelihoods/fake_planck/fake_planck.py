@@ -7,20 +7,13 @@ except ImportError:
   print "/_o_\ please run : source /path/to/clik/bin/clik_profile.sh"
   print "      and try again."
   exit()
-from likelihood_class import likelihood_clik
+from likelihood_class import likelihood
 
-class fake_planck():
+class fake_planck(likelihood):
 
-  def __init__(self,path='fake_planck.data'):
-
-    #self._read_from_file(path,'fake_planck')
-    for line in open(path,'r'):
-      if line.find('#')==-1:
-	if line.find('fake_planck.')!=-1:
-	  exec(line.replace('fake_planck.','self.'))
-    
+  def __init__(self,path,command_line=False):
+    likelihood.__init__(self,path,command_line)
     self.clik = clik.clik(self.path_clik)
-
 
   def _loglkl(self,_cosmo,data):
 
