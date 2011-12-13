@@ -40,7 +40,8 @@ def create_output_files(command_line):
   else:
     command_line.folder = command_line.restart.split('/')[0]
     number = int(command_line.restart.split('/')[-1].split('__')[0].split('_')[1]) + command_line.N
-  command_line.folder+='/'
+  if command_line.folder[-1]!='/':
+    command_line.folder+='/'
   # log file
   if not os.path.exists(command_line.folder):
     os.mkdir(command_line.folder)
@@ -103,7 +104,7 @@ def write_log(log,out,Parameters,rate,LogLike):
   log.write('{0} :\t[ '.format(out.name.split('/')[-1]),)
   for i in range(len(Parameters)):
     log.write('{0} '.format(Parameters[i]),)
-  log.write(']\tacceptance rate: %.4f,\t -LogLike: %.4f' % (rate,-LogLike)+'\n')
+  log.write(']\tacceptance rate: %.4f,\t Min (-LogLike): %.4f' % (rate,-LogLike)+'\n')
   return 0
 
 class File(file):

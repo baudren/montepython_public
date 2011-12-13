@@ -5,7 +5,6 @@ from collections import OrderedDict as od
 from datetime    import date
 
 import mcmc
-#import clik
 
 class data:
 
@@ -59,7 +58,7 @@ class data:
 
       for elem in self.exp:
 
-	folder = os.path.abspath(path['MontePython'])+ "/likelihoods/%s" % elem
+	folder = os.path.abspath(path['MontePython'])+ "/../likelihoods/%s" % elem
 	if folder not in sys.path:
 	  sys.path.insert(0, folder)
 	exec "import %s" % elem

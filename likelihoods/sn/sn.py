@@ -3,7 +3,7 @@ import numpy as np
 
 class sn():
   
-  def __init__(self,path='sn.data'):
+  def __init__(self,path):
 
     abs_folder = os.path.dirname(os.path.abspath(path))+'/'
 

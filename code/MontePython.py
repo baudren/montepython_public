@@ -6,15 +6,6 @@
 # written by Benjamin Audren
 ####################
 
-
-#------------------DEFAULT-CONFIGURATION--------------------------------
-path={}
-path['class']		= '/itp/baudren/Desktop/codes/class/'
-path['clik']		= '/itp/baudren/Desktop/codes/clik_epfl/examples/'
-path['clik_wmap']	= '/itp/baudren/Desktop/codes/clik_epfl/examples/wmap_full.clik'
-path['MontePython']	= '/itp/baudren/Desktop/codes/montepython/'
-
-
 #-------------------IMPORT-PACKAGES-------------------------------------
 
 try:
@@ -31,8 +22,19 @@ import mcmc	# the actual Monte Carlo chain procedure, along with the useful func
 import data	# data handling
 import analyze	# analysis module, only invoked if asked in the command line
 
-import os
+import os,sys
 
+#------------------DEFAULT-CONFIGURATION--------------------------------
+path = {}
+path['MontePython'] = sys.path[0]
+conf_file = path['MontePython']+'/../default.conf'
+if os.path.isfile(conf_file):
+  for line in open(conf_file):
+    exec(line)
+else:
+  print ' /|\  You must provide a default.conf file'
+  print '/_o_\ in your montepython directory that specify'
+  print '      the correct locations of MontePython, Class, Clik...'
 
 
 #------------------MAIN-DEFINITION--------------------------------------
@@ -66,11 +68,12 @@ def main():
   # If output folder already exists, first load a data instance with used
   # param, and compare the two instances. If different, displays a warning.
   else:
-    Data=data.data(command_line.par,path)
-    if os.path.isdir(command_line.folder):
-      Data_old=data.data(command_line.folder+'/log.param',path,False)
-      if Data!=Data_old:
-	print '\n /|\  You are starting a chain in {0} with different parameters\n/_o_\ than used previously.\n      Proceeding with the computation'.format(command_line.folder)
+    if command_line.par != command_line.folder+'/log.param':
+      Data=data.data(command_line.par,path)
+      if os.path.isdir(command_line.folder):
+	Data_old=data.data(command_line.folder+'/log.param',path,False)
+	if Data!=Data_old:
+	  print '\n /|\  You are starting a chain in {0} with different parameters\n/_o_\ than used previously.\n      Exiting'.format(command_line.folder)
 
   # Overwrite arguments from parameter file with the command line
   if command_line.N is None:
@@ -82,7 +85,7 @@ def main():
 
   # Logging all configuration
   out,log,Data.out_name=io.create_output_files(command_line)
-  if command_line.restart is None:
+  if ((command_line.restart is None) and (command_line.par.find('log.param')==-1)):
     io.log_parameters(Data,path,command_line)
 
   # Load up the cosmological backbone. For the moment, only Class has been wrapped.

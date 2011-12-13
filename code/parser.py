@@ -1,4 +1,5 @@
 import argparse
+import os
 
 parser = argparse.ArgumentParser(description='Monte Python, a Monte Carlo code in Python')
 parser.add_argument('-N', metavar='steps',type=int,dest='N')
@@ -25,8 +26,15 @@ def parse():
 	if args.folder==None:
 	  print ' /|\   You must provide an output folder,\n/_o_\  because you do not want your main folder to look dirty, do you?'
 	  exit()
-	if args.par==None:
-	  print ' /|\   You must provide a parameter file,\n/_o_\  use the command line option -p any.param'
-	  exit()
+	else:
+	  if args.folder[-1]!='/':
+	    args.folder+='/'
+	  if os.path.isdir(args.folder):
+	    if args.par==None:
+	      args.par=args.folder+'log.param'
+	  else:
+	    if args.par==None:
+	      print ' /|\   No runs were found in your output folder,\n/_o_\  You must provide a parameter file,\n       use the command line option -p any.param'
+	      exit()
 
   return args
