@@ -1,0 +1,131 @@
+####################
+# Monte-Python, a Monte Carlo Markov Chain code (with Class!)
+# Version 0.9
+# written by Benjamin Audren
+####################
+
+## The MontePython part
+-----------------------
+  Move the .tgz file to your convenience, untar its content
+
+  $ tar -zxvf montepython-x.y.tgz
+  
+  This will create a directory named MontePython into your current directory.
+  If you add the following line to your ~/.bashrc file:
+  
+  $ export PATH=$PATH:/path/to/MontePython/
+
+  then a simple call MontePython.py anywhere will launch the program.
+  
+  To make this work, you need to install all the necessary libraries.
+
+## The Class part
+-----------------
+  Go to your class directory, and add the following lines to your makefile:
+
+  CFLAG   = -O4 -Wall -fopenmp -fPIC 
+  LDFLAG  = -O4 -Wall -fopenmp -fPIC
+
+  while commenting your usual lines for these flags.
+  Now type make clean, then make (and not make class !).
+  This builds the libclass.a, needed for the next step.
+  From there, 
+
+  cd python/
+
+  python setup.py build
+  python setup.py install --user
+
+  If this step fails, check that you have cython installed, numpy (a numerical
+package for python), python (well... did I say this code was in python ?) with
+a version > 2.6.  If this step fails again, kindly ask your sys.admin, (s)he is
+there for this, afterall.
+
+## The Clik part
+----------------
+
+  Recover the Plik package, that will auto-install itself on any machine.
+  Remember before executing any MontePython.py to source the clik profile
+
+  $ source YourClikPath/bin/clik_profile.sh
+
+  or add this line to your ~/.bashrc
+
+## Finalizing the installation
+------------------------------
+
+  Go to your MontePython directory, and edit the MontePython.py file.
+  You will have potentially two things to change.
+
+  1- The very first line is:
+    #!/usr/bin/python
+  This should be change to wherever is your prefered python distribution
+installed. For standard distribution, this should already be working.
+
+  2- You then have to edit the two lines labeled:
+    path['class']='/my/path/to/class'
+    path['clik'] ='/my/path/to/clik/examples'
+  to the values relevant for your system.
+
+
+## Enjoying the difference
+--------------------------
+
+  Now the code is installed. Go anywhere, and just call
+
+  $ ./MontePython.py --help
+
+  To see a list of all commands. There are two essential ones, without which
+the program will not start. At minimum, you should precise an output folder
+('-o') and a parameter file ('-p'). An example of parameter file is found in
+the main directory of MontePython (planck.param, for instance).
+  A typical call would then be:
+
+  $ ./MontePython.py -o planck -p planck.param
+
+  If non existant, the planck/ folder will be created, and a run with the
+number of steps described in planck.param will be started. To run a chain with
+less steps, one can type:
+
+  $ ./MontePython.py -o planck -p planck.param -N 100
+
+  If you want to analyse the details of a particular chain, just run 
+
+  $ ./MontePython.py -info planck/2011-11-23_10000__1
+
+  or, the more time consuming version, analyse all chains in folder
+
+  $ ./MontePython.py -info planck/*
+
+## The details
+--------------
+
+  One folder will contain only one cosmological scenario (one set of
+experiments, and one set of priors). If you try to run a chain in an existing
+folder with a different parameter file, the program will only mention it to
+you.
+  In your planck/ folder, at the end of a run, there will be three files. One
+contains the chain, devoid of all information except the values of the
+parameters (cosmomc format). It is named according to the date, the number of
+steps, and the number of time you launched a chain with these parameters.
+  For instance, an output folder can contain these files:
+  
+  2011-11-23_10000__1
+  2011-11-23_10000__2
+  2011-11-24_10000__1
+
+  The numerotation is automatic and taken care of by the program. There are
+also two log files, log.dat and log.param.
+
+  log.dat will contain a new line for each __SUCCESSFUL__ run, so here, if the
+previous exemple is continued, I will have the following log.dat:
+
+  2011-11-23_10000__1 :  [ Omega_b Omega_cdm tau_reio h A_s n_s ]	acceptance rate: 0.02,	 -LogLike: [ 398.32]
+  2011-11-23_10000__2 :  [ Omega_b Omega_cdm tau_reio h A_s n_s ]	acceptance rate: 0.018,	 -LogLike: [ 400.21]
+  2011-11-24_10000__1 :  [ Omega_b Omega_cdm tau_reio h A_s n_s ]	acceptance rate: 0.02,	 -LogLike: [ 397.42]
+
+  Note: The existence of this file is crucial for the -info option to work!
+
+  finally, log.param stores the parameters called to make the run. If these
+differs from the ones you try to use, the warning will be printed, and the 
+** FILE WILL BE REPLACED **
