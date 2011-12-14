@@ -7,9 +7,9 @@ import io
 import data
 
 # COMPUTE LKL
-def compute_lkl(_cosmo,Data):
+def compute_lkl(_cosmo,Data,args):
   # Prepare the cosmological module with the new set of parameters
-  _cosmo.set(Data.Class_args)
+  _cosmo.set(args)
 
   # Compute the model
   failure=False
@@ -105,6 +105,7 @@ def jump(data,Direction,Range):
   data.Class_args[Direction]=Range
   if Direction.find('A_s')!=-1:
     data.Class_args[Direction]=Range*1e-9
+  return data.Class_args
 
 
 #---------------MCMC-CHAIN----------------------------------------------
@@ -120,15 +121,15 @@ def chain(_cosmo,data,command_line):
   if command_line.restart is not None:
     read_args_from_chain(data,command_line.restart)
     for i in range(len(data.Class)):
-      jump(data,data.Class_param_names[i],data.Class[i])
+      data.Class_args = jump(data,data.Class_param_names[i],data.Class[i])
 
-  failure,loglike=compute_lkl(_cosmo,data)
+  failure,loglike=compute_lkl(_cosmo,data,data.Class_args)
   while ((failure is True) and (failed<=num_failure)):
     failed +=1
     data.vector=get_new_pos(data,sigma_eig,U)
     for i in range(len(data.Class)):
-      jump(data,data.Class_param_names[i],data.Class[i])
-    failure,loglike=compute_lkl(_cosmo,data)
+      data.Class_args = jump(data,data.Class_param_names[i],data.Class[i])
+    failure,loglike=compute_lkl(_cosmo,data,data.Class_args)
   if failure is True:
     print ' /|\   Class tried {0} times to initialize with given parameters, and failed...'.format(num_failure+2)
     print '/_o_\  You might want to change your starting values, or pick default ones!'
@@ -142,8 +143,8 @@ def chain(_cosmo,data,command_line):
   for k in range(command_line.N):
     vector_new=get_new_pos(data,sigma_eig,U)
     for i in range(len(data.Class)):
-      newargs=jump(data,data.Class_param_names[i],vector_new[i])
-    failure,newloglike=compute_lkl(_cosmo,data)
+      newargs = jump(data,data.Class_param_names[i],vector_new[i])
+    failure,newloglike=compute_lkl(_cosmo,data,newargs)
     if(failure==True):
       failed += 1
       k-=2
@@ -153,7 +154,7 @@ def chain(_cosmo,data,command_line):
     alpha=np.exp(newloglike-loglike)
     if ((alpha>1) or (rd.uniform(0,1) < alpha)): #accept step
       io.print_vector([data.out,sys.stdout],N,loglike,data)
-      args=newargs
+      data.Class_args=newargs
       loglike=newloglike
       if loglike > max_loglike:
 	max_loglike = loglike

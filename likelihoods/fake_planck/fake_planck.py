@@ -12,7 +12,7 @@ from likelihood_class import likelihood
 class fake_planck(likelihood):
 
   def __init__(self,path,data,command_line=False):
-    likelihood.__init__(self,path,command_line)
+    likelihood.__init__(self,path,data,command_line)
     self.clik = clik.clik(self.path_clik)
 
   def _loglkl(self,_cosmo,data):

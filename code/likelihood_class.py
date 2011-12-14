@@ -34,7 +34,6 @@ class likelihood():
 
   def _read_from_file(self,path,data):
     self.path = path
-    self.nuisance = od()
     if os.path.isfile(path):
       data_file = open(path,'r')
       for line in data_file:
@@ -43,8 +42,6 @@ class likelihood():
 	    exec(line.replace(self.name+'.','self.'))
       data_file.seek(0)
       data_file.close()
-    for key,value in self.nuisance.iteritems():
-      data.nuisance_params[self.name+'_'+key] = value
 
 
 # Likelihood type for prior
