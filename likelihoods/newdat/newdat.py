@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import math
 from likelihood_class import likelihood
 
 class newdat(likelihood):
@@ -7,6 +8,9 @@ class newdat(likelihood):
   def __init__(self,path,data,command_line=False):
 
     likelihood.__init__(self,path,data,command_line)
+
+    # path of newdat file
+    # abs_folder = os.path.dirname(os.path.abspath(path))+'/'
       
     # open .newdat file
     newdatfile=open(self.data_directory+self.file,'r')
@@ -151,7 +155,7 @@ class newdat(likelihood):
 #    window=np.array([],'float64')
 
     for point in range(self.num_points):
-      for line in open(abs_folder+self.data_directory+'windows/'+window_name+str(point+1),'r'):
+      for line in open(self.data_directory+'windows/'+window_name+str(point+1),'r'):
         if any([float(line.split()[i]) != 0. for i in range(1,len(line.split()))]):
           if (self.win_min[point]==0):
             self.win_min[point]=line.split()[0]
@@ -162,8 +166,9 @@ class newdat(likelihood):
     #print self.num_points,max(self.win_max)+1,len(line.split())-1
     self.window=np.zeros((self.num_points,max(self.win_max)+1,len(line.split())-1),'float64')
 
+    #read window functions; note that they are susually distributed as: l TT (TE EE BB)
     for point in range(self.num_points):
-      for line in open(abs_folder+self.data_directory+'windows/'+window_name+str(point+1),'r'):
+      for line in open(self.data_directory+'windows/'+window_name+str(point+1),'r'):
         l=int(line.split()[0])
         if ((l>=self.win_min[point]) and (l<=self.win_max[point])):
           self.window[point,l,:]=[line.split()[i] for i in range(1,len(line.split()))]
@@ -194,10 +199,30 @@ class newdat(likelihood):
    #cl = nm.ndarray([4,lmax+1], dtype=nm.double)
    #cl = _cosmo.lensed_cl(-1,False)
    cl=np.array(_cosmo.lensed_cl(),'float64')
+   print np.shape(cl)
    
-#   for point in range(self.num_points)
+   print cl[:,2]
+   #convert dimensionless cl's to l(l+1)/2pi C_l in muk**2
+   T = _cosmo._T_cmb()
+   print T
+   for l in range(np.shape(cl)[1]):
+       for t in range(np.shape(cl)[0]):
+         cl[t,l] = l*(l+1)/2/math.pi*(T*1.e6)**2*cl[t,l]
+
+   print cl[:,2]
+
+   theo=np.zeros(self.num_points,'float64')
+
+   for point in range(self.num_points):
       # sum over l and types of from win_min[point] to w_max[point] of cl[l][type]*window[point][l][type], where type = TT or TT EE BB TE
-#      theo[point]=np.sum(cl[l,:]*window[point,l])
+     for l in range(self.win_min[point],self.win_max[point]+1):
+       theo[point] += np.sum(cl[:,l]*self.window[point,l,:])
+     print theo[point],self.obs[point]
+
+       #print cl[0,l]*window[point,0,l]+cl[1,l]*window[point,1,l]+cl[2,l]*window[point,2,l]+cl[3,l]*window[point,3,l]
+         
+       #theo[point]=np.sum(cl[:,l]*window[point,:,l])
+       #print theo[point]
                                        
       #if ((self.has_xfactors == True) && (self.has_xfactors[point] == True))
        #  theo[point]=log(theo[point]+xfactor[point])
@@ -246,3 +271,5 @@ class newdat(likelihood):
 
 #    self.loglkl = - 0.5 * chisq 
 #    return self.loglkl
+
+   return 0
