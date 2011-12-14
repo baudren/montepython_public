@@ -21,13 +21,8 @@ def compute_lkl(_cosmo,Data):
   # For each desired likelihood, compute its value against the theoretical model
   loglike=0
   for likelihood in Data.lkl.itervalues():
-    try:
-      loglike+=likelihood._loglkl(_cosmo,Data)
-    except AttributeError :
-      print '\n  Failure in likelihood {0}'.format(likelihood)
-      return True,0
-  
     loglike+=likelihood._loglkl(_cosmo,Data)
+
   # Clean the cosmological strucutre
   _cosmo._struct_cleanup(set(["lensing","nonlinear","spectra","primordial","transfer","perturb","thermodynamics","background","bessel"]))
 
@@ -115,6 +110,7 @@ def jump(data,Direction,Range):
 #---------------MCMC-CHAIN----------------------------------------------
 def chain(_cosmo,data,command_line):
   # initialisation
+  num_failure=2
   loglike=0
   failure=False
   sigma_eig,U=get_cov(data,command_line)
@@ -127,14 +123,14 @@ def chain(_cosmo,data,command_line):
       jump(data,data.Class_param_names[i],data.Class[i])
 
   failure,loglike=compute_lkl(_cosmo,data)
-  while ((failure is True) and (failed<=98)):
+  while ((failure is True) and (failed<=num_failure)):
     failed +=1
     data.vector=get_new_pos(data,sigma_eig,U)
     for i in range(len(data.Class)):
       jump(data,data.Class_param_names[i],data.Class[i])
     failure,loglike=compute_lkl(_cosmo,data)
   if failure is True:
-    print ' /|\   Class tried 100 times to initialize with given parameters, and failed...'
+    print ' /|\   Class tried {0} times to initialize with given parameters, and failed...'.format(num_failure+2)
     print '/_o_\  You might want to change your starting values, or pick default ones!'
     exit()
 
@@ -169,7 +165,7 @@ def chain(_cosmo,data,command_line):
       N+=1
     if acc % data.write_step ==0:
       io.refresh_file(data)
-    if (failed >= 98):
+    if (failed >= num_failure):
       print ' /|\   The computation failed too many times, \n'
       print '/_o_\  Please check the values of your parameters'
   if N>1:

@@ -63,7 +63,7 @@ def class_output(Data):
   Data.Class_args['output']=''
   Data.Class_args['lensing']=''
   for elem in Data.exp:
-    if (elem == 'fake_planck' or elem == 'wmap'):
+    if (elem == 'fake_planck' or elem == 'wmap' or elem == 'newdat'):
       Data.Class_args['output']+=' tCl lCl pCl'
       Data.Class_args['lensing'] =' yes '
     if (elem == 'sdss'):
