@@ -1,21 +1,15 @@
 import os
 import numpy as np
+from likelihood_class import likelihood
 
-class newdat():
+class newdat(likelihood):
   
-  def __init__(self,path):
+  def __init__(self,path,command_line=False):
 
-    # path of .data file
-    abs_folder = os.path.dirname(os.path.abspath(path))+'/'
-
-    # parsing .data file
-    for line in open(path,'r'):
-      if line.find('#')==-1:
-	if line.find('newdat.')!=-1:
-	  exec(line.replace('newdat.','self.'))
+    likelihood.__init__(self,path,command_line)
       
     # open .newdat file
-    newdatfile=open(abs_folder+self.directory+self.file,'r')
+    newdatfile=open(self.data_directory+self.file,'r')
 
     # (can be moved later) define string for window function file name
     window_name=newdatfile.readline().strip('\n')
@@ -252,6 +246,3 @@ class newdat():
 
 #    self.loglkl = - 0.5 * chisq 
 #    return self.loglkl
-
-
-newdat = newdat('newdat.data')

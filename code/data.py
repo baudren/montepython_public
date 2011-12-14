@@ -77,7 +77,9 @@ class data:
 	  sys.path.insert(0, folder)
 	exec "import %s" % elem
 	if self.param.find('log.param')==-1:
+	  print '%s/%s.data' % (folder,elem)
 	  exec "self.lkl['%s'] = %s.%s('%s/%s.data',command_line)"% (elem,elem,elem,folder,elem)
+	  print "self.lkl['%s'] = %s.%s('%s/%s.data',command_line)"% (elem,elem,elem,folder,elem)
 	else:
 	  exec "self.lkl['%s'] = %s.%s(self.param)"% (elem,elem,elem)
 
