@@ -69,9 +69,9 @@ def main():
   # If output folder already exists, first load a data instance with used
   # param, and compare the two instances. If different, displays a warning.
   else:
-    if command_line.par != command_line.folder+'/log.param':
-      Data=data.data(command_line,path)
-      if os.path.exists(command_line.folder+'/log.dat'):
+    Data=data.data(command_line,path)
+    if command_line.par.find('log.param')==-1:
+      if os.path.exists(command_line.folder+'log.dat'):
 	Data_old=data.data(command_line,path,False)
 	if Data!=Data_old:
 	  print '\n /|\  You are starting a chain in {0} with different parameters\n/_o_\ than used previously.\n      Exiting'.format(command_line.folder)

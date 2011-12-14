@@ -22,11 +22,11 @@ def print_parameters(out,param):
     out.write('{0}\t'.format(param[i]))
   out.write('\n')
 
-def print_theta(out,N,loglkl,data):
+def print_vector(out,N,loglkl,data):
   for j in range(len(out)):
     out[j].write('%d  %.3f\t' % (N,-loglkl))
-    for i in range(len(data.theta)):
-      out[j].write('%.6f\t' % data.theta[i])
+    for i in range(len(data.vector)):
+      out[j].write('%.6f\t' % data.vector[i])
     out[j].write('\n')
 
 def refresh_file(data):
@@ -60,14 +60,14 @@ def create_output_files(command_line,data):
       out.write(line)
 
 def class_output(Data):
-  Data.args['output']=''
-  Data.args['lensing']=''
+  Data.Class_args['output']=''
+  Data.Class_args['lensing']=''
   for elem in Data.exp:
     if (elem == 'fake_planck' or elem == 'wmap'):
-      Data.args['output']+=' tCl lCl pCl'
-      Data.args['lensing'] =' yes '
+      Data.Class_args['output']+=' tCl lCl pCl'
+      Data.Class_args['lensing'] =' yes '
     if (elem == 'sdss'):
-      Data.args['output']+= ' mPk'
+      Data.Class_args['output']+= ' mPk'
 
 def pico_output(Data):
   pass

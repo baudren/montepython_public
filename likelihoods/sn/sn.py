@@ -4,19 +4,15 @@ from likelihood_class import likelihood
 
 class sn(likelihood):
   
-  def __init__(self,path,command_line=False):
+  def __init__(self,path,data,command_line=False):
 
-    likelihood.__init__(self,path,command_line)
-
-    #abs_folder = os.path.dirname(os.path.abspath(path))+'/'
-    
+    likelihood.__init__(self,path,data,command_line)
 
     self.z	= np.array([],'float64')
     self.moduli = np.array([],'float64')
     for line in open(self.z_mu_dmu,'r'):
       self.z		= np.append(self.z,float(line.split()[1]))
       self.moduli 	= np.append(self.z,float(line.split()[2]))
-
 
     if self.has_syscovmat:
       covmat_filename = self.covmat_sys
@@ -31,6 +27,7 @@ class sn(likelihood):
 
     self.inv_covmat=np.linalg.inv(covmat)
     self.trace_inv_covmat=np.trace(self.inv_covmat)
+
 
   def _loglkl(self,_cosmo,data):
 

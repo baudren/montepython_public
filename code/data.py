@@ -22,10 +22,20 @@ class data:
     # Then try and modify according to command_line.param custom parameter file
     # Finally overwrites with special command_line arguments.
     rd.seed()
+    self.Class_params=od()
+    self.Class_param_names=[]
+    self.Class=[]    # Create the Class param vector
+
+    self.nuisance_params=od()
+    self.nuisance_param_names=[]
+    self.nuisance=[] # Create the nuisance vector
+
     self.params=od()
-    self.param_names=[]
-    self.theta=[] # Create the theta vector
-    self.args={}
+    self.param_names=od()
+
+    self.vector=[]   # Will contain the merging of the two above
+
+    self.Class_args={} # Contains the arguments of the Class instance
 
     try:
       param_file = open(self.param,'r')
@@ -62,7 +72,7 @@ class data:
 	os.mkdir(command_line.folder)
         io.log_parameters(self,command_line)
       
-      self.lkl=dict()
+    self.lkl=dict()
       
       # adding the likelihood directory to the path, to import the module
       # then, for each library, calling an instance of the likelihood.
@@ -70,18 +80,22 @@ class data:
       # folder likelihoods/yourlike/yourlike.py, and contain a yourlike.data,
       # otherwise the following set of commands will not work anymore.
 
-      for elem in self.exp:
+    for elem in self.exp:
 
-	folder = os.path.abspath(path['MontePython'])+ "/../likelihoods/%s" % elem
-	if folder not in sys.path:
-	  sys.path.insert(0, folder)
-	exec "import %s" % elem
-	if self.param.find('log.param')==-1:
-	  print '%s/%s.data' % (folder,elem)
-	  exec "self.lkl['%s'] = %s.%s('%s/%s.data',command_line)"% (elem,elem,elem,folder,elem)
-	  print "self.lkl['%s'] = %s.%s('%s/%s.data',command_line)"% (elem,elem,elem,folder,elem)
-	else:
-	  exec "self.lkl['%s'] = %s.%s(self.param)"% (elem,elem,elem)
+      folder = os.path.abspath(path['MontePython'])+ "/../likelihoods/%s" % elem
+      if folder not in sys.path:
+	sys.path.insert(0, folder)
+      exec "import %s" % elem
+      if self.param.find('log.param')==-1:
+	exec "self.lkl['%s'] = %s.%s('%s/%s.data',self,command_line)"% (elem,elem,elem,folder,elem)
+      else:
+	exec "self.lkl['%s'] = %s.%s(self.param,self)"% (elem,elem,elem)
+    
+    self._nuisance_parameters()
+    self.params.update(self.Class_params)
+    self.params.update(self.nuisance_params)
+    self.param_names = np.append(self.Class_param_names,self.nuisance_param_names)
+    self._update_vector()
 
   def __cmp__(self,other):
     self.uo_params  = {}
@@ -101,8 +115,8 @@ class data:
   def _read_file(self,_file):
     for line in _file:
       if line.find('#')==-1:
-	if line.find('data')!=-1:
-	  exec(line.replace('data','self'))
+	if line.find('data.')!=-1:
+	  exec(line.replace('data.','self.'))
     _file.seek(0)
 
   def _read_version(self,_file):
@@ -115,7 +129,7 @@ class data:
   def _parameters(self):
     failure=False
     for key,value in self.params.iteritems():
-      self.param_names.append(key)
+      self.Class_param_names.append(key)
       temp=rd.gauss(value[0],value[3])
       while (value[1]!=-1 and temp<value[1] and failure==False):
 	if value[1]>value[0]:
@@ -128,7 +142,33 @@ class data:
 	  print '  Warning: you might have inconsistently set the max boundary for {0} parameter'.format(key)
 	  failure=True
 	temp=rd.gauss(value[0],value[3])
-      self.theta.append(temp)
+      self.Class.append(temp)
 
-    for i in range(len(self.theta)): # Initialize the arguments
-      mcmc.jump(self,self.param_names[i],self.theta[i])
+  def _nuisance_parameters(self):
+    for key,value in self.nuisance_params.iteritems():
+      self.nuisance_param_names.append(key)
+      temp=rd.gauss(value[0],value[3])
+      while (value[1]!=-1 and temp<value[1] and failure==False):
+	if value[1]>value[0]:
+	  print '  Warning: you might have inconsistently set the min boundary for {0} parameter'.format(key)
+	  failure=True
+	temp=rd.gauss(value[0],value[3])
+      failure=False
+      while (value[2]!=-1 and temp>value[2] and failure==False):
+	if value[2]<value[0]:
+	  print '  Warning: you might have inconsistently set the max boundary for {0} parameter'.format(key)
+	  failure=True
+	temp=rd.gauss(value[0],value[3])
+      self.nuisance.append(temp)
+
+    for i in range(len(self.Class)): # Initialize the arguments
+      mcmc.jump(self,self.Class_param_names[i],self.Class[i])
+
+  def _update_vector(self):
+    self.vector = np.append(self.Class,self.nuisance)
+
+  def _transmit_vector(self,vector):
+    for i in range(len(self.Class)):
+      self.Class[i]    = vector[i]
+    for i in range(len(self.Class),len(self.Class)+len(self.nuisance)):
+      self.nuisance[i-len(self.Class)] = vector[i]

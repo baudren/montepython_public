@@ -4,9 +4,9 @@ from likelihood_class import likelihood
 
 class newdat(likelihood):
   
-  def __init__(self,path,command_line=False):
+  def __init__(self,path,data,command_line=False):
 
-    likelihood.__init__(self,path,command_line)
+    likelihood.__init__(self,path,data,command_line)
       
     # open .newdat file
     newdatfile=open(self.data_directory+self.file,'r')
