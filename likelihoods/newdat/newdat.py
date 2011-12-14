@@ -151,7 +151,7 @@ class newdat(likelihood):
 #    window=np.array([],'float64')
 
     for point in range(self.num_points):
-      for line in open(abs_folder+self.directory+'windows/'+window_name+str(point+1),'r'):
+      for line in open(abs_folder+self.data_directory+'windows/'+window_name+str(point+1),'r'):
         if any([float(line.split()[i]) != 0. for i in range(1,len(line.split()))]):
           if (self.win_min[point]==0):
             self.win_min[point]=line.split()[0]
@@ -163,7 +163,7 @@ class newdat(likelihood):
     self.window=np.zeros((self.num_points,max(self.win_max)+1,len(line.split())-1),'float64')
 
     for point in range(self.num_points):
-      for line in open(abs_folder+self.directory+'windows/'+window_name+str(point+1),'r'):
+      for line in open(abs_folder+self.data_directory+'windows/'+window_name+str(point+1),'r'):
         l=int(line.split()[0])
         if ((l>=self.win_min[point]) and (l<=self.win_max[point])):
           self.window[point,l,:]=[line.split()[i] for i in range(1,len(line.split()))]
