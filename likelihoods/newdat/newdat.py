@@ -8,6 +8,7 @@ class newdat(likelihood):
   def __init__(self,path,data,command_line=False):
 
     likelihood.__init__(self,path,data,command_line)
+    self._need_Class_args(data,{'lensing':'yes', 'output':'tCl lCl pCl'})
       
     # open .newdat file
     newdatfile=open(self.data_directory+self.file,'r')

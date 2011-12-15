@@ -16,6 +16,12 @@ def log_parameters(data,command_line):
   param_file.close()
   log.close()
 
+def log_Class_args(data,command_line):
+  log     = open(command_line.folder+'/log.param','a')
+  log.write('\n\n#-----------Class-arguments---------\n')
+  log.write('data.Class_args.update({0})\n'.format(data.Class_args))
+  log.close()
+
 def print_parameters(out,param):
   out.write('#  -LogLkl\t')
   for i in range(len(param)):
@@ -58,19 +64,6 @@ def create_output_files(command_line,data):
   if command_line.restart is not None:
     for line in open(command_line.restart,'r'):
       out.write(line)
-
-def class_output(Data):
-  Data.Class_args['output']=''
-  Data.Class_args['lensing']=''
-  for elem in Data.exp:
-    if (elem == 'fake_planck' or elem == 'wmap' or elem == 'newdat'):
-      Data.Class_args['output']+=' tCl lCl pCl'
-      Data.Class_args['lensing'] =' yes '
-    if (elem == 'sdss'):
-      Data.Class_args['output']+= ' mPk'
-
-def pico_output(Data):
-  pass
 
 def clean(folder):
   if os.path.isdir(folder) is False:

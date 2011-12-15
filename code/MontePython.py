@@ -90,9 +90,6 @@ def main():
   # Load up the cosmological backbone. For the moment, only Class has been wrapped.
   _cosmo=Class()
 
-  # initialisation of output here
-  io.class_output(Data)
-
   # Main chain
   rate,min_LogLike=mcmc.chain(_cosmo,Data,command_line)
   

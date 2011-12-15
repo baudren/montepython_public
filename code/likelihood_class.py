@@ -43,6 +43,16 @@ class likelihood():
       data_file.seek(0)
       data_file.close()
 
+  def _need_Class_args(self,data,dictionary):
+    for key,value in dictionary.iteritems():
+      try :
+	data.Class_args[key]
+      except KeyError:
+	data.Class_args[key] = ''
+      if data.Class_args[key].find(value)==-1:
+	data.Class_args[key] += ' '+value+' '
+    pass
+
 
 # Likelihood type for prior
 class likelihood_prior(likelihood):

@@ -93,6 +93,9 @@ class data:
 	else:
 	  exec "self.lkl['%s'] = %s.%s(self.param,self)"% (elem,elem,elem)
     
+      # log Class_args, and eventually all fixed parameters
+      if self.param.find('log.param')==-1:
+	io.log_Class_args(self,command_line)
   
     for i in range(len(self.Class)): # Initialize the arguments
       mcmc.jump(self,self.Class_param_names[i],self.Class[i])
