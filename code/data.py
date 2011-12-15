@@ -133,39 +133,44 @@ class data:
     failure=False
     for key,value in self.Class_params.iteritems():
       if value[3] == 0:
-	print 'nope'
-      self.Class_param_names.append(key)
-      self.Class_params[key] = value
-      temp=rd.gauss(value[0],value[3])
-      while (value[1]!=-1 and temp<value[1] and failure==False):
-	if value[1]>value[0]:
-	  print('  Warning: you might have inconsistently set the min boundary for {0} parameter'.format(key))
-	  failure=True
+	print key,value
+	self.Class_args[key] = self.Class_params.pop(key)[0]
+	print self.Class_args[key]
+
+      else:
+	self.Class_param_names.append(key)
 	temp=rd.gauss(value[0],value[3])
-      failure=False
-      while (value[2]!=-1 and temp>value[2] and failure==False):
-	if value[2]<value[0]:
-	  print '  Warning: you might have inconsistently set the max boundary for {0} parameter'.format(key)
-	  failure=True
-	temp=rd.gauss(value[0],value[3])
-      self.Class.append(temp)
+	while (value[1]!=-1 and temp<value[1] and failure==False):
+	  if value[1]>value[0]:
+	    print('  Warning: you might have inconsistently set the min boundary for {0} parameter'.format(key))
+	    failure=True
+	  temp=rd.gauss(value[0],value[3])
+	failure=False
+	while (value[2]!=-1 and temp>value[2] and failure==False):
+	  if value[2]<value[0]:
+	    print '  Warning: you might have inconsistently set the max boundary for {0} parameter'.format(key)
+	    failure=True
+	  temp=rd.gauss(value[0],value[3])
+	self.Class.append(temp)
     
     for key,value in self.nuisance_params.iteritems():
-      self.nuisance_param_names.append(key)
-      self.nuisance_params[key] = value
-      temp=rd.gauss(value[0],value[3])
-      while (value[1]!=-1 and temp<value[1] and failure==False):
-	if value[1]>value[0]:
-	  print '  Warning: you might have inconsistently set the min boundary for {0} parameter'.format(key)
-	  failure=True
+      if value[3] == 0:
+	exec  "self.%s = %f" % (key,self.nuisance_params.pop(key)[0])
+      else:
+	self.nuisance_param_names.append(key)
 	temp=rd.gauss(value[0],value[3])
-      failure=False
-      while (value[2]!=-1 and temp>value[2] and failure==False):
-	if value[2]<value[0]:
-	  print '  Warning: you might have inconsistently set the max boundary for {0} parameter'.format(key)
-	  failure=True
-	temp=rd.gauss(value[0],value[3])
-      self.nuisance.append(temp)
+	while (value[1]!=-1 and temp<value[1] and failure==False):
+	  if value[1]>value[0]:
+	    print '  Warning: you might have inconsistently set the min boundary for {0} parameter'.format(key)
+	    failure=True
+	  temp=rd.gauss(value[0],value[3])
+	failure=False
+	while (value[2]!=-1 and temp>value[2] and failure==False):
+	  if value[2]<value[0]:
+	    print '  Warning: you might have inconsistently set the max boundary for {0} parameter'.format(key)
+	    failure=True
+	  temp=rd.gauss(value[0],value[3])
+	self.nuisance.append(temp)
       
 
 
