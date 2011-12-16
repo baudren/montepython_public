@@ -49,10 +49,25 @@ class likelihood():
     for key,value in dictionary.iteritems():
       try :
 	data.Class_args[key]
+	try:
+	  float(data.Class_args[key])
+	  num_flag = True
+	except:
+	  num_flag = False
       except KeyError:
-	data.Class_args[key] = ''
-      if data.Class_args[key].find(value)==-1:
-	data.Class_args[key] += ' '+value+' '
+	try:
+	  float(value)
+	  num_flag = True
+	  data.Class_args[key] = 0
+	except:
+	  num_flag = False
+	  data.Class_args[key] = ''
+      if num_flag is False:
+	if data.Class_args[key].find(value)==-1:
+	  data.Class_args[key] += ' '+value+' '
+      else:
+	if float(data.Class_args[key])<value:
+	  data.Class_args[key] = value
 
 
   def _need_nuisance_parameters(self,data,array):
@@ -61,7 +76,7 @@ class likelihood():
         try:
           exec "data.%s" % elem
         except:
-          print elem+' must be defined, either fixed or varying'
+          print elem+' must be defined, either fixed or varying, for {0} likelihood'.format(self.name)
           exit()
 
 

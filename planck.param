@@ -1,7 +1,7 @@
 #------Experiments to test (separated with commas)-----
 # valid options are: planck, hst, wmap...
 #data.exp=['fake_planck','hst']
-data.exp=['spt']
+data.exp=['spt','acbar']
 #data.exp=['hst','sn','fake_planck']
 
 # Parameter list, data.params[class name] = [mean, min, max, 1-sigma]
@@ -18,6 +18,7 @@ data.Class_params['h']	 	= [0.7,   -1,-1,0.005]
 # class name
 #data.nuisance_params['toto']	= [0.05, -1,-1,0.003]
 #data.nuisance_params['tata']	= [0.1,  -1,-1,0]
+data.nuisance_params['A_SZ']	= [0.1,  -1,-1,0]
 
 #------ Mcmc parameters ----
 data.N=10000
