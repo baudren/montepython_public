@@ -13,6 +13,7 @@ class fake_planck(likelihood):
 
   def __init__(self,path,data,command_line=False):
     likelihood.__init__(self,path,data,command_line)
+    self._need_Class_args(data,{'lensing':'yes', 'output':'tCl lCl pCl'})
     self.clik = clik.clik(self.path_clik)
 
   def _loglkl(self,_cosmo,data):
