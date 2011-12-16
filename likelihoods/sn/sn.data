@@ -1,7 +1,7 @@
 # Union2 supernovae
-sn.z_mu_dmu 		= sn.folder+'sn_z_mu_dmu_union2.txt'
-sn.covmat_sys 		= sn.folder+'sn_covmat_sys_union2.txt'
-sn.covmat_nosys 	= sn.folder+'sn_covmat_nosys_union2.txt'
+sn.z_mu_dmu 		= sn.folder+'../../data/sn_z_mu_dmu_union2.txt'
+sn.covmat_sys 		= sn.folder+'../../data/sn_covmat_sys_union2.txt'
+sn.covmat_nosys 	= sn.folder+'../../data/sn_covmat_nosys_union2.txt'
 
 sn.has_marginalization 	= True
 sn.has_syscovmat	= True

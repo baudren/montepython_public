@@ -1,0 +1,3 @@
+# this files give the path to the .newdat file where the experiment is entirely described.
+boomerang.data_directory 	= boomerang.folder+'../../data/'
+boomerang.file             = 'B03_NA_21July05.newdat'

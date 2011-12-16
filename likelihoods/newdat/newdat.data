@@ -1,3 +1,0 @@
-# a typical .newdat file supernova
-newdat.data_directory 	= newdat.folder+'data/'
-newdat.file             = 'BICEP_20090618.newdat'

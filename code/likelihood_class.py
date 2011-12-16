@@ -77,17 +77,20 @@ class likelihood_newdat(likelihood):
     newdatfile=open(self.data_directory+self.file,'r')
 
     # find beginning of window functions file names
-    window_name=newdatfile.readline().strip('\n')
+    window_name=newdatfile.readline().strip('\n').replace(' ','')
     
-    # read number of bands for each of the six types TT, EE, BB, EB, TE, TB
-    band_num = newdatfile.readline().split()
-
     # initialize list of fist and last band for each type
+    band_num = np.zeros(6,'int')
     band_min = np.zeros(6,'int')
     band_max = np.zeros(6,'int')
 
+    # read number of bands for each of the six types TT, EE, BB, EB, TE, TB
+    line = newdatfile.readline()
+    for i in range(6):
+      band_num[i] = int(line.split()[i])
+
     # read string equal to 'BAND_SELECTION' or not
-    line = str(newdatfile.readline()).strip('\n')
+    line = str(newdatfile.readline()).strip('\n').replace(' ','')
 
     # if yes, read 6 lines containing 'min, max'
     if (line=='BAND_SELECTION'):
@@ -122,7 +125,8 @@ class likelihood_newdat(likelihood):
     beam_sigma = float(line.split()[2])
     
     # read flag (= 0, 1 or 2) for lognormal distributions and xfactors
-    likelihood_type = int(newdatfile.readline())
+    line = newdatfile.readline()
+    likelihood_type = int(line.split()[0])
     if (likelihood_type > 0):
       self.has_xfactors = True
     else:
@@ -132,7 +136,7 @@ class likelihood_newdat(likelihood):
     # size yet unknown, it will be found later and stored as self.num_points
     self.obs=np.array([],'float64')
     self.var=np.array([],'float64')
-    self.beam_err=np.array([],'float64')
+    self.beam_error=np.array([],'float64')
     self.has_xfactor=np.array([],'bool')
     self.xfactor=np.array([],'float64')
 
@@ -143,7 +147,7 @@ class likelihood_newdat(likelihood):
 
     # scan the lines describing each point of measurement
     for cltype in range(6):
-      if (band_num[cltype] != 0):
+      if (int(band_num[cltype]) != 0):
         # read name (but do not use it)
         newdatfile.readline()
         for band in range(int(band_num[cltype])):
@@ -162,23 +166,21 @@ class likelihood_newdat(likelihood):
 
             self.xfactor=np.append(self.xfactor,float(line.split()[4])*calib**2)
 
-            if (likelihood_type == 0):
+            if ((likelihood_type == 0) or ((likelihood_type == 2) and (int(line.split()[7])==0))):
               self.has_xfactor=np.append(self.has_xfactor,[False])
-            if (likelihood_type == 1):
+            if ((likelihood_type == 1) or ((likelihood_type == 2) and (int(line.split()[7])==1))):
               self.has_xfactor=np.append(self.has_xfactor,[True])
-            if (likelihood_type == 2):
-              self.has_xfactor=np.append(self.has_xfactor,int(line.split()[7]))
 
             if (beam_type == 0):
-              self.beam_error=0
+              self.beam_error=np.append(self.beam_error,0.)
             if (beam_type == 1):
-              l_mid=int(line.split()[5])+0.5*(int(line.split()[5])+int(line.split()[6]))
-              self.beam_error=abs(exp(-l_mid*(l_mid+1)*1.526e-8*2*beam_sigma*beam_width-1.))
+              l_mid=float(line.split()[5])+0.5*(float(line.split()[5])+float(line.split()[6]))
+              self.beam_error=np.append(self.beam_error,abs(math.exp(-l_mid*(l_mid+1)*1.526e-8*2.*beam_sigma*beam_width)-1.))
             if (beam_type == 2):
               if (likelihood_type == 2):
-                self.beam_error=np.append(self.beam_error,int(line.split()[8]))
+                self.beam_error=np.append(self.beam_error,float(line.split()[8]))
               else:
-                self.beam_error=np.append(self.beam_error,int(line.split()[7]))
+                self.beam_error=np.append(self.beam_error,float(line.split()[7]))
 
         # now, skip and unused part of the file (with sub-correlation matrices)
         for band in range(int(band_num[cltype])):      
@@ -214,8 +216,9 @@ class likelihood_newdat(likelihood):
           if (self.has_xfactor[j]):
             covmat[i,j] /= (self.obs[j]+self.xfactor[j])
             
+      for i in range(self.num_points):
         if (self.has_xfactor[i]):
-          self.var[i] /= (self.obs[i]+self.xfactor[i])
+          self.var[i] /= (self.obs[i]+self.xfactor[i])**2
           self.obs[i] = math.log(self.obs[i]+self.xfactor[i])
 
     # invert correlation matrix
@@ -228,8 +231,8 @@ class likelihood_newdat(likelihood):
       for line in open(self.data_directory+'windows/'+window_name+str(used_index[point]+1),'r'):
         if any([float(line.split()[i]) != 0. for i in range(1,len(line.split()))]):
           if (self.win_min[point]==0):
-            self.win_min[point]=line.split()[0]
-          self.win_max[point]=line.split()[0]
+            self.win_min[point]=int(line.split()[0])
+          self.win_max[point]=int(line.split()[0])
 
     # infer from format of window function files whether we will use polarisation spectra or not 
     num_col=len(line.split())
@@ -258,7 +261,7 @@ class likelihood_newdat(likelihood):
            print 'for given experiment, all window functions should have the same number of columns, 2 or 5. This is not the case here.'
            exit()
         if ((l>=self.win_min[point]) and (l<=self.win_max[point])):
-          self.window[point,l,:]=[line.split()[i] for i in range(1,len(line.split()))]
+          self.window[point,l,:]=[float(line.split()[i]) for i in range(1,len(line.split()))]
           self.window[point,l,:]*=l
 
     # eventually, initialise quantitites used in the marginalization over nuisance parameters
@@ -275,6 +278,7 @@ class likelihood_newdat(likelihood):
 
    # get C_l^XX from CLASS
    cl=np.array(_cosmo.lensed_cl(),'float64')
+   lmax_cl=np.shape(cl)[1]
 
    # convert dimensionless C_l's to C_l in muK**2
    T = _cosmo._T_cmb()
@@ -286,7 +290,7 @@ class likelihood_newdat(likelihood):
    for point in range(self.num_points):
 
      # find bandpowers B_l by convolving C_l's with [(l+1/2)/2pi W_l]
-     for l in range(self.win_min[point],self.win_max[point]+1):
+     for l in range(self.win_min[point],min(self.win_max[point]+1,lmax_cl)):
 
        theo[point] += cl[0,l]*self.window[point,l,0]*(l+0.5)/2./math.pi
        #theo[point] = cl[_cosmo.le.index_lt_tt,l]*self.window[point,l,0]*(l+0.5)/2./math.pi
@@ -334,7 +338,8 @@ class likelihood_newdat(likelihood):
              difference[point]=self.obs[point]-theo[point]*beam_error[point]*calib_error
 
          # find chisq with those corrections
-         chisq_tmp[icalib]=np.dot(np.transpose(difference),np.dot(self.inv_covmat,difference))
+         #chisq_tmp[icalib]=np.dot(np.transpose(difference),np.dot(self.inv_covmat,difference))
+         chisq_tmp[icalib]=np.dot(difference,np.dot(self.inv_covmat,difference))
 
        minchisq=min(chisq_tmp)
 

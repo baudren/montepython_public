@@ -1,0 +1,3 @@
+# this files give the path to the .newdat file where the experiment is entirely described.
+cbi.data_directory 	= cbi.folder+'../../data/'
+cbi.file             = 'BICEP_20090618.newdat'
