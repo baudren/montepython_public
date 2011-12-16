@@ -72,8 +72,8 @@ def get_cov(data,command_line):
 	    rot[k][h]=0
       M=np.dot(rot,np.dot(M,rot))
 
-    # If covmat is smaller than data.param_names, using the sigma^2 for the rest
-    if len(covnames) <= len(data.param_names):
+    # if covmat is smaller than data.param_names, using the sigma^2 for the rest
+    if len(covnames) < len(data.param_names):
       # extracting indices for the sub param_names that contains covnames
       M_temp  = np.ones((len(data.param_names),len(data.param_names)),'float64')
       indexes = np.zeros(len(data.param_names))
@@ -90,6 +90,19 @@ def get_cov(data,command_line):
       for zeros in np.where(indexes == 0)[0]:
 	#print data.param[]
 	M[zeros,zeros] = np.array(data.params[data.param_names[zeros]][3],'float64')**2
+
+    # if covmat is bigger than data.param_names, take only needed columns
+    if len(covnames) > len(data.param_names):
+      M_temp = np.ones((len(data.param_names),len(data.param_names)),'float64')
+      indexes = np.zeros(len(covnames))
+      for k in range(len(covnames)):
+	if covnames[k] in data.param_names:
+	  indexes[k]=1
+      for zeros in np.where(indexes == 0)[0]:
+	M[zeros,:] = 0
+	M[:,zeros] = 0
+      M_temp = M[M!=0].reshape(len(data.param_names),len(data.param_names))
+      M = np.copy(M_temp)
 
   # else, take sigmas^2.
   else:
