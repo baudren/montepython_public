@@ -1,0 +1,3 @@
+# this files give the path to the .newdat file where the experiment is entirely described.
+spt.data_directory 	   = spt.folder+'../../data/'
+spt.file                   = 'Spectrum_spt20082009.newdat'

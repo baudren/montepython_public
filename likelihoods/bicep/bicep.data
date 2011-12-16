@@ -1,0 +1,3 @@
+# this files give the path to the .newdat file where the experiment is entirely described.
+bicep.data_directory 	= bicep.folder+'../../data/'
+bicep.file             = 'BICEP_20090618.newdat'

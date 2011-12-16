@@ -1,7 +1,7 @@
 #------Experiments to test (separated with commas)-----
 # valid options are: planck, hst, wmap...
 #data.exp=['fake_planck','hst']
-data.exp=['acbar','boomerang','bicep','cbi','quad']
+data.exp=['spt']
 #data.exp=['hst','sn','fake_planck']
 
 # Parameter list, data.params[class name] = [mean, min, max, 1-sigma]
