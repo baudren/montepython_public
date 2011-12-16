@@ -17,10 +17,11 @@ def log_parameters(data,command_line):
   log.close()
 
 def log_Class_args(data,command_line):
-  log     = open(command_line.folder+'/log.param','a')
-  log.write('\n\n#-----------Class-arguments---------\n')
-  log.write('data.Class_args.update({0})\n'.format(data.Class_args))
-  log.close()
+  if len(data.Class_args) >= 1:
+    log     = open(command_line.folder+'/log.param','a')
+    log.write('\n\n#-----------Class-arguments---------\n')
+    log.write('data.Class_args.update({0})\n'.format(data.Class_args))
+    log.close()
 
 def print_parameters(out,param):
   out.write('#  -LogLkl\t')
@@ -43,7 +44,6 @@ def create_output_files(command_line,data):
   if command_line.restart is None:
     number = command_line.N
   else:
-    command_line.folder = command_line.restart.split('/')[0]
     number = int(command_line.restart.split('/')[-1].split('__')[0].split('_')[1]) + command_line.N
 
   logname='log.dat'
@@ -63,7 +63,7 @@ def create_output_files(command_line,data):
   # in case of a restart, copying the whole thing in the new file
   if command_line.restart is not None:
     for line in open(command_line.restart,'r'):
-      out.write(line)
+      data.out.write(line)
 
 def clean(folder):
   if os.path.isdir(folder) is False:
@@ -75,17 +75,42 @@ def clean(folder):
   chains=[]
   for line in log:
     chains.append(line.split(':')[0].strip(' '))
-  files=[] # list all files in folder, that have no extensions,
+  # list all files in folder, that have no extensions,
   for File in os.listdir(folder):
     if '.' not in File:
       if File not in chains:
 	os.remove(folder+'/'+File)
 	print ' removing: '+File
 	action+=1
+  for chain in chains:
+    if chain not in os.listdir(folder):
+      log = remove_from_log(log,folder+'/log.dat',chain)
+      print ' removing: '+chain
+      action+=1
   if action==0:
     print '{0} is already perfectly clean'.format(folder)
   else:
     print '{0} now perfectly clean'.format(folder)
+
+def remove_from_log(log,log_name,chain):
+  log.seek(0)
+  lines = log.readlines()
+  for elem in lines: 
+    if elem.split(':')[0].strip(' ') == chain:
+      index = lines.index(elem)
+  if len(lines[:index])>0:
+    new = lines[:index]
+    if len(lines[index+1:])>0:
+      new.append(lines[index+1:])
+  else:
+    new = lines[index+1:]
+  log.seek(0)
+  log.close()
+  os.remove(log_name)
+  log = open(log_name,'w')
+  for line in new:
+    log.write(line)
+  return log
 
 def write_log(data,rate,LogLike):
   data.log.write('{0} :\t[ '.format(data.out.name.split('/')[-1]),)

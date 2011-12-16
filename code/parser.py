@@ -36,5 +36,8 @@ def parse():
 	    if args.par==None:
 	      print ' /|\   No runs were found in your output folder,\n/_o_\  You must provide a parameter file,\n       use the command line option -p any.param'
 	      exit()
+    else:
+      args.folder = args.restart.split('/')[0]+'/'
+      args.par 	  = args.folder+'log.param'
 
   return args
