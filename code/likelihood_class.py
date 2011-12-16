@@ -53,7 +53,17 @@ class likelihood():
 	data.Class_args[key] = ''
       if data.Class_args[key].find(value)==-1:
 	data.Class_args[key] += ' '+value+' '
-    pass
+
+
+  def _need_nuisance_parameters(self,data,array):
+    for elem in array:
+      if elem not in data.nuisance_params.iterkeys():
+        try:
+          exec "data.%s" % elem
+        except:
+          print elem+' must be defined, either fixed or varying'
+          exit()
+
 
 
 # Likelihood type for prior
@@ -276,140 +286,150 @@ class likelihood_newdat(likelihood):
 
   def _loglkl(self,_cosmo,data):
 
-   # get C_l^XX from CLASS
-   cl=np.array(_cosmo.lensed_cl(),'float64')
-   lmax_cl=np.shape(cl)[1]
+    cl = self._get_cl(_cosmo)
+    return self._compute_loglkl(cl,_cosmo,data)
 
-   # convert dimensionless C_l's to C_l in muK**2
-   T = _cosmo._T_cmb()
-   cl *= (T*1.e6)**2
+  def _get_cl(self,_cosmo):
 
-   # compute theoretical bandpowers, store them in theo[points]
-   theo=np.zeros(self.num_points,'float64')
+    # get C_l^XX from CLASS
+    cl=np.array(_cosmo.lensed_cl(),'float64')
 
-   for point in range(self.num_points):
+    # convert dimensionless C_l's to C_l in muK**2
+    T = _cosmo._T_cmb()
+    cl *= (T*1.e6)**2
 
-     # find bandpowers B_l by convolving C_l's with [(l+1/2)/2pi W_l]
-     for l in range(self.win_min[point],min(self.win_max[point]+1,lmax_cl)):
+    return cl
 
-       theo[point] += cl[0,l]*self.window[point,l,0]*(l+0.5)/2./math.pi
-       #theo[point] = cl[_cosmo.le.index_lt_tt,l]*self.window[point,l,0]*(l+0.5)/2./math.pi
+  def _compute_loglkl(self,cl,_cosmo,data):
 
-       if (self.has_pol):
-         theo[point] += (cl[2,l]*self.window[point,l,1] + cl[1,l]*self.window[point,l,2] + cl[3,l]*self.window[point,l,3])*(l+0.5)/2./math.pi
-         #theo[point] += (cl[_cosmo.le.index_lt_te,l]*self.window[point,l,1] + cl[_cosmo.le.index_lt_ee,l]*self.window[point,l,2] + cl[_cosmo.le.index_lt_bb,l]*self.window[point,l,3])(l+0.5)/2./math.pi
+    lmax_cl=np.shape(cl)[1]
 
-   # allocate array for differencve between observed and theoretical bandpowers
-   difference=np.zeros(self.num_points,'float64')
+    # compute theoretical bandpowers, store them in theo[points]
+    theo=np.zeros(self.num_points,'float64')
 
-   # depending on the presence of lognormal likelihood, calibration uncertainty and beam uncertainity, use several methods for marginalising over nuisance parameters:
+    for point in range(self.num_points):
 
-   # first method: numerical integration over calibration uncertainty:
-   if (self.has_xfactors and ((self.calib_uncertainty > 1.e-4) or self.has_beam_uncertainty)):
+      # find bandpowers B_l by convolving C_l's with [(l+1/2)/2pi W_l]
+      for l in range(self.win_min[point],min(self.win_max[point]+1,lmax_cl)):
+
+        theo[point] += cl[0,l]*self.window[point,l,0]*(l+0.5)/2./math.pi
+        #theo[point] = cl[_cosmo.le.index_lt_tt,l]*self.window[point,l,0]*(l+0.5)/2./math.pi
+
+        if (self.has_pol):
+          theo[point] += (cl[2,l]*self.window[point,l,1] + cl[1,l]*self.window[point,l,2] + cl[3,l]*self.window[point,l,3])*(l+0.5)/2./math.pi
+          #theo[point] += (cl[_cosmo.le.index_lt_te,l]*self.window[point,l,1] + cl[_cosmo.le.index_lt_ee,l]*self.window[point,l,2] + cl[_cosmo.le.index_lt_bb,l]*self.window[point,l,3])(l+0.5)/2./math.pi
+
+    # allocate array for differencve between observed and theoretical bandpowers
+    difference=np.zeros(self.num_points,'float64')
+
+    # depending on the presence of lognormal likelihood, calibration uncertainty and beam uncertainity, use several methods for marginalising over nuisance parameters:
+
+    # first method: numerical integration over calibration uncertainty:
+    if (self.has_xfactors and ((self.calib_uncertainty > 1.e-4) or self.has_beam_uncertainty)):
     
-     chisq_tmp=np.zeros(2*self.halfsteps+1,'float64')
-     chisqcalib=np.zeros(2*self.halfsteps+1,'float64')
-     beam_error=np.zeros(self.num_points,'float64')
+      chisq_tmp=np.zeros(2*self.halfsteps+1,'float64')
+      chisqcalib=np.zeros(2*self.halfsteps+1,'float64')
+      beam_error=np.zeros(self.num_points,'float64')
 
-     # loop over various beam errors
-     for ibeam in range(2*self.halfsteps+1):
+      # loop over various beam errors
+      for ibeam in range(2*self.halfsteps+1):
 
-       # beam error
-       for point in range(self.num_points):
-         if (self.has_beam_uncertainty):
-           beam_error[point]=1.+self.beam_error[point]*(ibeam-self.halfsteps)*3/float(self.halfsteps)
-         else:
-           beam_error[point]=1.
+        # beam error
+        for point in range(self.num_points):
+          if (self.has_beam_uncertainty):
+            beam_error[point]=1.+self.beam_error[point]*(ibeam-self.halfsteps)*3/float(self.halfsteps)
+          else:
+            beam_error[point]=1.
 
-       # loop over various calibraion errors
-       for icalib in range(2*self.halfsteps+1):
+        # loop over various calibraion errors
+        for icalib in range(2*self.halfsteps+1):
 
-         # calibration error
-         calib_error=1+self.calib_uncertainty*(icalib-self.halfsteps)*3/float(self.halfsteps)
+          # calibration error
+          calib_error=1+self.calib_uncertainty*(icalib-self.halfsteps)*3/float(self.halfsteps)
          
-         # compute difference between observed and theoretical points, after correcting the later for errors
-         for point in range(self.num_points):
+          # compute difference between observed and theoretical points, after correcting the later for errors
+          for point in range(self.num_points):
 
-           # for lognormal likelihood, use log(B_l+X_l)
-           if (self.has_xfactor[point]):
-             difference[point]=self.obs[point]-math.log(theo[point]*beam_error[point]*calib_error+self.xfactor[point])
-           # otherwise use B_l
-           else:
-             difference[point]=self.obs[point]-theo[point]*beam_error[point]*calib_error
+            # for lognormal likelihood, use log(B_l+X_l)
+            if (self.has_xfactor[point]):
+              difference[point]=self.obs[point]-math.log(theo[point]*beam_error[point]*calib_error+self.xfactor[point])
+            # otherwise use B_l
+            else:
+              difference[point]=self.obs[point]-theo[point]*beam_error[point]*calib_error
 
-         # find chisq with those corrections
+              # find chisq with those corrections
          #chisq_tmp[icalib]=np.dot(np.transpose(difference),np.dot(self.inv_covmat,difference))
-         chisq_tmp[icalib]=np.dot(difference,np.dot(self.inv_covmat,difference))
+          chisq_tmp[icalib]=np.dot(difference,np.dot(self.inv_covmat,difference))
 
-       minchisq=min(chisq_tmp)
+        minchisq=min(chisq_tmp)
 
        # find chisq marginalized over calibration uncertainty (if any)
-       tot=0
-       for icalib in range(2*self.halfsteps+1):
-         tot += self.margeweights[icalib]*math.exp(max(-30.,-(chisq_tmp[icalib]-minchisq)/2.))
+        tot=0
+        for icalib in range(2*self.halfsteps+1):
+          tot += self.margeweights[icalib]*math.exp(max(-30.,-(chisq_tmp[icalib]-minchisq)/2.))
 
-       chisqcalib[ibeam]=-2*math.log(tot/self.margenorm)+minchisq
+        chisqcalib[ibeam]=-2*math.log(tot/self.margenorm)+minchisq
 
      # find chisq marginalized over beam uncertainty (if any)
-     if (self.has_beam_uncertainty):
+      if (self.has_beam_uncertainty):
 
-       minchisq=min(chisqcalib)
+        minchisq=min(chisqcalib)
 
-       tot=0
-       for ibeam in range(2*self.halfsteps+1):
-         tot += self.margeweights[ibeam]*math.exp(max(-30.,-(chisqcalib[ibeam]-minchisq)/2.))
+        tot=0
+        for ibeam in range(2*self.halfsteps+1):
+          tot += self.margeweights[ibeam]*math.exp(max(-30.,-(chisqcalib[ibeam]-minchisq)/2.))
 
-       chisq=-2*math.log(tot/self.margenorm)+minchisq
+        chisq=-2*math.log(tot/self.margenorm)+minchisq
 
-     else:
-       chisq=chisqcalib[0]
+      else:
+        chisq=chisqcalib[0]
 
    # second method: marginalize over nuisance parameters (if any) analytically
-   else:
+    else:
 
      # for lognormal likelihood, theo[point] should contain log(B_l+X_l)
-     if (self.has_xfactors): 
-       for point in range(self.num_points):
-         if (self.has_xfactor[point]):
-           theo[point]=math.log(theo[point]+self.xfactor[point])
+      if (self.has_xfactors): 
+        for point in range(self.num_points):
+          if (self.has_xfactor[point]):
+            theo[point]=math.log(theo[point]+self.xfactor[point])
  
      # find vector of difference between observed and theoretical bandpowers
-     difference=self.obs-theo  
+      difference=self.obs-theo  
 
      # find chisq
-     chisq=np.dot(np.transpose(difference),np.dot(self.inv_covmat,difference))
+      chisq=np.dot(np.transpose(difference),np.dot(self.inv_covmat,difference))
 
      # correct eventually for effect of analytic marginalization over nuisance parameters
-     if ((self.calib_uncertainty > 1.e-4) or self.has_beam_uncertainty):
+      if ((self.calib_uncertainty > 1.e-4) or self.has_beam_uncertainty):
             
-       denom=1.                  
-       tmp= np.dot(self.inv_covmat,theo)                             
-       chi2op=np.dot(np.transpose(difference),tmp)
-       chi2pp=np.dot(np.transpose(theo),tmp)
+        denom=1.                  
+        tmp= np.dot(self.inv_covmat,theo)                             
+        chi2op=np.dot(np.transpose(difference),tmp)
+        chi2pp=np.dot(np.transpose(theo),tmp)
          
-       if (self.has_beam_uncertainty):
-         for points in range(self.num_points):
-           beam[point]=self.beam_error[point]*theo[point]
-         tmp=np.dot(self.inv_covmat,beam)
-         chi2dd=np.dot(np.transpose(beam),tmp)
-         chi2pd=np.dot(np.transpose(theo),tmp)
-         chi2od=np.dot(np.transpose(difference),tmp)
+        if (self.has_beam_uncertainty):
+          for points in range(self.num_points):
+            beam[point]=self.beam_error[point]*theo[point]
+          tmp=np.dot(self.inv_covmat,beam)
+          chi2dd=np.dot(np.transpose(beam),tmp)
+          chi2pd=np.dot(np.transpose(theo),tmp)
+          chi2od=np.dot(np.transpose(difference),tmp)
             
-       if (self.calib_uncertainty > 1.e-4):
-         wpp=1/(chi2pp+1/self.calib_uncertainty**2)
-         chisq=chisq-wpp*chi2op**2
-         denom = denom/wpp*self.calib_uncertainty**2
-       else:
-         wpp=0
+        if (self.calib_uncertainty > 1.e-4):
+          wpp=1/(chi2pp+1/self.calib_uncertainty**2)
+          chisq=chisq-wpp*chi2op**2
+          denom = denom/wpp*self.calib_uncertainty**2
+        else:
+          wpp=0
 
-       if (self.has_beam_uncertainty):
-         wdd=1/(chi2dd-wpp*chi2pd**2+1)
-         chisq=chisq-wdd*(chi2od-wpp*chi2op*chi2pd)**2
-         denom=denom/wdd
+        if (self.has_beam_uncertainty):
+          wdd=1/(chi2dd-wpp*chi2pd**2+1)
+          chisq=chisq-wdd*(chi2od-wpp*chi2op*chi2pd)**2
+          denom=denom/wdd
 
-       chisq+=log(denom)
+        chisq+=log(denom)
 
    # finally, return ln(L)=-chi2/2
 
-   self.loglkl = - 0.5 * chisq 
-   return self.loglkl
+    self.loglkl = - 0.5 * chisq 
+    return self.loglkl
