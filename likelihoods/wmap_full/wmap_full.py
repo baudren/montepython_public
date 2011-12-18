@@ -9,7 +9,7 @@ except ImportError:
   exit()
 from likelihood_class import likelihood
 
-class fake_planck(likelihood):
+class wmap_full(likelihood):
 
   def __init__(self,path,data,command_line=False):
     likelihood.__init__(self,path,data,command_line)
@@ -22,13 +22,11 @@ class fake_planck(likelihood):
     T_squared=np.array(T**2.*1e12,'float64')
     cl=np.array(_cosmo.lensed_cl(),'float64')
     tot=np.zeros(np.sum(self.clik.get_lmax())+6)
-    for i in range(cl.shape[0]-1):
-      if (i==0 or i==1):
-	ieq=i
-      else:
-	ieq=3
-      for j in range(1701):
-	bound=1701
+    for i in range(cl.shape[0]):
+      ieq=i
+      for j in range(1201):
+	bound=1201
 	tot[j+i*bound]=np.array(cl[ieq][j]*T_squared,'float64')
     loglkl=self.clik(tot)[0]
     return loglkl
+
