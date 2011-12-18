@@ -79,8 +79,6 @@ class likelihood():
           print elem+' must be defined, either fixed or varying, for {0} likelihood'.format(self.name)
           exit()
 
-
-
 # Likelihood type for prior
 class likelihood_prior(likelihood):
 
@@ -297,6 +295,12 @@ class likelihood_newdat(likelihood):
         self.margeweights[i+self.halfsteps]=np.exp(-(float(i)*3./float(self.halfsteps))**2/2)
       self.margenorm=sum(self.margeweights)
 
+    # store maximum value of l needed by window functions
+    self.l_max=max(self.win_max)  
+
+    # impose that CLASS computes Cl's up to maximum l needed by window function
+    self._need_Class_args(data,{'l_max_scalars':self.l_max})
+
     # end of initialisation
 
   def _loglkl(self,_cosmo,data):
@@ -317,7 +321,10 @@ class likelihood_newdat(likelihood):
 
   def _compute_loglkl(self,cl,_cosmo,data):
 
-    lmax_cl=np.shape(cl)[1]
+    # checks that Cl's have been computed up to high enough l given window function range. Normally this has been imposed before, so this test could even be supressed.
+    if (np.shape(cl)[1]-1 < self.l_max):
+      print 'CLASS computed Cls till l=',np.shape(cl)[1]-1,'while window functions need',self.l_max
+      exit()
 
     # compute theoretical bandpowers, store them in theo[points]
     theo=np.zeros(self.num_points,'float64')
@@ -325,7 +332,7 @@ class likelihood_newdat(likelihood):
     for point in range(self.num_points):
 
       # find bandpowers B_l by convolving C_l's with [(l+1/2)/2pi W_l]
-      for l in range(self.win_min[point],min(self.win_max[point]+1,lmax_cl)):
+      for l in range(self.win_min[point],self.win_max[point]):
 
         theo[point] += cl[0,l]*self.window[point,l,0]*(l+0.5)/2./math.pi
         #theo[point] = cl[_cosmo.le.index_lt_tt,l]*self.window[point,l,0]*(l+0.5)/2./math.pi

@@ -1,3 +1,5 @@
 # this files give the path to the .newdat file where the experiment is entirely described.
 acbar.data_directory 	= acbar.folder+'../../data/'
 acbar.file             = 'acbar2007_v3_corr.newdat'
+acbar.A_SZ_file        = 'WMAP_SZ_VBand.dat'
+acbar.A_SZ_scale       = 0.28

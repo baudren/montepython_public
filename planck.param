@@ -18,7 +18,10 @@ data.Class_params['h']	 	= [0.7,   -1,-1,0.005]
 # class name
 #data.nuisance_params['toto']	= [0.05, -1,-1,0.003]
 #data.nuisance_params['tata']	= [0.1,  -1,-1,0]
-data.nuisance_params['A_SZ']	= [0.1,  -1,-1,0]
+data.nuisance_params['A_SZ']	= [1,  0, 2, 0]
+data.nuisance_params['SPT_SZ']	= [5.5,  0, 10, 0]
+data.nuisance_params['SPT_PS']	= [19.3,  0, 10,0]
+data.nuisance_params['SPT_CL']	= [5.,  0, 10,0]
 
 #------ Mcmc parameters ----
 data.N=10000
