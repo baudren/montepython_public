@@ -563,14 +563,24 @@ class likelihood_clik(likelihood):
     likelihood.__init__(self,path,data,command_line)
     self._need_Class_args(data,{'lensing':'yes', 'output':'tCl lCl pCl'})
     self.clik = clik.clik(self.path_clik)
-    l_max = max(self.clik.get_lmax())
-    self._need_Class_args(data,{'l_max_scalar':l_max})
+    self.l_max = max(self.clik.get_lmax())
+    self._need_Class_args(data,{'l_max_scalar':self.l_max})
+
+    # deal with nuisance parameters
+    try:
+      self.use_nuisance
+    except:
+      self.use_nuisance = []
+    self._read_contamination_spectra(data)
 
   def _loglkl(self,_cosmo,data):
 
     # get Cl's from CLASS
     cl = self._get_cl(_cosmo)
   
+    # add contamination spectra multiplied by nuisance parameters
+    cl = self._add_contamination_spectra(cl,data)
+
     tot=np.zeros(np.sum(self.clik.get_lmax())+6)
 
     index=0
@@ -593,4 +603,8 @@ class likelihood_clik(likelihood):
         index += self.clik.get_lmax()[i]
 
     loglkl=self.clik(tot)[0]
+
+    # add prior on nuisance parameters
+    loglkl = self._add_nuisance_prior(loglkl,data)
+
     return loglkl

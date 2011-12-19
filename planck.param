@@ -1,8 +1,6 @@
 #------Experiments to test (separated with commas)-----
 # valid options are: planck, hst, wmap...
-#data.exp=['sn','hst']
-#data.exp=['acbar','quad','boomerang','spt','bicep','cbi']
-data.exp=['clik_wmap_full']
+data.exp=['clik_planck_smica']
 
 # Parameter list, data.params[class name] = [mean, min, max, 1-sigma]
 # if min max irrelevant, put to -1
@@ -11,15 +9,13 @@ data.Class_params['Omega_b']   	= [0.0449,-1,-1,0.0005]
 data.Class_params['Omega_cdm'] 	= [0.23,  -1,-1,0.01]
 data.Class_params['tau_reio']  	= [0.088, -1,-1,0.005]
 data.Class_params['h']	 	= [0.7,   -1,-1,0.005]
-data.Class_params['n_s']	= [0.963, -1,-1,0.007]
+data.Class_params['n_s']	= [0.963, -1,-1,0]
 data.Class_params['A_s']	= [2.42,  -1,-1,0.02]
 
 # Nuisance parameter list, same call, except the name does not have to be a
 # class name
-#data.nuisance_params['A_SZ']	= [1,	0, 2,  1]
 #data.nuisance_params['SPT_SZ']	= [5.5, 0, 10, 3]
-#data.nuisance_params['SPT_PS']	= [19.3,0, 50, 3.5]
-#data.nuisance_params['SPT_CL']	= [5.,  0, 10, 2.5]
+
 
 #------ Mcmc parameters ----
 data.N=10000
