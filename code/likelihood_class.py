@@ -47,6 +47,18 @@ class likelihood():
       data_file.seek(0)
       data_file.close()
 
+  def _get_cl(self,_cosmo):
+
+    # get C_l^XX from CLASS
+    cl = _cosmo.lensed_cl()
+
+    # convert dimensionless C_l's to C_l in muK**2
+    T = _cosmo._T_cmb()
+    for key in cl.iterkeys():
+      cl[key] *= (T*1.e6)**2
+
+    return cl
+
   def _need_Class_args(self,data,dictionary):
     for key,value in dictionary.iteritems():
       try :
@@ -396,17 +408,7 @@ class likelihood_newdat(likelihood):
 
     return loglkl
 
-  def _get_cl(self,_cosmo):
 
-    # get C_l^XX from CLASS
-    cl = _cosmo.lensed_cl()
-
-    # convert dimensionless C_l's to C_l in muK**2
-    T = _cosmo._T_cmb()
-    for key in cl.iterkeys():
-      cl[key] *= (T*1.e6)**2
-
-    return cl
 
   def _compute_loglkl(self,cl,_cosmo,data):
 
@@ -542,3 +544,53 @@ class likelihood_newdat(likelihood):
 
     self.loglkl = - 0.5 * chisq 
     return self.loglkl
+
+
+
+class likelihood_clik(likelihood):
+
+  
+
+  def __init__(self,path,data,command_line=False):
+
+    try:
+      import clik
+    except ImportError:
+      print " /|\  You must first activate the binaries from the Clik distribution,"
+      print "/_o_\ please run : source /path/to/clik/bin/clik_profile.sh"
+      print "      and try again."
+      exit()
+    likelihood.__init__(self,path,data,command_line)
+    self._need_Class_args(data,{'lensing':'yes', 'output':'tCl lCl pCl'})
+    self.clik = clik.clik(self.path_clik)
+    l_max = max(self.clik.get_lmax())
+    self._need_Class_args(data,{'l_max_scalar':l_max})
+
+  def _loglkl(self,_cosmo,data):
+
+    # get Cl's from CLASS
+    cl = self._get_cl(_cosmo)
+  
+    tot=np.zeros(np.sum(self.clik.get_lmax())+6)
+
+    index=0
+    for i in range(np.shape(self.clik.get_lmax())[0]):
+      if (self.clik.get_lmax()[i] >-1):
+        for j in range(self.clik.get_lmax()[i]+1):
+          if (i==0):
+            tot[index+j]=cl['tt'][j]        
+          if (i==1):
+            tot[index+j]=cl['ee'][j]
+          if (i==2):
+            tot[index+j]=cl['bb'][j]
+          if (i==3):
+            tot[index+j]=cl['te'][j]
+          if (i==4):
+            tot[index+j]=cl['tb'][j]
+          if (i==5):
+            tot[index+j]=cl['eb'][j]
+
+        index += self.clik.get_lmax()[i]
+
+    loglkl=self.clik(tot)[0]
+    return loglkl

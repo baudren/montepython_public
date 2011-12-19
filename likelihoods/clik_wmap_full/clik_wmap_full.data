@@ -1,3 +1,3 @@
 # Grab the clik version of fake planck
 
-wmap_full.path_clik = '/itp/baudren/Desktop/codes/clik_epfl/examples/wmap_7_full.clik'
+clik_wmap_full.path_clik = data.path['clik']+'wmap_7_full.clik'

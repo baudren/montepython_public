@@ -1,34 +1,4 @@
-import os
-import numpy as np
-try:
-  import clik
-except ImportError:
-  print " /|\  You must first activate the binaries from the Clik distribution,"
-  print "/_o_\ please run : source /path/to/clik/bin/clik_profile.sh"
-  print "      and try again."
-  exit()
-from likelihood_class import likelihood
+from likelihood_class import likelihood_clik
 
-class clik_fake_planck(likelihood):
-
-  def __init__(self,path,data,command_line=False):
-    likelihood.__init__(self,path,data,command_line)
-    self._need_Class_args(data,{'lensing':'yes', 'output':'tCl lCl pCl'})
-    self.clik = clik.clik(self.path_clik)
-
-  def _loglkl(self,_cosmo,data):
-
-    T = _cosmo._T_cmb()
-    T_squared=np.array(T**2.*1e12,'float64')
-    cl=np.array(_cosmo.lensed_cl(),'float64')
-    tot=np.zeros(np.sum(self.clik.get_lmax())+6)
-    for i in range(cl.shape[0]-1):
-      if (i==0 or i==1):
-	ieq=i
-      else:
-	ieq=3
-      for j in range(1701):
-	bound=1701
-	tot[j+i*bound]=np.array(cl[ieq][j]*T_squared,'float64')
-    loglkl=self.clik(tot)[0]
-    return loglkl
+class clik_fake_planck(likelihood_clik):
+  pass
