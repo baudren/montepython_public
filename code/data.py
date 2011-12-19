@@ -120,7 +120,7 @@ class data:
   def _read_file(self,_file):
     for line in _file:
       if line.find('#')==-1:
-	if line.find('data.')!=-1:
+	if line.split('=')[0].find('data.')!=-1:
 	  exec(line.replace('data.','self.'))
     _file.seek(0)
 
@@ -134,10 +134,12 @@ class data:
   def _parameters(self):
     failure=False
     for key,value in self.Class_params.iteritems():
+      if len(value) == 5:
+	for i in range(4):
+	  if (value[i]!=-1 and value[i]!=0):
+	    value[i]*=value[4]
       if value[3] == 0:
-	print key,value
 	self.Class_args[key] = self.Class_params.pop(key)[0]
-	print self.Class_args[key]
 
       else:
 	self.Class_param_names.append(key)
@@ -156,6 +158,10 @@ class data:
 	self.Class.append(temp)
     
     for key,value in self.nuisance_params.iteritems():
+      if len(value) == 5:
+	for i in range(4):
+	  if (value[i]!=-1 and value[i]!=0):
+	    value[i]*=value[4]
       if value[3] == 0:
 	exec  "self.%s = %f" % (key,self.nuisance_params.pop(key)[0])
       else:
