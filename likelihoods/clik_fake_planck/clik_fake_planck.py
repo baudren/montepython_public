@@ -9,7 +9,7 @@ except ImportError:
   exit()
 from likelihood_class import likelihood
 
-class fake_planck(likelihood):
+class clik_fake_planck(likelihood):
 
   def __init__(self,path,data,command_line=False):
     likelihood.__init__(self,path,data,command_line)

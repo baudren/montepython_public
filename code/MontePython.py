@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/software/base/python-2.7.1-gnu/bin/python
 
 ####################
 # Monte-Python, a Monte Carlo Markov Chain code (with Class!)

@@ -9,7 +9,7 @@ except ImportError:
   exit()
 from likelihood_class import likelihood
 
-class wmap_full(likelihood):
+class clik_wmap_full(likelihood):
 
   def __init__(self,path,data,command_line=False):
     likelihood.__init__(self,path,data,command_line)
