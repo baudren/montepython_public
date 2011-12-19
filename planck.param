@@ -2,7 +2,7 @@
 # valid options are: planck, hst, wmap...
 #data.exp=['fake_planck','hst']
 #data.exp=['spt','acbar']
-data.exp=['fake_planck']
+data.exp=['wmap']
 #data.exp=['hst','sn','fake_planck']
 
 # Parameter list, data.params[class name] = [mean, min, max, 1-sigma]
