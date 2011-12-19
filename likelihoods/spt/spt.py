@@ -11,9 +11,7 @@ class spt(likelihood_newdat):
 
   def __init__(self,path,data,command_line=False):
     likelihood_newdat.__init__(self,path,data,command_line)
-    self._need_nuisance_parameters(data,['SPT_SZ'])
-    self._need_nuisance_parameters(data,['SPT_PS'])
-    self._need_nuisance_parameters(data,['SPT_CL'])
+    self._need_nuisance_parameters(data,['SPT_SZ','SPT_PS','SPT_CL'])
 
     #####################
     # the following should become a function self._read_contamination_spectrum(self,['SPT_SZ'])

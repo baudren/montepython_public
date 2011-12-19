@@ -77,7 +77,9 @@ class likelihood():
           exec "data.%s" % elem
         except:
           print elem+' must be defined, either fixed or varying, for {0} likelihood'.format(self.name)
-          exit()
+	  failure=True
+    if failure:
+      exit()
 
 # Likelihood type for prior
 class likelihood_prior(likelihood):
