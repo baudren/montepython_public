@@ -130,7 +130,7 @@ class likelihood():
 
       # add contamination spectra multiplied by nuisance parameters
       for l in range(2,self.l_max):
-        exec "cl[0,l] += nuisance_value*self.%s_contamination[l]" % nuisance
+        exec "cl['tt'][l] += nuisance_value*self.%s_contamination[l]" % nuisance
 
     return cl
 
@@ -399,19 +399,20 @@ class likelihood_newdat(likelihood):
   def _get_cl(self,_cosmo):
 
     # get C_l^XX from CLASS
-    cl=np.array(_cosmo.lensed_cl(),'float64')
+    cl = _cosmo.lensed_cl()
 
     # convert dimensionless C_l's to C_l in muK**2
     T = _cosmo._T_cmb()
-    cl *= (T*1.e6)**2
+    for key in cl.iterkeys():
+      cl[key] *= (T*1.e6)**2
 
     return cl
 
   def _compute_loglkl(self,cl,_cosmo,data):
 
     # checks that Cl's have been computed up to high enough l given window function range. Normally this has been imposed before, so this test could even be supressed.
-    if (np.shape(cl)[1]-1 < self.l_max):
-      print 'CLASS computed Cls till l=',np.shape(cl)[1]-1,'while window functions need',self.l_max
+    if (np.shape(cl['tt'])[0]-1 < self.l_max):
+      print 'CLASS computed Cls till l=',np.shape(cl['tt'])[0]-1,'while window functions need',self.l_max
       exit()
 
     # compute theoretical bandpowers, store them in theo[points]
@@ -422,12 +423,10 @@ class likelihood_newdat(likelihood):
       # find bandpowers B_l by convolving C_l's with [(l+1/2)/2pi W_l]
       for l in range(self.win_min[point],self.win_max[point]):
 
-        theo[point] += cl[0,l]*self.window[point,l,0]*(l+0.5)/2./math.pi
-        #theo[point] = cl[_cosmo.le.index_lt_tt,l]*self.window[point,l,0]*(l+0.5)/2./math.pi
+        theo[point] += cl['tt'][l]*self.window[point,l,0]*(l+0.5)/2./math.pi
 
         if (self.has_pol):
-          theo[point] += (cl[2,l]*self.window[point,l,1] + cl[1,l]*self.window[point,l,2] + cl[3,l]*self.window[point,l,3])*(l+0.5)/2./math.pi
-          #theo[point] += (cl[_cosmo.le.index_lt_te,l]*self.window[point,l,1] + cl[_cosmo.le.index_lt_ee,l]*self.window[point,l,2] + cl[_cosmo.le.index_lt_bb,l]*self.window[point,l,3])(l+0.5)/2./math.pi
+          theo[point] += (cl['te'][l]*self.window[point,l,1] + cl['ee'][l]*self.window[point,l,2] + cl['bb'][l]*self.window[point,l,3])*(l+0.5)/2./math.pi
 
     # allocate array for differencve between observed and theoretical bandpowers
     difference=np.zeros(self.num_points,'float64')
