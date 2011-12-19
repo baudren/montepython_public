@@ -1,12 +1,14 @@
 # this files give the path to the .newdat file where the experiment is entirely described.
 spt.data_directory 	   = spt.folder+'../../data/'
 spt.file                   = 'Spectrum_spt20082009.newdat'
+spt.use_nuisance	   = ['SPT_SZ','SPT_PS','SPT_CL']
+
 spt.SPT_SZ_file = 'dl_sz.txt'
-spt.SPT_SZ_bestfit = 5.5
-spt.SPT_SZ_variance = 3.
+spt.SPT_SZ_prior_center = 5.5
+spt.SPT_SZ_prior_variance = 3.
 spt.SPT_PS_file = 'dl_poisson_point_source.txt'
-spt.SPT_PS_bestfit = 19.3
-spt.SPT_PS_variance = 3.5
+spt.SPT_PS_prior_center = 19.3
+spt.SPT_PS_prior_variance = 3.5
 spt.SPT_CL_file = 'dl_clustered_point_source.txt'
-spt.SPT_CL_bestfit = 5.0
-spt.SPT_CL_variance = 2.5
+spt.SPT_CL_prior_center = 5.0
+spt.SPT_CL_prior_variance = 2.5
