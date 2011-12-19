@@ -1,5 +1,5 @@
 # this files give the path to the .newdat file where the experiment is entirely described.
-acbar.data_directory 	= acbar.folder+'../../data/'
+acbar.data_directory 	= data.path['data']
 acbar.file              = 'acbar2007_v3_corr.newdat'
 acbar.use_nuisance	= ['A_SZ']
 
