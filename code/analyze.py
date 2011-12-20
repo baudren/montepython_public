@@ -39,6 +39,8 @@ class info:
 	self.cov.write('{0} '.format(self.covar[i][j]))
       self.cov.write('\n')
 
+    self.prepare_tex_names()
+
     # sorting
     a=chain[:,1].argsort(0)
     total=chain[:,0].sum()
@@ -54,48 +56,20 @@ class info:
 	else:
 	  a99=i
 
-    # Plotting parameters
-    font = {'size'   : 10}
-    matplotlib.rc('font', **font)
+    self.plot_triangle(chain,bin_number=binnumber)
 
-    # 1D and 2D plots
-    fig = plt.figure(1,(24,16))
-    fig.subplots_adjust(bottom=0.03, left=.02, right=0.98, top=0.98, hspace=.35)
-
-    for i in range(len(self.ref_names)):
-      ax=fig.add_subplot(len(self.ref_names),len(self.ref_names),i*(len(self.ref_names)+1)+1,yticks=[])
-
-      n,bins,patches=plt.hist(chain[:,i+2],bins=binnumber,weights=chain[:,0],normed=True,color='red')
-      ax.set_xticks(np.linspace(round(min(chain[:,i+2]),3),round(max(chain[:,i+2]),3),5))
-      ax.set_xticklabels(['%1.3f' % s for s in np.linspace(round(min(chain[:,i+2]),3),round(max(chain[:,i+2]),3),5)])
-      ax.set_xlabel('{0}'.format(self.ref_names[i]))
-      #y = mlab.normpdf( bins, mean[i], var[i])
-      #y = Max*exp(-(mean[i], var[i])
-      #print mean[i],var[i]
-      #plt.plot(bins,1./np.sqrt(2*np.pi*np.sqrt(var[i]))*np.exp(-(bins-mean[i])**2/(2.*var[i])),color='blue')
-      bins = np.linspace(min(bins),max(bins),1000)
-      ax.plot(bins,1./np.sqrt(2*np.pi*self.var[i])*np.exp(-(bins-self.mean[i])**2/(2.*self.var[i])),color='blue',linewidth=2)
-
-      #l = plt.plot(bins,y, 'r--', linewidth=1)
-      #print y
-
-      for j in range(i):
-	ax1=fig.add_subplot(len(self.ref_names),len(self.ref_names),(i)*len(self.ref_names)+j+1)
-	n,xedges,yedges=np.histogram2d(chain[:,i+2],chain[:,j+2],bins=(binnumber,binnumber))
-	extent = [yedges[0], yedges[-1], xedges[0], xedges[-1]]
-	plt.imshow(n, extent=extent, aspect='auto',interpolation='nearest')
-
-    fig.savefig(self.folder+'hist.pdf')
-    #plt.show()
-    self.info.write('\n parameter names:\t')
+    self.info.write('\n param names:\t')
     for elem in self.ref_names:
-      self.info.write('{0}\t'.format(elem))
+      self.info.write('%s\t' % (elem))
     self.info.write('\n R values:\t')
     for elem in self.R:
-      self.info.write('{0}\t'.format(elem))
+      self.info.write('%.7f\t' % (elem))
     self.info.write('\n mean    :\t')
     for elem in self.mean:
-      self.info.write('{0}\t'.format(elem))
+      self.info.write('%.7f\t' % (elem))
+    self.info.write('\n 1-sigma :\t')
+    for elem in self.var:
+      self.info.write('%.7f\t' % (math.sqrt(elem) ))
 
   def prepare(self,Files):
 
@@ -191,7 +165,7 @@ class info:
       for name in names:
 	if name != self.ref_names[names.index(name)]:
 	  ham,names = swap(ham,names,names.index(name),self.ref_names.index(name))
-
+      
       # Adding resulting table to spam
       self.spam.append(ham)
 
@@ -247,3 +221,83 @@ class info:
     ham[:,i] = ham[:,j]
     ham[:,j] = temp
     return ham,names
+
+  def plot_triangle(self,chain,select=None,bin_number=20,scales=(),legend=(),levels=(68.26,95.4,99.7),show_prop=True,fill=68.26,show_mean=True,show_peak=True,show_extra=None,add_legend=r"$=%(peak).4g^{+%(up).3g}_{-%(down).3g}$",aspect=(24,16),fig=None,tick_at_peak=False,convolve=True):
+
+    matplotlib.rc('text',usetex = True)
+    matplotlib.rc('xtick',labelsize='8')
+    matplotlib.rc('ytick',labelsize='8')
+    lvl = np.array(levels)/100.
+
+    if fig:
+      plt.figure(fig,aspect)
+    else:
+      plt.figure(figsize=aspect)
+
+    # clear figure
+    plt.clf()
+
+    n = np.shape(chain)[1]-2
+    # to be modified by data.param.itervalues()[4]
+    if select==None:
+      select = range(n)
+    if not scales:
+     scales = np.ones(n)
+    scales=np.array(scales)
+
+
+    if show_mean:
+      if not isinstance(show_mean,(list,tuple)): 
+	show_mean=(True,)*(n)
+    else:
+      if not isinstance(show_mean,(list,tuple)): 
+	show_mean=(False,)*(n)
+
+    if show_peak:
+      if not isinstance(show_peak,(list,tuple)): 
+	show_peak=(True,)*(n)
+    else:
+      if not isinstance(show_peak,(list,tuple)): 
+	show_peak=(False,)*(n)
+
+    n = len(select)
+    mean = self.mean*scales
+    var  = self.var*scales**2
+    print select
+    #pmax = 
+    # 1D plot
+
+    fig = plt.figure(1,(24,16))
+    fig.subplots_adjust(bottom=0.03, left=.02, right=0.98, top=0.98, hspace=.35)
+
+    for i in range(len(self.ref_names)):
+      ax=fig.add_subplot(len(self.ref_names),len(self.ref_names),i*(len(self.ref_names)+1)+1,yticks=[])
+
+      n,bins,patches=plt.hist(chain[:,i+2],bins=bin_number,weights=chain[:,0],normed=True,color='red')
+      ax.set_xticks(np.linspace(round(min(chain[:,i+2]),3),round(max(chain[:,i+2]),3),5))
+      ax.set_xticklabels(['%1.3f' % s for s in np.linspace(round(min(chain[:,i+2]),3),round(max(chain[:,i+2]),3),5)])
+      ax.set_title('{0}'.format(self.tex_names[i]))
+      #y = mlab.normpdf( bins, mean[i], var[i])
+      #y = Max*exp(-(mean[i], var[i])
+      #print mean[i],var[i]
+      #plt.plot(bins,1./np.sqrt(2*np.pi*np.sqrt(var[i]))*np.exp(-(bins-mean[i])**2/(2.*var[i])),color='blue')
+      bins = np.linspace(min(bins),max(bins),1000)
+      ax.plot(bins,1./np.sqrt(2*np.pi*self.var[i])*np.exp(-(bins-self.mean[i])**2/(2.*self.var[i])),color='blue',linewidth=2)
+
+      for j in range(i):
+	ax1=fig.add_subplot(len(self.ref_names),len(self.ref_names),(i)*len(self.ref_names)+j+1)
+	n,xedges,yedges=np.histogram2d(chain[:,i+2],chain[:,j+2],bins=(bin_number,bin_number))
+	extent = [yedges[0], yedges[-1], xedges[0], xedges[-1]]
+	plt.imshow(n, extent=extent, aspect='auto',interpolation='nearest')
+
+    fig.savefig(self.folder+'hist.pdf')
+
+  def prepare_tex_names(self):
+    self.tex_names = []
+    for name in self.ref_names:
+      if (name.find('mega')!=-1 or name.find('tau')!=-1):
+	name="""\\"""+name
+      if name.find('_')!=-1:
+	name = name.split('_')[0]+'_{'+name.split('_')[1]+'}'
+      name = '$'+name+'$'
+      self.tex_names.append(name)

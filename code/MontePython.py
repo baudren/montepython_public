@@ -20,7 +20,6 @@ import parser	# parsing the input command line
 import io	# all the input/output mechanisms
 import mcmc	# the actual Monte Carlo chain procedure, along with the useful functions
 import data	# data handling
-#import analyze	# analysis module, only invoked if asked in the command line
 
 import os,sys
 
