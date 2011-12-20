@@ -57,52 +57,46 @@ def get_cov(data,command_line):
 	i+=1
 
     # Deal with the all problematic cases. 
+
+    # First, rotate M for the parameters to be well ordered, even if some names
+    # are missing or some are in extra.
+    temp_names = []
+    for elem in data.param_names:
+      if elem in covnames:
+	temp_names.append(elem)
+    for k in range(len(covnames)):
+      for h in range(len(covnames)):
+	if covnames[k]==temp_names[h]:
+	  rot[k][h] = 1.
+	else:
+	  rot[k][h] = 0.
+    M=np.dot(rot,np.dot(M,rot))
     
-    # First, the simplest one: same amount of parameter, but ill ordered
-    if len(covnames) == len(data.param_names):
-      for k in range(len(data.param_names)):
-	if covnames[k] not in data.param_names:
-	  print ' /|\  Error, you do not have the same parameters\n/_o_\ in your cov matrix and chain!' 
-	  print data.param_names,covnames
-	  exit()
-	for h in range(len(data.vector)):
-	  if covnames[k]==data.param_names[h]:
-	    rot[k][h]=1
-	  else:
-	    rot[k][h]=0
-      M=np.dot(rot,np.dot(M,rot))
+    M_temp    = np.ones((len(data.param_names),len(data.param_names)),'float64')
+    indices_1 = np.zeros(len(data.param_names))
+    indices_2 = np.zeros(len(covnames))
+    #Remove names that are in param_names but not in covnames
+    for k in range(len(data.param_names)):
+      if data.param_names[k] in covnames:
+	indices_1[k]=1
+    for zeros in np.where(indices_1 == 0)[0]:
+      M_temp[zeros,:] = 0
+      M_temp[:,zeros] = 0
+    #Remove names that are in covnames but not in param_names
+    for h in range(len(covnames)):
+      if covnames[h] in data.param_names:
+	indices_2[h]=1
+    for zeros in np.where(indices_2 == 0)[0]:
+      M[zeros,:] = 0
+      M[:,zeros] = 0
+    # super trick
+    M_temp[M_temp == 1]=M[M!=0]
+    M = np.copy(M_temp)
+    # on all other lines, just use sigma^2
+    for zeros in np.where(indices_1 == 0)[0]:
+      #print data.param[]
+      M[zeros,zeros] = np.array(data.params[data.param_names[zeros]][3],'float64')**2
 
-    # if covmat is smaller than data.param_names, using the sigma^2 for the rest
-    if len(covnames) < len(data.param_names):
-      # extracting indices for the sub param_names that contains covnames
-      M_temp  = np.ones((len(data.param_names),len(data.param_names)),'float64')
-      indexes = np.zeros(len(data.param_names))
-      for k in range(len(data.param_names)):
-	if data.param_names[k] in covnames:
-	  indexes[k]=1
-      for zeros in np.where(indexes == 0)[0]:
-	M_temp[zeros,:] = 0
-	M_temp[:,zeros] = 0
-      # super trick
-      M_temp[M_temp == 1]=M.flatten()
-      M = np.copy(M_temp)
-      # on all other lines, just use sigma^2
-      for zeros in np.where(indexes == 0)[0]:
-	#print data.param[]
-	M[zeros,zeros] = np.array(data.params[data.param_names[zeros]][3],'float64')**2
-
-    # if covmat is bigger than data.param_names, take only needed columns
-    if len(covnames) > len(data.param_names):
-      M_temp = np.ones((len(data.param_names),len(data.param_names)),'float64')
-      indexes = np.zeros(len(covnames))
-      for k in range(len(covnames)):
-	if covnames[k] in data.param_names:
-	  indexes[k]=1
-      for zeros in np.where(indexes == 0)[0]:
-	M[zeros,:] = 0
-	M[:,zeros] = 0
-      M_temp = M[M!=0].reshape(len(data.param_names),len(data.param_names))
-      M = np.copy(M_temp)
 
   # else, take sigmas^2.
   else:
