@@ -64,6 +64,9 @@ class info:
     self.info.write('\n R values:\t')
     for elem in self.R:
       self.info.write('%.7f\t' % (elem))
+    self.info.write('\n Best Fit:\t')
+    for elem in chain[a[0],2:]:
+      self.info.write('%.7f\t' % (elem))
     self.info.write('\n mean    :\t')
     for elem in self.mean:
       self.info.write('%.7f\t' % (elem))
