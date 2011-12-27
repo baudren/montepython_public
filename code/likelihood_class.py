@@ -581,8 +581,10 @@ class likelihood_clik(likelihood):
     # add contamination spectra multiplied by nuisance parameters
     cl = self._add_contamination_spectra(cl,data)
 
-    tot=np.zeros(np.sum(self.clik.get_lmax())+6)
+    # allocate array of Cl's and nuisance parameters
+    tot=np.zeros(np.sum(self.clik.get_lmax())+6+len(self.clik.get_extra_parameter_names()))
 
+    # fill with Cl's
     index=0
     for i in range(np.shape(self.clik.get_lmax())[0]):
       if (self.clik.get_lmax()[i] >-1):
@@ -602,6 +604,21 @@ class likelihood_clik(likelihood):
 
         index += self.clik.get_lmax()[i]
 
+    # fill with nuisance parameters
+    for nuisance in self.clik.get_extra_parameter_names():
+      if nuisance in data.nuisance_param_names:
+        nuisance_value = float(data.vector[np.where(data.param_names == nuisance)[0][0]])
+      else:
+        try:
+          exec "nuisance_value = data.%s" % nuisance
+        except:
+          print 'the likelihood needs a parameter '+nuisance
+          print 'you must pass it through the input file (as a free nuisance parameter or a fixed parameter)'
+          exit()
+      index += 1
+      tot[index]=nuisance_value
+
+    # compute likelihood
     loglkl=self.clik(tot)[0]
 
     # add prior on nuisance parameters
