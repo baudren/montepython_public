@@ -41,7 +41,6 @@ def read_args_from_chain(data,chain):
 
 def get_cov(data,command_line):
   np.set_printoptions(precision=2,linewidth=150)
-  rot=np.zeros((len(data.vector),len(data.vector)))
   i=0
   # if the user wants to use a covmat file
   if command_line.cov is not None:
@@ -50,6 +49,7 @@ def get_cov(data,command_line):
       if line.find('#')!=-1:
 	covnames = line.strip('#[').strip(']\n').replace("'","").split(', ')
 	M=np.zeros((len(covnames),len(covnames)),'float64')
+	rot=np.zeros((len(covnames),len(covnames)))
       else:
 	line=line.split()
 	for j in range(len(line)):
@@ -94,8 +94,8 @@ def get_cov(data,command_line):
     M = np.copy(M_temp)
     # on all other lines, just use sigma^2
     for zeros in np.where(indices_1 == 0)[0]:
-      #print data.param[]
       M[zeros,zeros] = np.array(data.params[data.param_names[zeros]][3],'float64')**2
+
 
 
   # else, take sigmas^2.
