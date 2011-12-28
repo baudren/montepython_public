@@ -80,16 +80,19 @@ class info:
     # '.' in their name will be discarded as not mcmc chains (If you want to have
     # additionnal files than the log.dat and .param in this folder, please keep
     # this in  mind
+
     if os.path.isdir(Files[0]): 
       if Files[0].find('/')==-1:
 	Files[0]+='/'
+      self.folder = Files[0]
       Files = [Files[0]+elem for elem in os.listdir(Files[0]) if elem.find('.')==-1]
 
     # Recover the folder, depending on the case
-    if (len(Files[0].split('/'))==0 or (Files[0].split('/')[0]=='.')):
-      self.folder = './'
     else:
-      self.folder = Files[0].split('/')[0]+'/'
+      if (len(Files[0].split('/'))==0 or (Files[0].split('/')[0]=='.')):
+	self.folder = './'
+      else:
+	self.folder = Files[0].split('/')[:-2]+'/'
 
     # Check if the log.dat file exists
     if os.path.isfile(self.folder+'log.dat') is True:

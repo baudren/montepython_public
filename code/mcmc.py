@@ -70,7 +70,9 @@ def get_cov(data,command_line):
 	  rot[k][h] = 1.
 	else:
 	  rot[k][h] = 0.
+    print M
     M=np.dot(rot,np.dot(M,rot))
+    print M
     
     M_temp    = np.ones((len(data.param_names),len(data.param_names)),'float64')
     indices_1 = np.zeros(len(data.param_names))
@@ -95,6 +97,7 @@ def get_cov(data,command_line):
     # on all other lines, just use sigma^2
     for zeros in np.where(indices_1 == 0)[0]:
       M[zeros,zeros] = np.array(data.params[data.param_names[zeros]][3],'float64')**2
+    print M
 
 
 
