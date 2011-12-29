@@ -130,8 +130,7 @@ def get_new_pos(data,eigv,U):
 	flag+=1 # same
       else:
 	flag+=0 # else keep it at zero
-    if flag!=0:
-      print 'one turn for nothing'
+      i+=1
   data._transmit_vector(vector_new)
   return vector_new
 

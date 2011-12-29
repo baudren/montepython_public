@@ -111,8 +111,16 @@ class info:
     if numlines < len(Files):
       io.clean(self.folder)
 
-    infoname = self.folder+self.folder.rstrip('/')+'.info'
-    covname  = self.folder+self.folder.rstrip('/')+'.covmat'
+    # If the folder has no subdirectory, then go for a simple infoname,
+    # otherwise, call it with the last name
+    if (len(self.folder.split('/')) <= 2 and self.folder.split('/')[-1] == ''):
+      infoname = self.folder+self.folder.rstrip('/')+'.info'
+      covname  = self.folder+self.folder.rstrip('/')+'.covmat'
+    else:
+      infoname = self.folder+self.folder.split('/')[-2]+'.info'
+      covname  = self.folder+self.folder.split('/')[-2]+'.covmat'
+
+    print covname,infoname
 
     self.info  = open(infoname,'w')
     self.cov   = open(covname,'w')
