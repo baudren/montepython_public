@@ -564,7 +564,7 @@ class likelihood_clik(likelihood):
     self._need_Class_args(data,{'lensing':'yes', 'output':'tCl lCl pCl'})
     self.clik = clik.clik(self.path_clik)
     self.l_max = max(self.clik.get_lmax())
-    self._need_Class_args(data,{'l_max_scalar':self.l_max})
+    self._need_Class_args(data,{'l_max_scalars':self.l_max})
 
     # deal with nuisance parameters
     try:
