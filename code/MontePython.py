@@ -63,9 +63,8 @@ def main():
     folder = './'
     for elem in command_line.restart.split("/")[:-1]:
       folder += ''.join(elem+'/')
-    print folder
-    print 'log.param'
     command_line.par = folder+'log.param'
+    command_line.folder = folder
     Data = data.data(command_line,path)
 
   # Else, fill in data, starting from default_path, then custom parameter file,
