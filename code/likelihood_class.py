@@ -12,13 +12,13 @@ import math
 # initialization
 class likelihood():
 
-  def __init__(self,path,data,command_line=False):
+  def __init__(self,path,data,command_line=False,log_flag=False):
 
     self.name = self.__class__.__name__
     self.folder = os.path.abspath(data.path['MontePython'])+'/../likelihoods/'+self.name+'/'
     self._read_from_file(path,data)
 
-    if ((command_line is not False) and (os.path.exists(command_line.folder+'/log.dat') is False)):
+    if log_flag: 
       self._store_lkl_params(command_line)
 
     
@@ -172,9 +172,9 @@ class likelihood_prior(likelihood):
 # Generic type for newdat likelihood (spt, boomerang, etc)
 class likelihood_newdat(likelihood):
 
-  def __init__(self,path,data,command_line=False):
+  def __init__(self,path,data,command_line=False,log_flag=False):
 
-    likelihood.__init__(self,path,data,command_line)
+    likelihood.__init__(self,path,data,command_line,log_flag)
 
     self._need_Class_args(data,{'lensing':'yes', 'output':'tCl lCl pCl'})
       
@@ -551,7 +551,7 @@ class likelihood_clik(likelihood):
 
   
 
-  def __init__(self,path,data,command_line=False):
+  def __init__(self,path,data,command_line=False,log_flag=False):
 
     try:
       import clik
@@ -560,7 +560,7 @@ class likelihood_clik(likelihood):
       print "/_o_\ please run : source /path/to/clik/bin/clik_profile.sh"
       print "      and try again."
       exit()
-    likelihood.__init__(self,path,data,command_line)
+    likelihood.__init__(self,path,data,command_line,log_flag)
     self._need_Class_args(data,{'lensing':'yes', 'output':'tCl lCl pCl'})
     self.clik = clik.clik(self.path_clik)
     self.l_max = max(self.clik.get_lmax())

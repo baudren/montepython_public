@@ -60,6 +60,7 @@ class data:
     param_file.close()
 
     self._parameters()
+    log_flag = False
 
     if default:
       sys.stdout.write('testing likelihoods for:\n')
@@ -73,7 +74,8 @@ class data:
       if not os.path.exists(command_line.folder):
 	os.mkdir(command_line.folder)
         io.log_parameters(self,command_line)
-      
+	log_flag = True
+
       self.lkl=dict()
 	
 	# adding the likelihood directory to the path, to import the module
@@ -89,15 +91,14 @@ class data:
 	  sys.path.insert(0, folder)
 	exec "import %s" % elem
 	if self.param.find('log.param')==-1:
-	  exec "self.lkl['%s'] = %s.%s('%s/%s.data',self,command_line)"% (elem,elem,elem,folder,elem)
+	  exec "self.lkl['%s'] = %s.%s('%s/%s.data',self,command_line,log_flag)"% (elem,elem,elem,folder,elem)
 	else:
 	  exec "self.lkl['%s'] = %s.%s(self.param,self)"% (elem,elem,elem)
     
-      # log Class_args, and eventually all fixed parameters
-      if default:
-	if self.param.find('log.param')==-1:
-	  if os.path.exists(command_line.folder+'log.dat') is False:
-	    io.log_Class_args(self,command_line)
+
+      
+      if log_flag:
+	io.log_Class_args(self,command_line)
   
     for i in range(len(self.Class)): # Initialize the arguments
       mcmc.jump(self,self.Class_param_names[i],self.Class[i])
