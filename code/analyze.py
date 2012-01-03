@@ -95,21 +95,15 @@ class info:
 	self.folder = Files[0].split('/')[:-2]+'/'
 
     # Check if the log.dat file exists
-    if os.path.isfile(self.folder+'log.dat') is True:
-      if os.path.getsize(self.folder+'log.dat')>0:
-	self.log = open(self.folder+'log.dat','r')
+    if os.path.isfile(self.folder+'log.param') is True:
+      if os.path.getsize(self.folder+'log.param')>0:
+	self.log = open(self.folder+'log.param','r')
       else:
-	print '\n\n  The companion log file {0} seems empty'.format(self.folder+'log.dat')
+	print '\n\n  The log param file {0} seems empty'.format(self.folder+'log.dat')
 	exit()
     else:
-      print '\n\n  The companion log file {0} is absent ?'.format(self.folder+'log.dat')
+      print '\n\n  The log param file {0} is absent ?'.format(self.folder+'log.dat')
       exit()
-
-    # Cleaning the folder if necessary
-    numlines=sum(1 for line in self.log)
-    self.log.seek(0)
-    if numlines < len(Files):
-      io.clean(self.folder)
 
     # If the folder has no subdirectory, then go for a simple infoname,
     # otherwise, call it with the last name
@@ -119,8 +113,6 @@ class info:
     else:
       infoname = self.folder+self.folder.split('/')[-2]+'.info'
       covname  = self.folder+self.folder.split('/')[-2]+'.covmat'
-
-    print covname,infoname
 
     self.info  = open(infoname,'w')
     self.cov   = open(covname,'w')
@@ -141,8 +133,11 @@ class info:
     self.spam = list()
 
     # Recovering default ordering of parameters (first line in log file)
-    self.ref_names = self.log.readline().split('\t')[1].strip('[').strip(']').split()
-
+    self.ref_names = []
+    for line in self.log:
+      if line.find('data.params')!=-1:
+	self.ref_names.append(line.split("'")[1])
+    print self.ref_names
     self.log.seek(0)
 
     for File in self.Files:
@@ -168,17 +163,6 @@ class info:
 	self.spam.append(egg)
 	self.spam.append(sausage)
 	continue
-      
-      # Recover names for this chain
-      for line in self.log:
-	if line.find(File.split('/')[-1])!=-1:
-	  names = line.split('\t')[1].strip('[').strip(']').split()
-      self.log.seek(0)
-
-      # Verify the order is in agreement, otherwise, proceed to a swapping
-      for name in names:
-	if name != self.ref_names[names.index(name)]:
-	  ham,names = swap(ham,names,names.index(name),self.ref_names.index(name))
       
       # Adding resulting table to spam
       self.spam.append(ham)
@@ -224,18 +208,6 @@ class info:
       self.R[i] = math.sqrt(((1-1/length)*within+(len(self.spam)+1)/(len(self.spam)*length)*between)/within)
     return True
 
-  def swap(ham,names,i,j):
-    # first swap the things in names
-    temp 	   = names[i]
-    names[i] = names[j]
-    names[j] = temp
-
-    # then swap the columns
-    temp 	   = np.copy(ham[:,i])
-    ham[:,i] = ham[:,j]
-    ham[:,j] = temp
-    return ham,names
-
   def plot_triangle(self,chain,select=None,bin_number=20,scales=(),legend=(),levels=(68.26,95.4,99.7),show_prop=True,fill=68.26,show_mean=True,show_peak=True,show_extra=None,add_legend=r"$=%(peak).4g^{+%(up).3g}_{-%(down).3g}$",aspect=(24,16),fig=None,tick_at_peak=False,convolve=True):
 
     matplotlib.rc('text',usetex = True)
@@ -277,7 +249,6 @@ class info:
     n = len(select)
     mean = self.mean*scales
     var  = self.var*scales**2
-    print select
     #pmax = 
     # 1D plot
 
