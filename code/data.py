@@ -135,10 +135,6 @@ class data:
   def _parameters(self):
     failure=False
     for key,value in self.Class_params.iteritems():
-      if len(value) == 5:
-	for i in range(4):
-	  if (value[i]!=-1 and value[i]!=0):
-	    value[i]*=value[4]
       if value[3] == 0:
 	self.Class_args[key] = self.Class_params.pop(key)[0]
 
@@ -187,23 +183,6 @@ class data:
     self.params.update(self.nuisance_params)
     self.param_names = np.append(self.Class_param_names,self.nuisance_param_names)
     self._update_vector()
-
-  def _nuisance_parameters(self):
-    for key,value in self.nuisance_params.iteritems():
-      self.nuisance_param_names.append(key)
-      temp=rd.gauss(value[0],value[3])
-      while (value[1]!=-1 and temp<value[1] and failure==False):
-	if value[1]>value[0]:
-	  print '  Warning: you might have inconsistently set the min boundary for {0} parameter'.format(key)
-	  failure=True
-	temp=rd.gauss(value[0],value[3])
-      failure=False
-      while (value[2]!=-1 and temp>value[2] and failure==False):
-	if value[2]<value[0]:
-	  print '  Warning: you might have inconsistently set the max boundary for {0} parameter'.format(key)
-	  failure=True
-	temp=rd.gauss(value[0],value[3])
-      self.nuisance.append(temp)
 
   def _update_vector(self):
     self.vector = np.append(self.Class,self.nuisance)

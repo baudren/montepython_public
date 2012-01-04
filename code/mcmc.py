@@ -135,9 +135,13 @@ def get_new_pos(data,eigv,U):
   return vector_new
 
 def jump(data,Direction,Range):
-  data.Class_args[Direction]=Range
-  if Direction.find('A_s')!=-1:
-    data.Class_args[Direction]=Range*1e-9
+  # check if there is a multiplier for the number
+  multiplier = 1.
+  if Direction in data.Class_params.iterkeys():
+    if len(data.Class_params[Direction])==5:
+      multiplier = data.Class_params[Direction][4]
+
+  data.Class_args[Direction]=Range*multiplier
   return data.Class_args
 
 
@@ -171,7 +175,7 @@ def chain(_cosmo,data,command_line):
   max_loglike = loglike
 
   acc,rej=0.0,0.0	#acceptance and rejection number count
-  io.print_parameters(sys.stdout,data.param_names)
+  io.print_parameters(sys.stdout,data)
   N=1			#number of steps
   for k in range(command_line.N):
     vector_new=get_new_pos(data,sigma_eig,U)

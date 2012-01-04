@@ -23,10 +23,18 @@ def log_Class_args(data,command_line):
     log.write('data.Class_args.update({0})\n'.format(data.Class_args))
     log.close()
 
-def print_parameters(out,param):
+def print_parameters(out,data):
+  param = data.param_names
   out.write('#  -LogLkl\t')
   for i in range(len(param)):
-    out.write('{0}\t'.format(param[i]))
+    if len(data.Class_params[param[i]])==5:
+      number = 1./(data.Class_params[param[i]][4])
+      if number < 1000:
+	out.write('%0.d%s\t' % (number,param[i]))
+      else:
+	out.write('%0.e%s\t' % (number,param[i]))
+    else:
+      out.write('{0}\t'.format(param[i]))
   out.write('\n')
 
 def print_vector(out,N,loglkl,data):
@@ -114,8 +122,17 @@ def remove_from_log(log,log_name,chain):
 
 def write_log(data,rate,LogLike):
   data.log.write('{0} :\t[ '.format(data.out.name.split('/')[-1]),)
-  for i in range(len(data.param_names)):
-    data.log.write('{0} '.format(data.param_names[i]),)
+  param = data.param_names
+  for i in range(len(param)):
+    if param[i] in data.Class_params.iterkeys():
+      if len(data.Class_params[param[i]])==5:
+	    number = 1./(data.Class_params[param[i]][4])
+	    if number < 1000:
+	      data.log.write('%0.d%s ' % (number,param[i]))
+	    else:
+	      data.log.write('%0.e%s ' % (number,param[i]))
+      else:
+	data.log.write('{0} '.format(param[i]))
   data.log.write(']\tacceptance rate: %.4f,\t Min (-LogLike): %.4f' % (rate,-LogLike)+'\n')
   return 0
 

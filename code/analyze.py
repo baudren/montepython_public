@@ -138,7 +138,6 @@ class info:
       if line.find('#')==-1:
 	if (line.find('data.Class_params')!=-1 or line.find('data.nuisance_params')!=-1):
 	  if line.split('=')[-1].split(',')[-1].replace(']\n','').replace(' ','') == '0':
-	    print 'coucou'
 	    pass
 	  else:
 	    self.ref_names.append(line.split("'")[1])    
