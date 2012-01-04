@@ -1,4 +1,5 @@
 import os,sys
+import re
 import io
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
@@ -38,8 +39,6 @@ class info:
       for j in range(len(self.ref_names)):
 	self.cov.write('{0} '.format(self.covar[i][j]))
       self.cov.write('\n')
-
-    self.prepare_tex_names()
 
     # sorting
     a=chain[:,1].argsort(0)
@@ -132,15 +131,28 @@ class info:
     # normally the R coefficient. 
     self.spam = list()
 
-    # Recovering default ordering of parameters (first line in log file)
+    # Recovering default ordering of parameters 
     self.ref_names = []
     for line in self.log:
       if line.find('#')==-1:
 	if (line.find('data.Class_params')!=-1 or line.find('data.nuisance_params')!=-1):
+	  name = line.split("'")[1]
+	  if (name.find('mega')!=-1 or name.find('tau')!=-1):
+	    name="""\\"""+name
+	  if name.find('_')!=-1:
+	    name = name.split('_')[0]+'_{'+name.split('_')[1]+'}'
 	  if line.split('=')[-1].split(',')[-1].replace(']\n','').replace(' ','') == '0':
 	    pass
+	  elif len(line.split('=')[-1].split(',')) == 5:
+	    number = 1./float(line.split('=')[-1].split(',')[-1].replace(']\n','').replace(' ',''))
+	    if number < 1000:
+	      self.ref_names.append("$%0.d~%s$" % (number,name))
+	    else:
+	      self.ref_names.append("$%0.e%s$" % (number,name))
+	      m = re.search(r'(?:\$[0-9]*e\+[0]*)([0-9]*)(.*)',self.ref_names[-1])
+	      self.ref_names[-1] = '$10^{'+m.groups()[0]+'}'+m.groups()[1]
 	  else:
-	    self.ref_names.append(line.split("'")[1])    
+	    self.ref_names.append("${0}$".format(name))    
     print self.ref_names
     self.log.seek(0)
 
@@ -265,7 +277,7 @@ class info:
       n,bins,patches=plt.hist(chain[:,i+2],bins=bin_number,weights=chain[:,0],normed=True,color='red')
       ax.set_xticks(np.linspace(round(min(chain[:,i+2]),3),round(max(chain[:,i+2]),3),5))
       ax.set_xticklabels(['%1.3f' % s for s in np.linspace(round(min(chain[:,i+2]),3),round(max(chain[:,i+2]),3),5)])
-      ax.set_title('{0}'.format(self.tex_names[i]))
+      ax.set_title('{0}'.format(self.ref_names[i]))
       #y = mlab.normpdf( bins, mean[i], var[i])
       #y = Max*exp(-(mean[i], var[i])
       #print mean[i],var[i]
@@ -280,13 +292,3 @@ class info:
 	plt.imshow(n, extent=extent, aspect='auto',interpolation='nearest')
 
     fig.savefig(self.folder+'hist.pdf')
-
-  def prepare_tex_names(self):
-    self.tex_names = []
-    for name in self.ref_names:
-      if (name.find('mega')!=-1 or name.find('tau')!=-1):
-	name="""\\"""+name
-      if name.find('_')!=-1:
-	name = name.split('_')[0]+'_{'+name.split('_')[1]+'}'
-      name = '$'+name+'$'
-      self.tex_names.append(name)
