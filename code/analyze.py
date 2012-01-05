@@ -55,6 +55,7 @@ class info:
 	else:
 	  a99=i
 
+    self.lvls = [total*0.68,total*0.95,total*0.99]
     self.plot_triangle(chain,bin_number=binnumber)
 
     self.info.write('\n param names:\t')
@@ -153,7 +154,6 @@ class info:
 	      self.ref_names[-1] = '$10^{'+m.groups()[0]+'}'+m.groups()[1]
 	  else:
 	    self.ref_names.append("${0}$".format(name))    
-    print self.ref_names
     self.log.seek(0)
 
     for File in self.Files:
@@ -163,7 +163,7 @@ class info:
       max_lkl = min(cheese[:,1]) # beware, it is the min because we are talking about '- log likelihood'
 
       start = 0
-      while cheese[start,1]>max_lkl+4:
+      while cheese[start,1]>max_lkl+2:
 	start+=1
       print '  Removed {0} points of burn-in'.format(start)
       ham = np.copy(cheese[start::])
@@ -224,17 +224,18 @@ class info:
       self.R[i] = math.sqrt(((1-1/length)*within+(len(self.spam)+1)/(len(self.spam)*length)*between)/within)
     return True
 
-  def plot_triangle(self,chain,select=None,bin_number=20,scales=(),legend=(),levels=(68.26,95.4,99.7),show_prop=True,fill=68.26,show_mean=True,show_peak=True,show_extra=None,add_legend=r"$=%(peak).4g^{+%(up).3g}_{-%(down).3g}$",aspect=(24,16),fig=None,tick_at_peak=False,convolve=True):
+  def plot_triangle(self,chain,select=None,bin_number=20,scales=(),legend=(),levels=(68.26,95.4,99.7),show_prop=True,fill=68.26,show_mean=True,show_peak=True,show_extra=None,add_legend=r"$=%(peak).4g^{+%(up).3g}_{-%(down).3g}$",aspect=(16,16),fig=None,tick_at_peak=False,convolve=True):
 
     matplotlib.rc('text',usetex = True)
+    matplotlib.rc('font',size=11)
     matplotlib.rc('xtick',labelsize='8')
     matplotlib.rc('ytick',labelsize='8')
-    lvl = np.array(levels)/100.
+    lvls = np.array(levels)/100.
 
     if fig:
-      plt.figure(fig,aspect)
+      fig = plt.figure(fig,aspect)
     else:
-      plt.figure(figsize=aspect)
+      fig = plt.figure(1,figsize=aspect)
 
     # clear figure
     plt.clf()
@@ -267,28 +268,75 @@ class info:
     var  = self.var*scales**2
     #pmax = 
     # 1D plot
+    max_values = np.max(chain[:,2:],axis=0)*scales
+    min_values = np.min(chain[:,2:],axis=0)*scales
+    span = (max_values-min_values)
 
-    fig = plt.figure(1,(24,16))
-    fig.subplots_adjust(bottom=0.03, left=.02, right=0.98, top=0.98, hspace=.35)
+    if tick_at_peak:
+      pass
+    else:
+      ticks = np.array((min_values+span*0.1,(max_values+min_values)/2.,max_values-span*0.1)).T
+      
+    #fig.subplots_adjust(bottom=0.03, left=.02, right=0.98, top=0.98, hspace=.35)
+    fig.subplots_adjust(bottom=0.03, left=.04, right=0.98, top=0.98, hspace=.35)
 
     for i in range(len(self.ref_names)):
+
       ax=fig.add_subplot(len(self.ref_names),len(self.ref_names),i*(len(self.ref_names)+1)+1,yticks=[])
 
-      n,bins,patches=plt.hist(chain[:,i+2],bins=bin_number,weights=chain[:,0],normed=True,color='red')
-      ax.set_xticks(np.linspace(round(min(chain[:,i+2]),3),round(max(chain[:,i+2]),3),5))
-      ax.set_xticklabels(['%1.3f' % s for s in np.linspace(round(min(chain[:,i+2]),3),round(max(chain[:,i+2]),3),5)])
-      ax.set_title('{0}'.format(self.ref_names[i]))
-      #y = mlab.normpdf( bins, mean[i], var[i])
-      #y = Max*exp(-(mean[i], var[i])
-      #print mean[i],var[i]
-      #plt.plot(bins,1./np.sqrt(2*np.pi*np.sqrt(var[i]))*np.exp(-(bins-mean[i])**2/(2.*var[i])),color='blue')
-      bins = np.linspace(min(bins),max(bins),1000)
-      ax.plot(bins,1./np.sqrt(2*np.pi*self.var[i])*np.exp(-(bins-self.mean[i])**2/(2.*self.var[i])),color='blue',linewidth=2)
+      # histogram
+      n,bin_edges=np.histogram(chain[:,i+2],bins=bin_number,weights=chain[:,0],normed=False)
+      bincenters = 0.5*(bin_edges[1:]+bin_edges[:-1])
+      ax.set_xticks(ticks[i])
+      ax.set_xticklabels(['%.4g' % s for s in ticks[i]])
+      ax.set_title('%s= %.4g' % (self.ref_names[i],mean[i]))
+      ax.plot(bincenters,n,color='red',linewidth=2,ls='steps')
+      ax.axis([bin_edges[0], bin_edges[-1],0,np.max(n)])
+
+      # mean likelihood (optional)
 
       for j in range(i):
 	ax1=fig.add_subplot(len(self.ref_names),len(self.ref_names),(i)*len(self.ref_names)+j+1)
-	n,xedges,yedges=np.histogram2d(chain[:,i+2],chain[:,j+2],bins=(bin_number,bin_number))
+	n,xedges,yedges=np.histogram2d(chain[:,i+2],chain[:,j+2],weights=chain[:,0],bins=(bin_number,bin_number),normed=False)
 	extent = [yedges[0], yedges[-1], xedges[0], xedges[-1]]
-	plt.imshow(n, extent=extent, aspect='auto',interpolation='nearest')
+	x_centers = 0.5*(xedges[1:]+xedges[:-1])
+	y_centers = 0.5*(yedges[1:]+yedges[:-1])
+
+	ax1.set_xticks(ticks[j])
+	if i == len(self.ref_names)-1:
+	  ax1.set_xticklabels(['%.4g' % s for s in ticks[j]])
+	else:
+	  ax1.set_xticklabels([''])
+
+	ax1.set_yticks(ticks[i])
+	if j == 0:
+	  ax1.set_yticklabels(['%.4g' % s for s in ticks[i]])
+	else:
+	  ax1.set_yticklabels([''])
+	ax1.imshow(n.T, extent=extent, aspect='auto',interpolation='nearest',origin='lower',cmap=matplotlib.cm.Reds)
+	#ax1.contour(y_centers,x_centers,n.T,extent=extent,origin='lower',aspect='auto',levels=self.lvls)
+	cs = ax1.contour(y_centers,x_centers,n.T,extent=extent,levels=self.ctr_level(n.T,lvls),colors="k",zorder=5)
+	ax1.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=6)
+
 
     fig.savefig(self.folder+'hist.pdf')
+
+  def ctr_level(self,his,lvl,infinite = False):
+
+    mis=his.flatten()*1.
+    try:
+      msk=(mis.mask==False)
+      mis=np.array(np.compress(msk,mis))
+    except Exception,e:
+      pass
+    mis.sort()
+    cis=np.cumsum(mis[::-1])
+    cis/=cis[-1]
+
+    alvl=np.searchsorted(cis,lvl)[::-1]
+    #print alvl
+    clist=[0]+[mis[-ii] for ii in alvl]+[np.max(mis)]
+    if not infinite:
+      return clist[1:]
+    return clist
+
