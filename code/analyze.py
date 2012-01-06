@@ -313,30 +313,30 @@ class info:
 	  ax1.set_yticklabels(['%.4g' % s for s in ticks[i]])
 	else:
 	  ax1.set_yticklabels([''])
-	ax1.imshow(n.T, extent=extent, aspect='auto',interpolation='nearest',origin='lower',cmap=matplotlib.cm.Reds)
-	#ax1.contour(y_centers,x_centers,n.T,extent=extent,origin='lower',aspect='auto',levels=self.lvls)
+	ax1.imshow(n.T, extent=extent, aspect='auto',interpolation='gaussian',origin='lower',cmap=matplotlib.cm.Reds)
+
+	# smoothing the histogram, to have nicer contours
+	#n = self.smoothing_hist(n,200)
+	# plotting contours
 	cs = ax1.contour(y_centers,x_centers,n.T,extent=extent,levels=self.ctr_level(n.T,lvls),colors="k",zorder=5)
 	ax1.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=6)
 
 
     fig.savefig(self.folder+'hist.pdf')
 
-  def ctr_level(self,his,lvl,infinite = False):
+  def ctr_level(self,histogram2d,lvl,infinite = False):
 
-    mis=his.flatten()*1.
-    try:
-      msk=(mis.mask==False)
-      mis=np.array(np.compress(msk,mis))
-    except Exception,e:
-      pass
-    mis.sort()
-    cis=np.cumsum(mis[::-1])
-    cis/=cis[-1]
+    hist=histogram2d.flatten()*1.
+    hist.sort()
+    cum_hist=np.cumsum(hist[::-1])
+    cum_hist/=cum_hist[-1]
 
-    alvl=np.searchsorted(cis,lvl)[::-1]
-    #print alvl
-    clist=[0]+[mis[-ii] for ii in alvl]+[np.max(mis)]
+    alvl=np.searchsorted(cum_hist,lvl)[::-1]
+    clist=[0]+[hist[-ii] for ii in alvl]+[np.max(hist)]
     if not infinite:
       return clist[1:]
     return clist
 
+  def smoothing_hist(self,hist,size):
+    print hist
+    pass
