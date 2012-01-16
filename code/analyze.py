@@ -255,6 +255,8 @@ class info:
     else:
       fig = plt.figure(1,figsize=aspect)
 
+    # TEST
+    fig2 = plt.figure(fig,aspect)
     # clear figure
     plt.clf()
 
@@ -311,6 +313,10 @@ class info:
     for i in range(len(self.ref_names)):
 
       ax=fig.add_subplot(len(self.ref_names),len(self.ref_names),i*(len(self.ref_names)+1)+1,yticks=[])
+
+      print round(math.sqrt(self.ref_names))
+      exit()
+      ax1d = fig2.add_subplot(len(self.ref_names)
 
       # histogram
       n,bin_edges=np.histogram(chain[:,i+2],bins=bin_number,weights=chain[:,0],normed=False)
