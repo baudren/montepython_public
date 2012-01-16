@@ -60,7 +60,10 @@ def main():
   # log.param file, and append to the existing chain. The log.dat file will be
   # updated at the end of the run as well.
   if command_line.restart is not None:
-    folder = './'
+    if command_line.restart[0] == '/':
+      folder = ''
+    else:
+      folder = './'
     for elem in command_line.restart.split("/")[:-1]:
       folder += ''.join(elem+'/')
     command_line.par = folder+'log.param'
