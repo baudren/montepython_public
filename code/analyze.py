@@ -51,7 +51,7 @@ class info:
 	  if Sum<total*0.68:
 	    a68=i
 	  else:
-	    a95=i
+	    a95= i
 	else:
 	  a99=i
 
@@ -137,23 +137,34 @@ class info:
     # Recovering default ordering of parameters 
     self.ref_names = []
     self.tex_names = []
+    self.boundaries= []
+
+    # Defining a list of names that should have a \ in their tex names
+    tex_greek = ['omega','tau','alpha','beta','delta','nu','Omega']
     for line in self.log:
       if line.find('#')==-1:
 	if (line.find('data.Class_params')!=-1 or line.find('data.nuisance_params')!=-1):
+	  name = line.split("'")[1]
 	  if len(line.split('=')[-1].split(',')) == 4:
 	    if line.split('=')[-1].split(',')[-1].replace(']\n','').replace(' ','') != '0':
-	      name = line.split("'")[1]
+	      temp = [float(elem) for elem in line.split(",")[1:3]]
+	      self.boundaries.append(temp)
 	      self.ref_names.append(name)
-	      if (name.find('mega')!=-1 or name.find('tau')!=-1):
-		name="""\\"""+name
+	      for elem in tex_greek:
+		if elem in name:
+		  name="""\\"""+name
 	      if name.find('_')!=-1:
-		name = name.split('_')[0]+'_{'
-		for i in range(len(name.split('_'))-1):
-		  name += name.split('_')[i]
-		name += '}'
+		temp_name = name.split('_')[0]+'_{'
+		for i in range(1,len(name.split('_'))):
+		  temp_name += name.split('_')[i]
+		temp_name += '}'
+		name = temp_name
 	      self.tex_names.append('${0}$'.format(name))
 	  elif len(line.split('=')[-1].split(',')) == 5:
 	    if line.split('=')[-1].split(',')[-2].replace(' ','') != 0:
+	      temp = [float(elem) for elem in line.split(",")[1:3]]
+	      self.boundaries.append(temp)
+	      self.ref_names.append(name)
 	      number = 1./float(line.split('=')[-1].split(',')[-1].replace(']\n','').replace(' ',''))
 	      if number < 1000:
 		self.tex_names.append("$%0.d~%s$" % (number,name))
@@ -283,6 +294,16 @@ class info:
       pass
     else:
       ticks = np.array((min_values+span*0.1,(max_values+min_values)/2.,max_values-span*0.1)).T
+      x_range = np.array((min_values,max_values)).T
+      #ticks = np.array((min_values,(max_values+min_values)/2.,max_values)).T
+
+    for i in range(np.shape(ticks)[0]):
+      if abs(x_range[i][0]-self.boundaries[i][0]) < span[i]/bin_number :
+	ticks[i][0] = self.boundaries[i][0]
+	x_range[i][0] = self.boundaries[i][0]
+      if abs(x_range[i][1]-self.boundaries[i][1]) < span[i]/bin_number :
+	ticks[i][2] = self.boundaries[i][1]
+	x_range[i][1] = self.boundaries[i][1]
       
     #fig.subplots_adjust(bottom=0.03, left=.02, right=0.98, top=0.98, hspace=.35)
     fig.subplots_adjust(bottom=0.03, left=.04, right=0.98, top=0.98, hspace=.35)
@@ -294,11 +315,13 @@ class info:
       # histogram
       n,bin_edges=np.histogram(chain[:,i+2],bins=bin_number,weights=chain[:,0],normed=False)
       bincenters = 0.5*(bin_edges[1:]+bin_edges[:-1])
+      #self.minimum_credible_intervals(n,bincenters,lvls)
+      #exit()
       ax.set_xticks(ticks[i])
       ax.set_xticklabels(['%.4g' % s for s in ticks[i]])
       ax.set_title('%s= %.4g' % (self.tex_names[i],mean[i]))
       ax.plot(bincenters,n,color='red',linewidth=2,ls='steps')
-      ax.axis([bin_edges[0], bin_edges[-1],0,np.max(n)])
+      ax.axis([x_range[i][0], x_range[i][1],0,np.max(n)])
 
       # mean likelihood (optional)
 
@@ -344,6 +367,40 @@ class info:
       return clist[1:]
     return clist
 
-  def smoothing_hist(self,hist,size):
-    print hist
-    pass
+  def minimum_credible_intervals(self,histogram,bincenter,levels):
+    norm = float((sum(histogram)-0.5*(histogram[0]+histogram[-1]))*(bincenter[-1]-bincenter[0]))
+    print histogram
+    print histogram[-1]
+    print bincenter
+    print norm
+    for level in levels:
+      water_level_up   = max(histogram)
+      water_level_down = 0
+      
+      while ((water_level_up-water_level_down > max(histogram)/100000.)):
+	top=0
+	water_level = (water_level_up + water_level_down)/2.
+	indices = [i for i in range(len(histogram)) if histogram[i]>water_level]
+	# check for multimodal posteriors
+	if ((indices[-1]-indices[0]+1)!=len(indices)):
+	  print '\n\n  Can not derive minimum credible intervals for this multimodal posterior'
+	  return False
+	top = (sum(histogram[indices])-0.5*(histogram[indices[0]]+histogram[indices[-1]]))*(bincenter[indices[-1]]-bincenter[indices[0]])
+
+	# left
+	if indices[0]>0:
+	  top += 0.5 * (water_level + histogram[indices[0]]) * (bincenter[indices[0]] - bincenter[indices[0]-1] )*(histogram[indices[0]] - water_level)/(histogram[indices[0]]-histogram[indices[0]-1]) 
+
+	# right
+	if indices[-1]<(len(histogram)-1) :
+	  top += 0.5 * (water_level + histogram[indices[-1]]) * (bincenter[indices[-1]+1] - bincenter[indices[-1]]) * (histogram[indices[-1]] - water_level) / (histogram[indices[-1]]-histogram[indices[-1]+1])
+	
+	if top/norm > level:
+	  water_level_down = water_level
+	else:
+	  water_level_up = water_level
+	print top/norm,level,water_level_down,water_level_up
+	
+
+    exit()
+    return sigmas
