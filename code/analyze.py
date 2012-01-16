@@ -29,7 +29,7 @@ class info:
     for i in range(len(self.ref_names)):
       for j in range(i,len(self.ref_names)):
 	for k in range(np.shape(chain)[0]):
-	  self.covar[i][j]+=chain[k,0]*((chain[k,i+2]-self.mean[i])*(chain[k,j+2]-self.mean[j]))
+	  self.covar[i][j]+=chain[k][0]*((chain[k][i+2]-self.mean[i])*(chain[k][j+2]-self.mean[j]))
 	self.covar[i][j]  /= weight
 	if i!=j:
 	  self.covar[j][i]=self.covar[i][j]
@@ -140,24 +140,24 @@ class info:
     for line in self.log:
       if line.find('#')==-1:
 	if (line.find('data.Class_params')!=-1 or line.find('data.nuisance_params')!=-1):
-	  name = line.split("'")[1]
-	  self.ref_names.append(name)
-	  if (name.find('mega')!=-1 or name.find('tau')!=-1):
-	    name="""\\"""+name
-	  if name.find('_')!=-1:
-	    name = name.split('_')[0]+'_{'+name.split('_')[1]+'}'
-	  if line.split('=')[-1].split(',')[-1].replace(']\n','').replace(' ','') == '0':
-	    pass
+	  if len(line.split('=')[-1].split(',')) == 4:
+	    if line.split('=')[-1].split(',')[-1].replace(']\n','').replace(' ','') != '0':
+	      name = line.split("'")[1]
+	      self.ref_names.append(name)
+	      if (name.find('mega')!=-1 or name.find('tau')!=-1):
+		name="""\\"""+name
+	      if name.find('_')!=-1:
+		name = name.split('_')[0]+'_{'+name.split('_')[1]+'}'
+	      self.tex_names.append('${0}$'.format(name))
 	  elif len(line.split('=')[-1].split(',')) == 5:
-	    number = 1./float(line.split('=')[-1].split(',')[-1].replace(']\n','').replace(' ',''))
-	    if number < 1000:
-	      self.tex_names.append("$%0.d~%s$" % (number,name))
-	    else:
-	      self.tex_names.append("$%0.e%s$" % (number,name))
-	      m = re.search(r'(?:\$[0-9]*e\+[0]*)([0-9]*)(.*)',self.tex_names[-1])
-	      self.tex_names[-1] = '$10^{'+m.groups()[0]+'}'+m.groups()[1]
-	  else:
-	    self.tex_names.append("${0}$".format(name))    
+	    if line.split('=')[-1].split(',')[-2].replace(' ','') != 0:
+	      number = 1./float(line.split('=')[-1].split(',')[-1].replace(']\n','').replace(' ',''))
+	      if number < 1000:
+		self.tex_names.append("$%0.d~%s$" % (number,name))
+	      else:
+		self.tex_names.append("$%0.e%s$" % (number,name))
+		m = re.search(r'(?:\$[0-9]*e\+[0]*)([0-9]*)(.*)',self.tex_names[-1])
+		self.tex_names[-1] = '$10^{'+m.groups()[0]+'}'+m.groups()[1]
     self.log.seek(0)
 
     for File in self.Files:
