@@ -171,6 +171,7 @@ def chain(_cosmo,data,command_line):
     for i in range(len(data.Class)):
       data.Class_args = jump(data,data.Class_param_names[i],data.Class[i])
   failure,loglike=compute_lkl(_cosmo,data,data.Class_args)
+
   while ((failure is True) and (failed<=num_failure)):
     failed +=1
     data.vector=get_new_pos(data,sigma_eig,U,failed)
@@ -194,7 +195,7 @@ def chain(_cosmo,data,command_line):
     for i in range(len(data.Class)):
       newargs = jump(data,data.Class_param_names[i],vector_new[i])
     for i in range(len(data.Class),len(data.Class)+len(data.nuisance)):
-      data.nuisance[i-len(data.Class)] = data.vector[i]
+      data.nuisance[i-len(data.Class)] = vector_new[i]
     failure,newloglike=compute_lkl(_cosmo,data,newargs)
     if(failure==True):
       failed += 1
