@@ -256,7 +256,7 @@ class info:
       fig = plt.figure(1,figsize=aspect)
 
     # TEST
-    fig2 = plt.figure(fig,aspect)
+    fig2 = plt.figure(2,figsize=aspect)
     # clear figure
     plt.clf()
 
@@ -314,9 +314,8 @@ class info:
 
       ax=fig.add_subplot(len(self.ref_names),len(self.ref_names),i*(len(self.ref_names)+1)+1,yticks=[])
 
-      print round(math.sqrt(self.ref_names))
-      exit()
-      ax1d = fig2.add_subplot(len(self.ref_names)
+      num_column = round(math.sqrt(len(self.ref_names)))
+      ax1d = fig2.add_subplot(num_column,round(len(self.ref_names)*1.0/num_column),i,yticks=[])
 
       # histogram
       n,bin_edges=np.histogram(chain[:,i+2],bins=bin_number,weights=chain[:,0],normed=False)
@@ -326,10 +325,28 @@ class info:
       ax.set_xticks(ticks[i])
       ax.set_xticklabels(['%.4g' % s for s in ticks[i]])
       ax.set_title('%s= %.4g' % (self.tex_names[i],mean[i]))
-      ax.plot(bincenters,n,color='red',linewidth=2,ls='steps')
+      #ax.plot(bincenters,n,color='red',linewidth=2,ls='steps')
+      ax.plot(bincenters,n,color='red',linewidth=2,ls='-')
       ax.axis([x_range[i][0], x_range[i][1],0,np.max(n)])
 
+      ax1d.set_xticks(ticks[i])
+      ax1d.set_xticklabels(['%.4g' % s for s in ticks[i]])
+      ax1d.set_title('%s= %.4g' % (self.tex_names[i],mean[i]))
+      ax1d.plot(bincenters,n,color='red',linewidth=2,ls='-')
+      ax1d.axis([x_range[i][0], x_range[i][1],0,np.max(n)])
       # mean likelihood (optional)
+      
+      mean=np.zeros(len(bincenters),'float64')
+      norm=np.zeros(len(bincenters),'float64')
+      for j in range(len(bin_edges)-1):
+	for k in range(np.shape(chain)[0]):
+	  if (chain[k,i+2]>bin_edges[j] and chain[k,i+2]<bin_edges[j+1]):
+	    mean[j] += chain[k,1]*chain[k,0]
+	    norm[j] += chain[k,0]
+	mean[j] /= norm[j]
+      mean *= max(n)/max(mean)
+      ax.plot(bincenters,mean,color='red',ls='--')
+      ax1d.plot(bincenters,mean,color='red',ls='--')
 
       for j in range(i):
 	ax1=fig.add_subplot(len(self.ref_names),len(self.ref_names),(i)*len(self.ref_names)+j+1)
@@ -358,7 +375,8 @@ class info:
 	ax1.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=6)
 
 
-    fig.savefig(self.folder+'hist.pdf')
+    fig.savefig(self.folder+'{0}_triangle.pdf'.format(self.folder.split('/')[-2]))
+    fig2.savefig(self.folder+'{0}_1d.pdf'.format(self.folder.split('/')[-2]))
 
   def ctr_level(self,histogram2d,lvl,infinite = False):
 
