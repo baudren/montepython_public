@@ -334,19 +334,20 @@ class info:
       ax1d.set_title('%s= %.4g' % (self.tex_names[i],mean[i]))
       ax1d.plot(bincenters,n,color='red',linewidth=2,ls='-')
       ax1d.axis([x_range[i][0], x_range[i][1],0,np.max(n)])
+
       # mean likelihood (optional)
-      
       mean=np.zeros(len(bincenters),'float64')
       norm=np.zeros(len(bincenters),'float64')
       for j in range(len(bin_edges)-1):
 	for k in range(np.shape(chain)[0]):
-	  if (chain[k,i+2]>bin_edges[j] and chain[k,i+2]<bin_edges[j+1]):
+	  if (chain[k,i+2]>=bin_edges[j] and chain[k,i+2]<=bin_edges[j+1]):
 	    mean[j] += chain[k,1]*chain[k,0]
 	    norm[j] += chain[k,0]
-	mean[j] /= norm[j]
+	#mean[j] /= norm[j]
+      mean /= sum(norm)
       mean *= max(n)/max(mean)
-      ax.plot(bincenters,mean,color='red',ls='--')
-      ax1d.plot(bincenters,mean,color='red',ls='--')
+      ax.plot(bincenters,mean,color='red',ls='--',lw=2)
+      ax1d.plot(bincenters,mean,color='red',ls='--',lw=4)
 
       for j in range(i):
 	ax1=fig.add_subplot(len(self.ref_names),len(self.ref_names),(i)*len(self.ref_names)+j+1)
@@ -393,10 +394,8 @@ class info:
 
   def minimum_credible_intervals(self,histogram,bincenter,levels):
     norm = float((sum(histogram)-0.5*(histogram[0]+histogram[-1]))*(bincenter[-1]-bincenter[0]))
-    print histogram
-    print histogram[-1]
-    print bincenter
     print norm
+    print histogram
     for level in levels:
       water_level_up   = max(histogram)
       water_level_down = 0
@@ -405,6 +404,7 @@ class info:
 	top=0
 	water_level = (water_level_up + water_level_down)/2.
 	indices = [i for i in range(len(histogram)) if histogram[i]>water_level]
+	print indices
 	# check for multimodal posteriors
 	if ((indices[-1]-indices[0]+1)!=len(indices)):
 	  print '\n\n  Can not derive minimum credible intervals for this multimodal posterior'
@@ -413,18 +413,17 @@ class info:
 
 	# left
 	if indices[0]>0:
-	  top += 0.5 * (water_level + histogram[indices[0]]) * (bincenter[indices[0]] - bincenter[indices[0]-1] )*(histogram[indices[0]] - water_level)/(histogram[indices[0]]-histogram[indices[0]-1]) 
+	  top += 0.5 * (water_level + histogram[indices[0]]) * (bincenter[indices[0]] - bincenter[indices[0]-1] )*(1. - water_level/histogram[indices[0]])
 
 	# right
 	if indices[-1]<(len(histogram)-1) :
-	  top += 0.5 * (water_level + histogram[indices[-1]]) * (bincenter[indices[-1]+1] - bincenter[indices[-1]]) * (histogram[indices[-1]] - water_level) / (histogram[indices[-1]]-histogram[indices[-1]+1])
+	  top += 0.5 * (water_level + histogram[indices[-1]]) * (bincenter[indices[-1]+1] - bincenter[indices[-1]])*(1. - water_level/histogram[indices[-1]])
 	
 	if top/norm > level:
 	  water_level_down = water_level
 	else:
 	  water_level_up = water_level
-	print top/norm,level,water_level_down,water_level_up
+	#print top/norm,level,water_level_down,water_level_up
 	
 
-    exit()
     return sigmas
