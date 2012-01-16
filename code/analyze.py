@@ -147,7 +147,10 @@ class info:
 	      if (name.find('mega')!=-1 or name.find('tau')!=-1):
 		name="""\\"""+name
 	      if name.find('_')!=-1:
-		name = name.split('_')[0]+'_{'+name.split('_')[1]+'}'
+		name = name.split('_')[0]+'_{'
+		for i in range(len(name.split('_'))-1):
+		  name += name.split('_')[i]
+		name += '}'
 	      self.tex_names.append('${0}$'.format(name))
 	  elif len(line.split('=')[-1].split(',')) == 5:
 	    if line.split('=')[-1].split(',')[-2].replace(' ','') != 0:
