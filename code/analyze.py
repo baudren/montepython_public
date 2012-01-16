@@ -61,9 +61,9 @@ class info:
     self.info.write('\n param names:\t')
     for elem in self.ref_names:
       self.info.write('%s\t' % (elem))
-    self.info.write('\n R values:\t')
+    self.info.write('\n R-1 values:\t')
     for elem in self.R:
-      self.info.write('%.7f\t' % (elem))
+      self.info.write('%.7f\t' % (elem-1.))
     self.info.write('\n Best Fit:\t')
     for elem in chain[a[0],2:]:
       self.info.write('%.7f\t' % (elem))
@@ -82,7 +82,7 @@ class info:
     # this in  mind
 
     if os.path.isdir(Files[0]): 
-      if Files[0].find('/')==-1:
+      if Files[0][-1]!='/':
 	Files[0]+='/'
       self.folder = Files[0]
       Files = [Files[0]+elem for elem in os.listdir(Files[0]) if elem.find('.')==-1]
@@ -92,7 +92,9 @@ class info:
       if (len(Files[0].split('/'))==0 or (Files[0].split('/')[0]=='.')):
 	self.folder = './'
       else:
-	self.folder = Files[0].split('/')[:-2]+'/'
+	self.folder = ''
+	for i in range(len(Files[0].split('/')[:-1])):
+	  self.folder += Files[0].split('/')[i]+'/'
 
     # Check if the log.dat file exists
     if os.path.isfile(self.folder+'log.param') is True:
@@ -134,10 +136,12 @@ class info:
 
     # Recovering default ordering of parameters 
     self.ref_names = []
+    self.tex_names = []
     for line in self.log:
       if line.find('#')==-1:
 	if (line.find('data.Class_params')!=-1 or line.find('data.nuisance_params')!=-1):
 	  name = line.split("'")[1]
+	  self.ref_names.append(name)
 	  if (name.find('mega')!=-1 or name.find('tau')!=-1):
 	    name="""\\"""+name
 	  if name.find('_')!=-1:
@@ -147,13 +151,13 @@ class info:
 	  elif len(line.split('=')[-1].split(',')) == 5:
 	    number = 1./float(line.split('=')[-1].split(',')[-1].replace(']\n','').replace(' ',''))
 	    if number < 1000:
-	      self.ref_names.append("$%0.d~%s$" % (number,name))
+	      self.tex_names.append("$%0.d~%s$" % (number,name))
 	    else:
-	      self.ref_names.append("$%0.e%s$" % (number,name))
-	      m = re.search(r'(?:\$[0-9]*e\+[0]*)([0-9]*)(.*)',self.ref_names[-1])
-	      self.ref_names[-1] = '$10^{'+m.groups()[0]+'}'+m.groups()[1]
+	      self.tex_names.append("$%0.e%s$" % (number,name))
+	      m = re.search(r'(?:\$[0-9]*e\+[0]*)([0-9]*)(.*)',self.tex_names[-1])
+	      self.tex_names[-1] = '$10^{'+m.groups()[0]+'}'+m.groups()[1]
 	  else:
-	    self.ref_names.append("${0}$".format(name))    
+	    self.tex_names.append("${0}$".format(name))    
     self.log.seek(0)
 
     for File in self.Files:
@@ -289,7 +293,7 @@ class info:
       bincenters = 0.5*(bin_edges[1:]+bin_edges[:-1])
       ax.set_xticks(ticks[i])
       ax.set_xticklabels(['%.4g' % s for s in ticks[i]])
-      ax.set_title('%s= %.4g' % (self.ref_names[i],mean[i]))
+      ax.set_title('%s= %.4g' % (self.tex_names[i],mean[i]))
       ax.plot(bincenters,n,color='red',linewidth=2,ls='steps')
       ax.axis([bin_edges[0], bin_edges[-1],0,np.max(n)])
 

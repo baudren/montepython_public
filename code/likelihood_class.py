@@ -135,6 +135,7 @@ class likelihood():
 
     # first, test whether the nuisance param is fixed or varying.
     for nuisance in self.use_nuisance:
+      # PROBLEM
       if nuisance in data.nuisance_param_names:
         nuisance_value = float(data.vector[np.where(data.param_names == nuisance)[0][0]])
       else:
@@ -607,7 +608,10 @@ class likelihood_clik(likelihood):
     # fill with nuisance parameters
     for nuisance in self.clik.get_extra_parameter_names():
       if nuisance in data.nuisance_param_names:
-        nuisance_value = float(data.vector[np.where(data.param_names == nuisance)[0][0]])
+        #nuisance_value = float(data.vector[np.where(data.param_names == nuisance)[0][0]])
+	for i in range(len(data.nuisance)):
+	  if (data.nuisance_param_names[i] == nuisance):
+	    nuisance_value = float(data.nuisance[i])
       else:
         try:
           exec "nuisance_value = data.%s" % nuisance

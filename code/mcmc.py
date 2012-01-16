@@ -33,10 +33,12 @@ def read_args_from_chain(data,chain):
   i = 1
   for elem in data.Class_param_names:
     data.Class_args[elem] = float(Chain.tail(1)[0].split('\t')[i])
+    data.Class[i-1] = data.Class_args[elem]
     data.vector[i-1] = data.Class_args[elem]
     i+=1
   for elem in data.nuisance_param_names:
     data.vector[i-1] = float(Chain.tail(1)[0].split('\t')[i])
+    data.nuisance[i-1-len(data.Class)] = data.vector[i-1]
     i+=1
 
 def get_cov(data,command_line):
@@ -112,15 +114,24 @@ def get_cov(data,command_line):
   eigv,eigV=np.linalg.eig(np.linalg.inv(M))
   return eigv,eigV
 
-def get_new_pos(data,eigv,U):
+def get_new_pos(data,eigv,U,k):
   vector_new=np.zeros(len(data.vector),'float64')
   sigmas=np.zeros(len(data.vector),'float64')
   flag=1
   while flag!=0:
     flag=0 # initialize: there are no problems at first
     rd.seed()
-    for i in range(len(data.vector)):
-      sigmas[i]=(math.sqrt(1/eigv[i]))*rd.gauss(0,1)/2.4
+
+    # Choice here between sequential and global change of direction
+    if data.jumping == 'global':
+      for i in range(len(data.vector)):
+	sigmas[i]=(math.sqrt(1/eigv[i]/len(data.vector)))*rd.gauss(0,1)*2.4
+    elif data.jumping == 'sequential':
+      i = k%len(data.vector)
+      sigmas[i] = (math.sqrt(1/eigv[i]))*rd.gauss(0,1)*2.4
+    else:
+      print '\n\n  Jumping method unknown (accepted : global, sequential)'
+
     vector_new=data.vector+np.dot(U,sigmas)
     i=0
     for value in data.params.itervalues():
@@ -159,13 +170,14 @@ def chain(_cosmo,data,command_line):
     read_args_from_chain(data,command_line.restart)
     for i in range(len(data.Class)):
       data.Class_args = jump(data,data.Class_param_names[i],data.Class[i])
-
   failure,loglike=compute_lkl(_cosmo,data,data.Class_args)
   while ((failure is True) and (failed<=num_failure)):
     failed +=1
-    data.vector=get_new_pos(data,sigma_eig,U)
+    data.vector=get_new_pos(data,sigma_eig,U,failed)
     for i in range(len(data.Class)):
       data.Class_args = jump(data,data.Class_param_names[i],data.Class[i])
+    for i in range(len(data.Class),len(data.Class)+len(data.nuisance)):
+      data.nuisance[i-len(data.Class)] = data.vector[i]
     failure,loglike=compute_lkl(_cosmo,data,data.Class_args)
   if failure is True:
     print ' /|\   Class tried {0} times to initialize with given parameters, and failed...'.format(num_failure+2)
@@ -178,9 +190,11 @@ def chain(_cosmo,data,command_line):
   io.print_parameters(sys.stdout,data)
   N=1			#number of steps
   for k in range(command_line.N):
-    vector_new=get_new_pos(data,sigma_eig,U)
+    vector_new=get_new_pos(data,sigma_eig,U,failed+k)
     for i in range(len(data.Class)):
       newargs = jump(data,data.Class_param_names[i],vector_new[i])
+    for i in range(len(data.Class),len(data.Class)+len(data.nuisance)):
+      data.nuisance[i-len(data.Class)] = data.vector[i]
     failure,newloglike=compute_lkl(_cosmo,data,newargs)
     if(failure==True):
       failed += 1
@@ -188,8 +202,12 @@ def chain(_cosmo,data,command_line):
       print 'Warning: Class failed due to choice of parameters, picking up new values'
       print newargs
       continue
-    alpha=np.exp(newloglike-loglike)
-    if ((alpha>1) or (rd.uniform(0,1) < alpha)): #accept step
+    # Harmless trick to avoid exponentiating large numbers
+    if newloglike >= loglike:
+      alpha = 1.
+    else:
+      alpha=np.exp(newloglike-loglike)
+    if ((alpha == 1.) or (rd.uniform(0,1) < alpha)): #accept step
       io.print_vector([data.out,sys.stdout],N,loglike,data)
       data.Class_args=newargs
       loglike=newloglike
@@ -206,8 +224,6 @@ def chain(_cosmo,data,command_line):
     if (failed >= num_failure):
       print ' /|\   The computation failed too many times, \n'
       print '/_o_\  Please check the values of your parameters'
-  if N>1:
-    io.print_vector([data.out,sys.stdout],N-1,loglike,data)
   rate=acc/(acc+rej)
   print '#  {0} steps done, acceptance rate:'.format(command_line.N),rate
   if command_line.restart is not None:

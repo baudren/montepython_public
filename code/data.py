@@ -17,7 +17,8 @@ class data:
     else:
       self.param = command_line.folder+'/log.param'
 
-    data.path = path
+    self.jumping = command_line.jumping
+    self.path = path
 
     # Initialisation of all the data needed to run the Boltzmann code
     # First apply default parameters,

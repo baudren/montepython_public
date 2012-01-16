@@ -27,8 +27,8 @@ def print_parameters(out,data):
   param = data.param_names
   out.write('#  -LogLkl\t')
   for i in range(len(param)):
-    if len(data.Class_params[param[i]])==5:
-      number = 1./(data.Class_params[param[i]][4])
+    if len(data.params[param[i]])==5:
+      number = 1./(data.params[param[i]][4])
       if number < 1000:
 	out.write('%0.d%s\t' % (number,param[i]))
       else:

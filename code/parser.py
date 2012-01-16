@@ -7,6 +7,7 @@ parser.add_argument('-o', metavar='output folder',type=str,dest='folder')
 parser.add_argument('-p', metavar='input param file',type=str,dest='par')
 parser.add_argument('-c', metavar='input cov matrix',type=str,dest='cov')
 parser.add_argument('-r', metavar='restart from chain',type=str,dest='restart')
+parser.add_argument('-j', metavar='jumping method',type=str,dest='jumping',default='global')
 
 # cleaning
 parser.add_argument('-clean', metavar='input folder to clean',type=str,dest='clean')
