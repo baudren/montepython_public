@@ -10,14 +10,25 @@ import numpy as np
 
 class info:
 
-  def __init__(self,Files,binnumber):
+  def __init__(self,command_line):
   
+    Files     = command_line.files
+    binnumber = command_line.bins
     self.prepare(Files)
     self.convergence()
 
     chain = np.copy(self.spam[0])
     for i in range(len(self.spam)-1):
      chain = np.append(chain,self.spam[i+1],axis=0)
+
+    if command_line.comp is not None:
+      comp_Files,comp_folder,comp_log = self.prepare(command_line.comp,is_main_chain = False)
+      comp_spam,comp_ref_names,comp_tex_names,comp_boundaries,comp_mean = self.convergence(is_main_chain = False,Files = comp_Files,log = comp_log)
+      comp_mean = comp_mean[0]
+      comp_chain = np.copy(comp_spam[0])
+      for i in range(len(comp_spam)-1):
+	comp_chain = np.append(comp_chain,comp_spam[i+1],axis=0)
+
 
     weight = sum(chain)[0]
 
@@ -40,23 +51,15 @@ class info:
 	self.cov.write('{0} '.format(self.covar[i][j]))
       self.cov.write('\n')
 
-    # sorting
     a=chain[:,1].argsort(0)
     total=chain[:,0].sum()
-    Sum=0
-    for i in range(len(a)):
-      Sum+=chain[a[i],0]
-      if Sum<total*0.99:
-	if Sum<total*0.95:
-	  if Sum<total*0.68:
-	    a68=i
-	  else:
-	    a95= i
-	else:
-	  a99=i
-
     self.lvls = [total*0.68,total*0.95,total*0.99]
-    self.plot_triangle(chain,bin_number=binnumber)
+
+    self.bounds = np.zeros((len(self.ref_names),len(self.lvls),2))
+    if command_line.comp is None:
+      self.plot_triangle(chain,command_line,bin_number=binnumber)
+    else:
+      self.plot_triangle(chain,command_line,bin_number=binnumber,comp_chain=comp_chain,comp_names = comp_ref_names,comp_folder = comp_folder)
 
     self.info.write('\n param names:\t')
     for elem in self.ref_names:
@@ -70,11 +73,20 @@ class info:
     self.info.write('\n mean    :\t')
     for elem in self.mean:
       self.info.write('%.7f\t' % (elem))
-    self.info.write('\n 1-sigma :\t')
-    for elem in self.var:
-      self.info.write('%.7f\t' % (math.sqrt(elem) ))
+    self.info.write('\n 1-sigma - :\t')
+    for elem in self.bounds:
+      self.info.write('%.7f\t' % (elem[0][0]))
+    self.info.write('\n 1-sigma + :\t')
+    for elem in self.bounds:
+      self.info.write('%.7f\t' % (elem[0][1]))
+    #self.info.write('\n 2-sigma - :\t')
+    #for elem in self.bounds:
+      #self.info.write('%.7f\t' % (elem[1][0]))
+    #self.info.write('\n 2-sigma + :\t')
+    #for elem in self.bounds:
+      #self.info.write('%.7f\t' % (elem[1][1]))
 
-  def prepare(self,Files):
+  def prepare(self,Files,is_main_chain=True):
 
     # Scan the whole input folder, and include all chains in it (all files with a
     # '.' in their name will be discarded as not mcmc chains (If you want to have
@@ -84,72 +96,79 @@ class info:
     if os.path.isdir(Files[0]): 
       if Files[0][-1]!='/':
 	Files[0]+='/'
-      self.folder = Files[0]
-      Files = [Files[0]+elem for elem in os.listdir(Files[0]) if elem.find('.')==-1]
+      folder = Files[0]
+      Files = [folder+elem for elem in os.listdir(folder) if elem.find('.')==-1]
+      for elem in Files:
+	if os.path.isdir('{0}'.format(elem)) is True:
+	  Files.remove(elem)
 
     # Recover the folder, depending on the case
     else:
       if (len(Files[0].split('/'))==0 or (Files[0].split('/')[0]=='.')):
-	self.folder = './'
+	folder = './'
       else:
-	self.folder = ''
+	folder = ''
 	for i in range(len(Files[0].split('/')[:-1])):
-	  self.folder += Files[0].split('/')[i]+'/'
+	  folder += Files[0].split('/')[i]+'/'
 
     # Check if the log.dat file exists
-    if os.path.isfile(self.folder+'log.param') is True:
-      if os.path.getsize(self.folder+'log.param')>0:
-	self.log = open(self.folder+'log.param','r')
+    if os.path.isfile(folder+'log.param') is True:
+      if os.path.getsize(folder+'log.param')>0:
+	log = open(folder+'log.param','r')
       else:
-	print '\n\n  The log param file {0} seems empty'.format(self.folder+'log.dat')
+	print '\n\n  The log param file {0} seems empty'.format(folder+'log.param')
 	exit()
     else:
-      print '\n\n  The log param file {0} is absent ?'.format(self.folder+'log.dat')
+      print '\n\n  The log param file {0} is absent ?'.format(folder+'log.param')
       exit()
 
     # If the folder has no subdirectory, then go for a simple infoname,
     # otherwise, call it with the last name
-    if (len(self.folder.split('/')) <= 2 and self.folder.split('/')[-1] == ''):
-      infoname = self.folder+self.folder.rstrip('/')+'.info'
-      covname  = self.folder+self.folder.rstrip('/')+'.covmat'
+    if (len(folder.split('/')) <= 2 and folder.split('/')[-1] == ''):
+      infoname = folder+folder.rstrip('/')+'.info'
+      covname  = folder+folder.rstrip('/')+'.covmat'
     else:
-      infoname = self.folder+self.folder.split('/')[-2]+'.info'
-      covname  = self.folder+self.folder.split('/')[-2]+'.covmat'
+      infoname = folder+folder.split('/')[-2]+'.info'
+      covname  = folder+folder.split('/')[-2]+'.covmat'
 
-    self.info  = open(infoname,'w')
-    self.cov   = open(covname,'w')
+    if is_main_chain:
+      self.info  = open(infoname,'w')
+      self.cov   = open(covname,'w')
+      self.log   = log
 
-    # Updating the files names, taking into account the removed ones from
-    # cleaning
-    if len(Files)>=2:
-      Files = [ self.folder+elem for elem in os.listdir(self.folder) if elem.find('.')==-1 ]
+      self.Files = Files
+      self.folder= folder
+      return True
+    else:
+      return Files,folder,log
 
-    self.Files = Files
-    return True
-
-  def convergence(self):
+  def convergence(self,is_main_chain=True,Files=None,log=None):
 
     # We here have a list of files, that may be of length 1. If this
     # happens, then we split the only file in 3 subchains, otherwise we compute
     # normally the R coefficient. 
-    self.spam = list()
+    spam = list()
 
     # Recovering default ordering of parameters 
-    self.ref_names = []
-    self.tex_names = []
-    self.boundaries= []
+    ref_names = []
+    tex_names = []
+    boundaries= []
+
+    if is_main_chain:
+      Files = self.Files
+      log   = self.log
 
     # Defining a list of names that should have a \ in their tex names
     tex_greek = ['omega','tau','alpha','beta','delta','nu','Omega']
-    for line in self.log:
+    for line in log:
       if line.find('#')==-1:
 	if (line.find('data.Class_params')!=-1 or line.find('data.nuisance_params')!=-1):
 	  name = line.split("'")[1]
 	  if len(line.split('=')[-1].split(',')) == 4:
 	    if line.split('=')[-1].split(',')[-1].replace(']\n','').replace(' ','') != '0':
 	      temp = [float(elem) for elem in line.split(",")[1:3]]
-	      self.boundaries.append(temp)
-	      self.ref_names.append(name)
+	      boundaries.append(temp)
+	      ref_names.append(name)
 	      for elem in tex_greek:
 		if elem in name:
 		  name="""\\"""+name
@@ -159,23 +178,23 @@ class info:
 		  temp_name += name.split('_')[i]
 		temp_name += '}'
 		name = temp_name
-	      self.tex_names.append('${0}$'.format(name))
+	      tex_names.append('${0}$'.format(name))
 	  elif len(line.split('=')[-1].split(',')) == 5:
 	    if line.split('=')[-1].split(',')[-2].replace(' ','') != 0:
 	      temp = [float(elem) for elem in line.split(",")[1:3]]
-	      self.boundaries.append(temp)
-	      self.ref_names.append(name)
+	      boundaries.append(temp)
+	      ref_names.append(name)
 	      number = 1./float(line.split('=')[-1].split(',')[-1].replace(']\n','').replace(' ',''))
 	      if number < 1000:
-		self.tex_names.append("$%0.d~%s$" % (number,name))
+		tex_names.append("$%0.d~%s$" % (number,name))
 	      else:
-		self.tex_names.append("$%0.e%s$" % (number,name))
-		m = re.search(r'(?:\$[0-9]*e\+[0]*)([0-9]*)(.*)',self.tex_names[-1])
-		self.tex_names[-1] = '$10^{'+m.groups()[0]+'}'+m.groups()[1]
-    self.log.seek(0)
+		tex_names.append("$%0.e%s$" % (number,name))
+		m = re.search(r'(?:\$[0-9]*e\+[0]*)([0-9]*)(.*)',tex_names[-1])
+		tex_names[-1] = '$10^{'+m.groups()[0]+'}'+m.groups()[1]
+    log.seek(0)
 
-    for File in self.Files:
-      i=self.Files.index(File)
+    for File in Files:
+      i=Files.index(File)
       print 'scanning file {0}'.format(File)
       cheese = (np.array([[float(elem) for elem in line.split()] for line in open(File,'r')]))
       max_lkl = min(cheese[:,1]) # beware, it is the min because we are talking about '- log likelihood'
@@ -187,62 +206,84 @@ class info:
       ham = np.copy(cheese[start::])
 
       # Deal with single file case
-      if len(self.Files) == 1:
+      if len(Files) == 1:
 	print '  Beware, convergence computed for a single file'
 	bacon   = np.copy(cheese[::3,:])
 	egg     = np.copy(cheese[1::3,:])
 	sausage = np.copy(cheese[2::3,:])
 
-	self.spam.append(bacon)
-	self.spam.append(egg)
-	self.spam.append(sausage)
+	spam.append(bacon)
+	spam.append(egg)
+	spam.append(sausage)
 	continue
       
       # Adding resulting table to spam
-      self.spam.append(ham)
+      spam.append(ham)
 
 
     # Convergence computation
-    length  = np.mean([sum(elem[:])[0] for elem in self.spam])
+    length  = np.mean([sum(elem[:])[0] for elem in spam])
 
     # 2 D arrays for mean and var, one column will contain the total (over all
     # chains) mean (resp.  variance), and each other column the respective chain
     # mean (resp. chain variance).  R only contains the values for each parameter
-    self.mean     = np.zeros((len(self.spam)+1,np.shape(self.spam[0])[1]-2))
-    self.var      = np.zeros((len(self.spam)+1,np.shape(self.spam[0])[1]-2))
-    self.R 	  = np.zeros(np.shape(self.spam[0])[1]-2)
+    mean     = np.zeros((len(spam)+1,np.shape(spam[0])[1]-2))
+    var      = np.zeros((len(spam)+1,np.shape(spam[0])[1]-2))
+    R 	     = np.zeros(np.shape(spam[0])[1]-2)
     within  = 0
     between = 0
 
-    for i in range(np.shape(self.mean)[1]):
-      for j in range(len(self.spam)):
-	for k in range(np.shape(self.spam[j])[0]):
-	  self.mean[j+1,i] += self.spam[j][k,0]*self.spam[j][k,i+2]
-	self.mean[j+1,i] = self.mean[j+1,i]/sum(self.spam[j])[0]
-	self.mean[0,i]  += self.mean[j+1,i]/len(self.spam)
+    for i in range(np.shape(mean)[1]):
+      for j in range(len(spam)):
+	for k in range(np.shape(spam[j])[0]):
+	  mean[j+1,i] += spam[j][k,0]*spam[j][k,i+2]
+	mean[j+1,i] = mean[j+1,i]/sum(spam[j])[0]
+	mean[0,i]  += mean[j+1,i]/len(spam)
     
-    for i in range(np.shape(self.mean)[1]):
-      for j in range(len(self.spam)):
+    for i in range(np.shape(mean)[1]):
+      for j in range(len(spam)):
 	subvar = 0
-	for k in range(np.shape(self.spam[j])[0]):
-	  subvar 	   += self.spam[j][k,0]*(self.spam[j][k,i+2]-self.mean[0,i]  )**2
-	  self.var[j+1,i] += self.spam[j][k,0]*(self.spam[j][k,i+2]-self.mean[j+1,i])**2
+	for k in range(np.shape(spam[j])[0]):
+	  subvar 	   += spam[j][k,0]*(spam[j][k,i+2]-mean[0,i]  )**2
+	  var[j+1,i] += spam[j][k,0]*(spam[j][k,i+2]-mean[j+1,i])**2
 
-	self.var[0,i]   += subvar/(sum(self.spam[j])[0]-1)/len(self.spam)
-	self.var[j+1,i]  = self.var[j+1,i]/(sum(self.spam[j])[0]-1)
+	var[0,i]   += subvar/(sum(spam[j])[0]-1)/len(spam)
+	var[j+1,i]  = var[j+1,i]/(sum(spam[j])[0]-1)
 
     
     # Gelman Rubin Diagnostic
     # verify the validity of this computation for different length !
-    for i in range(np.shape(self.mean)[1]):
-      for j in range(len(self.spam)):
-	within  += self.var[j+1,i]/len(self.spam)
-	between += sum(self.spam[j])[0]*(self.mean[j+1,i]-self.mean[0,i])**2 / (len(self.spam)-1)
+    for i in range(np.shape(mean)[1]):
+      for j in range(len(spam)):
+	within  += var[j+1,i]/len(spam)
+	between += sum(spam[j])[0]*(mean[j+1,i]-mean[0,i])**2 / (len(spam)-1)
 
-      self.R[i] = math.sqrt(((1-1/length)*within+(len(self.spam)+1)/(len(self.spam)*length)*between)/within)
-    return True
+      R[i] = math.sqrt(((1-1/length)*within+(len(spam)+1)/(len(spam)*length)*between)/within)
+    
+    if is_main_chain:
+      self.spam = spam
 
-  def plot_triangle(self,chain,select=None,bin_number=20,scales=(),legend=(),levels=(68.26,95.4,99.7),show_prop=True,fill=68.26,show_mean=True,show_peak=True,show_extra=None,add_legend=r"$=%(peak).4g^{+%(up).3g}_{-%(down).3g}$",aspect=(16,16),fig=None,tick_at_peak=False,convolve=True):
+      self.ref_names = ref_names
+      self.tex_names = tex_names
+      self.boundaries = boundaries
+
+      self.mean = mean
+      self.var  = var
+      self.R = R
+
+      return True
+    else:
+      return spam,ref_names,tex_names,boundaries,mean
+
+  def plot_triangle(self,chain,command_line,select=None,bin_number=20,scales=(),legend=(),levels=(68.26,95.4,99.7),show_prop=True,fill=68.26,show_mean=True,show_peak=True,show_extra=None,add_legend=r"$=%(peak).4g^{+%(up).3g}_{-%(down).3g}$",aspect=(16,16),fig=None,tick_at_peak=False,convolve=True,comp_chain = None,comp_names = None,comp_folder = None):
+
+    # If comparison is asked, don't plot 2d levels
+    if command_line.comp is not None:
+      plot_2d = False
+      comp    = True
+    else:
+      plot_2d = True
+      comp    = False
 
     matplotlib.rc('text',usetex = True)
     matplotlib.rc('font',size=11)
@@ -250,13 +291,14 @@ class info:
     matplotlib.rc('ytick',labelsize='8')
     lvls = np.array(levels)/100.
 
-    if fig:
-      fig = plt.figure(fig,aspect)
-    else:
-      fig = plt.figure(1,figsize=aspect)
+    if plot_2d:
+      if fig:
+	fig2d = plt.figure(fig,aspect)
+      else:
+	fig2d = plt.figure(1,figsize=aspect)
 
     # TEST
-    fig2 = plt.figure(2,figsize=aspect)
+    fig1d = plt.figure(2,figsize=aspect)
     # clear figure
     plt.clf()
 
@@ -307,79 +349,146 @@ class info:
 	ticks[i][2] = self.boundaries[i][1]
 	x_range[i][1] = self.boundaries[i][1]
       
-    #fig.subplots_adjust(bottom=0.03, left=.02, right=0.98, top=0.98, hspace=.35)
-    fig.subplots_adjust(bottom=0.03, left=.04, right=0.98, top=0.98, hspace=.35)
+    if plot_2d:
+      fig2d.subplots_adjust(bottom=0.03, left=.04, right=0.98, top=0.98, hspace=.35)
+
+    if comp:
+      index = 0
+      backup_comp_names = np.copy(comp_names)
+      for name in self.ref_names:
+	index +=1
+	if name in comp_names:
+	  comp_names.remove(name)
+      for name in comp_names:
+	index +=1
+      num_column = round(math.sqrt(index)) 
+    else:
+      num_column = round(math.sqrt(len(self.ref_names)))
 
     for i in range(len(self.ref_names)):
 
-      ax=fig.add_subplot(len(self.ref_names),len(self.ref_names),i*(len(self.ref_names)+1)+1,yticks=[])
+      if plot_2d:
+	ax2d=fig2d.add_subplot(len(self.ref_names),len(self.ref_names),i*(len(self.ref_names)+1)+1,yticks=[])
 
-      num_column = round(math.sqrt(len(self.ref_names)))
-      ax1d = fig2.add_subplot(num_column,round(len(self.ref_names)*1.0/num_column),i,yticks=[])
+      ax1d = fig1d.add_subplot(num_column,round(len(self.ref_names)*1.0/num_column),i,yticks=[])
 
       # histogram
-      n,bin_edges=np.histogram(chain[:,i+2],bins=bin_number,weights=chain[:,0],normed=False)
+      hist,bin_edges=np.histogram(chain[:,i+2],bins=bin_number,weights=chain[:,0],normed=False)
       bincenters = 0.5*(bin_edges[1:]+bin_edges[:-1])
-      sigma=self.minimum_credible_intervals(n,bincenters,lvls)
-      #print sigma
-      #print self.ref_names[i]
-      #exit()
-      ax.set_xticks(ticks[i])
-      ax.set_xticklabels(['%.4g' % s for s in ticks[i]])
-      ax.set_title('%s= %.4g' % (self.tex_names[i],mean[i]))
-      #ax.plot(bincenters,n,color='red',linewidth=2,ls='steps')
-      ax.plot(bincenters,n,color='red',linewidth=2,ls='-')
-      ax.axis([x_range[i][0], x_range[i][1],0,np.max(n)])
+
+      if comp:
+	comp_hist,comp_bin_edges = np.histogram(comp_chain[:,i+2],bins=bin_number,weights=comp_chain[:,0],normed=False)
+	comp_hist *= max(hist)/max(comp_hist)
+	comp_bincenters = 0.5*(comp_bin_edges[1:]+comp_bin_edges[:-1])
+
+
+      # minimum credible interval
+      bounds = self.minimum_credible_intervals(hist,bincenters,lvls)
+      for elem in bounds:
+	for j in (0,1):
+	  elem[j] -= self.mean[i]
+      self.bounds[i] = bounds
+
+      if comp:
+	comp_bounds = self.minimum_credible_intervals(comp_hist,comp_bincenters,lvls)
+	if comp_bounds is False:
+	  print comp_hist
+	  exit()
+	for elem in comp_bounds:
+	  for j in (0,1):
+	    elem[j] -= self.mean[i]
+
+
+      # plotting
+      if plot_2d:
+	ax2d.set_xticks(ticks[i])
+	ax2d.set_xticklabels(['%.4g' % s for s in ticks[i]])
+	ax2d.set_title('%s= %.4g' % (self.tex_names[i],mean[i]))
+	ax2d.plot(bincenters,hist,color='red',linewidth=2,ls='-')
+	ax2d.axis([x_range[i][0], x_range[i][1],0,np.max(hist)])
 
       ax1d.set_xticks(ticks[i])
       ax1d.set_xticklabels(['%.4g' % s for s in ticks[i]])
       ax1d.set_title('%s= %.4g' % (self.tex_names[i],mean[i]))
-      ax1d.plot(bincenters,n,color='red',linewidth=2,ls='-')
-      ax1d.axis([x_range[i][0], x_range[i][1],0,np.max(n)])
+      ax1d.plot(bincenters,hist,color='red',linewidth=2,ls='-')
+      ax1d.axis([x_range[i][0], x_range[i][1],0,np.max(hist)])
 
-      # mean likelihood (optional)
-      mean=np.zeros(len(bincenters),'float64')
-      norm=np.zeros(len(bincenters),'float64')
-      for j in range(len(bin_edges)-1):
-	for k in range(np.shape(chain)[0]):
-	  if (chain[k,i+2]>=bin_edges[j] and chain[k,i+2]<=bin_edges[j+1]):
-	    mean[j] += chain[k,1]*chain[k,0]
-	    norm[j] += chain[k,0]
-	#mean[j] /= norm[j]
-      mean /= sum(norm)
-      mean *= max(n)/max(mean)
-      ax.plot(bincenters,mean,color='red',ls='--',lw=2)
-      ax1d.plot(bincenters,mean,color='red',ls='--',lw=4)
-
-      for j in range(i):
-	ax1=fig.add_subplot(len(self.ref_names),len(self.ref_names),(i)*len(self.ref_names)+j+1)
-	n,xedges,yedges=np.histogram2d(chain[:,i+2],chain[:,j+2],weights=chain[:,0],bins=(bin_number,bin_number),normed=False)
-	extent = [yedges[0], yedges[-1], xedges[0], xedges[-1]]
-	x_centers = 0.5*(xedges[1:]+xedges[:-1])
-	y_centers = 0.5*(yedges[1:]+yedges[:-1])
-
-	ax1.set_xticks(ticks[j])
-	if i == len(self.ref_names)-1:
-	  ax1.set_xticklabels(['%.4g' % s for s in ticks[j]])
-	else:
-	  ax1.set_xticklabels([''])
-
-	ax1.set_yticks(ticks[i])
-	if j == 0:
-	  ax1.set_yticklabels(['%.4g' % s for s in ticks[i]])
-	else:
-	  ax1.set_yticklabels([''])
-	ax1.imshow(n.T, extent=extent, aspect='auto',interpolation='gaussian',origin='lower',cmap=matplotlib.cm.Reds)
-
-	# smoothing the histogram, to have nicer contours
-	#n = self.smoothing_hist(n,200)
-	# plotting contours
-	cs = ax1.contour(y_centers,x_centers,n.T,extent=extent,levels=self.ctr_level(n.T,lvls),colors="k",zorder=5)
-	ax1.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=6)
+      if comp:
+	if self.ref_names[i] in backup_comp_names:
+	  ax1d.plot(comp_bincenters,comp_hist,color='green',linewidth=2,ls='-')
 
 
-    fig.savefig(self.folder+'{0}_triangle.pdf'.format(self.folder.split('/')[-2]))
-    fig2.savefig(self.folder+'{0}_1d.pdf'.format(self.folder.split('/')[-2]))
+      # mean likelihood (optional, if comparison, it will not be printed)
+      if plot_2d:
+	mean=np.zeros(len(bincenters),'float64')
+	norm=np.zeros(len(bincenters),'float64')
+	for j in range(len(bin_edges)-1):
+	  for k in range(np.shape(chain)[0]):
+	    if (chain[k,i+2]>=bin_edges[j] and chain[k,i+2]<=bin_edges[j+1]):
+	      mean[j] += chain[k,1]*chain[k,0]
+	      norm[j] += chain[k,0]
+	  #mean[j] /= norm[j]
+	mean /= sum(norm)
+	mean *= max(hist)/max(mean)
+	ax2d.plot(bincenters,mean,color='red',ls='--',lw=2)
+	ax1d.plot(bincenters,mean,color='red',ls='--',lw=4)
+
+      if plot_2d:
+	for j in range(i):
+	  ax2dsub=fig2d.add_subplot(len(self.ref_names),len(self.ref_names),(i)*len(self.ref_names)+j+1)
+	  n,xedges,yedges=np.histogram2d(chain[:,i+2],chain[:,j+2],weights=chain[:,0],bins=(bin_number,bin_number),normed=False)
+	  extent = [yedges[0], yedges[-1], xedges[0], xedges[-1]]
+	  x_centers = 0.5*(xedges[1:]+xedges[:-1])
+	  y_centers = 0.5*(yedges[1:]+yedges[:-1])
+
+	  ax2dsub.set_xticks(ticks[j])
+	  if i == len(self.ref_names)-1:
+	    ax2dsub.set_xticklabels(['%.4g' % s for s in ticks[j]])
+	  else:
+	    ax2dsub.set_xticklabels([''])
+
+	  ax2dsub.set_yticks(ticks[i])
+	  if j == 0:
+	    ax2dsub.set_yticklabels(['%.4g' % s for s in ticks[i]])
+	  else:
+	    ax2dsub.set_yticklabels([''])
+	  ax2dsub.imshow(n.T, extent=extent, aspect='auto',interpolation='gaussian',origin='lower',cmap=matplotlib.cm.Reds)
+
+	  # smoothing the histogram, to have nicer contours
+	  #n = self.smoothing_hist(n,200)
+	  # plotting contours
+	  cs = ax2dsub.contour(y_centers,x_centers,n.T,extent=extent,levels=self.ctr_level(n.T,lvls),colors="k",zorder=5)
+	  ax2dsub.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=6)
+
+    if comp:
+      for i in range(len(self.ref_names),len(self.ref_names)+len(comp_names)):
+
+	comp_hist,comp_bin_edges = np.histogram(comp_chain[:,i-len(self.ref_names)+2],bins=bin_number,weights=comp_chain[:,0],normed=False)
+	comp_bincenters = 0.5*(comp_bin_edges[1:]+comp_bin_edges[:-1])
+
+	comp_bounds = self.minimum_credible_intervals(comp_hist,comp_bincenters,lvls)
+	if comp_bounds is False:
+	  print comp_hist
+	  exit()
+	for elem in comp_bounds:
+	  for j in (0,1):
+	    elem[j] -= self.mean[i-len(self.ref_names)]
+	ax1d.plot(comp_bincenters,comp_hist,color='green',linewidth=2,ls='-')
+	print i
+    # If plot/ folder in output folder does not exist, create it
+    if os.path.isdir(self.folder+'plots') is False:
+      os.mkdir(self.folder+'plots')
+    if plot_2d:
+      fig2d.savefig(self.folder+'plots/{0}_triangle.pdf'.format(self.folder.split('/')[-2]))
+    if comp:
+      fig1d.savefig(self.folder+'plots/{0}-vs-{1}.pdf'.format(self.folder.split('/')[-2],comp_folder.split('/')[-2]))
+    else:
+      fig1d.savefig(self.folder+'plots/{0}_1d.pdf'.format(self.folder.split('/')[-2]))
+
+
+
+
+
 
   def ctr_level(self,histogram2d,lvl,infinite = False):
 
@@ -395,7 +504,7 @@ class info:
     return clist
 
   def minimum_credible_intervals(self,histogram,bincenter,levels):
-    sigma = np.zeros((len(levels),2))
+    bounds = np.zeros((len(levels),2))
     j = 0
     delta = bincenter[1]-bincenter[0]
     for level in levels:
@@ -413,7 +522,8 @@ class info:
 	# check for multimodal posteriors
 	if ((indices[-1]-indices[0]+1)!=len(indices)):
 	  print '\n\n  Can not derive minimum credible intervals for this multimodal posterior'
-	  return False
+	  print histogram
+	  break
 	top = (sum(histogram[indices])-0.5*(histogram[indices[0]]+histogram[indices[-1]]))*(delta)
 
 	# left
@@ -432,14 +542,18 @@ class info:
 	ii+=1
 	if (ii>1000):
 	  print '\n\n  the loop to check for sigma deviations was too long to converge'
-	  exit()
+	  break
 
       # min
-      sigma[j][0] = bincenter[indices[0]] - delta*(histogram[indices[0]]-water_level)/(histogram[indices[0]]-histogram[indices[0]-1])
-      #sigma[j][0] = - delta*(histogram[indices[0]]-water_level)/(histogram[indices[0]]-histogram[indices[0]-1])
+      if indices[0]>0:
+	bounds[j][0] = bincenter[indices[0]] - delta*(histogram[indices[0]]-water_level)/(histogram[indices[0]]-histogram[indices[0]-1])
+      else:
+	bounds[j][0] = bincenter[0]
       # max
-      sigma[j][1] = bincenter[indices[-1]]+ delta*(histogram[indices[-1]]-water_level)/(histogram[indices[-1]]-histogram[indices[-1]+1])
-      #sigma[j][1] = + delta*(histogram[indices[-1]]-water_level)/(histogram[indices[-1]]-histogram[indices[-1]+1])
+      if indices[-1]<(len(histogram)-1):
+	bounds[j][1] = bincenter[indices[-1]]+ delta*(histogram[indices[-1]]-water_level)/(histogram[indices[-1]]-histogram[indices[-1]+1])
+      else:
+	bounds[j][1] = bincenter[-1]
       j+=1
 	
-    return sigma
+    return bounds

@@ -53,7 +53,7 @@ def main():
   # etc...)
   if command_line.files is not None:
     import analyze	# analysis module, only invoked if asked in the command line
-    analyze.info(command_line.files,command_line.bins)
+    analyze.info(command_line)
     exit()
 
   # If the restart flag was used, load the cosmology directly from the

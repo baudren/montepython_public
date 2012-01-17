@@ -2,21 +2,35 @@ import argparse
 import os
 
 parser = argparse.ArgumentParser(description='Monte Python, a Monte Carlo code in Python')
+
+# MCMC basic
+# -- number of steps
 parser.add_argument('-N', metavar='steps',type=int,dest='N')
+# -- output folder
 parser.add_argument('-o', metavar='output folder',type=str,dest='folder')
+# -- parameter file
 parser.add_argument('-p', metavar='input param file',type=str,dest='par')
+# -- covariance matrix
 parser.add_argument('-c', metavar='input cov matrix',type=str,dest='cov')
-parser.add_argument('-r', metavar='restart from chain',type=str,dest='restart')
+# -- jumping method
 parser.add_argument('-j', metavar='jumping method',type=str,dest='jumping',default='global')
 
+###############
+# MCMC restart from chain
+parser.add_argument('-r', metavar='restart from chain',type=str,dest='restart')
+
+###############
 # cleaning
 parser.add_argument('-clean', metavar='input folder to clean',type=str,dest='clean')
 
-# for information part
+###############
+# information
+# -- folder to analyze
 parser.add_argument('-info', metavar='compute information of desired file',type=str,dest='files',nargs='*')
+# -- number of bins (defaulting to 10)
 parser.add_argument('-bins', metavar='desired number of bins, default is 10',type=int,dest='bins',default=10)
-
-parser.add_argument('-input',metavar='input file',type=str,dest='infile')
+# -- possible comparison folder
+parser.add_argument('-comp',metavar='comparison folder',type=str,dest='comp',nargs='*')
 
 
 def parse():
