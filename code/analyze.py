@@ -320,7 +320,9 @@ class info:
       # histogram
       n,bin_edges=np.histogram(chain[:,i+2],bins=bin_number,weights=chain[:,0],normed=False)
       bincenters = 0.5*(bin_edges[1:]+bin_edges[:-1])
-      #self.minimum_credible_intervals(n,bincenters,lvls)
+      sigma=self.minimum_credible_intervals(n,bincenters,lvls)
+      #print sigma
+      #print self.ref_names[i]
       #exit()
       ax.set_xticks(ticks[i])
       ax.set_xticklabels(['%.4g' % s for s in ticks[i]])
@@ -393,37 +395,51 @@ class info:
     return clist
 
   def minimum_credible_intervals(self,histogram,bincenter,levels):
-    norm = float((sum(histogram)-0.5*(histogram[0]+histogram[-1]))*(bincenter[-1]-bincenter[0]))
-    print norm
-    print histogram
+    sigma = np.zeros((len(levels),2))
+    j = 0
+    delta = bincenter[1]-bincenter[0]
     for level in levels:
-      water_level_up   = max(histogram)
-      water_level_down = 0
+      norm = float((sum(histogram)-0.5*(histogram[0]+histogram[-1]))*delta)
+      water_level_up   = max(histogram)*1.0
+      water_level_down = min(histogram)*1.0
+      top = 0.
       
-      while ((water_level_up-water_level_down > max(histogram)/100000.)):
-	top=0
+      ii=0
+      while (abs((top/norm)-level) > 0.0001):
+	top=0.
 	water_level = (water_level_up + water_level_down)/2.
+	ontop = [elem for elem in histogram if elem>water_level]
 	indices = [i for i in range(len(histogram)) if histogram[i]>water_level]
-	print indices
 	# check for multimodal posteriors
 	if ((indices[-1]-indices[0]+1)!=len(indices)):
 	  print '\n\n  Can not derive minimum credible intervals for this multimodal posterior'
 	  return False
-	top = (sum(histogram[indices])-0.5*(histogram[indices[0]]+histogram[indices[-1]]))*(bincenter[indices[-1]]-bincenter[indices[0]])
+	top = (sum(histogram[indices])-0.5*(histogram[indices[0]]+histogram[indices[-1]]))*(delta)
 
 	# left
 	if indices[0]>0:
-	  top += 0.5 * (water_level + histogram[indices[0]]) * (bincenter[indices[0]] - bincenter[indices[0]-1] )*(1. - water_level/histogram[indices[0]])
+	  top += 0.5 * (water_level + histogram[indices[0]]) * (delta)*(histogram[indices[0]]-water_level)/(histogram[indices[0]]-histogram[indices[0]-1])
 
 	# right
 	if indices[-1]<(len(histogram)-1) :
-	  top += 0.5 * (water_level + histogram[indices[-1]]) * (bincenter[indices[-1]+1] - bincenter[indices[-1]])*(1. - water_level/histogram[indices[-1]])
-	
-	if top/norm > level:
+	  top += 0.5 * (water_level + histogram[indices[-1]]) * (delta)*(histogram[indices[-1]]-water_level)/(histogram[indices[-1]]-histogram[indices[-1]+1])
+
+	if top/norm >= level:
 	  water_level_down = water_level
 	else:
 	  water_level_up = water_level
-	#print top/norm,level,water_level_down,water_level_up
-	
+	# safeguard, just in case
+	ii+=1
+	if (ii>1000):
+	  print '\n\n  the loop to check for sigma deviations was too long to converge'
+	  exit()
 
-    return sigmas
+      # min
+      sigma[j][0] = bincenter[indices[0]] - delta*(histogram[indices[0]]-water_level)/(histogram[indices[0]]-histogram[indices[0]-1])
+      #sigma[j][0] = - delta*(histogram[indices[0]]-water_level)/(histogram[indices[0]]-histogram[indices[0]-1])
+      # max
+      sigma[j][1] = bincenter[indices[-1]]+ delta*(histogram[indices[-1]]-water_level)/(histogram[indices[-1]]-histogram[indices[-1]+1])
+      #sigma[j][1] = + delta*(histogram[indices[-1]]-water_level)/(histogram[indices[-1]]-histogram[indices[-1]+1])
+      j+=1
+	
+    return sigma
