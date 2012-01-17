@@ -101,14 +101,13 @@ class likelihood():
       exec "self.%s_contamination=np.zeros(self.l_max+1,'float64')" % nuisance
       try:  
         exec "File = open(self.data_directory+self.%s_file,'r')" % nuisance
+        for line in File:
+          l=int(float(line.split()[0]))
+          if ((l >=2) and (l <= self.l_max)):
+            exec "self.%s_contamination[l]=float(line.split()[1])/(l*(l+1.)/2./math.pi)" % nuisance
+
       except:
-        print 'you must define a file name '+self.name+'.'+nuisance+'_file containing the contamination spectrum regulated by the nuisance parameter '+nuisance
-        exit()
-   
-      for line in File:
-        l=int(float(line.split()[0]))
-        if ((l >=2) and (l <= self.l_max)):
-          exec "self.%s_contamination[l]=float(line.split()[1])/(l*(l+1.)/2./math.pi)" % nuisance
+	print 'Warning: you did not pass a file name containing a contamination spectrum regulated by the nuisance parameter '+nuisance
 
       # read renormalization factor
       # if it is not there, assume it is one, i.e. do not renormalize  
@@ -152,7 +151,10 @@ class likelihood():
     # first, test whether the nuisance param is fixed or varying.
     for nuisance in self.use_nuisance:
       if nuisance in data.nuisance_param_names:
-        nuisance_value = float(data.vector[np.where(data.param_names == nuisance)[0][0]])
+        #nuisance_value = float(data.vector[np.where(data.param_names == nuisance)[0][0]])
+	for i in range(len(data.nuisance)):
+          if (data.nuisance_param_names[i] == nuisance):
+            nuisance_value = float(data.nuisance[i])
       else:
         exec "nuisance_value = data.%s" % nuisance
 
@@ -578,7 +580,7 @@ class likelihood_clik(likelihood):
 
     # get Cl's from CLASS
     cl = self._get_cl(_cosmo)
-  
+ 
     # add contamination spectra multiplied by nuisance parameters
     cl = self._add_contamination_spectra(cl,data)
 
@@ -603,7 +605,7 @@ class likelihood_clik(likelihood):
           if (i==5):
             tot[index+j]=cl['eb'][j]
 
-        index += self.clik.get_lmax()[i]
+        index += self.clik.get_lmax()[i]+1
 
     # fill with nuisance parameters
     for nuisance in self.clik.get_extra_parameter_names():
@@ -619,8 +621,8 @@ class likelihood_clik(likelihood):
           print 'the likelihood needs a parameter '+nuisance
           print 'you must pass it through the input file (as a free nuisance parameter or a fixed parameter)'
           exit()
-      index += 1
       tot[index]=nuisance_value
+      index += 1
 
     # compute likelihood
     loglkl=self.clik(tot)[0]
