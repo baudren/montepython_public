@@ -280,8 +280,9 @@ class info:
 
     # If comparison is asked, don't plot 2d levels
     if command_line.comp is not None:
-      plot_2d = False
-      comp    = True
+      plot_2d   = False
+      comp      = True
+      comp_done = False
     else:
       plot_2d = True
       comp    = False
@@ -598,6 +599,7 @@ class info:
 
   def cubic_interpolation(self,hist,bincenter):
     interp_grid = np.linspace(bincenter[0],bincenter[-1],len(bincenter)*10)
-    interp_hist = interp1d(bincenter,hist,interp_grid)
+    f = interp1d(bincenter,hist)
+    interp_hist = f(interp_grid)
     return interp_hist,interp_grid
 
