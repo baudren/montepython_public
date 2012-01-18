@@ -6,6 +6,7 @@ import matplotlib.mlab as mlab
 import matplotlib
 import math
 import numpy as np
+from scipy.interpolate import interp1d
 
 
 class info:
@@ -381,7 +382,7 @@ class info:
       num_lines   = round((len(self.ref_names)+len(comp_ref_names))*1.0/num_columns)
     else:
       num_columns = round(math.sqrt(len(self.ref_names)))
-      num_lines   = round(self.ref_names*1.0/num_columns)
+      num_lines   = round(len(self.ref_names)*1.0/num_columns)
 
     for i in range(len(self.ref_names)):
 
@@ -393,6 +394,8 @@ class info:
       # histogram
       hist,bin_edges=np.histogram(chain[:,i+2],bins=bin_number,weights=chain[:,0],normed=False)
       bincenters = 0.5*(bin_edges[1:]+bin_edges[:-1])
+
+      interp_hist = self.cubic_interpolation(hist,bincenters)
 
       if comp:
 	try:
@@ -591,3 +594,10 @@ class info:
       j+=1
 	
     return bounds
+
+  def cubic_interpolation(self,hist,bincenter):
+    newgrid = np.linspace(bincenter[0],bincenter[-1],len(bincenter)*10)
+    print newgrid
+    print hist
+    exit()
+
