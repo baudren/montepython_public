@@ -59,7 +59,7 @@ class info:
     if command_line.comp is None:
       self.plot_triangle(chain,command_line,bin_number=binnumber)
     else:
-      self.plot_triangle(chain,command_line,bin_number=binnumber,comp_chain=comp_chain,comp_names = comp_ref_names,comp_folder = comp_folder)
+      self.plot_triangle(chain,command_line,bin_number=binnumber,comp_chain=comp_chain,comp_ref_names = comp_ref_names,comp_tex_names = comp_tex_names,comp_folder = comp_folder,comp_boundaries = comp_boundaries)
 
     self.info.write('\n param names:\t')
     for elem in self.ref_names:
@@ -275,7 +275,7 @@ class info:
     else:
       return spam,ref_names,tex_names,boundaries,mean
 
-  def plot_triangle(self,chain,command_line,select=None,bin_number=20,scales=(),legend=(),levels=(68.26,95.4,99.7),show_prop=True,fill=68.26,show_mean=True,show_peak=True,show_extra=None,add_legend=r"$=%(peak).4g^{+%(up).3g}_{-%(down).3g}$",aspect=(16,16),fig=None,tick_at_peak=False,convolve=True,comp_chain = None,comp_names = None,comp_folder = None):
+  def plot_triangle(self,chain,command_line,select=None,bin_number=20,scales=(),legend=(),levels=(68.26,95.4,99.7),show_prop=True,fill=68.26,show_mean=True,show_peak=True,show_extra=None,add_legend=r"$=%(peak).4g^{+%(up).3g}_{-%(down).3g}$",aspect=(16,16),fig=None,tick_at_peak=False,convolve=True,comp_chain = None,comp_ref_names = None,comp_tex_names = None, comp_folder = None,comp_boundaries = None):
 
     # If comparison is asked, don't plot 2d levels
     if command_line.comp is not None:
@@ -334,12 +334,28 @@ class info:
     min_values = np.min(chain[:,2:],axis=0)*scales
     span = (max_values-min_values)
 
+    best_minus_lkl = np.min(chain[:,1],axis=0)
+
+    if comp:
+      comp_max_values = np.max(comp_chain[:,2:],axis=0)
+      comp_min_values = np.min(comp_chain[:,2:],axis=0)
+      comp_span = (comp_max_values-comp_min_values)
+
     if tick_at_peak:
       pass
     else:
       ticks = np.array((min_values+span*0.1,(max_values+min_values)/2.,max_values-span*0.1)).T
       x_range = np.array((min_values,max_values)).T
-      #ticks = np.array((min_values,(max_values+min_values)/2.,max_values)).T
+      if comp:
+	comp_ticks = np.array((comp_min_values+comp_span*0.1,(comp_max_values+comp_min_values)/2.,comp_max_values-comp_span*0.1)).T
+	comp_x_range = np.array((comp_min_values,comp_max_values)).T
+	for i in range(np.shape(comp_ticks)[0]):
+	  if abs(comp_x_range[i][0]-comp_boundaries[i][0]) < comp_span[i]/bin_number :
+	    comp_ticks[i][0] = comp_boundaries[i][0]
+	    comp_x_range[i][0] = comp_boundaries[i][0]
+	  if abs(comp_x_range[i][1]-comp_boundaries[i][1]) < comp_span[i]/bin_number :
+	    comp_ticks[i][2] = comp_boundaries[i][1]
+	    comp_x_range[i][1] = comp_boundaries[i][1]
 
     for i in range(np.shape(ticks)[0]):
       if abs(x_range[i][0]-self.boundaries[i][0]) < span[i]/bin_number :
@@ -354,12 +370,12 @@ class info:
 
     if comp:
       index = 0
-      backup_comp_names = np.copy(comp_names)
+      backup_comp_names = np.copy(comp_ref_names)
       for name in self.ref_names:
 	index +=1
-	if name in comp_names:
-	  comp_names.remove(name)
-      for name in comp_names:
+	if name in comp_ref_names:
+	  comp_ref_names.remove(name)
+      for name in comp_ref_names:
 	index +=1
       num_column = round(math.sqrt(index)) 
     else:
@@ -377,10 +393,14 @@ class info:
       bincenters = 0.5*(bin_edges[1:]+bin_edges[:-1])
 
       if comp:
-	comp_hist,comp_bin_edges = np.histogram(comp_chain[:,i+2],bins=bin_number,weights=comp_chain[:,0],normed=False)
-	comp_hist *= max(hist)/max(comp_hist)
-	comp_bincenters = 0.5*(comp_bin_edges[1:]+comp_bin_edges[:-1])
-
+	try:
+	  ii = backup_comp_names.index(self.ref_names[i])
+	  comp_hist,comp_bin_edges = np.histogram(comp_chain[:,ii+2],bins=bin_number,weights=comp_chain[:,0],normed=False)
+	  comp_hist *= max(hist)/max(comp_hist)
+	  comp_bincenters = 0.5*(comp_bin_edges[1:]+comp_bin_edges[:-1])
+	  comp_done = True
+	except:
+	  comp_done = False
 
       # minimum credible interval
       bounds = self.minimum_credible_intervals(hist,bincenters,lvls)
@@ -389,7 +409,7 @@ class info:
 	  elem[j] -= self.mean[i]
       self.bounds[i] = bounds
 
-      if comp:
+      if comp_done:
 	comp_bounds = self.minimum_credible_intervals(comp_hist,comp_bincenters,lvls)
 	if comp_bounds is False:
 	  print comp_hist
@@ -407,15 +427,26 @@ class info:
 	ax2d.plot(bincenters,hist,color='red',linewidth=2,ls='-')
 	ax2d.axis([x_range[i][0], x_range[i][1],0,np.max(hist)])
 
-      ax1d.set_xticks(ticks[i])
-      ax1d.set_xticklabels(['%.4g' % s for s in ticks[i]])
-      ax1d.set_title('%s= %.4g' % (self.tex_names[i],mean[i]))
-      ax1d.plot(bincenters,hist,color='red',linewidth=2,ls='-')
-      ax1d.axis([x_range[i][0], x_range[i][1],0,np.max(hist)])
+      if comp_done:
+	if comp_span[ii] >= span[i]:
+	  ax1d.set_xticks(comp_ticks[ii])
+	  ax1d.set_xticklabels(['%.4g' % s for s in comp_ticks[ii]])
+	  ax1d.set_title('%s= %.4g' % (comp_tex_names[i],comp_mean[i]))
+	  ax1d.axis([comp_x_range[i][0], comp_x_range[i][1],0,np.max(comp_hist)])
+	else:
+	  ax1d.set_xticks(ticks[i])
+	  ax1d.set_xticklabels(['%.4g' % s for s in ticks[i]])
+	  ax1d.set_title('%s= %.4g' % (self.tex_names[i],mean[i]))
+	  ax1d.axis([x_range[i][0], x_range[i][1],0,np.max(hist)])
+      else:
+	ax1d.set_xticks(ticks[i])
+	ax1d.set_xticklabels(['%.4g' % s for s in ticks[i]])
+	ax1d.set_title('%s= %.4g' % (self.tex_names[i],mean[i]))
+	ax1d.axis([x_range[i][0], x_range[i][1],0,np.max(hist)])
 
-      if comp:
-	if self.ref_names[i] in backup_comp_names:
-	  ax1d.plot(comp_bincenters,comp_hist,color='green',linewidth=2,ls='-')
+      ax1d.plot(bincenters,hist,color='red',linewidth=2,ls='-')
+      if comp_done:
+	ax1d.plot(comp_bincenters,comp_hist,color='green',linewidth=2,ls='-')
 
 
       # mean likelihood (optional, if comparison, it will not be printed)
@@ -425,10 +456,9 @@ class info:
 	for j in range(len(bin_edges)-1):
 	  for k in range(np.shape(chain)[0]):
 	    if (chain[k,i+2]>=bin_edges[j] and chain[k,i+2]<=bin_edges[j+1]):
-	      mean[j] += chain[k,1]*chain[k,0]
+	      mean[j] += math.exp( best_minus_lkl - chain[k,1])*chain[k,0]
 	      norm[j] += chain[k,0]
-	  #mean[j] /= norm[j]
-	mean /= sum(norm)
+	  mean[j] /= norm[j]
 	mean *= max(hist)/max(mean)
 	ax2d.plot(bincenters,mean,color='red',ls='--',lw=2)
 	ax1d.plot(bincenters,mean,color='red',ls='--',lw=4)
@@ -461,7 +491,7 @@ class info:
 	  ax2dsub.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=6)
 
     if comp:
-      for i in range(len(self.ref_names),len(self.ref_names)+len(comp_names)):
+      for i in range(len(self.ref_names),len(self.ref_names)+len(comp_ref_names)):
 
 	comp_hist,comp_bin_edges = np.histogram(comp_chain[:,i-len(self.ref_names)+2],bins=bin_number,weights=comp_chain[:,0],normed=False)
 	comp_bincenters = 0.5*(comp_bin_edges[1:]+comp_bin_edges[:-1])
