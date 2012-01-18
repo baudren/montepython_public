@@ -60,7 +60,7 @@ class info:
     if command_line.comp is None:
       self.plot_triangle(chain,command_line,bin_number=binnumber)
     else:
-      self.plot_triangle(chain,command_line,bin_number=binnumber,comp_chain=comp_chain,comp_ref_names = comp_ref_names,comp_tex_names = comp_tex_names,comp_folder = comp_folder,comp_boundaries = comp_boundaries)
+      self.plot_triangle(chain,command_line,bin_number=binnumber,comp_chain=comp_chain,comp_ref_names = comp_ref_names,comp_tex_names = comp_tex_names,comp_folder = comp_folder,comp_boundaries = comp_boundaries,comp_mean = comp_mean)
 
     self.info.write('\n param names:\t')
     for elem in self.ref_names:
@@ -276,7 +276,7 @@ class info:
     else:
       return spam,ref_names,tex_names,boundaries,mean
 
-  def plot_triangle(self,chain,command_line,select=None,bin_number=20,scales=(),legend=(),levels=(68.26,95.4,99.7),show_prop=True,fill=68.26,show_mean=True,show_peak=True,show_extra=None,add_legend=r"$=%(peak).4g^{+%(up).3g}_{-%(down).3g}$",aspect=(16,16),fig=None,tick_at_peak=False,convolve=True,comp_chain = None,comp_ref_names = None,comp_tex_names = None, comp_folder = None,comp_boundaries = None):
+  def plot_triangle(self,chain,command_line,select=None,bin_number=20,scales=(),legend=(),levels=(68.26,95.4,99.7),show_prop=True,fill=68.26,show_mean=True,show_peak=True,show_extra=None,add_legend=r"$=%(peak).4g^{+%(up).3g}_{-%(down).3g}$",aspect=(16,16),fig=None,tick_at_peak=False,convolve=True,comp_chain = None,comp_ref_names = None,comp_tex_names = None, comp_folder = None,comp_boundaries = None,comp_mean = None):
 
     # If comparison is asked, don't plot 2d levels
     if command_line.comp is not None:
@@ -286,6 +286,7 @@ class info:
     else:
       plot_2d = True
       comp    = False
+      comp_done = False
 
     matplotlib.rc('text',usetex = True)
     matplotlib.rc('font',size=11)
@@ -371,29 +372,31 @@ class info:
       fig2d.subplots_adjust(bottom=0.03, left=.04, right=0.98, top=0.98, hspace=.35)
 
     if comp:
-      index = 0
+      index = 1
       backup_comp_names = np.copy(comp_ref_names)
-      for name in self.ref_names:
+      for i in range(len(self.ref_names)):
 	index +=1
-	if name in comp_ref_names:
-	  comp_ref_names.remove(name)
+	if self.ref_names[i] in comp_ref_names:
+	  comp_ref_names.remove(self.ref_names[i])
+	  comp_tex_names.remove(self.tex_names[i])
       for name in comp_ref_names:
 	index +=1
       num_columns = round(math.sqrt(index)) 
-      num_lines   = round((len(self.ref_names)+len(comp_ref_names))*1.0/num_columns)
+      num_lines   = math.ceil((len(self.ref_names)+len(comp_ref_names))*1.0/num_columns)
     else:
       num_columns = round(math.sqrt(len(self.ref_names)))
-      num_lines   = round(len(self.ref_names)*1.0/num_columns)
+      num_lines   = math.ceil(len(self.ref_names)*1.0/num_columns)
 
     for i in range(len(self.ref_names)):
 
       if plot_2d:
 	ax2d=fig2d.add_subplot(len(self.ref_names),len(self.ref_names),i*(len(self.ref_names)+1)+1,yticks=[])
 
-      ax1d = fig1d.add_subplot(num_columns,num_lines,i,yticks=[])
+      ax1d = fig1d.add_subplot(num_lines,num_columns,i+1,yticks=[])
 
       # histogram
       hist,bin_edges=np.histogram(chain[:,i+2],bins=bin_number,weights=chain[:,0],normed=False)
+      hist /= np.max(hist)
       bincenters = 0.5*(bin_edges[1:]+bin_edges[:-1])
 
       interp_hist,interp_grid = self.cubic_interpolation(hist,bincenters)
@@ -403,15 +406,15 @@ class info:
 	  #ii = backup_comp_names.index(self.ref_names[i])
 	  ii = np.where( backup_comp_names == self.ref_names[i] )[0][0]
 	  comp_hist,comp_bin_edges = np.histogram(comp_chain[:,ii+2],bins=bin_number,weights=comp_chain[:,0],normed=False)
-	  comp_hist *= max(hist)/max(comp_hist)
+	  comp_hist /= np.max(comp_hist)
 	  comp_bincenters = 0.5*(comp_bin_edges[1:]+comp_bin_edges[:-1])
+	  interp_comp_hist,interp_comp_grid = self.cubic_interpolation(comp_hist,comp_bincenters)
 	  comp_done = True
-	except ValueError :
-	  print 'ooh'
+	except IndexError :
 	  comp_done = False
       if comp:
 	if not comp_done:
-	  print '{0} was not found in the comparison folder'.format(self.ref_names[i])
+	  print '{0} was not found in the second folder'.format(self.ref_names[i])
 
       # minimum credible interval
       bounds = self.minimum_credible_intervals(hist,bincenters,lvls)
@@ -430,30 +433,39 @@ class info:
 	else:
 	  for elem in comp_bounds:
 	    for j in (0,1):
-	      elem[j] -= self.mean[i]
+	      elem[j] -= comp_mean[ii]
 
       # plotting
       if plot_2d:
 	ax2d.set_xticks(ticks[i])
 	ax2d.set_xticklabels(['%.4g' % s for s in ticks[i]])
-	ax2d.set_title('%s= %.4g' % (self.tex_names[i],mean[i]))
+	ax2d.set_title('%s= $%.4g^{+%.4g}_{%.4g}$' % (self.tex_names[i],self.mean[i],bounds[0][1],bounds[0][0]))
 	ax2d.plot(bincenters,hist,color='red',linewidth=2,ls='-')
 	ax2d.axis([x_range[i][0], x_range[i][1],0,np.max(hist)])
 
-      ax1d.set_title('%s= %.4g' % (self.tex_names[i],mean[i]))
+      #ax1d.set_title('%s= %.4g' % (self.tex_names[i],mean[i]))
+      ax1d.set_title('%s= $%.4g^{+%.4g}_{%.4g}$' % (self.tex_names[i],self.mean[i],bounds[0][1],bounds[0][0]))
       ax1d.set_xticks(ticks[i])
       ax1d.set_xticklabels(['%.4g' % s for s in ticks[i]])
-      ax1d.axis([x_range[i][0], x_range[i][1],0,np.max(hist)])
+      ax1d.axis([x_range[i][0], x_range[i][1],0,max(interp_hist)])
       
       if comp_done:
-	if comp_span[ii] >= span[i]:
-	  ax1d.set_xticks(comp_ticks[ii])
-	  ax1d.set_xticklabels(['%.4g' % s for s in comp_ticks[ii]])
-	  ax1d.axis([comp_x_range[i][0], comp_x_range[i][1],0,np.max(comp_hist)])
+	# complex variation of intervals
+	if comp_x_range[ii][0] > x_range[i][0]:
+	  comp_ticks[ii][0] = ticks[i][0]
+	  comp_x_range[ii][0] = x_range[i][0]
+	if comp_x_range[ii][1] < x_range[i][1]:
+	  comp_ticks[ii][2] = ticks[i][2]
+	  comp_x_range[ii][1] = x_range[i][1]
+	comp_ticks[ii][1] = (comp_x_range[ii][1]+comp_x_range[ii][0])/2.
+	ax1d.set_xticks(comp_ticks[ii])
+	ax1d.set_xticklabels(['%.4g' % s for s in comp_ticks[ii]])
+	ax1d.axis([comp_x_range[ii][0], comp_x_range[ii][1],0,max(interp_comp_hist)])
+
 
       ax1d.plot(interp_grid,interp_hist,color='black',linewidth=2,ls='-')
       if comp_done:
-	ax1d.plot(comp_bincenters,comp_hist,color='red',linewidth=2,ls='-')
+	ax1d.plot(interp_comp_grid,interp_comp_hist,color='red',linewidth=2,ls='-')
 
 
       # mean likelihood (optional, if comparison, it will not be printed)
@@ -467,7 +479,7 @@ class info:
 	      norm[j] += chain[k,0]
 	  lkl_mean[j] /= norm[j]
 	lkl_mean *= max(hist)/max(lkl_mean)
-	interp_lkl_mean,interp_grid = self.cubic_interpolation(lkl_mean,bincenter)
+	interp_lkl_mean,interp_grid = self.cubic_interpolation(lkl_mean,bincenters)
 	ax2d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=2)
 	ax1d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=4)
 
@@ -499,11 +511,13 @@ class info:
     if comp:
       for i in range(len(self.ref_names),len(self.ref_names)+len(comp_ref_names)):
 
-	ax1d = fig1d.add_subplot(num_columns,num_lines,i+len(self.ref_names),yticks=[])
+	ax1d = fig1d.add_subplot(num_lines,num_columns,i+1,yticks=[])
+	ii = np.where(backup_comp_names == comp_ref_names[i-len(self.ref_names)])[0][0]
 
-	ii = backup_comp_names.index(comp_ref_names[i-len(self.ref_names)])
 	comp_hist,comp_bin_edges = np.histogram(comp_chain[:,ii+2],bins=bin_number,weights=comp_chain[:,0],normed=False)
+	comp_hist /= np.max(comp_hist)
 	comp_bincenters = 0.5*(comp_bin_edges[1:]+comp_bin_edges[:-1])
+	interp_comp_hist,interp_comp_grid = self.cubic_interpolation(comp_hist,comp_bincenters)
 
 	comp_bounds = self.minimum_credible_intervals(comp_hist,comp_bincenters,lvls)
 	if comp_bounds is False:
@@ -511,8 +525,12 @@ class info:
 	else:
 	  for elem in comp_bounds:
 	    for j in (0,1):
-	      elem[j] -= self.mean[i-len(self.ref_names)]
-	ax1d.plot(comp_bincenters,comp_hist,color='green',linewidth=2,ls='-')
+	      elem[j] -= comp_mean[ii]
+	ax1d.set_xticks(comp_ticks[ii])
+	ax1d.set_xticklabels(['%.4g' % s for s in comp_ticks[ii]])
+	ax1d.axis([comp_x_range[ii][0], comp_x_range[ii][1],0,max(interp_comp_hist)])
+	ax1d.set_title('%s= $%.4g^{+%.4g}_{%.4g}$' % (comp_tex_names[i-len(self.ref_names)],comp_mean[ii],comp_bounds[0][1],comp_bounds[0][0]))
+	ax1d.plot(interp_comp_grid,interp_comp_hist,color='red',linewidth=2,ls='-')
 	
     # If plots/ folder in output folder does not exist, create it
     if os.path.isdir(self.folder+'plots') is False:
@@ -542,10 +560,11 @@ class info:
       return clist[1:]
     return clist
 
-  def minimum_credible_intervals(self,histogram,bincenter,levels):
+  def minimum_credible_intervals(self,histogram,bincenters,levels):
     bounds = np.zeros((len(levels),2))
     j = 0
-    delta = bincenter[1]-bincenter[0]
+    delta = bincenters[1]-bincenters[0]
+    failed = False
     for level in levels:
       norm = float((sum(histogram)-0.5*(histogram[0]+histogram[-1]))*delta)
       water_level_up   = max(histogram)*1.0
@@ -553,15 +572,16 @@ class info:
       top = 0.
       
       ii=0
-      while (abs((top/norm)-level) > 0.0001):
+      while ((abs((top/norm)-level) > 0.0001) and not failed):
 	top=0.
 	water_level = (water_level_up + water_level_down)/2.
 	ontop = [elem for elem in histogram if elem>water_level]
 	indices = [i for i in range(len(histogram)) if histogram[i]>water_level]
 	# check for multimodal posteriors
 	if ((indices[-1]-indices[0]+1)!=len(indices)):
-	  print '\n\n  Can not derive minimum credible intervals for this multimodal posterior'
+	  print '  Warning : Can not derive minimum credible intervals for this multimodal posterior'
 	  print histogram
+	  failed = True
 	  break
 	top = (sum(histogram[indices])-0.5*(histogram[indices[0]]+histogram[indices[-1]]))*(delta)
 
@@ -585,21 +605,21 @@ class info:
 
       # min
       if indices[0]>0:
-	bounds[j][0] = bincenter[indices[0]] - delta*(histogram[indices[0]]-water_level)/(histogram[indices[0]]-histogram[indices[0]-1])
+	bounds[j][0] = bincenters[indices[0]] - delta*(histogram[indices[0]]-water_level)/(histogram[indices[0]]-histogram[indices[0]-1])
       else:
-	bounds[j][0] = bincenter[0]
+	bounds[j][0] = bincenters[0]
       # max
       if indices[-1]<(len(histogram)-1):
-	bounds[j][1] = bincenter[indices[-1]]+ delta*(histogram[indices[-1]]-water_level)/(histogram[indices[-1]]-histogram[indices[-1]+1])
+	bounds[j][1] = bincenters[indices[-1]]+ delta*(histogram[indices[-1]]-water_level)/(histogram[indices[-1]]-histogram[indices[-1]+1])
       else:
-	bounds[j][1] = bincenter[-1]
+	bounds[j][1] = bincenters[-1]
       j+=1
 	
     return bounds
 
-  def cubic_interpolation(self,hist,bincenter):
-    interp_grid = np.linspace(bincenter[0],bincenter[-1],len(bincenter)*10)
-    f = interp1d(bincenter,hist)
+  def cubic_interpolation(self,hist,bincenters):
+    interp_grid = np.linspace(bincenters[0],bincenters[-1],len(bincenters)*10)
+    f = interp1d(bincenters,hist,kind='cubic')
     interp_hist = f(interp_grid)
     return interp_hist,interp_grid
 

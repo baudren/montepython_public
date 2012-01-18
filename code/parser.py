@@ -27,8 +27,8 @@ parser.add_argument('-clean', metavar='input folder to clean',type=str,dest='cle
 # information
 # -- folder to analyze
 parser.add_argument('-info', metavar='compute information of desired file',type=str,dest='files',nargs='*')
-# -- number of bins (defaulting to 10)
-parser.add_argument('-bins', metavar='desired number of bins, default is 10',type=int,dest='bins',default=10)
+# -- number of bins (defaulting to 20)
+parser.add_argument('-bins', metavar='desired number of bins, default is 20',type=int,dest='bins',default=20)
 # -- possible comparison folder
 parser.add_argument('-comp',metavar='comparison folder',type=str,dest='comp',nargs='*')
 
