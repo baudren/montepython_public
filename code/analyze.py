@@ -395,7 +395,7 @@ class info:
       hist,bin_edges=np.histogram(chain[:,i+2],bins=bin_number,weights=chain[:,0],normed=False)
       bincenters = 0.5*(bin_edges[1:]+bin_edges[:-1])
 
-      interp_hist = self.cubic_interpolation(hist,bincenters)
+      interp_hist,interp_grid = self.cubic_interpolation(hist,bincenters)
 
       if comp:
 	try:
@@ -450,24 +450,25 @@ class info:
 	  ax1d.set_xticklabels(['%.4g' % s for s in comp_ticks[ii]])
 	  ax1d.axis([comp_x_range[i][0], comp_x_range[i][1],0,np.max(comp_hist)])
 
-      ax1d.plot(bincenters,hist,color='black',linewidth=2,ls='-')
+      ax1d.plot(interp_grid,interp_hist,color='black',linewidth=2,ls='-')
       if comp_done:
 	ax1d.plot(comp_bincenters,comp_hist,color='red',linewidth=2,ls='-')
 
 
       # mean likelihood (optional, if comparison, it will not be printed)
       if plot_2d:
-	mean=np.zeros(len(bincenters),'float64')
+	lkl_mean=np.zeros(len(bincenters),'float64')
 	norm=np.zeros(len(bincenters),'float64')
 	for j in range(len(bin_edges)-1):
 	  for k in range(np.shape(chain)[0]):
 	    if (chain[k,i+2]>=bin_edges[j] and chain[k,i+2]<=bin_edges[j+1]):
-	      mean[j] += math.exp( best_minus_lkl - chain[k,1])*chain[k,0]
+	      lkl_mean[j] += math.exp( best_minus_lkl - chain[k,1])*chain[k,0]
 	      norm[j] += chain[k,0]
-	  mean[j] /= norm[j]
-	mean *= max(hist)/max(mean)
-	ax2d.plot(bincenters,mean,color='red',ls='--',lw=2)
-	ax1d.plot(bincenters,mean,color='red',ls='--',lw=4)
+	  lkl_mean[j] /= norm[j]
+	lkl_mean *= max(hist)/max(lkl_mean)
+	interp_lkl_mean,interp_grid = self.cubic_interpolation(lkl_mean,bincenter)
+	ax2d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=2)
+	ax1d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=4)
 
       if plot_2d:
 	for j in range(i):
@@ -596,8 +597,7 @@ class info:
     return bounds
 
   def cubic_interpolation(self,hist,bincenter):
-    newgrid = np.linspace(bincenter[0],bincenter[-1],len(bincenter)*10)
-    print newgrid
-    print hist
-    exit()
+    interp_grid = np.linspace(bincenter[0],bincenter[-1],len(bincenter)*10)
+    interp_hist = interp1d(bincenter,hist,interp_grid)
+    return interp_hist,interp_grid
 
