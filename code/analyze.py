@@ -377,16 +377,18 @@ class info:
 	  comp_ref_names.remove(name)
       for name in comp_ref_names:
 	index +=1
-      num_column = round(math.sqrt(index)) 
+      num_columns = round(math.sqrt(index)) 
+      num_lines   = round((len(self.ref_names)+len(comp_ref_names))*1.0/num_columns)
     else:
-      num_column = round(math.sqrt(len(self.ref_names)))
+      num_columns = round(math.sqrt(len(self.ref_names)))
+      num_lines   = round(self.ref_names*1.0/num_columns)
 
     for i in range(len(self.ref_names)):
 
       if plot_2d:
 	ax2d=fig2d.add_subplot(len(self.ref_names),len(self.ref_names),i*(len(self.ref_names)+1)+1,yticks=[])
 
-      ax1d = fig1d.add_subplot(num_column,round(len(self.ref_names)*1.0/num_column),i,yticks=[])
+      ax1d = fig1d.add_subplot(num_columns,num_lines,i,yticks=[])
 
       # histogram
       hist,bin_edges=np.histogram(chain[:,i+2],bins=bin_number,weights=chain[:,0],normed=False)
@@ -394,30 +396,37 @@ class info:
 
       if comp:
 	try:
-	  ii = backup_comp_names.index(self.ref_names[i])
+	  #ii = backup_comp_names.index(self.ref_names[i])
+	  ii = np.where( backup_comp_names == self.ref_names[i] )[0][0]
 	  comp_hist,comp_bin_edges = np.histogram(comp_chain[:,ii+2],bins=bin_number,weights=comp_chain[:,0],normed=False)
 	  comp_hist *= max(hist)/max(comp_hist)
 	  comp_bincenters = 0.5*(comp_bin_edges[1:]+comp_bin_edges[:-1])
 	  comp_done = True
-	except:
+	except ValueError :
+	  print 'ooh'
 	  comp_done = False
+      if comp:
+	if not comp_done:
+	  print '{0} was not found in the comparison folder'.format(self.ref_names[i])
 
       # minimum credible interval
       bounds = self.minimum_credible_intervals(hist,bincenters,lvls)
-      for elem in bounds:
-	for j in (0,1):
-	  elem[j] -= self.mean[i]
-      self.bounds[i] = bounds
+      if bounds is False:
+	print hist
+      else:
+	for elem in bounds:
+	  for j in (0,1):
+	    elem[j] -= self.mean[i]
+	self.bounds[i] = bounds
 
       if comp_done:
 	comp_bounds = self.minimum_credible_intervals(comp_hist,comp_bincenters,lvls)
 	if comp_bounds is False:
 	  print comp_hist
-	  exit()
-	for elem in comp_bounds:
-	  for j in (0,1):
-	    elem[j] -= self.mean[i]
-
+	else:
+	  for elem in comp_bounds:
+	    for j in (0,1):
+	      elem[j] -= self.mean[i]
 
       # plotting
       if plot_2d:
@@ -427,26 +436,20 @@ class info:
 	ax2d.plot(bincenters,hist,color='red',linewidth=2,ls='-')
 	ax2d.axis([x_range[i][0], x_range[i][1],0,np.max(hist)])
 
+      ax1d.set_title('%s= %.4g' % (self.tex_names[i],mean[i]))
+      ax1d.set_xticks(ticks[i])
+      ax1d.set_xticklabels(['%.4g' % s for s in ticks[i]])
+      ax1d.axis([x_range[i][0], x_range[i][1],0,np.max(hist)])
+      
       if comp_done:
 	if comp_span[ii] >= span[i]:
 	  ax1d.set_xticks(comp_ticks[ii])
 	  ax1d.set_xticklabels(['%.4g' % s for s in comp_ticks[ii]])
-	  ax1d.set_title('%s= %.4g' % (comp_tex_names[i],comp_mean[i]))
 	  ax1d.axis([comp_x_range[i][0], comp_x_range[i][1],0,np.max(comp_hist)])
-	else:
-	  ax1d.set_xticks(ticks[i])
-	  ax1d.set_xticklabels(['%.4g' % s for s in ticks[i]])
-	  ax1d.set_title('%s= %.4g' % (self.tex_names[i],mean[i]))
-	  ax1d.axis([x_range[i][0], x_range[i][1],0,np.max(hist)])
-      else:
-	ax1d.set_xticks(ticks[i])
-	ax1d.set_xticklabels(['%.4g' % s for s in ticks[i]])
-	ax1d.set_title('%s= %.4g' % (self.tex_names[i],mean[i]))
-	ax1d.axis([x_range[i][0], x_range[i][1],0,np.max(hist)])
 
-      ax1d.plot(bincenters,hist,color='red',linewidth=2,ls='-')
+      ax1d.plot(bincenters,hist,color='black',linewidth=2,ls='-')
       if comp_done:
-	ax1d.plot(comp_bincenters,comp_hist,color='green',linewidth=2,ls='-')
+	ax1d.plot(comp_bincenters,comp_hist,color='red',linewidth=2,ls='-')
 
 
       # mean likelihood (optional, if comparison, it will not be printed)
@@ -484,8 +487,6 @@ class info:
 	    ax2dsub.set_yticklabels([''])
 	  ax2dsub.imshow(n.T, extent=extent, aspect='auto',interpolation='gaussian',origin='lower',cmap=matplotlib.cm.Reds)
 
-	  # smoothing the histogram, to have nicer contours
-	  #n = self.smoothing_hist(n,200)
 	  # plotting contours
 	  cs = ax2dsub.contour(y_centers,x_centers,n.T,extent=extent,levels=self.ctr_level(n.T,lvls),colors="k",zorder=5)
 	  ax2dsub.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=6)
@@ -493,19 +494,22 @@ class info:
     if comp:
       for i in range(len(self.ref_names),len(self.ref_names)+len(comp_ref_names)):
 
-	comp_hist,comp_bin_edges = np.histogram(comp_chain[:,i-len(self.ref_names)+2],bins=bin_number,weights=comp_chain[:,0],normed=False)
+	ax1d = fig1d.add_subplot(num_columns,num_lines,i+len(self.ref_names),yticks=[])
+
+	ii = backup_comp_names.index(comp_ref_names[i-len(self.ref_names)])
+	comp_hist,comp_bin_edges = np.histogram(comp_chain[:,ii+2],bins=bin_number,weights=comp_chain[:,0],normed=False)
 	comp_bincenters = 0.5*(comp_bin_edges[1:]+comp_bin_edges[:-1])
 
 	comp_bounds = self.minimum_credible_intervals(comp_hist,comp_bincenters,lvls)
 	if comp_bounds is False:
 	  print comp_hist
-	  exit()
-	for elem in comp_bounds:
-	  for j in (0,1):
-	    elem[j] -= self.mean[i-len(self.ref_names)]
+	else:
+	  for elem in comp_bounds:
+	    for j in (0,1):
+	      elem[j] -= self.mean[i-len(self.ref_names)]
 	ax1d.plot(comp_bincenters,comp_hist,color='green',linewidth=2,ls='-')
-	print i
-    # If plot/ folder in output folder does not exist, create it
+	
+    # If plots/ folder in output folder does not exist, create it
     if os.path.isdir(self.folder+'plots') is False:
       os.mkdir(self.folder+'plots')
     if plot_2d:
