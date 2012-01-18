@@ -6,7 +6,6 @@ import matplotlib.mlab as mlab
 import matplotlib
 import math
 import numpy as np
-from scipy.interpolate import interp1d
 
 
 class info:
@@ -368,8 +367,10 @@ class info:
 	ticks[i][2] = self.boundaries[i][1]
 	x_range[i][1] = self.boundaries[i][1]
       
+    fig1d.subplots_adjust(bottom=0.03, left=.04, right=0.98, top=0.95, hspace=.35)
     if plot_2d:
       fig2d.subplots_adjust(bottom=0.03, left=.04, right=0.98, top=0.98, hspace=.35)
+    
 
     if comp:
       index = 1
@@ -417,7 +418,7 @@ class info:
 	  print '{0} was not found in the second folder'.format(self.ref_names[i])
 
       # minimum credible interval
-      bounds = self.minimum_credible_intervals(hist,bincenters,lvls)
+      bounds = self.minimum_credible_intervals(hist,bincenters)
       if bounds is False:
 	print hist
       else:
@@ -427,7 +428,7 @@ class info:
 	self.bounds[i] = bounds
 
       if comp_done:
-	comp_bounds = self.minimum_credible_intervals(comp_hist,comp_bincenters,lvls)
+	comp_bounds = self.minimum_credible_intervals(comp_hist,comp_bincenters)
 	if comp_bounds is False:
 	  print comp_hist
 	else:
@@ -438,16 +439,17 @@ class info:
       # plotting
       if plot_2d:
 	ax2d.set_xticks(ticks[i])
-	ax2d.set_xticklabels(['%.4g' % s for s in ticks[i]])
-	ax2d.set_title('%s= $%.4g^{+%.4g}_{%.4g}$' % (self.tex_names[i],self.mean[i],bounds[0][1],bounds[0][0]))
+	fontsize2d,ticksize2d = self.get_fontsize( len(self.tex_names) )
+	ax2d.set_xticklabels(['%.4g' % s for s in ticks[i]],fontsize=ticksize2d)
+	ax2d.set_title('%s= $%.4g^{+%.4g}_{%.4g}$' % (self.tex_names[i],self.mean[i],bounds[0][1],bounds[0][0]),fontsize=fontsize2d)
 	ax2d.plot(bincenters,hist,color='red',linewidth=2,ls='-')
-	ax2d.axis([x_range[i][0], x_range[i][1],0,np.max(hist)])
+	ax2d.axis([x_range[i][0], x_range[i][1],0,1.05])
 
-      #ax1d.set_title('%s= %.4g' % (self.tex_names[i],mean[i]))
-      ax1d.set_title('%s= $%.4g^{+%.4g}_{%.4g}$' % (self.tex_names[i],self.mean[i],bounds[0][1],bounds[0][0]))
+      fontsize1d,ticksize1d = self.get_fontsize( max(num_columns,num_lines))
+      ax1d.set_title('%s= $%.4g^{+%.4g}_{%.4g}$' % (self.tex_names[i],self.mean[i],bounds[0][1],bounds[0][0]),fontsize=fontsize1d)
       ax1d.set_xticks(ticks[i])
-      ax1d.set_xticklabels(['%.4g' % s for s in ticks[i]])
-      ax1d.axis([x_range[i][0], x_range[i][1],0,max(interp_hist)])
+      ax1d.set_xticklabels(['%.4g' % s for s in ticks[i]],fontsize=ticksize1d)
+      ax1d.axis([x_range[i][0], x_range[i][1],0,1.05])
       
       if comp_done:
 	# complex variation of intervals
@@ -459,8 +461,8 @@ class info:
 	  comp_x_range[ii][1] = x_range[i][1]
 	comp_ticks[ii][1] = (comp_x_range[ii][1]+comp_x_range[ii][0])/2.
 	ax1d.set_xticks(comp_ticks[ii])
-	ax1d.set_xticklabels(['%.4g' % s for s in comp_ticks[ii]])
-	ax1d.axis([comp_x_range[ii][0], comp_x_range[ii][1],0,max(interp_comp_hist)])
+	ax1d.set_xticklabels(['%.4g' % s for s in comp_ticks[ii]],fontsize=ticksize1d)
+	ax1d.axis([comp_x_range[ii][0], comp_x_range[ii][1],0,1.05])
 
 
       ax1d.plot(interp_grid,interp_hist,color='black',linewidth=2,ls='-')
@@ -487,21 +489,24 @@ class info:
 	for j in range(i):
 	  ax2dsub=fig2d.add_subplot(len(self.ref_names),len(self.ref_names),(i)*len(self.ref_names)+j+1)
 	  n,xedges,yedges=np.histogram2d(chain[:,i+2],chain[:,j+2],weights=chain[:,0],bins=(bin_number,bin_number),normed=False)
-	  extent = [yedges[0], yedges[-1], xedges[0], xedges[-1]]
+	  #extent = [yedges[0], yedges[-1], xedges[0], xedges[-1]]
+	  #extent = [x_range[i][1], x_range[i][0], x_range[j][1], x_range[j][0]]
+	  extent = [x_range[j][0], x_range[j][1], x_range[i][0], x_range[i][1]]
 	  x_centers = 0.5*(xedges[1:]+xedges[:-1])
 	  y_centers = 0.5*(yedges[1:]+yedges[:-1])
 
 	  ax2dsub.set_xticks(ticks[j])
 	  if i == len(self.ref_names)-1:
-	    ax2dsub.set_xticklabels(['%.4g' % s for s in ticks[j]])
+	    ax2dsub.set_xticklabels(['%.4g' % s for s in ticks[j]],fontsize=ticksize2d)
 	  else:
 	    ax2dsub.set_xticklabels([''])
 
 	  ax2dsub.set_yticks(ticks[i])
 	  if j == 0:
-	    ax2dsub.set_yticklabels(['%.4g' % s for s in ticks[i]])
+	    ax2dsub.set_yticklabels(['%.4g' % s for s in ticks[i]],fontsize=ticksize2d)
 	  else:
 	    ax2dsub.set_yticklabels([''])
+	  #ax2dsub.axis([x_range[i][0],x_range[i][1],x_range[j][0],x_range[j][1]])
 	  ax2dsub.imshow(n.T, extent=extent, aspect='auto',interpolation='gaussian',origin='lower',cmap=matplotlib.cm.Reds)
 
 	  # plotting contours
@@ -519,7 +524,7 @@ class info:
 	comp_bincenters = 0.5*(comp_bin_edges[1:]+comp_bin_edges[:-1])
 	interp_comp_hist,interp_comp_grid = self.cubic_interpolation(comp_hist,comp_bincenters)
 
-	comp_bounds = self.minimum_credible_intervals(comp_hist,comp_bincenters,lvls)
+	comp_bounds = self.minimum_credible_intervals(comp_hist,comp_bincenters)
 	if comp_bounds is False:
 	  print comp_hist
 	else:
@@ -527,9 +532,9 @@ class info:
 	    for j in (0,1):
 	      elem[j] -= comp_mean[ii]
 	ax1d.set_xticks(comp_ticks[ii])
-	ax1d.set_xticklabels(['%.4g' % s for s in comp_ticks[ii]])
-	ax1d.axis([comp_x_range[ii][0], comp_x_range[ii][1],0,max(interp_comp_hist)])
-	ax1d.set_title('%s= $%.4g^{+%.4g}_{%.4g}$' % (comp_tex_names[i-len(self.ref_names)],comp_mean[ii],comp_bounds[0][1],comp_bounds[0][0]))
+	ax1d.set_xticklabels(['%.4g' % s for s in comp_ticks[ii]],fontsize=ticksize1d)
+	ax1d.axis([comp_x_range[ii][0], comp_x_range[ii][1],0,1.05])
+	ax1d.set_title('%s= $%.4g^{+%.4g}_{%.4g}$' % (comp_tex_names[i-len(self.ref_names)],comp_mean[ii],comp_bounds[0][1],comp_bounds[0][0]),fontsize=fontsize1d)
 	ax1d.plot(interp_comp_grid,interp_comp_hist,color='red',linewidth=2,ls='-')
 	
     # If plots/ folder in output folder does not exist, create it
@@ -560,7 +565,8 @@ class info:
       return clist[1:]
     return clist
 
-  def minimum_credible_intervals(self,histogram,bincenters,levels):
+  def minimum_credible_intervals(self,histogram,bincenters):
+    levels = [0.68,0.95,0.99]
     bounds = np.zeros((len(levels),2))
     j = 0
     delta = bincenters[1]-bincenters[0]
@@ -618,8 +624,18 @@ class info:
     return bounds
 
   def cubic_interpolation(self,hist,bincenters):
-    interp_grid = np.linspace(bincenters[0],bincenters[-1],len(bincenters)*10)
-    f = interp1d(bincenters,hist,kind='cubic')
-    interp_hist = f(interp_grid)
-    return interp_hist,interp_grid
+    try:
+      from scipy.interpolate import interp1d
+      interp_grid = np.linspace(bincenters[0],bincenters[-1],len(bincenters)*10)
+      f = interp1d(bincenters,hist,kind='cubic')
+      interp_hist = f(interp_grid)
+      return interp_hist,interp_grid
+    except ImportError:
+      print 'No interpolation done (no scipy.interpolate module)'
+      return hist,bincenters
 
+  def get_fontsize(self,diag_length):
+    # for a diagonal of 5, fontsize of 19, for a diagonal of 13, fontsize of 8
+    fontsize = round( 19 - (diag_length-5)*1.38)
+    ticksize = round( 14 - (diag_length-5)*1)
+    return fontsize,ticksize
