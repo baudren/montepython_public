@@ -100,9 +100,8 @@ class info:
       Files = [folder+elem for elem in os.listdir(folder) if elem.find('.')==-1]
       for elem in np.copy(Files):
 	if os.path.isdir('{0}'.format(elem)) is True:
-	  print elem
 	  Files.remove(elem)
-	if (elem in Files and os.path.getsize(elem) < 600):
+	elif os.path.getsize(elem) < 600:
 	  Files.remove(elem)
 
     # Recover the folder, depending on the case
@@ -116,7 +115,9 @@ class info:
 	for elem in np.copy(Files):
 	  if os.path.isdir('{0}'.format(elem)) is True:
 	    Files.remove(elem)
-	  if (elem in Files and os.path.getsize(elem) < 600):
+	  elif os.path.getsize(elem) < 600:
+	    Files.remove(elem)
+	  elif elem.find('.')!=-1:
 	    Files.remove(elem)
 
     # Check if the log.param file exists
