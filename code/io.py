@@ -54,9 +54,6 @@ def create_output_files(command_line,data):
   else:
     number = int(command_line.restart.split('/')[-1].split('__')[0].split('_')[1]) + command_line.N
 
-  logname='log.dat'
-  data.log=open(command_line.folder+logname,'a')
-  print '  Appending to {0}{1}.'.format(command_line.folder,logname)
   # output file
   outname_base='{0}_{1}__'.format(date.today(),number)
   suffix=0
@@ -73,69 +70,8 @@ def create_output_files(command_line,data):
     for line in open(command_line.restart,'r'):
       data.out.write(line)
 
-def clean(folder):
-  if os.path.isdir(folder) is False:
-    print 'You must provide a valid directory to clean'
-    exit()
-  print 'Cleaning the following output directory: '+folder
-  action=0
-  log=open(folder+'/log.dat') # recover all successful chains
-  chains=[]
-  for line in log:
-    chains.append(line.split(':')[0].strip(' '))
-  # list all files in folder, that have no extensions,
-  for File in os.listdir(folder):
-    if '.' not in File:
-      if File not in chains:
-	os.remove(folder+'/'+File)
-	print ' removing: '+File
-	action+=1
-  for chain in chains:
-    if chain not in os.listdir(folder):
-      log = remove_from_log(log,folder+'/log.dat',chain)
-      print ' removing: '+chain
-      action+=1
-  if action==0:
-    print '{0} is already perfectly clean'.format(folder)
-  else:
-    print '{0} now perfectly clean'.format(folder)
 
-def remove_from_log(log,log_name,chain):
-  log.seek(0)
-  lines = log.readlines()
-  for elem in lines: 
-    if elem.split(':')[0].strip(' ') == chain:
-      index = lines.index(elem)
-  if len(lines[:index])>0:
-    new = lines[:index]
-    if len(lines[index+1:])>0:
-      new.append(lines[index+1:])
-  else:
-    new = lines[index+1:]
-  log.seek(0)
-  log.close()
-  os.remove(log_name)
-  log = open(log_name,'w')
-  for line in new:
-    log.write(line)
-  return log
-
-def write_log(data,rate,LogLike):
-  data.log.write('{0} :\t[ '.format(data.out.name.split('/')[-1]),)
-  param = data.param_names
-  for i in range(len(param)):
-    if param[i] in data.Class_params.iterkeys():
-      if len(data.Class_params[param[i]])==5:
-	    number = 1./(data.Class_params[param[i]][4])
-	    if number < 1000:
-	      data.log.write('%0.d%s ' % (number,param[i]))
-	    else:
-	      data.log.write('%0.e%s ' % (number,param[i]))
-      else:
-	data.log.write('{0} '.format(param[i]))
-  data.log.write(']\tacceptance rate: %.4f,\t Min (-LogLike): %.4f' % (rate,-LogLike)+'\n')
-  return 0
-
+# New class
 class File(file):
   def head(self, lines_2find=1):
     self.seek(0)                            #Rewind file

@@ -68,12 +68,21 @@ def get_cov(data,command_line):
 	temp_names.append(elem)
     for k in range(len(covnames)):
       for h in range(len(covnames)):
-	if covnames[k]==temp_names[h]:
-	  rot[k][h] = 1.
-	else:
-	  rot[k][h] = 0.
+	try:
+	  if covnames[k]==temp_names[h]:
+	    rot[h][k] = 1.
+	  else:
+	    rot[h][k] = 0.
+	except IndexError:
+	  rot[h][k] = 0.
+    print rot
+    print covnames,data.param_names
+    print '\nInput covariance matrix:'
+    print covnames
     print M
     M=np.dot(rot,np.dot(M,rot))
+
+    print '\nFirst treatment'
     print M
     
     M_temp    = np.ones((len(data.param_names),len(data.param_names)),'float64')
@@ -90,15 +99,20 @@ def get_cov(data,command_line):
     for h in range(len(covnames)):
       if covnames[h] in data.param_names:
 	indices_2[h]=1
+    print indices_2
     for zeros in np.where(indices_2 == 0)[0]:
       M[zeros,:] = 0
       M[:,zeros] = 0
     # super trick
+    print M
+    print M_temp
     M_temp[M_temp == 1]=M[M!=0]
     M = np.copy(M_temp)
     # on all other lines, just use sigma^2
     for zeros in np.where(indices_1 == 0)[0]:
       M[zeros,zeros] = np.array(data.params[data.param_names[zeros]][3],'float64')**2
+    print '\nDeduced starting covariance matrix:'
+    print data.param_names
     print M
 
 

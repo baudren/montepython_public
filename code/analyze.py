@@ -22,8 +22,8 @@ class info:
      chain = np.append(chain,self.spam[i+1],axis=0)
 
     if command_line.comp is not None:
-      comp_Files,comp_folder,comp_log = self.prepare(command_line.comp,is_main_chain = False)
-      comp_spam,comp_ref_names,comp_tex_names,comp_boundaries,comp_mean = self.convergence(is_main_chain = False,Files = comp_Files,log = comp_log)
+      comp_Files,comp_folder,comp_param = self.prepare(command_line.comp,is_main_chain = False)
+      comp_spam,comp_ref_names,comp_tex_names,comp_boundaries,comp_mean = self.convergence(is_main_chain = False,Files = comp_Files,param = comp_param)
       comp_mean = comp_mean[0]
       comp_chain = np.copy(comp_spam[0])
       for i in range(len(comp_spam)-1):
@@ -88,18 +88,21 @@ class info:
 
   def prepare(self,Files,is_main_chain=True):
 
-    # Scan the whole input folder, and include all chains in it (all files with a
-    # '.' in their name will be discarded as not mcmc chains (If you want to have
-    # additionnal files than the log.dat and .param in this folder, please keep
-    # this in  mind
+    # Scan the whole input folder, and include all chains in it (all files with
+    # a '.' in their name will be discarded as not mcmc chains (If you want to
+    # have additionnal files than the .param in this folder, please keep this
+    # in  mind
 
     if os.path.isdir(Files[0]): 
       if Files[0][-1]!='/':
 	Files[0]+='/'
       folder = Files[0]
       Files = [folder+elem for elem in os.listdir(folder) if elem.find('.')==-1]
-      for elem in Files:
+      for elem in np.copy(Files):
 	if os.path.isdir('{0}'.format(elem)) is True:
+	  print elem
+	  Files.remove(elem)
+	if (elem in Files and os.path.getsize(elem) < 600):
 	  Files.remove(elem)
 
     # Recover the folder, depending on the case
@@ -110,11 +113,16 @@ class info:
 	folder = ''
 	for i in range(len(Files[0].split('/')[:-1])):
 	  folder += Files[0].split('/')[i]+'/'
+	for elem in np.copy(Files):
+	  if os.path.isdir('{0}'.format(elem)) is True:
+	    Files.remove(elem)
+	  if (elem in Files and os.path.getsize(elem) < 600):
+	    Files.remove(elem)
 
-    # Check if the log.dat file exists
+    # Check if the log.param file exists
     if os.path.isfile(folder+'log.param') is True:
       if os.path.getsize(folder+'log.param')>0:
-	log = open(folder+'log.param','r')
+	param = open(folder+'log.param','r')
       else:
 	print '\n\n  The log param file {0} seems empty'.format(folder+'log.param')
 	exit()
@@ -127,22 +135,25 @@ class info:
     if (len(folder.split('/')) <= 2 and folder.split('/')[-1] == ''):
       infoname = folder+folder.rstrip('/')+'.info'
       covname  = folder+folder.rstrip('/')+'.covmat'
+      logname  = folder+folder.rstrip('/')+'.log'
     else:
       infoname = folder+folder.split('/')[-2]+'.info'
       covname  = folder+folder.split('/')[-2]+'.covmat'
+      logname  = folder+folder.split('/')[-2]+'.log'
 
     if is_main_chain:
       self.info  = open(infoname,'w')
       self.cov   = open(covname,'w')
-      self.log   = log
+      self.log   = open(logname,'w')
+      self.param = param
 
       self.Files = Files
       self.folder= folder
       return True
     else:
-      return Files,folder,log
+      return Files,folder,param
 
-  def convergence(self,is_main_chain=True,Files=None,log=None):
+  def convergence(self,is_main_chain=True,Files=None,param=None):
 
     # We here have a list of files, that may be of length 1. If this
     # happens, then we split the only file in 3 subchains, otherwise we compute
@@ -156,11 +167,11 @@ class info:
 
     if is_main_chain:
       Files = self.Files
-      log   = self.log
+      param   = self.param
 
     # Defining a list of names that should have a \ in their tex names
     tex_greek = ['omega','tau','alpha','beta','delta','nu','Omega']
-    for line in log:
+    for line in param:
       if line.find('#')==-1:
 	if (line.find('data.Class_params')!=-1 or line.find('data.nuisance_params')!=-1):
 	  name = line.split("'")[1]
@@ -191,13 +202,24 @@ class info:
 		tex_names.append("$%0.e%s$" % (number,name))
 		m = re.search(r'(?:\$[0-9]*e\+[0]*)([0-9]*)(.*)',tex_names[-1])
 		tex_names[-1] = '$10^{'+m.groups()[0]+'}'+m.groups()[1]
-    log.seek(0)
+    param.seek(0)
 
+    # log param names
+    if is_main_chain:
+      for elem in ref_names:
+	self.log.write("%s   " % elem)
+      self.log.write("\n")
     for File in Files:
       i=Files.index(File)
       print 'scanning file {0}'.format(File)
       cheese = (np.array([[float(elem) for elem in line.split()] for line in open(File,'r')]))
       max_lkl = min(cheese[:,1]) # beware, it is the min because we are talking about '- log likelihood'
+
+      line_count = 0
+      for line in open(File,'r'):
+	line_count+=1
+      self.log.write("%s\t Number of steps:%d\tSteps accepted:%d\tacc = %.2g\tmin(-loglike) = %.5g " % (File,sum(cheese[:,0]),line_count,line_count*1.0/sum(cheese[:,0]),max_lkl))
+      self.log.write("\n")
 
       start = 0
       while cheese[start,1]>max_lkl+2:
@@ -639,3 +661,21 @@ class info:
     fontsize = round( 19 - (diag_length-5)*1.38)
     ticksize = round( 14 - (diag_length-5)*1)
     return fontsize,ticksize
+
+
+  # TO MODIFY
+  #def write_log(data,rate,LogLike):
+    #data.log.write('{0} :\t[ '.format(data.out.name.split('/')[-1]),)
+    #param = data.param_names
+    #for i in range(len(param)):
+      #if param[i] in data.Class_params.iterkeys():
+	#if len(data.Class_params[param[i]])==5:
+	      #number = 1./(data.Class_params[param[i]][4])
+	      #if number < 1000:
+		#data.log.write('%0.d%s ' % (number,param[i]))
+	      #else:
+		#data.log.write('%0.e%s ' % (number,param[i]))
+	#else:
+	  #data.log.write('{0} '.format(param[i]))
+    #data.log.write(']\tacceptance rate: %.4f,\t Min (-LogLike): %.4f' % (rate,-LogLike)+'\n')
+    #return 0

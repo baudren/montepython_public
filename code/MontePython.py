@@ -41,12 +41,6 @@ def main():
   # Parsing line argument
   command_line=parser.parse()
 
-  # read the cleaning command: it will get rid of every file in the desired
-  # folder that is not a completed MCM chain.
-  if command_line.clean is not None:
-    io.clean(command_line.clean)
-    exit()
-
   # If info flag was used, read a potential chain (or set of chains) to be
   # analysed with default procedure. If the argument is a .info file, then it
   # will extract information from it (plots to compute, chains to analyse,
@@ -57,8 +51,7 @@ def main():
     exit()
 
   # If the restart flag was used, load the cosmology directly from the
-  # log.param file, and append to the existing chain. The log.dat file will be
-  # updated at the end of the run as well.
+  # log.param file, and append to the existing chain. 
   if command_line.restart is not None:
     if command_line.restart[0] == '/':
       folder = ''
@@ -77,10 +70,9 @@ def main():
   else:
     Data=data.data(command_line,path)
     if command_line.par.find('log.param')==-1:
-      if os.path.exists(command_line.folder+'log.dat'):
-	Data_old=data.data(command_line,path,False)
-	if Data!=Data_old:
-	  print '\n /|\  You are starting a chain in {0} with different parameters\n/_o_\ than used previously.\n      Exiting'.format(command_line.folder)
+      Data_old=data.data(command_line,path,False)
+      if Data!=Data_old:
+        print '\n /|\  You are starting a chain in {0} with different parameters\n/_o_\ than used previously.\n      Exiting'.format(command_line.folder)
 
   # Overwrite arguments from parameter file with the command line
   if command_line.N is None:
@@ -99,12 +91,10 @@ def main():
   # Main chain
   rate,min_LogLike=mcmc.chain(_cosmo,Data,command_line)
   
-  # Closing up and loggin the result of the chain stuff
+  # Closing up the chain
   Data.out.close()
-  io.write_log(Data,rate,min_LogLike)
-  Data.log.close()
+
 
 #-----------------MAIN-CALL---------------------------------------------
-
 if __name__ == '__main__':
   main()
