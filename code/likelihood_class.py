@@ -3,6 +3,8 @@ from collections import OrderedDict as od
 import numpy as np
 import math
 
+import data
+
 # Definition of classes for the likelihoods to inherit, for every different
 # types of expected likelihoods. Included so far, models for a Clik, simple
 # prior, and newdat likelihoods.
@@ -16,17 +18,16 @@ class likelihood():
 
     self.name = self.__class__.__name__
     self.folder = os.path.abspath(data.path['MontePython'])+'/../likelihoods/'+self.name+'/'
-    self._read_from_file(path,data)
+    self.read_from_file(path,data)
 
     if log_flag: 
-      self._store_lkl_params(command_line)
+      self.store_lkl_params(command_line)
 
-    
 
-  def _loglkl(self,_cosmo,data):
-    raise NotImplementedError('Must implement method _loglkl() in your likelihood')
+  def loglkl(self,_cosmo,data):
+    raise NotImplementedError('Must implement method loglkl() in your likelihood')
 
-  def _store_lkl_params(self,command_line):
+  def store_lkl_params(self,command_line):
     log = open(command_line.folder+'log.param','a')
     tolog = open(self.path,'r')
     log.write("\n\n#-----Likelihood-{0}-----\n".format(self.name))
@@ -36,7 +37,7 @@ class likelihood():
     tolog.close()
     log.close()
 
-  def _read_from_file(self,path,data):
+  def read_from_file(self,path,data):
     self.path = path
     if os.path.isfile(path):
       data_file = open(path,'r')
@@ -47,7 +48,7 @@ class likelihood():
       data_file.seek(0)
       data_file.close()
 
-  def _get_cl(self,_cosmo):
+  def get_cl(self,_cosmo):
 
     # get C_l^XX from CLASS
     cl = _cosmo.lensed_cl()
@@ -59,12 +60,12 @@ class likelihood():
 
     return cl
 
-  def _need_Class_args(self,data,dictionary):
+  def need_Class_arguments(self,data,dictionary):
     for key,value in dictionary.iteritems():
       try :
-	data.Class_args[key]
+	data.Class_arguments[key]
 	try:
-	  float(data.Class_args[key])
+	  float(data.Class_arguments[key])
 	  num_flag = True
 	except:
 	  num_flag = False
@@ -72,27 +73,24 @@ class likelihood():
 	try:
 	  float(value)
 	  num_flag = True
-	  data.Class_args[key] = 0
+	  data.Class_arguments[key] = 0
 	except:
 	  num_flag = False
-	  data.Class_args[key] = ''
+	  data.Class_arguments[key] = ''
       if num_flag is False:
-	if data.Class_args[key].find(value)==-1:
-	  data.Class_args[key] += ' '+value+' '
+	if data.Class_arguments[key].find(value)==-1:
+	  data.Class_arguments[key] += ' '+value+' '
       else:
-	if float(data.Class_args[key])<value:
-	  data.Class_args[key] = value
+	if float(data.Class_arguments[key])<value:
+	  data.Class_arguments[key] = value
 
 
-  def _read_contamination_spectra(self,data):
+  def read_contamination_spectra(self,data):
     failure = False
     for nuisance in self.use_nuisance:
-      if nuisance not in data.nuisance_params.iterkeys():
-        try:
-          exec "data.%s" % nuisance
-        except:
-          print nuisance+' must be defined, either fixed or varying, for {0} likelihood'.format(self.name)
-	  failure=True
+      if nuisance not in data.get_mcmc_parameters(['nuisance']):
+	print nuisance+' must be defined, either fixed or varying, for {0} likelihood'.format(self.name)
+	failure=True
     if failure:
       exit()
 
@@ -116,6 +114,7 @@ class likelihood():
       except:
         pass
 
+      # BA : wth?
       # read central value of nuisance parameter
       # if it is not there, assume one by default
       try:
@@ -130,15 +129,11 @@ class likelihood():
       except:
         exec "self.%s_prior_variance=0." % nuisance
 
-  def _add_contamination_spectra(self,cl,data):
+  def add_contamination_spectra(self,cl,data):
 
-    # first, test whether the nuisance param is fixed or varying.
+    # Recover the current value of the nuisance parameter. 
     for nuisance in self.use_nuisance:
-      # PROBLEM
-      if nuisance in data.nuisance_param_names:
-        nuisance_value = float(data.vector[np.where(data.param_names == nuisance)[0][0]])
-      else:
-        exec "nuisance_value = data.%s" % nuisance
+      nuisance_value = float(data.mcmc_parameters[nuisance]['current'])
 
       # add contamination spectra multiplied by nuisance parameters
       for l in range(2,self.l_max):
@@ -146,30 +141,22 @@ class likelihood():
 
     return cl
 
-  def _add_nuisance_prior(self,loglkl,data):
+  def add_nuisance_prior(self,lkl,data):
 
-    # first, test whether the nuisance param is fixed or varying.
+    # Recover the current value of the nuisance parameter. 
     for nuisance in self.use_nuisance:
-      if nuisance in data.nuisance_param_names:
-        #nuisance_value = float(data.vector[np.where(data.param_names == nuisance)[0][0]])
-	for i in range(len(data.nuisance)):
-          if (data.nuisance_param_names[i] == nuisance):
-            nuisance_value = float(data.nuisance[i])
-      else:
-        exec "nuisance_value = data.%s" % nuisance
+      nuisance_value = float(data.mcmc_parameters[nuisance]['current'])
 
       # add prior on nuisance parameters
-      exec "if (self.%s_prior_variance>0): loglkl += -0.5*((nuisance_value-self.%s_prior_center)/self.%s_prior_variance)**2" % (nuisance,nuisance,nuisance)
+      exec "if (self.%s_prior_variance>0): lkl += -0.5*((nuisance_value-self.%s_prior_center)/self.%s_prior_variance)**2" % (nuisance,nuisance,nuisance)
 
-    return loglkl
+    return lkl
 
 # Likelihood type for prior
 class likelihood_prior(likelihood):
 
-  def _loglkl(self):
-    raise NotImplementedError('Must implement method __loglkl() in your likelihood')
-
-
+  def loglkl(self):
+    raise NotImplementedError('Must implement method loglkl() in your likelihood')
 
 
 # Generic type for newdat likelihood (spt, boomerang, etc)
@@ -179,7 +166,7 @@ class likelihood_newdat(likelihood):
 
     likelihood.__init__(self,path,data,command_line,log_flag)
 
-    self._need_Class_args(data,{'lensing':'yes', 'output':'tCl lCl pCl'})
+    self.need_Class_arguments(data,{'lensing':'yes', 'output':'tCl lCl pCl'})
       
     # open .newdat file
     newdatfile=open(self.data_directory+self.file,'r')
@@ -384,36 +371,36 @@ class likelihood_newdat(likelihood):
     self.l_max=max(self.win_max)  
 
     # impose that CLASS computes Cl's up to maximum l needed by window function
-    self._need_Class_args(data,{'l_max_scalars':self.l_max})
+    self.need_Class_arguments(data,{'l_max_scalars':self.l_max})
 
     # deal with nuisance parameters
     try:
       self.use_nuisance
     except:
       self.use_nuisance = []
-    self._read_contamination_spectra(data)
+    self.read_contamination_spectra(data)
 
     # end of initialisation
 
-  def _loglkl(self,_cosmo,data):
+  def loglkl(self,_cosmo,data):
 
     # get Cl's from CLASS
-    cl = self._get_cl(_cosmo)
+    cl = self.get_cl(_cosmo)
 
     # add contamination spectra multiplied by nuisance parameters
-    cl = self._add_contamination_spectra(cl,data)
+    cl = self.add_contamination_spectra(cl,data)
 
     # get likelihood
-    loglkl = self._compute_loglkl(cl,_cosmo,data)
+    lkl = self.compute_lkl(cl,_cosmo,data)
 
     # add prior on nuisance parameters
-    loglkl = self._add_nuisance_prior(loglkl,data)
+    lkl = self.add_nuisance_prior(lkl,data)
 
-    return loglkl
+    return lkl
 
 
 
-  def _compute_loglkl(self,cl,_cosmo,data):
+  def compute_lkl(self,cl,_cosmo,data):
 
     # checks that Cl's have been computed up to high enough l given window function range. Normally this has been imposed before, so this test could even be supressed.
     if (np.shape(cl['tt'])[0]-1 < self.l_max):
@@ -545,8 +532,8 @@ class likelihood_newdat(likelihood):
 
    # finally, return ln(L)=-chi2/2
 
-    self.loglkl = - 0.5 * chisq 
-    return self.loglkl
+    self.lkl = - 0.5 * chisq 
+    return self.lkl
 
 
 
@@ -564,25 +551,25 @@ class likelihood_clik(likelihood):
       print "      and try again."
       exit()
     likelihood.__init__(self,path,data,command_line,log_flag)
-    self._need_Class_args(data,{'lensing':'yes', 'output':'tCl lCl pCl'})
+    self.need_Class_arguments(data,{'lensing':'yes', 'output':'tCl lCl pCl'})
     self.clik = clik.clik(self.path_clik)
     self.l_max = max(self.clik.get_lmax())
-    self._need_Class_args(data,{'l_max_scalars':self.l_max})
+    self.need_Class_arguments(data,{'l_max_scalars':self.l_max})
 
     # deal with nuisance parameters
     try:
       self.use_nuisance
     except:
       self.use_nuisance = []
-    self._read_contamination_spectra(data)
+    self.read_contamination_spectra(data)
 
-  def _loglkl(self,_cosmo,data):
+  def loglkl(self,_cosmo,data):
 
     # get Cl's from CLASS
-    cl = self._get_cl(_cosmo)
+    cl = self.get_cl(_cosmo)
  
     # add contamination spectra multiplied by nuisance parameters
-    cl = self._add_contamination_spectra(cl,data)
+    cl = self.add_contamination_spectra(cl,data)
 
     # allocate array of Cl's and nuisance parameters
     tot=np.zeros(np.sum(self.clik.get_lmax())+6+len(self.clik.get_extra_parameter_names()))
@@ -625,9 +612,9 @@ class likelihood_clik(likelihood):
       index += 1
 
     # compute likelihood
-    loglkl=self.clik(tot)[0]
+    lkl=self.clik(tot)[0]
 
     # add prior on nuisance parameters
-    loglkl = self._add_nuisance_prior(loglkl,data)
+    lkl = self.add_nuisance_prior(lkl,data)
 
-    return loglkl
+    return lkl

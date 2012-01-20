@@ -10,42 +10,38 @@ import io
 class data:
 
   def __init__(self,command_line,path,default=True):
-    # First of all, distinguish between the two cases, genuine initialization
-    # or comparison with existing data
+
+    # Initialisation of the random seed
+    rd.seed()
+
+    # Distinguish between the two cases, genuine initialization or comparison
+    # with existing data
     if default:
       self.param = command_line.par
     else:
       self.param = command_line.folder+'/log.param'
 
+    # Recover jumping method from command_line
     self.jumping = command_line.jumping
     self.path = path
 
-    # Initialisation of all the data needed to run the Boltzmann code
-    # First apply default parameters,
-    # Then try and modify according to command_line.param custom parameter file
-    # Finally overwrites with special command_line arguments.
-    rd.seed()
-    self.Class_params=od()
-    self.Class_param_names=[]
-    self.Class=[]    # Create the Class param vector
+    # Creation of the two main dictionnaries:
 
-    self.nuisance_params=od()
-    self.nuisance_param_names=[]
-    self.nuisance=[] # Create the nuisance vector
+    # -- Class_arguments, that will contain everything for the cosmological code
+    # Class, and will be updated from:
 
-    self.params=od()
-    self.param_names=[]
+    # -- mcmc_parameters, an ordered dictionary of dictionaries that will contain
+    # everything needed by the Monte-Carlo procedure. Every parameter name will
+    # be the key of a dictionary, containing: -initial configuration, role,
+    # status last_accepted point, and current point
 
-    self.vector=[]   # Will contain the merging of the two above
+    self.Class_arguments = {}
+    self.mcmc_parameters = od()
 
-    self.Class_args={} # Contains the arguments of the Class instance
+    # Read from the parameter file to fill properly the mcmc_parameters dictionary.
+    self.fill_mcmc_parameters()
 
-    try:
-      param_file = open(self.param,'r')
-    except IOError:
-      print "\n /|\  Error in initializing the data class,\n/_o_\ parameter file {0} does not point to a file".format(self.param)
-      exit()
-    self._read_file(param_file)
+    self.update_Class_arguments()
 
     # Recover Class version and subversion
     if default:
@@ -56,13 +52,13 @@ class data:
 	if line.find('_VERSION_')!=-1:
 	  self.version = line.split()[-1].replace('"','')
 	  break
-    else:
-      self._read_version(param_file)
-    param_file.close()
+    else: # read in the parameter file
+      self.read_version(self.param_file)
 
-    self._parameters()
+    # End of initialisation with the parameter file
+    self.param_file.close()
+
     log_flag = False
-
     if default:
       sys.stdout.write('testing likelihoods for:\n')
       for i in range(len(self.exp)):
@@ -96,100 +92,95 @@ class data:
 	else:
 	  exec "self.lkl['%s'] = %s.%s(self.param,self)"% (elem,elem,elem)
     
-
-      
       if log_flag:
-	io.log_Class_args(self,command_line)
-  
-    for i in range(len(self.Class)): # Initialize the arguments
-      mcmc.jump(self,self.Class_param_names[i],self.Class[i])
+	io.log_Class_arguments(self,command_line)
 
   def __cmp__(self,other):
     self.uo_params  = {}
-    # comparing Class versions
+    other.uo_params = {}
+
+    # Comparing Class versions
     if self.version != other.version:
       print '/!\ Warning, you are running with a different version of Class'
-    if len(list(set(other.exp).symmetric_difference(set(self.exp))))==0: # if all the experiments are tested again
-      for key,elem in self.params.iteritems():
-	self.uo_params[key]=elem
-      other.uo_params = {}
-      for key,elem in other.params.iteritems():
-	other.uo_params[key]=elem
-      return cmp(self.uo_params,other.uo_params) # and if all the unordered parameters have the same value
+
+    # Check if all the experiments are tested again,
+    if len(list(set(other.exp).symmetric_difference(set(self.exp))))==0: 
+      # and if all the unordered parameters,fixed or varying, have the same value
+      for key,elem in self.mcmc_parameters.iteritems():
+	self.uo_params[key]=elem['initial']
+      for key,elem in other.mcmc_parameters.iteritems():
+	other.uo_params[key]=elem['initial']
+      return cmp(self.uo_params,other.uo_params) 
     else:
       return -1
     
-  def _read_file(self,_file):
+  def read_file(self,_file):
     for line in _file:
       if line.find('#')==-1:
 	if line.split('=')[0].find('data.')!=-1:
 	  exec(line.replace('data.','self.'))
     _file.seek(0)
 
-  def _read_version(self,_file):
+  def read_version(self,_file):
     # Read the first line (Class version)
     first_line = _file.readline()
     self.version = first_line.split()[1]
     self.subversion = first_line.split()[-1].replace(')','').replace('-','')
     _file.seek(0)
 
-  def _parameters(self):
-    failure=False
-    for key,value in self.Class_params.iteritems():
-      if value[3] == 0:
-	self.Class_args[key] = self.Class_params.pop(key)[0]
-
-      else:
-	self.Class_param_names.append(key)
-	temp=rd.gauss(value[0],value[3])
-	while (value[1]!=-1 and temp<value[1] and failure==False):
-	  if value[1]>value[0]:
-	    print('  Warning: you might have inconsistently set the min boundary for {0} parameter'.format(key))
-	    failure=True
-	  temp=rd.gauss(value[0],value[3])
-	failure=False
-	while (value[2]!=-1 and temp>value[2] and failure==False):
-	  if value[2]<value[0]:
-	    print '  Warning: you might have inconsistently set the max boundary for {0} parameter'.format(key)
-	    failure=True
-	  temp=rd.gauss(value[0],value[3])
-	self.Class.append(temp)
-    
-    for key,value in self.nuisance_params.iteritems():
-      if len(value) == 5:
-	for i in range(4):
-	  if (value[i]!=-1 and value[i]!=0):
-	    value[i]*=value[4]
-      if value[3] == 0:
-	exec  "self.%s = %f" % (key,self.nuisance_params.pop(key)[0])
-      else:
-	self.nuisance_param_names.append(key)
-	temp=rd.gauss(value[0],value[3])
-	while (value[1]!=-1 and temp<value[1] and failure==False):
-	  if value[1]>value[0]:
-	    print '  Warning: you might have inconsistently set the min boundary for {0} parameter'.format(key)
-	    failure=True
-	  temp=rd.gauss(value[0],value[3])
-	failure=False
-	while (value[2]!=-1 and temp>value[2] and failure==False):
-	  if value[2]<value[0]:
-	    print '  Warning: you might have inconsistently set the max boundary for {0} parameter'.format(key)
-	    failure=True
-	  temp=rd.gauss(value[0],value[3])
-	self.nuisance.append(temp)
-      
-
-
-    self.params.update(self.Class_params)
-    self.params.update(self.nuisance_params)
-    self.param_names = np.append(self.Class_param_names,self.nuisance_param_names)
-    self._update_vector()
-
-  def _update_vector(self):
+  def update_vector(self):
     self.vector = np.append(self.Class,self.nuisance)
 
-  def _transmit_vector(self,vector):
-    for i in range(len(self.Class)):
-      self.Class[i]    = vector[i]
-    for i in range(len(self.Class),len(self.Class)+len(self.nuisance)):
-      self.nuisance[i-len(self.Class)] = vector[i]
+  def fill_mcmc_parameters(self):
+
+    # Define temporary quantities, only to simplify the input in the parameter
+    # file
+    self.Class_params=od()
+    self.nuisance_params=od()
+
+    # Read from the parameter file everything
+    try:
+      self.param_file = open(self.param,'r')
+    except IOError:
+      print "\n /|\  Error in initializing the data class,\n/_o_\ parameter file {0} does not point to a file".format(self.param)
+      exit()
+    self.read_file(self.param_file)
+
+    self.from_input_to_mcmc_parameters(self.Class_params,   'Class')
+    self.from_input_to_mcmc_parameters(self.nuisance_params,'nuisance')
+
+
+  def from_input_to_mcmc_parameters(self,dictionary,role):
+    for key,value in dictionary.iteritems():
+      self.mcmc_parameters[key] = od()
+      self.mcmc_parameters[key]['initial'] = value
+      self.mcmc_parameters[key]['role']    = role
+      self.mcmc_parameters[key]['name']    = key
+      self.mcmc_parameters[key]['tex_name']= io.get_tex_name(key)
+      if value[3] == 0:
+	self.mcmc_parameters[key]['status']    = 'fixed'
+	self.mcmc_parameters[key]['current']   = value[0]
+      else:
+	self.mcmc_parameters[key]['status']    = 'varying'
+
+  def get_mcmc_parameters(self,table_of_strings):
+    table = []
+    for key,value in self.mcmc_parameters.iteritems():
+      number = 0
+      for subkey,subvalue in value.iteritems():
+	for string in table_of_strings:
+	  if subvalue == string:
+	    number += 1
+      if number == len(table_of_strings):
+	table.append(key)
+    return table
+
+  def update_Class_arguments(self):
+    for elem in self.get_mcmc_parameters(['Class']):
+      try:
+	if len(self.mcmc_parameters[elem]['initial'])==4:
+	  self.Class_arguments[elem]   = self.mcmc_parameters[elem]['current']
+	else:
+	  self.Class_arguments[elem]   = self.mcmc_parameters[elem]['current']*1.0/self.mcmc_parameters[elem]['initial'][4]
+      except:
+	pass

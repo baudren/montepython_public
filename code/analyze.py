@@ -12,6 +12,12 @@ class info:
 
   def __init__(self,command_line):
   
+    try:
+      from scipy.interpolate import interp1d
+      self.has_interpolate_module = True
+    except ImportError:
+      self.has_interpolate_module = False
+      print 'No cubic interpolation done (no scipy.interpolate module), only linear'
     Files     = command_line.files
     binnumber = command_line.bins
     self.prepare(Files)
@@ -53,7 +59,7 @@ class info:
 
     a=chain[:,1].argsort(0)
     total=chain[:,0].sum()
-    self.lvls = [total*0.68,total*0.95,total*0.99]
+    self.lvls = [total*0.6826,total*0.954,total*0.997]
 
     self.bounds = np.zeros((len(self.ref_names),len(self.lvls),2))
     if command_line.comp is None:
@@ -171,7 +177,6 @@ class info:
       param   = self.param
 
     # Defining a list of names that should have a \ in their tex names
-    tex_greek = ['omega','tau','alpha','beta','delta','nu','Omega']
     for line in param:
       if line.find('#')==-1:
 	if (line.find('data.Class_params')!=-1 or line.find('data.nuisance_params')!=-1):
@@ -181,28 +186,14 @@ class info:
 	      temp = [float(elem) for elem in line.split(",")[1:3]]
 	      boundaries.append(temp)
 	      ref_names.append(name)
-	      for elem in tex_greek:
-		if elem in name:
-		  name="""\\"""+name
-	      if name.find('_')!=-1:
-		temp_name = name.split('_')[0]+'_{'
-		for i in range(1,len(name.split('_'))):
-		  temp_name += name.split('_')[i]
-		temp_name += '}'
-		name = temp_name
-	      tex_names.append('${0}$'.format(name))
+	      tex_names.append(io.get_tex_name(name))
 	  elif len(line.split('=')[-1].split(',')) == 5:
 	    if line.split('=')[-1].split(',')[-2].replace(' ','') != 0:
 	      temp = [float(elem) for elem in line.split(",")[1:3]]
 	      boundaries.append(temp)
 	      ref_names.append(name)
 	      number = 1./float(line.split('=')[-1].split(',')[-1].replace(']\n','').replace(' ',''))
-	      if number < 1000:
-		tex_names.append("$%0.d~%s$" % (number,name))
-	      else:
-		tex_names.append("$%0.e%s$" % (number,name))
-		m = re.search(r'(?:\$[0-9]*e\+[0]*)([0-9]*)(.*)',tex_names[-1])
-		tex_names[-1] = '$10^{'+m.groups()[0]+'}'+m.groups()[1]
+	      tex_names.append(io.get_tex_name(name,number=number))
     param.seek(0)
 
     # log param names
@@ -647,14 +638,12 @@ class info:
     return bounds
 
   def cubic_interpolation(self,hist,bincenters):
-    try:
-      from scipy.interpolate import interp1d
+    if self.has_interpolate_module:
       interp_grid = np.linspace(bincenters[0],bincenters[-1],len(bincenters)*10)
       f = interp1d(bincenters,hist,kind='cubic')
       interp_hist = f(interp_grid)
       return interp_hist,interp_grid
-    except ImportError:
-      print 'No interpolation done (no scipy.interpolate module)'
+    else:
       return hist,bincenters
 
   def get_fontsize(self,diag_length):
@@ -662,21 +651,3 @@ class info:
     fontsize = round( 19 - (diag_length-5)*1.38)
     ticksize = round( 14 - (diag_length-5)*1)
     return fontsize,ticksize
-
-
-  # TO MODIFY
-  #def write_log(data,rate,LogLike):
-    #data.log.write('{0} :\t[ '.format(data.out.name.split('/')[-1]),)
-    #param = data.param_names
-    #for i in range(len(param)):
-      #if param[i] in data.Class_params.iterkeys():
-	#if len(data.Class_params[param[i]])==5:
-	      #number = 1./(data.Class_params[param[i]][4])
-	      #if number < 1000:
-		#data.log.write('%0.d%s ' % (number,param[i]))
-	      #else:
-		#data.log.write('%0.e%s ' % (number,param[i]))
-	#else:
-	  #data.log.write('{0} '.format(param[i]))
-    #data.log.write(']\tacceptance rate: %.4f,\t Min (-LogLike): %.4f' % (rate,-LogLike)+'\n')
-    #return 0

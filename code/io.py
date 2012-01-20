@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import mcmc
 import random as rd
@@ -16,19 +17,19 @@ def log_parameters(data,command_line):
   param_file.close()
   log.close()
 
-def log_Class_args(data,command_line):
-  if len(data.Class_args) >= 1:
+def log_Class_arguments(data,command_line):
+  if len(data.Class_arguments) >= 1:
     log     = open(command_line.folder+'/log.param','a')
     log.write('\n\n#-----------Class-arguments---------\n')
-    log.write('data.Class_args.update({0})\n'.format(data.Class_args))
+    log.write('data.Class_arguments.update({0})\n'.format(data.Class_arguments))
     log.close()
 
 def print_parameters(out,data):
-  param = data.param_names
+  param = data.get_mcmc_parameters(['varying'])
   out.write('#  -LogLkl\t')
   for i in range(len(param)):
-    if len(data.params[param[i]])==5:
-      number = 1./(data.params[param[i]][4])
+    if len(data.mcmc_parameters[param[i]]['initial'])==5:
+      number = 1./(data.mcmc_parameters[param[i]]['initial' ][4])
       if number < 1000:
 	out.write('%0.d%s\t' % (number,param[i]))
       else:
@@ -40,8 +41,8 @@ def print_parameters(out,data):
 def print_vector(out,N,loglkl,data):
   for j in range(len(out)):
     out[j].write('%d  %.3f\t' % (N,-loglkl))
-    for i in range(len(data.vector)):
-      out[j].write('%.6f\t' % data.vector[i])
+    for elem in data.get_mcmc_parameters(['varying']):
+      out[j].write('%.6f\t' % data.mcmc_parameters[elem]['last_accepted'])
     out[j].write('\n')
 
 def refresh_file(data):
@@ -70,6 +71,27 @@ def create_output_files(command_line,data):
     for line in open(command_line.restart,'r'):
       data.out.write(line)
 
+def get_tex_name(name,number=0):
+  tex_greek = ['omega','tau','alpha','beta','delta','nu','Omega']
+  for elem in tex_greek:
+    if elem in name:
+      name="""\\"""+name
+  if number==0: 
+    if name.find('_')!=-1:
+      temp_name = name.split('_')[0]+'_{'
+      for i in range(1,len(name.split('_'))):
+	temp_name += name.split('_')[i]
+      temp_name += '}'
+      name = temp_name
+    name = "${0}$".format(name)
+    return name
+  elif number < 1000:
+    name = "$%0.d~%s$" % (number,name)
+  else:
+    temp_name = "$%0.e%s$" % (number,name)
+    m = re.search(r'(?:\$[0-9]*e\+[0]*)([0-9]*)(.*)',temp_name)
+    name = '$10^{'+m.groups()[0]+'}'+m.groups()[1]
+  return name
 
 # New class
 class File(file):

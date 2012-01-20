@@ -7,21 +7,23 @@ import io
 import data
 
 # COMPUTE LKL
-def compute_lkl(_cosmo,Data,args):
+def compute_lkl(_cosmo,data):
   # Prepare the cosmological module with the new set of parameters
-  _cosmo.set(args)
+  _cosmo.set(data.Class_arguments)
 
   # Compute the model
   failure=False
   try:
     _cosmo._compute(["lensing"])
-  except:
+  except NameError :
     return True,0 
+  except KeyboardInterrupt:
+    exit()
 
   # For each desired likelihood, compute its value against the theoretical model
   loglike=0
-  for likelihood in Data.lkl.itervalues():
-    loglike+=likelihood._loglkl(_cosmo,Data)
+  for likelihood in data.lkl.itervalues():
+    loglike+=likelihood.loglkl(_cosmo,data)
 
   # Clean the cosmological strucutre
   _cosmo._struct_cleanup(set(["lensing","nonlinear","spectra","primordial","transfer","perturb","thermodynamics","background","bessel"]))
@@ -29,21 +31,24 @@ def compute_lkl(_cosmo,Data,args):
   return failure,loglike
 
 def read_args_from_chain(data,chain):
+  # Chain is defined as a special File (that inherits from File, and has two
+  # new method, head and tail). The class is defined in code/io.py
   Chain = io.File(chain,'r')
+  parameter_names = data.get_mcmc_parameters(['varying'])
+
+  # BE CAREFUL: Here it works because of the particular presentation of the
+  # chain, and the use of tabbings. Please keep this in mind if having
+  # difficulties
   i = 1
-  for elem in data.Class_param_names:
-    data.Class_args[elem] = float(Chain.tail(1)[0].split('\t')[i])
-    data.Class[i-1] = data.Class_args[elem]
-    data.vector[i-1] = data.Class_args[elem]
-    i+=1
-  for elem in data.nuisance_param_names:
-    data.vector[i-1] = float(Chain.tail(1)[0].split('\t')[i])
-    data.nuisance[i-1-len(data.Class)] = data.vector[i-1]
+  for elem in parameter_names:
+    data.mcmc_parameters[elem]['last_accepted'] = float(Chain.tail(1)[0].split('\t')[i])
     i+=1
 
 def get_cov(data,command_line):
   np.set_printoptions(precision=2,linewidth=150)
+  parameter_names = data.get_mcmc_parameters(['varying'])
   i=0
+
   # if the user wants to use a covmat file
   if command_line.cov is not None:
     cov=open('{0}'.format(command_line.cov),'r')
@@ -63,7 +68,7 @@ def get_cov(data,command_line):
     # First, rotate M for the parameters to be well ordered, even if some names
     # are missing or some are in extra.
     temp_names = []
-    for elem in data.param_names:
+    for elem in parameter_names:
       if elem in covnames:
 	temp_names.append(elem)
     for k in range(len(covnames)):
@@ -76,7 +81,7 @@ def get_cov(data,command_line):
 	except IndexError:
 	  rot[h][k] = 0.
     print rot
-    print covnames,data.param_names
+    print covnames,parameter_names
     print '\nInput covariance matrix:'
     print covnames
     print M
@@ -85,19 +90,19 @@ def get_cov(data,command_line):
     print '\nFirst treatment'
     print M
     
-    M_temp    = np.ones((len(data.param_names),len(data.param_names)),'float64')
-    indices_1 = np.zeros(len(data.param_names))
+    M_temp    = np.ones((len(parameter_names),len(parameter_names)),'float64')
+    indices_1 = np.zeros(len(parameter_names))
     indices_2 = np.zeros(len(covnames))
     #Remove names that are in param_names but not in covnames
-    for k in range(len(data.param_names)):
-      if data.param_names[k] in covnames:
+    for k in range(len(parameter_names)):
+      if parameter_names[k] in covnames:
 	indices_1[k]=1
     for zeros in np.where(indices_1 == 0)[0]:
       M_temp[zeros,:] = 0
       M_temp[:,zeros] = 0
     #Remove names that are in covnames but not in param_names
     for h in range(len(covnames)):
-      if covnames[h] in data.param_names:
+      if covnames[h] in parameter_names:
 	indices_2[h]=1
     print indices_2
     for zeros in np.where(indices_2 == 0)[0]:
@@ -110,27 +115,38 @@ def get_cov(data,command_line):
     M = np.copy(M_temp)
     # on all other lines, just use sigma^2
     for zeros in np.where(indices_1 == 0)[0]:
-      M[zeros,zeros] = np.array(data.params[data.param_names[zeros]][3],'float64')**2
-    print '\nDeduced starting covariance matrix:'
-    print data.param_names
-    print M
-
-
+      M[zeros,zeros] = np.array(data.mcmc_parameters[parameter_names[zeros]]['initial'][3],'float64')**2
 
   # else, take sigmas^2.
   else:
-    M = np.identity(len(data.vector),'float64')
-    for elem in data.params:
-      M[i][i]=np.array(data.params[elem][3],'float64')**2
+    M = np.identity(len(parameter_names),'float64')
+    for elem in parameter_names:
+      M[i][i]=np.array(data.mcmc_parameters[elem]['initial'][3],'float64')**2
       i+=1
+
+  print '\nDeduced starting covariance matrix:'
+  print parameter_names
+  print M
 
   #inverse, and diagonalization
   eigv,eigV=np.linalg.eig(np.linalg.inv(M))
   return eigv,eigV
 
 def get_new_pos(data,eigv,U,k):
-  vector_new=np.zeros(len(data.vector),'float64')
-  sigmas=np.zeros(len(data.vector),'float64')
+  
+  parameter_names = data.get_mcmc_parameters(['varying'])
+  vector_new=np.zeros(len(parameter_names),'float64')
+  sigmas=np.zeros(len(parameter_names),'float64')
+
+  # Write the vector of last accepted points, 
+  vector = np.zeros(len(parameter_names),'float64')
+  try:
+    for elem in parameter_names:
+      vector[parameter_names.index(elem)] = data.mcmc_parameters[elem]['last_accepted']
+  except KeyError: # Else take the mean value
+    for elem in parameter_names:
+      vector[parameter_names.index(elem)] = data.mcmc_parameters[elem]['initial'][0]
+
   flag=1
   while flag!=0:
     flag=0 # initialize: there are no problems at first
@@ -138,62 +154,61 @@ def get_new_pos(data,eigv,U,k):
 
     # Choice here between sequential and global change of direction
     if data.jumping == 'global':
-      for i in range(len(data.vector)):
-	sigmas[i]=(math.sqrt(1/eigv[i]/len(data.vector)))*rd.gauss(0,1)*2.4
+      for i in range(len(vector)):
+	sigmas[i]=(math.sqrt(1/eigv[i]/len(vector)))*rd.gauss(0,1)*2.4
     elif data.jumping == 'sequential':
-      i = k%len(data.vector)
+      i = k%len(vector)
       sigmas[i] = (math.sqrt(1/eigv[i]))*rd.gauss(0,1)*2.4
     else:
       print '\n\n  Jumping method unknown (accepted : global, sequential)'
 
-    vector_new=data.vector+np.dot(U,sigmas)
+    vector_new = vector + np.dot(U,sigmas)
     i=0
-    for value in data.params.itervalues():
+    for elem in parameter_names:
+      value = data.mcmc_parameters[elem]['initial']
       if(value[1]!=-1 and vector_new[i]<value[1]):
 	flag+=1 # if a boundary value is reached, increment
       elif(value[2]!=-1 and vector_new[i]>value[2]):
 	flag+=1 # same
-      else:
-	flag+=0 # else keep it at zero
       i+=1
-  data._transmit_vector(vector_new)
-  return vector_new
 
-def jump(data,Direction,Range):
-  # check if there is a multiplier for the number
-  multiplier = 1.
-  if Direction in data.Class_params.iterkeys():
-    if len(data.Class_params[Direction])==5:
-      multiplier = data.Class_params[Direction][4]
+  i=0
+  for elem in parameter_names:
+    data.mcmc_parameters[elem]['current'] = vector_new[i]
+    i+=1
+    
+  # Propagate the information towards the Class arguments
+  data.update_Class_arguments()
 
-  data.Class_args[Direction]=Range*multiplier
-  return data.Class_args
 
+def accept_step(data):
+  for elem in data.get_mcmc_parameters(['varying']):
+    data.mcmc_parameters[elem]['last_accepted'] = data.mcmc_parameters[elem]['current']
 
 #---------------MCMC-CHAIN----------------------------------------------
 def chain(_cosmo,data,command_line):
   # initialisation
-  num_failure=2
+  num_failure=10
   loglike=0
   failure=False
   sigma_eig,U=get_cov(data,command_line)
   failed=0
 
-  # if restart wanted, change initial value for arguments
+  # if restart wanted, pick initial value for arguments
   if command_line.restart is not None:
     read_args_from_chain(data,command_line.restart)
-    for i in range(len(data.Class)):
-      data.Class_args = jump(data,data.Class_param_names[i],data.Class[i])
-  failure,loglike=compute_lkl(_cosmo,data,data.Class_args)
+
+  # Pick a position (from last accepted point if restart, from the mean value
+  # else)
+  get_new_pos(data,sigma_eig,U,failed)
+  # Compute the starting Likelihood
+  failure,loglike=compute_lkl(_cosmo,data)
 
   while ((failure is True) and (failed<=num_failure)):
     failed +=1
-    data.vector=get_new_pos(data,sigma_eig,U,failed)
-    for i in range(len(data.Class)):
-      data.Class_args = jump(data,data.Class_param_names[i],data.Class[i])
-    for i in range(len(data.Class),len(data.Class)+len(data.nuisance)):
-      data.nuisance[i-len(data.Class)] = data.vector[i]
-    failure,loglike=compute_lkl(_cosmo,data,data.Class_args)
+    get_new_pos(data,sigma_eig,U,failed)
+    failure,loglike=compute_lkl(_cosmo,data)
+
   if failure is True:
     print ' /|\   Class tried {0} times to initialize with given parameters, and failed...'.format(num_failure+2)
     print '/_o_\  You might want to change your starting values, or pick default ones!'
@@ -201,44 +216,50 @@ def chain(_cosmo,data,command_line):
 
   max_loglike = loglike
 
-  acc,rej=0.0,0.0	#acceptance and rejection number count
+  acc,rej=0.0,0.0	# acceptance and rejection number count
+  N=1			# number of time the system stayed in the current position
   io.print_parameters(sys.stdout,data)
-  N=1			#number of steps
-  for k in range(command_line.N):
-    vector_new=get_new_pos(data,sigma_eig,U,failed+k)
-    for i in range(len(data.Class)):
-      newargs = jump(data,data.Class_param_names[i],vector_new[i])
-    for i in range(len(data.Class),len(data.Class)+len(data.nuisance)):
-      data.nuisance[i-len(data.Class)] = vector_new[i]
-    failure,newloglike=compute_lkl(_cosmo,data,newargs)
+
+  k = 1
+  while (k <= command_line.N and failed <= num_failure):
+
+    get_new_pos(data,sigma_eig,U,failed)
+    failure,newloglike=compute_lkl(_cosmo,data)
+    
     if(failure==True):
       failed += 1
-      k-=2
       print 'Warning: Class failed due to choice of parameters, picking up new values'
-      print newargs
+      print data.Class_arguments
       continue
+
     # Harmless trick to avoid exponentiating large numbers
     if newloglike >= loglike:
       alpha = 1.
     else:
       alpha=np.exp(newloglike-loglike)
+
     if ((alpha == 1.) or (rd.uniform(0,1) < alpha)): #accept step
+
+      accept_step(data)
       io.print_vector([data.out,sys.stdout],N,loglike,data)
-      data.Class_args=newargs
       loglike=newloglike
       if loglike > max_loglike:
 	max_loglike = loglike
-      data.vector = vector_new
       acc+=1.0
       N=1
+      
     else:
       rej+=1.0
       N+=1
+      
     if acc % data.write_step ==0:
       io.refresh_file(data)
-    if (failed >= num_failure):
-      print ' /|\   The computation failed too many times, \n'
-      print '/_o_\  Please check the values of your parameters'
+    k += 1
+
+  if (failed == num_failure):
+    print ' /|\   The computation failed {0} times, \n'.format(failed)
+    print '/_o_\  Please check the values of your parameters'
+
   rate=acc/(acc+rej)
   print '#  {0} steps done, acceptance rate:'.format(command_line.N),rate
   if command_line.restart is not None:

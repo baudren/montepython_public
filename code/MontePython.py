@@ -63,10 +63,10 @@ def main():
     command_line.folder = folder
     Data = data.data(command_line,path)
 
-  # Else, fill in data, starting from default_path, then custom parameter file,
-  # then additionnal command line arguments.
-  # If output folder already exists, first load a data instance with used
-  # param, and compare the two instances. If different, displays a warning.
+  # Else, fill in data, starting from  parameter file, If output folder already
+  # exists, first load a data instance with used param, and compare the two
+  # instances. If different, exit: you are not able to run two different things
+  # in one folder.
   else:
     Data=data.data(command_line,path)
     if command_line.par.find('log.param')==-1:
