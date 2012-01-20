@@ -48,7 +48,7 @@ class sn(likelihood):
 
   # compute likelihood
 
-  def _loglkl(self,_cosmo,data):
+  def loglkl(self,_cosmo,data):
 
     # define array for difference between theory and observations
     difference = np.ndarray(self.num_points,'float64')
