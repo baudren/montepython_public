@@ -128,15 +128,11 @@ class data:
     self.subversion = first_line.split()[-1].replace(')','').replace('-','')
     _file.seek(0)
 
-  def update_vector(self):
-    self.vector = np.append(self.Class,self.nuisance)
-
   def fill_mcmc_parameters(self):
 
     # Define temporary quantities, only to simplify the input in the parameter
     # file
-    self.Class_params=od()
-    self.nuisance_params=od()
+    self.params=od()
 
     # Read from the parameter file everything
     try:
@@ -146,16 +142,14 @@ class data:
       exit()
     self.read_file(self.param_file)
 
-    self.from_input_to_mcmc_parameters(self.Class_params,   'Class')
-    self.from_input_to_mcmc_parameters(self.nuisance_params,'nuisance')
+    self.from_input_to_mcmc_parameters(self.params)
 
 
-  def from_input_to_mcmc_parameters(self,dictionary,role):
+  def from_input_to_mcmc_parameters(self,dictionary):
     for key,value in dictionary.iteritems():
       self.mcmc_parameters[key] = od()
-      self.mcmc_parameters[key]['initial'] = value
-      self.mcmc_parameters[key]['role']    = role
-      self.mcmc_parameters[key]['name']    = key
+      self.mcmc_parameters[key]['initial'] = value[0:5]
+      self.mcmc_parameters[key]['role']    = value[-1]
       self.mcmc_parameters[key]['tex_name']= io.get_tex_name(key)
       if value[3] == 0:
 	self.mcmc_parameters[key]['status']    = 'fixed'
@@ -176,11 +170,8 @@ class data:
     return table
 
   def update_Class_arguments(self):
-    for elem in self.get_mcmc_parameters(['Class']):
+    for elem in self.get_mcmc_parameters(['cosmo']):
       try:
-	if len(self.mcmc_parameters[elem]['initial'])==4:
-	  self.Class_arguments[elem]   = self.mcmc_parameters[elem]['current']
-	else:
-	  self.Class_arguments[elem]   = self.mcmc_parameters[elem]['current']*1.0/self.mcmc_parameters[elem]['initial'][4]
-      except:
+	self.Class_arguments[elem]   = self.mcmc_parameters[elem]['current']*self.mcmc_parameters[elem]['initial'][4]
+      except KeyError:
 	pass

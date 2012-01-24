@@ -28,19 +28,19 @@ def print_parameters(out,data):
   param = data.get_mcmc_parameters(['varying'])
   out.write('#  -LogLkl\t')
   for i in range(len(param)):
-    if len(data.mcmc_parameters[param[i]]['initial'])==5:
+    if data.mcmc_parameters[param[i]]['initial'][4]!=1:
       number = 1./(data.mcmc_parameters[param[i]]['initial' ][4])
-      if number < 1000:
-	out.write('%0.d%s\t' % (number,param[i]))
+      if number > 0.01:
+	out.write('%0.d%s\t' % (int(1.0/number),param[i]))
       else:
-	out.write('%0.e%s\t' % (number,param[i]))
+	out.write('%0.e%s\t' % (1.0/number,param[i]))
     else:
       out.write('{0}\t'.format(param[i]))
   out.write('\n')
 
 def print_vector(out,N,loglkl,data):
   for j in range(len(out)):
-    out[j].write('%d  %.3f\t' % (N,-loglkl))
+    out[j].write('%d  %.8g\t' % (N,-loglkl))
     for elem in data.get_mcmc_parameters(['varying']):
       out[j].write('%.6f\t' % data.mcmc_parameters[elem]['last_accepted'])
     out[j].write('\n')
@@ -71,12 +71,12 @@ def create_output_files(command_line,data):
     for line in open(command_line.restart,'r'):
       data.out.write(line)
 
-def get_tex_name(name,number=0):
+def get_tex_name(name,number=1):
   tex_greek = ['omega','tau','alpha','beta','delta','nu','Omega']
   for elem in tex_greek:
     if elem in name:
       name="""\\"""+name
-  if number==0: 
+  if number==1: 
     if name.find('_')!=-1:
       temp_name = name.split('_')[0]+'_{'
       for i in range(1,len(name.split('_'))):

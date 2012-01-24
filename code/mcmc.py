@@ -17,7 +17,7 @@ def compute_lkl(_cosmo,data):
     _cosmo._compute(["lensing"])
   except NameError :
     return True,0 
-  except KeyboardInterrupt:
+  except (AttributeError,KeyboardInterrupt):
     exit()
 
   # For each desired likelihood, compute its value against the theoretical model
@@ -64,8 +64,24 @@ def get_cov(data,command_line):
 	i+=1
 
     # Deal with the all problematic cases. 
+    # First, adjust the scales between stored parameters and the ones used in mcmc
+    scales = []
+    for elem in covnames:
+      if elem in parameter_names:
+	scales.append(data.mcmc_parameters[elem]['initial'][4])
+      else:
+	scales.append(1)
+    scales = np.diag(scales)
+    invscales = np.linalg.inv(scales)
+    print '\nInput covariance matrix:'
+    print covnames
+    print M
+    M = np.dot(invscales.T,np.dot(M,invscales))
 
-    # First, rotate M for the parameters to be well ordered, even if some names
+    print '\nFirst treatment (scaling)'
+    print M
+
+    # Then, rotate M for the parameters to be well ordered, even if some names
     # are missing or some are in extra.
     temp_names = []
     for elem in parameter_names:
@@ -89,12 +105,9 @@ def get_cov(data,command_line):
 	    rot[h][k] = 0.
 	except IndexError:
 	  rot[h][k] = 0.
-    print '\nInput covariance matrix:'
-    print covnames
-    print M
     M=np.dot(rot,np.dot(M,rot))
 
-    print '\nFirst treatment (partial reordering and cleaning)'
+    print '\nSecond treatment (partial reordering and cleaning)'
     print M
     
     M_temp    = np.ones((len(parameter_names),len(parameter_names)),'float64')
@@ -219,6 +232,7 @@ def chain(_cosmo,data,command_line):
     print '/_o_\  You might want to change your starting values, or pick default ones!'
     exit()
 
+  accept_step(data)
   max_loglike = loglike
 
   acc,rej=0.0,0.0	# acceptance and rejection number count
@@ -245,8 +259,8 @@ def chain(_cosmo,data,command_line):
 
     if ((alpha == 1.) or (rd.uniform(0,1) < alpha)): #accept step
 
-      accept_step(data)
       io.print_vector([data.out,sys.stdout],N,loglike,data)
+      accept_step(data)
       loglike=newloglike
       if loglike > max_loglike:
 	max_loglike = loglike
@@ -260,6 +274,9 @@ def chain(_cosmo,data,command_line):
     if acc % data.write_step ==0:
       io.refresh_file(data)
     k += 1
+
+  if N>1:
+    io.print_vector([data.out,sys.stdout],N,loglike,data)
 
   if (failed == num_failure):
     print ' /|\   The computation failed {0} times, \n'.format(failed)

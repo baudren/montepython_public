@@ -52,6 +52,7 @@ class info:
 	  self.covar[j][i]=self.covar[i][j]
 
     self.cov.write('#{0}\n'.format(self.ref_names))
+    self.covar = np.dot(self.scales.T,np.dot(self.covar,self.scales))
     for i in range(len(self.ref_names)):
       for j in range(len(self.ref_names)):
 	self.cov.write('{0} '.format(self.covar[i][j]))
@@ -171,6 +172,7 @@ class info:
     ref_names = []
     tex_names = []
     boundaries= []
+    scales    = []
 
     if is_main_chain:
       Files = self.Files
@@ -179,21 +181,16 @@ class info:
     # Defining a list of names that should have a \ in their tex names
     for line in param:
       if line.find('#')==-1:
-	if (line.find('data.Class_params')!=-1 or line.find('data.nuisance_params')!=-1):
+	if line.find('data.params')!=-1 :
 	  name = line.split("'")[1]
-	  if len(line.split('=')[-1].split(',')) == 4:
-	    if line.split('=')[-1].split(',')[-1].replace(']\n','').replace(' ','') != '0':
-	      temp = [float(elem) for elem in line.split(",")[1:3]]
-	      boundaries.append(temp)
-	      ref_names.append(name)
-	      tex_names.append(io.get_tex_name(name))
-	  elif len(line.split('=')[-1].split(',')) == 5:
-	    if line.split('=')[-1].split(',')[-2].replace(' ','') != 0:
-	      temp = [float(elem) for elem in line.split(",")[1:3]]
-	      boundaries.append(temp)
-	      ref_names.append(name)
-	      number = 1./float(line.split('=')[-1].split(',')[-1].replace(']\n','').replace(' ',''))
-	      tex_names.append(io.get_tex_name(name,number=number))
+	  if line.split('=')[-1].split(',')[-3].replace(' ','') != 0:
+	    temp = [float(elem) for elem in line.split(",")[1:3]]
+	    boundaries.append(temp)
+	    ref_names.append(name)
+	    scales.append(float(line.split('=')[-1].split(",")[4].replace(' ','')))
+	    number = 1./scales[-1]
+	    tex_names.append(io.get_tex_name(name,number=number))
+    scales = np.diag(scales)
     param.seek(0)
 
     # log param names
@@ -284,6 +281,8 @@ class info:
       self.mean = mean
       self.var  = var
       self.R = R
+
+      self.scales = scales
 
       return True
     else:
