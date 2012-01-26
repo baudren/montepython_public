@@ -10,7 +10,7 @@ from datetime import date
 
 def log_parameters(data,command_line):
   log     = open(command_line.folder+'/log.param','w')
-  param_file = open(command_line.par,'r')
+  param_file = open(command_line.param,'r')
   log.write("#-----Class {0} (subversion {1})-----\n\n".format(data.version,data.subversion))
   for line in param_file:
     log.write(line)

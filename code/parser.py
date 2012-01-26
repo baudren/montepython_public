@@ -1,6 +1,8 @@
-import argparse
+import argparse # Python module to handle command line arguments
 import os
 
+# Definition of the object, below will be added all the possible options. This
+# will also create an automatic help command, available through the option -h
 parser = argparse.ArgumentParser(description='Monte Python, a Monte Carlo code in Python')
 
 ###############
@@ -10,7 +12,7 @@ parser.add_argument('-N', metavar='steps',type=int,dest='N')
 # -- output folder
 parser.add_argument('-o', metavar='output folder',type=str,dest='folder')
 # -- parameter file
-parser.add_argument('-p', metavar='input param file',type=str,dest='par')
+parser.add_argument('-p', metavar='input param file',type=str,dest='param')
 # -- covariance matrix
 parser.add_argument('-c', metavar='input cov matrix',type=str,dest='cov')
 # -- jumping method
@@ -21,7 +23,7 @@ parser.add_argument('-j', metavar='jumping method',type=str,dest='jumping',defau
 parser.add_argument('-r', metavar='restart from chain',type=str,dest='restart')
 
 ###############
-# information
+# Information
 # -- folder to analyze
 parser.add_argument('-info', metavar='compute information of desired file',type=str,dest='files',nargs='*')
 # -- number of bins (defaulting to 20)
@@ -31,24 +33,40 @@ parser.add_argument('-comp',metavar='comparison folder',type=str,dest='comp',nar
 
 
 def parse():
+  # Recover all command line arguments in the args dictionnary
   args=parser.parse_args()
-  if args.restart is None:
-    if args.files is None:
+
+  # First of all, if the analyze module is invoked, there is no point in
+  # checking for existing folder
+  if args.files is None:
+    
+    # If the user wants to start over from an existing chain, the program will
+    # use automatically the same folder, and the log.param in it
+    if args.restart is not None:
+      args.folder = args.restart.split('/')[0]+'/'
+      args.param 	  = args.folder+'log.param'
+
+    # Else, the user should provide an output folder
+    else:
       if args.folder==None:
 	print ' /|\   You must provide an output folder,\n/_o_\  because you do not want your main folder to look dirty, do you?'
 	exit()
+
+      # If he did so, 
       else:
+
+	# check that the provided name is ending with a /,
 	if args.folder[-1]!='/':
 	  args.folder+='/'
+
+	# and if the folder already exists, and that no parameter file was
+	# provided, use the log.param
 	if os.path.isdir(args.folder):
-	  if args.par==None:
-	    args.par=args.folder+'log.param'
+	  if args.param==None:
+	    args.param=args.folder+'log.param'
 	else:
-	  if args.par==None:
+	  if args.param==None:
 	    print ' /|\   No log.param was found in your output folder,\n/_o_\  You must then provide a parameter file,\n       use the command line option -p any.param'
 	    exit()
-  else:
-    args.folder = args.restart.split('/')[0]+'/'
-    args.par 	  = args.folder+'log.param'
 
   return args

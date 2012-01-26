@@ -59,7 +59,7 @@ def main():
       folder = './'
     for elem in command_line.restart.split("/")[:-1]:
       folder += ''.join(elem+'/')
-    command_line.par = folder+'log.param'
+    command_line.param = folder+'log.param'
     command_line.folder = folder
     Data = data.data(command_line,path)
 
@@ -69,7 +69,7 @@ def main():
   # in one folder.
   else:
     Data=data.data(command_line,path)
-    if command_line.par.find('log.param')==-1:
+    if command_line.param.find('log.param')==-1:
       Data_old=data.data(command_line,path,False)
       if Data!=Data_old:
         print '\n /|\  You are starting a chain in {0} with different parameters\n/_o_\ than used previously.\n      Exiting'.format(command_line.folder)
@@ -80,19 +80,19 @@ def main():
     try:
       command_line.N=Data.N
     except AttributeError:
-      print '\n /|\  You did not provide a number of steps,\n/_o_\ neither via command line, neither in {0}'.format(command_line.par)
+      print '\n /|\  You did not provide a number of steps,\n/_o_\ neither via command line, neither in {0}'.format(command_line.param)
       exit()
 
-  # Logging all configuration
+  # Creating the file that will contain the chain
   io.create_output_files(command_line,Data)
 
-  # Load up the cosmological backbone. For the moment, only Class has been wrapped.
+  # Loading up the cosmological backbone. For the moment, only Class has been wrapped.
   _cosmo=Class()
 
-  # Main chain
+  # MCMC chain 
   rate,min_LogLike=mcmc.chain(_cosmo,Data,command_line)
   
-  # Closing up the chain
+  # Closing up the file
   Data.out.close()
 
 
