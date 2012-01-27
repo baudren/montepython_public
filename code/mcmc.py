@@ -276,7 +276,7 @@ def chain(_cosmo,data,command_line):
     k += 1
 
   if N>1:
-    io.print_vector([data.out,sys.stdout],N,loglike,data)
+    io.print_vector([data.out,sys.stdout],N-1,loglike,data)
 
   if (failed == num_failure):
     print ' /|\   The computation failed {0} times, \n'.format(failed)
