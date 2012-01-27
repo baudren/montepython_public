@@ -238,3 +238,12 @@ class data:
 	self.Class_arguments[elem]   = self.mcmc_parameters[elem]['current']*self.mcmc_parameters[elem]['initial'][4]
       except KeyError: # it will go there if there is not yet a 'current' field,
 	pass           # In this case, nothing to do.
+
+    for elem in self.get_mcmc_parameters(['cosmo']):
+      if elem == 'Omega_Lambda':
+	omega_b      = self.Class_arguments['omega_b']['current']
+	omega_cdm    = self.Class_arguments['omega_cdm']['current']
+	Omega_Lambda = self.Class_arguments['Omega_Lambda']['current']
+	self.Class_arguments['h']   = math.sqrt( (omega_b+omega_cdm) / (1.-Omega_Lambda) )
+	del self.Class_arguments[elem]
+	print self.Class_arguments
