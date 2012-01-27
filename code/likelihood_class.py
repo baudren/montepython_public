@@ -590,16 +590,11 @@ class likelihood_clik(likelihood):
     # fill with nuisance parameters
     for nuisance in self.clik.get_extra_parameter_names():
       if nuisance in nuisance_parameter_names:
-	for i in range(len(data.nuisance)):
-	  if (nuisance_parameter_names[i] == nuisance):
-	    nuisance_value = float(data.nuisance[i])
+	nuisance_value = data.mcmc_parameters[nuisance]['current']
       else:
-        try:
-          exec "nuisance_value = data.%s" % nuisance
-        except:
-          print 'the likelihood needs a parameter '+nuisance
-          print 'you must pass it through the input file (as a free nuisance parameter or a fixed parameter)'
-          exit()
+	print 'the likelihood needs a parameter '+nuisance
+	print 'you must pass it through the input file (as a free nuisance parameter or a fixed parameter)'
+	exit()
       tot[index]=nuisance_value
       index += 1
 
