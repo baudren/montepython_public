@@ -1,4 +1,5 @@
 import os,sys                             # Basic python module to handle file writing, and obtaining system information
+import math
 import random as rd 
 import numpy  as np                       # Numerical Python module
 from collections import OrderedDict as od # A modified version of Python dictionary, 
@@ -241,9 +242,11 @@ class data:
 
     for elem in self.get_mcmc_parameters(['cosmo']):
       if elem == 'Omega_Lambda':
-	omega_b      = self.Class_arguments['omega_b']['current']
-	omega_cdm    = self.Class_arguments['omega_cdm']['current']
-	Omega_Lambda = self.Class_arguments['Omega_Lambda']['current']
-	self.Class_arguments['h']   = math.sqrt( (omega_b+omega_cdm) / (1.-Omega_Lambda) )
-	del self.Class_arguments[elem]
-	print self.Class_arguments
+        try:
+          omega_b      = self.Class_arguments['omega_b']
+          omega_cdm    = self.Class_arguments['omega_cdm']
+          Omega_Lambda = self.Class_arguments['Omega_Lambda']
+          self.Class_arguments['h']   = math.sqrt( (omega_b+omega_cdm) / (1.-Omega_Lambda) )
+          del self.Class_arguments[elem]
+        except (KeyError):
+          pass

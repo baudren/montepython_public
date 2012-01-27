@@ -1,6 +1,6 @@
 # Grab the clik version of fake planck
 
-clik_wmap_full.path_clik = data.path['clik']+'wmap_7_full.clik'
+clik_wmap_full.path_clik = data.path['clik']+'wmap_7_full_gibbs_2_band_EE.clik'
 #clik_wmap_full.use_nuisance	= ['A_SZ']
 
 #clik_wmap_full.data_directory   = data.path['data']
