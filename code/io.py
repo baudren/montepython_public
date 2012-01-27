@@ -1,12 +1,9 @@
-import os
-import re
-import sys
-import mcmc
+import os,sys
+import re     # Module to handle regular expressions (powerful tool to manipulate strings)
 import random as rd
 import numpy as np
 from collections import OrderedDict as od
 from datetime import date
-
 
 def log_parameters(data,command_line):
   log     = open(command_line.folder+'/log.param','w')
