@@ -121,6 +121,15 @@ class data:
 	io.log_Class_arguments(self,command_line)
 	io.log_default_configuration(self,command_line)
 
+    # In case of a comparison, one needs to know whether the likelihoods
+    # share the same properties (same data, prior, etc). To this end, one
+    # reads the already logged parameter file, after having created new
+    # data.likelihood_name dictionaries
+    #if not default:
+      #for elem in self.exp:
+	#exec "print %s.path_clik" % elem
+      #exit()
+
   # Redefinition of the 'compare' method for two instances of this data class.
   # It will decide which basic operations to perform when the code asked if two
   # instances are the same (in case you want to launch a new chain in an

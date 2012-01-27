@@ -556,6 +556,8 @@ class likelihood_clik(likelihood):
 
   def loglkl(self,_cosmo,data):
 
+    nuisance_parameter_names = data.get_mcmc_parameters(['nuisance'])
+
     # get Cl's from CLASS
     cl = self.get_cl(_cosmo)
  
@@ -587,10 +589,9 @@ class likelihood_clik(likelihood):
 
     # fill with nuisance parameters
     for nuisance in self.clik.get_extra_parameter_names():
-      if nuisance in data.nuisance_param_names:
-        #nuisance_value = float(data.vector[np.where(data.param_names == nuisance)[0][0]])
+      if nuisance in nuisance_parameter_names:
 	for i in range(len(data.nuisance)):
-	  if (data.nuisance_param_names[i] == nuisance):
+	  if (nuisance_parameter_names[i] == nuisance):
 	    nuisance_value = float(data.nuisance[i])
       else:
         try:
