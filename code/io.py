@@ -1,3 +1,9 @@
+# This module will handle all the input/output of the code (at least most of
+# it). 
+
+# So if something is printed that does not satisfy you (number of decimals, for
+# instance), you only have to find the called function and change a number.
+
 import os,sys
 import re     # Module to handle regular expressions (powerful tool to manipulate strings)
 import random as rd
@@ -5,6 +11,8 @@ import numpy as np
 from collections import OrderedDict as od
 from datetime import date
 
+# Writes the beginning of log.param, starting with the header with Class
+# version and subversion, and then recopies entirely the input parameter file
 def log_parameters(data,command_line):
   log     = open(command_line.folder+'/log.param','w')
   param_file = open(command_line.param,'r')
@@ -14,12 +22,39 @@ def log_parameters(data,command_line):
   param_file.close()
   log.close()
 
+# Writes the configuration for each and every likelihood used
+def log_likelihood_parameters(likelihood,command_line):
+  log = open(command_line.folder+'log.param','a')
+  tolog = open(likelihood.path,'r')
+  log.write("\n\n#-----Likelihood-{0}-----\n".format(likelihood.name))
+  for line in tolog:
+    log.write(line)
+  tolog.seek(0)
+  tolog.close()
+  log.close()
+
+# Third function called when writing log.param, it writes down the Class
+# arguments used (it is understood here that all the other parameters for Class
+# are set to their default value, in Class itself). It is written as an update
+# for the dictionary Class_arguments, in order not to erase previously
+# initialized data.
 def log_Class_arguments(data,command_line):
   if len(data.Class_arguments) >= 1:
     log     = open(command_line.folder+'/log.param','a')
     log.write('\n\n#-----------Class-arguments---------\n')
     log.write('data.Class_arguments.update({0})\n'.format(data.Class_arguments))
     log.close()
+
+# Fourth and last function called when writing log.param, it logs the
+# default.conf file used to get the path. Only useful if you have several
+# versions of Class installed in different locations, or different versions of
+# Clik. But, as you never know what might go wrong, it is logged everytime !
+def log_default_configuration(data,command_line):
+  log = open(command_line.folder+'/log.param','a')
+  log.write('\n\n#--------Default-Configuration------\n')
+  for key,value in data.path.iteritems():
+    log.write("data.path['{0}']\t= '{1}'\n".format(key,value))
+  log.close()
 
 def print_parameters(out,data):
   param = data.get_mcmc_parameters(['varying'])

@@ -119,6 +119,7 @@ class data:
       # it can be modified inside the likelihoods init functions
       if log_flag:
 	io.log_Class_arguments(self,command_line)
+	io.log_default_configuration(self,command_line)
 
   # Redefinition of the 'compare' method for two instances of this data class.
   # It will decide which basic operations to perform when the code asked if two

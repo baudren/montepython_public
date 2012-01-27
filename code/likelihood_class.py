@@ -4,6 +4,7 @@ import numpy as np
 import math
 
 import data
+import io
 
 # Definition of classes for the likelihoods to inherit, for every different
 # types of expected likelihoods. Included so far, models for a Clik, simple
@@ -21,21 +22,11 @@ class likelihood():
     self.read_from_file(path,data)
 
     if log_flag: 
-      self.store_lkl_params(command_line)
+      io.log_likelihood_parameters(self,command_line)
 
 
   def loglkl(self,_cosmo,data):
     raise NotImplementedError('Must implement method loglkl() in your likelihood')
-
-  def store_lkl_params(self,command_line):
-    log = open(command_line.folder+'log.param','a')
-    tolog = open(self.path,'r')
-    log.write("\n\n#-----Likelihood-{0}-----\n".format(self.name))
-    for line in tolog:
-      log.write(line)
-    tolog.seek(0)
-    tolog.close()
-    log.close()
 
   def read_from_file(self,path,data):
     self.path = path
