@@ -63,10 +63,11 @@ class info:
     self.lvls = [total*0.6826,total*0.954,total*0.997]
 
     self.bounds = np.zeros((len(self.ref_names),len(self.lvls),2))
-    if command_line.comp is None:
-      self.plot_triangle(chain,command_line,bin_number=binnumber)
-    else:
-      self.plot_triangle(chain,command_line,bin_number=binnumber,comp_chain=comp_chain,comp_ref_names = comp_ref_names,comp_tex_names = comp_tex_names,comp_folder = comp_folder,comp_boundaries = comp_boundaries,comp_mean = comp_mean)
+    if command_line.plot == True:
+      if command_line.comp is None:
+	self.plot_triangle(chain,command_line,bin_number=binnumber)
+      else:
+	self.plot_triangle(chain,command_line,bin_number=binnumber,comp_chain=comp_chain,comp_ref_names = comp_ref_names,comp_tex_names = comp_tex_names,comp_folder = comp_folder,comp_boundaries = comp_boundaries,comp_mean = comp_mean)
 
     self.info.write('\n param names:\t')
     for elem in self.ref_names:
@@ -431,7 +432,7 @@ class info:
 	  print '{0} was not found in the second folder'.format(self.ref_names[i])
 
       # minimum credible interval
-      bounds = self.minimum_credible_intervals(hist,bincenters)
+      bounds = self.minimum_credible_intervals(hist,bincenters,lvls)
       if bounds is False:
 	print hist
       else:
@@ -441,7 +442,7 @@ class info:
 	self.bounds[i] = bounds
 
       if comp_done:
-	comp_bounds = self.minimum_credible_intervals(comp_hist,comp_bincenters)
+	comp_bounds = self.minimum_credible_intervals(comp_hist,comp_bincenters,lvls)
 	if comp_bounds is False:
 	  print comp_hist
 	else:
@@ -578,8 +579,7 @@ class info:
       return clist[1:]
     return clist
 
-  def minimum_credible_intervals(self,histogram,bincenters):
-    levels = [0.68,0.95,0.99]
+  def minimum_credible_intervals(self,histogram,bincenters,levels):
     bounds = np.zeros((len(levels),2))
     j = 0
     delta = bincenters[1]-bincenters[0]
@@ -639,6 +639,7 @@ class info:
   def cubic_interpolation(self,hist,bincenters):
     if self.has_interpolate_module:
       interp_grid = np.linspace(bincenters[0],bincenters[-1],len(bincenters)*10)
+      from scipy.interpolate import interp1d
       f = interp1d(bincenters,hist,kind='cubic')
       interp_hist = f(interp_grid)
       return interp_hist,interp_grid

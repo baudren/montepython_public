@@ -30,6 +30,8 @@ parser.add_argument('-info', metavar='compute information of desired file',type=
 parser.add_argument('-bins', metavar='desired number of bins, default is 20',type=int,dest='bins',default=20)
 # -- possible comparison folder
 parser.add_argument('-comp',metavar='comparison folder',type=str,dest='comp',nargs='*')
+# -- if you just want the covariance matrix, use this option
+parser.add_argument('-noplot',metavar='comparison folder',dest='plot',action='store_const',const=False,default=True)
 
 
 def parse():
