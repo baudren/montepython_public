@@ -18,6 +18,7 @@ class info:
     except ImportError:
       self.has_interpolate_module = False
       print 'No cubic interpolation done (no scipy.interpolate module), only linear'
+    self.has_interpolate_module = False
     Files     = command_line.files
     binnumber = command_line.bins
     self.prepare(Files)

@@ -242,7 +242,7 @@ def chain(_cosmo,data,command_line):
   k = 1
   while (k <= command_line.N and failed <= num_failure):
 
-    get_new_pos(data,sigma_eig,U,failed)
+    get_new_pos(data,sigma_eig,U,k)
     failure,newloglike=compute_lkl(_cosmo,data)
     
     if(failure==True):
