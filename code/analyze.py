@@ -185,7 +185,7 @@ class info:
       if line.find('#')==-1:
 	if line.find('data.params')!=-1 :
 	  name = line.split("'")[1]
-	  if line.split('=')[-1].split(',')[-3].replace(' ','') != 0:
+	  if float(line.split('=')[-1].split(',')[-3].replace(' ','')) != 0:
 	    temp = [float(elem) for elem in line.split(",")[1:3]]
 	    boundaries.append(temp)
 	    ref_names.append(name)
