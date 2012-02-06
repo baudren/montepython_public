@@ -539,7 +539,7 @@ class info:
 	comp_bincenters = 0.5*(comp_bin_edges[1:]+comp_bin_edges[:-1])
 	interp_comp_hist,interp_comp_grid = self.cubic_interpolation(comp_hist,comp_bincenters)
 
-	comp_bounds = self.minimum_credible_intervals(comp_hist,comp_bincenters)
+	comp_bounds = self.minimum_credible_intervals(comp_hist,comp_bincenters,lvls)
 	if comp_bounds is False:
 	  print comp_hist
 	else:
