@@ -31,8 +31,8 @@ def compute_lkl(_cosmo,data):
   return failure,loglike
 
 def read_args_from_chain(data,chain):
-  # Chain is defined as a special File (that inherits from File, and has two
-  # new method, head and tail). The class is defined in code/io.py
+  # Chain is defined as a special File (that inherits from File, and has one
+  # new method, tail). The class is defined in code/io.py
   Chain = io.File(chain,'r')
   parameter_names = data.get_mcmc_parameters(['varying'])
 

@@ -56,6 +56,11 @@ def log_default_configuration(data,command_line):
     log.write("data.path['{0}']\t= '{1}'\n".format(key,value))
   log.close()
 
+# Will print the parameter names. In the code, out is simply the standard
+# output, as this information will not be printed on the output file. Indeed,
+# you will be able to recover these information from the log.param. Please pay
+# attention to the fact that, once launched, the order of the parameters in
+# log.param is crucial, as is it the only place where it is stored.
 def print_parameters(out,data):
   param = data.get_mcmc_parameters(['varying'])
   out.write('#  -LogLkl\t')
@@ -70,6 +75,9 @@ def print_parameters(out,data):
       out.write('{0}\t'.format(param[i]))
   out.write('\n')
 
+# Prints the last accepted values to out, which here is an array containing
+# both standard output and the output file. This way, if you run in interactive
+# mode, you will be able to monitor the progress of the chain.
 def print_vector(out,N,loglkl,data):
   for j in range(len(out)):
     out[j].write('%d  %.8g\t' % (N,-loglkl))
@@ -81,6 +89,15 @@ def refresh_file(data):
   data.out.close()
   data.out=open(data.out_name,'a')
 
+# This routine takes care of organising the folder for you. It will
+# automatically generate names for the new chains according to the date, number
+# of points chosen.
+###################
+# VERY IMPORTANT
+###################
+# The way these names are generated (with the proper number of _, __, -, and
+# their placement) is exploited in the rest of the code in various places.
+# Please keep that in mind if ever you are in the mood of changing things here.
 def create_output_files(command_line,data):
   if command_line.restart is None:
     number = command_line.N
@@ -103,6 +120,9 @@ def create_output_files(command_line,data):
     for line in open(command_line.restart,'r'):
       data.out.write(line)
 
+# Simple (and unperfect) tex name transformer. So far, if the greek letter is
+# in the middle of the name, this method will do weird things
+# TODO
 def get_tex_name(name,number=1):
   tex_greek = ['omega','tau','alpha','beta','delta','nu','Omega']
   for elem in tex_greek:
@@ -125,11 +145,10 @@ def get_tex_name(name,number=1):
     name = '$10^{'+m.groups()[0]+'}'+m.groups()[1]
   return name
 
-# New class
+# New class of file, to provide an equivalent of the tail command (on linux).
+# It will be used when starting from an existing chain, and avoids circling
+# through an immense file. 
 class File(file):
-  def head(self, lines_2find=1):
-    self.seek(0)                            #Rewind file
-    return [self.next() for x in xrange(lines_2find)]
 
   def tail(self, lines_2find=1):  
     self.seek(0, 2)                         #go to end of file
@@ -144,4 +163,3 @@ class File(file):
     self.seek(-total_bytes_scanned, 2)
     line_list = list(self.readlines())
     return line_list[-lines_2find:]
-
