@@ -21,10 +21,14 @@ class likelihood():
     self.folder = os.path.abspath(data.path['MontePython'])+'/../likelihoods/'+self.name+'/'
     self.read_from_file(path,data)
 
+    # Append to the log.param the value used (WARNING: so far no comparison is
+    # done to ensure that the experiments share the same parameters)
     if log_flag: 
       io.log_likelihood_parameters(self,command_line)
 
 
+  # This is a placeholder, to remind that, for a brand new likelihood, you need
+  # to define its computation.
   def loglkl(self,_cosmo,data):
     raise NotImplementedError('Must implement method loglkl() in your likelihood')
 
@@ -51,6 +55,9 @@ class likelihood():
 
     return cl
 
+  # Ensure that certain Class arguments are defined to the needed value.
+  # WARNING: so far, there is no way to enforce a parameter where smaller is
+  # better. TODO
   def need_Class_arguments(self,data,dictionary):
     for key,value in dictionary.iteritems():
       try :
@@ -143,14 +150,28 @@ class likelihood():
 
     return lkl
 
-# Likelihood type for prior
+###################################
+#
+# END OF GENERIC CLASS
+#
+###################################
+
+
+
+###################################
+# PRIOR TYPE LIKELIHOOD 
+# --> H0,...
+###################################
 class likelihood_prior(likelihood):
 
   def loglkl(self):
     raise NotImplementedError('Must implement method loglkl() in your likelihood')
 
 
-# Generic type for newdat likelihood (spt, boomerang, etc)
+###################################
+# NEWDAT TYPE LIKELIHOOD
+# --> spt,boomerang,etc.
+###################################
 class likelihood_newdat(likelihood):
 
   def __init__(self,path,data,command_line=False,log_flag=False):
@@ -528,9 +549,11 @@ class likelihood_newdat(likelihood):
 
 
 
+###################################
+# CLIK TYPE LIKELIHOOD
+# --> clik_fake_planck,clik_wmap,etc.
+###################################
 class likelihood_clik(likelihood):
-
-  
 
   def __init__(self,path,data,command_line=False,log_flag=False):
 

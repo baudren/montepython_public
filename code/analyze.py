@@ -2,7 +2,6 @@ import os,sys
 import re
 import io
 import matplotlib.pyplot as plt
-import matplotlib.mlab as mlab
 import matplotlib
 import math
 import numpy as np
@@ -12,32 +11,49 @@ class info:
 
   def __init__(self,command_line):
   
+    # Check if the scipy module has the interpolate method correctly installed
+    # (should be the case on every computer...)
     try:
       from scipy.interpolate import interp1d
       self.has_interpolate_module = True
     except ImportError:
       self.has_interpolate_module = False
-      print 'No cubic interpolation done (no scipy.interpolate module), only linear'
-    self.has_interpolate_module = False
+      print 'No cubic interpolation done (no interpolate method found in scipy), only linear'
+
+    # At this points, Files could contain either a list of files (that could be
+    # only one) or a folder.
     Files     = command_line.files
     binnumber = command_line.bins
+
+    # Prepare the files, according to the case, load the log.param, and
+    # prepare the output (plots folder, .covmat, .info and .log files). After
+    # this step, self.files will contain all chains.
     self.prepare(Files)
+    # And compute the mean, maximum of likelihood, 1-sigma variance for this
+    # main folder. This will create the self.spam chain
     self.convergence()
 
+    # Create the main chain, which consists in all elements of self.spam put
+    # together. This will serve for the  plotting.
     chain = np.copy(self.spam[0])
     for i in range(len(self.spam)-1):
      chain = np.append(chain,self.spam[i+1],axis=0)
 
+    # In case of comparison, launch the prepare and convergence methods, with
+    # an additional flag: is_main_chain=False. This will ensure that all the
+    # information will not be stored to self.files, self.covmat... but to the
+    # specified output, respectively comp_Files, comp_spam... 
     if command_line.comp is not None:
       comp_Files,comp_folder,comp_param = self.prepare(command_line.comp,is_main_chain = False)
       comp_spam,comp_ref_names,comp_tex_names,comp_boundaries,comp_mean = self.convergence(is_main_chain = False,Files = comp_Files,param = comp_param)
       comp_mean = comp_mean[0]
+      # Create comp_chain
       comp_chain = np.copy(comp_spam[0])
       for i in range(len(comp_spam)-1):
 	comp_chain = np.append(comp_chain,comp_spam[i+1],axis=0)
 
 
-    weight = sum(chain)[0]
+    weight = sum(chain)[0] # Total number of steps.
 
     # Covariance matrix computation (for the whole chain)
     self.mean   = self.mean[0]
@@ -59,10 +75,15 @@ class info:
 	self.cov.write('{0} '.format(self.covar[i][j]))
       self.cov.write('\n')
 
+    # Sorting by likelihood
     a=chain[:,1].argsort(0)
     total=chain[:,0].sum()
     self.lvls = [total*0.6826,total*0.954,total*0.997]
 
+    # Computing 1,2 and 3-sigma errors, and plot. This will create the triangle
+    # plot and the 1d by default. If you also specified a comparison folder, it
+    # will create a versus plot with the 1d comparison of all the common
+    # parameters, plus the 1d distibutions for the others.
     self.bounds = np.zeros((len(self.ref_names),len(self.lvls),2))
     if command_line.plot == True:
       if command_line.comp is None:
@@ -70,6 +91,7 @@ class info:
       else:
 	self.plot_triangle(chain,command_line,bin_number=binnumber,comp_chain=comp_chain,comp_ref_names = comp_ref_names,comp_tex_names = comp_tex_names,comp_folder = comp_folder,comp_boundaries = comp_boundaries,comp_mean = comp_mean)
 
+    # Write down to the .info file all necessary information
     self.info.write('\n param names:\t')
     for elem in self.ref_names:
       self.info.write('%s\t' % (elem))
@@ -95,6 +117,7 @@ class info:
     #for elem in self.bounds:
       #self.info.write('%.7f\t' % (elem[1][1]))
 
+  
   def prepare(self,Files,is_main_chain=True):
 
     # Scan the whole input folder, and include all chains in it (all files with
@@ -110,7 +133,7 @@ class info:
       for elem in np.copy(Files):
 	if os.path.isdir('{0}'.format(elem)) is True:
 	  Files.remove(elem)
-	elif os.path.getsize(elem) < 600:
+	elif os.path.getsize(elem) < 600: # If the file is too short in lines, remove it from the list
 	  Files.remove(elem)
 
     # Recover the folder, depending on the case
@@ -151,6 +174,8 @@ class info:
       covname  = folder+folder.split('/')[-2]+'.covmat'
       logname  = folder+folder.split('/')[-2]+'.log'
 
+    # Distinction between the main chain and the comparative one, instead of
+    # storing everything into the class, return it
     if is_main_chain:
       self.info  = open(infoname,'w')
       self.cov   = open(covname,'w')
@@ -162,6 +187,7 @@ class info:
       return True
     else:
       return Files,folder,param
+
 
   def convergence(self,is_main_chain=True,Files=None,param=None):
 
@@ -178,9 +204,9 @@ class info:
 
     if is_main_chain:
       Files = self.Files
-      param   = self.param
+      param = self.param
 
-    # Defining a list of names that should have a \ in their tex names
+    # Recovering parameter names and scales, creating tex names,
     for line in param:
       if line.find('#')==-1:
 	if line.find('data.params')!=-1 :
@@ -195,14 +221,20 @@ class info:
     scales = np.diag(scales)
     param.seek(0)
 
-    # log param names
+    # Log param names for the main chain
     if is_main_chain:
       for elem in ref_names:
 	self.log.write("%s   " % elem)
       self.log.write("\n")
+
+    # Total number of steps done:
+    total = 0
+
+    # Circle through all files
     for File in Files:
       i=Files.index(File)
       print 'scanning file {0}'.format(File)
+      # cheese will brutally contain everything in the chain File being scanned
       cheese = (np.array([[float(elem) for elem in line.split()] for line in open(File,'r')]))
       max_lkl = min(cheese[:,1]) # beware, it is the min because we are talking about '- log likelihood'
 
@@ -211,11 +243,15 @@ class info:
 	line_count+=1
       self.log.write("%s\t Number of steps:%d\tSteps accepted:%d\tacc = %.2g\tmin(-loglike) = %.5g " % (File,sum(cheese[:,0]),line_count,line_count*1.0/sum(cheese[:,0]),max_lkl))
       self.log.write("\n")
+      total += sum(cheese[:,0])
 
+      # Removing burn-in
       start = 0
       while cheese[start,1]>max_lkl+2:
 	start+=1
       print '  Removed {0} points of burn-in'.format(start)
+
+      # ham contains cheese without the burn-in
       ham = np.copy(cheese[start::])
 
       # Deal with single file case
@@ -234,18 +270,23 @@ class info:
       spam.append(ham)
 
 
-    # Convergence computation
+    # Now that the list spam contains all the different chains removed of their
+    # respective burn-in, proceed to the convergence computation
     length  = np.mean([sum(elem[:])[0] for elem in spam])
 
-    # 2 D arrays for mean and var, one column will contain the total (over all
-    # chains) mean (resp.  variance), and each other column the respective chain
-    # mean (resp. chain variance).  R only contains the values for each parameter
+    # 2D arrays for mean and var, one column will contain the total (over all
+    # chains) mean (resp.  variance), and each other column the respective
+    # chain mean (resp. chain variance).  R only contains the values for each
+    # parameter
     mean     = np.zeros((len(spam)+1,np.shape(spam[0])[1]-2))
     var      = np.zeros((len(spam)+1,np.shape(spam[0])[1]-2))
     R 	     = np.zeros(np.shape(spam[0])[1]-2)
+    
+    # Quantities for the Gelman Rubin diagnostic
     within  = 0
     between = 0
 
+    # Compute mean and variance for each chain
     for i in range(np.shape(mean)[1]):
       for j in range(len(spam)):
 	for k in range(np.shape(spam[j])[0]):
@@ -264,8 +305,11 @@ class info:
 	var[j+1,i]  = var[j+1,i]/(sum(spam[j])[0]-1)
 
     
-    # Gelman Rubin Diagnostic
-    # verify the validity of this computation for different length !
+    # Gelman Rubin Diagnostic:
+    # Computes a quantity linked to the ratio of the mean of the variances of
+    # the different chains (within), and the variance of the means (between)
+    # TODO: verify the validity of this computation for chains of different
+    # length !
     for i in range(np.shape(mean)[1]):
       for j in range(len(spam)):
 	within  += var[j+1,i]/len(spam)
@@ -273,6 +317,8 @@ class info:
 
       R[i] = math.sqrt(((1-1/length)*within+(len(spam)+1)/(len(spam)*length)*between)/within)
     
+    # Log finally the total number of steps
+    self.log.write("--> Total number of steps:%d" % total)
     if is_main_chain:
       self.spam = spam
 
@@ -290,6 +336,10 @@ class info:
     else:
       return spam,ref_names,tex_names,boundaries,mean
 
+  # Plotting routine, also computes the sigma errors. Partly imported from
+  # Karim Benabed in pmc. However, many options from this method (if not all of
+  # them) are unused, meaning : select, legend, show_prop, show_peak,
+  # show_extra, add_legend, tick_at_peak, convolve
   def plot_triangle(self,chain,command_line,select=None,bin_number=20,scales=(),legend=(),levels=(68.26,95.4,99.7),show_prop=True,fill=68.26,show_mean=True,show_peak=True,show_extra=None,add_legend=r"$=%(peak).4g^{+%(up).3g}_{-%(down).3g}$",aspect=(16,16),fig=None,tick_at_peak=False,convolve=True,comp_chain = None,comp_ref_names = None,comp_tex_names = None, comp_folder = None,comp_boundaries = None,comp_mean = None):
 
     # If comparison is asked, don't plot 2d levels
@@ -302,31 +352,36 @@ class info:
       comp    = False
       comp_done = False
 
+    # Pre configuration of the output, note that changes to the font size will
+    # occur later on as well, to obtain a nice scaling.
     matplotlib.rc('text',usetex = True)
     matplotlib.rc('font',size=11)
     matplotlib.rc('xtick',labelsize='8')
     matplotlib.rc('ytick',labelsize='8')
     lvls = np.array(levels)/100.
 
+    # Create the figures
     if plot_2d:
       if fig:
 	fig2d = plt.figure(fig,aspect)
       else:
 	fig2d = plt.figure(1,figsize=aspect)
 
-    # TEST
     fig1d = plt.figure(2,figsize=aspect)
+
     # clear figure
     plt.clf()
 
+    
     n = np.shape(chain)[1]-2
-    # to be modified by data.param.itervalues()[4]
-    if select==None:
-      select = range(n)
     if not scales:
      scales = np.ones(n)
     scales=np.array(scales)
 
+    #################
+    # Beginning of unused stuff
+    if select==None:
+      select = range(n)
 
     if show_mean:
       if not isinstance(show_mean,(list,tuple)): 
@@ -343,9 +398,12 @@ class info:
 	show_peak=(False,)*(n)
 
     n = len(select)
+    # End of unused stuff
+    ################
+    
     mean = self.mean*scales
     var  = self.var*scales**2
-    #pmax = 
+
     # 1D plot
     max_values = np.max(chain[:,2:],axis=0)*scales
     min_values = np.min(chain[:,2:],axis=0)*scales
@@ -358,6 +416,7 @@ class info:
       comp_min_values = np.min(comp_chain[:,2:],axis=0)
       comp_span = (comp_max_values-comp_min_values)
 
+    # Define the place of ticks
     if tick_at_peak:
       pass
     else:
@@ -382,11 +441,15 @@ class info:
 	ticks[i][2] = self.boundaries[i][1]
 	x_range[i][1] = self.boundaries[i][1]
       
+
+    # Borders stuff, might need adjustement for printing on paper.
     fig1d.subplots_adjust(bottom=0.03, left=.04, right=0.98, top=0.95, hspace=.35)
     if plot_2d:
       fig2d.subplots_adjust(bottom=0.03, left=.04, right=0.98, top=0.98, hspace=.35)
     
 
+    # In case of a comparison, figure out which names are shared, which are
+    # unique and thus require a simple treatment.
     if comp:
       index = 1
       backup_comp_names = np.copy(comp_ref_names)
@@ -403,38 +466,41 @@ class info:
       num_columns = round(math.sqrt(len(self.ref_names)))
       num_lines   = math.ceil(len(self.ref_names)*1.0/num_columns)
 
+    # Actual plotting
     for i in range(len(self.ref_names)):
 
+      # Adding the subplots to the respective figures, this will be the diagonal for the triangle plot.
       if plot_2d:
 	ax2d=fig2d.add_subplot(len(self.ref_names),len(self.ref_names),i*(len(self.ref_names)+1)+1,yticks=[])
-
       ax1d = fig1d.add_subplot(num_lines,num_columns,i+1,yticks=[])
 
-      # histogram
+      # normalized histogram
       hist,bin_edges=np.histogram(chain[:,i+2],bins=bin_number,weights=chain[:,0],normed=False)
       hist /= np.max(hist)
       bincenters = 0.5*(bin_edges[1:]+bin_edges[:-1])
 
+      # interpolated histogram (if available)
       interp_hist,interp_grid = self.cubic_interpolation(hist,bincenters)
 
       if comp:
 	try:
-	  #ii = backup_comp_names.index(self.ref_names[i])
+	  # For the names in common, the following line will not output an
+	  # error. Then compute the comparative histogram
 	  ii = np.where( backup_comp_names == self.ref_names[i] )[0][0]
 	  comp_hist,comp_bin_edges = np.histogram(comp_chain[:,ii+2],bins=bin_number,weights=comp_chain[:,0],normed=False)
 	  comp_hist /= np.max(comp_hist)
 	  comp_bincenters = 0.5*(comp_bin_edges[1:]+comp_bin_edges[:-1])
 	  interp_comp_hist,interp_comp_grid = self.cubic_interpolation(comp_hist,comp_bincenters)
 	  comp_done = True
-	except IndexError :
+	except IndexError : # If the name was not found, return the error. This will be then plotted at the end
 	  comp_done = False
       if comp:
 	if not comp_done:
 	  print '{0} was not found in the second folder'.format(self.ref_names[i])
 
-      # minimum credible interval
+      # minimum credible interval (method by Jan Haman). Fails for multimodal histograms
       bounds = self.minimum_credible_intervals(hist,bincenters,lvls)
-      if bounds is False:
+      if bounds is False: # print out the faulty histogram (try reducing the binnumber to avoir this)
 	print hist
       else:
 	for elem in bounds:
@@ -500,12 +566,11 @@ class info:
 	ax2d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=2)
 	ax1d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=4)
 
+      # Now do the rest of the triangle plot
       if plot_2d:
 	for j in range(i):
 	  ax2dsub=fig2d.add_subplot(len(self.ref_names),len(self.ref_names),(i)*len(self.ref_names)+j+1)
 	  n,xedges,yedges=np.histogram2d(chain[:,i+2],chain[:,j+2],weights=chain[:,0],bins=(bin_number,bin_number),normed=False)
-	  #extent = [yedges[0], yedges[-1], xedges[0], xedges[-1]]
-	  #extent = [x_range[i][1], x_range[i][0], x_range[j][1], x_range[j][0]]
 	  extent = [x_range[j][0], x_range[j][1], x_range[i][0], x_range[i][1]]
 	  x_centers = 0.5*(xedges[1:]+xedges[:-1])
 	  y_centers = 0.5*(yedges[1:]+yedges[:-1])
@@ -521,13 +586,13 @@ class info:
 	    ax2dsub.set_yticklabels(['%.4g' % s for s in ticks[i]],fontsize=ticksize2d)
 	  else:
 	    ax2dsub.set_yticklabels([''])
-	  #ax2dsub.axis([x_range[i][0],x_range[i][1],x_range[j][0],x_range[j][1]])
 	  ax2dsub.imshow(n.T, extent=extent, aspect='auto',interpolation='gaussian',origin='lower',cmap=matplotlib.cm.Reds)
 
-	  # plotting contours
+	  # plotting contours, using the ctr_level method (from Karim Benabed)
 	  cs = ax2dsub.contour(y_centers,x_centers,n.T,extent=extent,levels=self.ctr_level(n.T,lvls),colors="k",zorder=5)
 	  ax2dsub.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=6)
 
+    # Plot the remaining 1d diagram for the parameters only in the comp folder
     if comp:
       for i in range(len(self.ref_names),len(self.ref_names)+len(comp_ref_names)):
 
@@ -563,10 +628,7 @@ class info:
       fig1d.savefig(self.folder+'plots/{0}_1d.pdf'.format(self.folder.split('/')[-2]))
 
 
-
-
-
-
+  # Extract the contours for the 2d plots (KB)
   def ctr_level(self,histogram2d,lvl,infinite = False):
 
     hist=histogram2d.flatten()*1.
@@ -580,6 +642,7 @@ class info:
       return clist[1:]
     return clist
 
+  # Extract minimum credible intervals (method from Jan Haman)
   def minimum_credible_intervals(self,histogram,bincenters,levels):
     bounds = np.zeros((len(levels),2))
     j = 0
@@ -647,6 +710,8 @@ class info:
     else:
       return hist,bincenters
 
+  # Empirical method to adjust font size on the plots to fit the number of
+  # parameters. Feel free to modify to your needs.
   def get_fontsize(self,diag_length):
     # for a diagonal of 5, fontsize of 19, for a diagonal of 13, fontsize of 8
     fontsize = round( 19 - (diag_length-5)*1.38)

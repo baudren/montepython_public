@@ -26,6 +26,7 @@ import os,sys
 #------------------DEFAULT-CONFIGURATION--------------------------------
 path = {}
 path['MontePython'] = sys.path[0]
+# TODO: allow for another .conf file to be used
 conf_file = path['MontePython']+'/../default.conf'
 if os.path.isfile(conf_file):
   for line in open(conf_file):
