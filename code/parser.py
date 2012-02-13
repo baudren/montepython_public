@@ -7,16 +7,18 @@ parser = argparse.ArgumentParser(description='Monte Python, a Monte Carlo code i
 
 ###############
 # MCMC basic
-# -- number of steps
+# -- number of steps	(OPTIONAL)
 parser.add_argument('-N', metavar='steps',type=int,dest='N')
-# -- output folder
+# -- output folder	(OBLIGATORY)
 parser.add_argument('-o', metavar='output folder',type=str,dest='folder')
-# -- parameter file
+# -- parameter file	(OBLIGATORY)
 parser.add_argument('-p', metavar='input param file',type=str,dest='param')
-# -- covariance matrix
+# -- covariance matrix	(OPTIONAL)
 parser.add_argument('-c', metavar='input cov matrix',type=str,dest='cov')
-# -- jumping method
+# -- jumping method	(OPTIONAL)
 parser.add_argument('-j', metavar='jumping method',type=str,dest='jumping',default='global')
+# -- configuration file (OPTIONAL)
+parser.add_argument('-conf', metavar='configuration file',type=str,dest='config_file',default='default.conf')
 
 ###############
 # MCMC restart from chain

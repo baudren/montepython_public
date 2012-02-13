@@ -23,26 +23,27 @@ import data	# data handling
 
 import os,sys
 
-#------------------DEFAULT-CONFIGURATION--------------------------------
-path = {}
-path['MontePython'] = sys.path[0]
-# TODO: allow for another .conf file to be used
-conf_file = path['MontePython']+'/../default.conf'
-if os.path.isfile(conf_file):
-  for line in open(conf_file):
-    exec(line)
-else:
-  print ' /|\  You must provide a default.conf file'
-  print '/_o_\ in your montepython directory that specify'
-  print '      the correct locations of MontePython, Class, Clik...'
-
 
 #------------------MAIN-DEFINITION--------------------------------------
 def main():
   # Parsing line argument
   command_line=parser.parse()
 
-  # If info flag was used, read a potential chain (or set of chains) to be
+  # Default configuration
+  path = {}
+  path['MontePython'] = sys.path[0]
+
+  # Configuration file, defaulting to default.conf in your root directory
+  conf_file = path['MontePython']+'/../'+command_line.config_file
+  if os.path.isfile(conf_file):
+    for line in open(conf_file):
+      exec(line)
+  else:
+    print ' /|\  You must provide a .conf file (default.conf by default)'
+    print '/_o_\ in your montepython directory that specifies'
+    print '      the correct locations for MontePython, Class, Clik...'
+
+  # If the info flag was used, read a potential chain (or set of chains) to be
   # analysed with default procedure. If the argument is a .info file, then it
   # will extract information from it (plots to compute, chains to analyse,
   # etc...)

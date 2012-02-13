@@ -15,10 +15,12 @@ import io
 # initialization
 class likelihood():
 
-  def __init__(self,path,data,command_line=False,log_flag=False):
+  def __init__(self,path,data,command_line,log_flag,default):
 
     self.name = self.__class__.__name__
     self.folder = os.path.abspath(data.path['MontePython'])+'/../likelihoods/'+self.name+'/'
+    if not default:
+      path = command_line.folder+'log.param'
     self.read_from_file(path,data)
 
     # Append to the log.param the value used (WARNING: so far no comparison is
@@ -34,12 +36,17 @@ class likelihood():
 
   def read_from_file(self,path,data):
     self.path = path
+    self.dictionary={}
     if os.path.isfile(path):
       data_file = open(path,'r')
       for line in data_file:
 	if line.find('#')==-1:
 	  if line.find(self.name+'.')!=-1:
 	    exec(line.replace(self.name+'.','self.'))
+	    # This part serves only to compare
+	    key = line.split('=')[0].strip(' ').strip('\t').strip('\n').split('.')[1]
+	    value = line.split('=')[-1].strip(' ').strip('\t').strip('\n')
+	    self.dictionary[key] = value
       data_file.seek(0)
       data_file.close()
 
@@ -174,11 +181,14 @@ class likelihood_prior(likelihood):
 ###################################
 class likelihood_newdat(likelihood):
 
-  def __init__(self,path,data,command_line=False,log_flag=False):
+  def __init__(self,path,data,command_line,log_flag,default):
 
-    likelihood.__init__(self,path,data,command_line,log_flag)
+    likelihood.__init__(self,path,data,command_line,log_flag,default)
 
     self.need_Class_arguments(data,{'lensing':'yes', 'output':'tCl lCl pCl'})
+    
+    if not default:
+      return
       
     # open .newdat file
     newdatfile=open(self.data_directory+self.file,'r')
@@ -555,7 +565,13 @@ class likelihood_newdat(likelihood):
 ###################################
 class likelihood_clik(likelihood):
 
-  def __init__(self,path,data,command_line=False,log_flag=False):
+  def __init__(self,path,data,command_line,log_flag,default):
+
+    likelihood.__init__(self,path,data,command_line,log_flag,default)
+    self.need_Class_arguments(data,{'lensing':'yes', 'output':'tCl lCl pCl'})
+
+    if not default:
+      return
 
     try:
       import clik
@@ -564,8 +580,6 @@ class likelihood_clik(likelihood):
       print "/_o_\ please run : source /path/to/clik/bin/clik_profile.sh"
       print "      and try again."
       exit()
-    likelihood.__init__(self,path,data,command_line,log_flag)
-    self.need_Class_arguments(data,{'lensing':'yes', 'output':'tCl lCl pCl'})
     self.clik = clik.clik(self.path_clik)
     self.l_max = max(self.clik.get_lmax())
     self.need_Class_arguments(data,{'l_max_scalars':self.l_max})

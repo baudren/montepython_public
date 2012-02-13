@@ -6,9 +6,12 @@ class sn(likelihood):
   
   # initialization routine
 
-  def __init__(self,path,data,command_line=False):
+  def __init__(self,path,data,command_line,log_flag,default):
 
     likelihood.__init__(self,path,data,command_line)
+    
+    if not default:
+      return
 
     # define array for values of z and data points
     self.z	= np.array([],'float64')

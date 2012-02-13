@@ -46,9 +46,9 @@ def log_Class_arguments(data,command_line):
     log.close()
 
 # Fourth and last function called when writing log.param, it logs the
-# default.conf file used to get the path. Only useful if you have several
-# versions of Class installed in different locations, or different versions of
-# Clik. But, as you never know what might go wrong, it is logged everytime !
+# .conf file used to get the path. Only useful if you have several versions of
+# Class installed in different locations, or different versions of Clik. But,
+# as you never know what might go wrong, it is logged everytime !
 def log_default_configuration(data,command_line):
   log = open(command_line.folder+'/log.param','a')
   log.write('\n\n#--------Default-Configuration------\n')
@@ -124,10 +124,11 @@ def create_output_files(command_line,data):
 # in the middle of the name, this method will do weird things
 # TODO
 def get_tex_name(name,number=1):
-  tex_greek = ['omega','tau','alpha','beta','delta','nu','Omega']
+  tex_greek = ['omega','tau','alpha','beta','delta','nu','Omega','Lambda','lambda']
   for elem in tex_greek:
     if elem in name:
-      name="""\\"""+name
+      position = name.find(elem)
+      name=name[:position]+"""\\"""+name[position:]
   if number==1: 
     if name.find('_')!=-1:
       temp_name = name.split('_')[0]+'_{'

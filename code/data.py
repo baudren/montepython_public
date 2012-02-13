@@ -10,7 +10,7 @@ import io # Needs to talk to io.py file for the logging of parameters
 
 class data:
 
-  # - path contains the configuration you inputed in default.conf,
+  # - path contains the configuration you inputed in your .conf file,
   # - the default flag is here to distinguish whether it is a genuine
   # initialization of data (default=True), or whether it is a comparison with
   # the log.param of an existing folder (default=False)
@@ -66,13 +66,13 @@ class data:
     # End of initialisation with the parameter file
     self.param_file.close()
 
+    # log_flag, initially at False, will help determine if the code should
+    # log the parameter file in the folder
+    log_flag = False
+
     # For a true initialization, one should then initialize the likelihoods.
     # This step is obviously skipped for a comparison
     if default:
-
-      # log_flag, initially at False, will help determine if the code should
-      # log the parameter file in the folder
-      log_flag = False
 
       sys.stdout.write('testing likelihoods for:\n')
       for i in range(len(self.exp)):
@@ -88,48 +88,37 @@ class data:
         io.log_parameters(self,command_line)
 	log_flag = True
 
-      self.lkl=dict()
-	
-	# adding the likelihood directory to the path, to import the module
-	# then, for each library, calling an instance of the likelihood.
-	# Beware, though, if you add new likelihoods, they should go to the
-	# folder likelihoods/yourlike/yourlike.py, and contain a yourlike.data,
-	# otherwise the following set of commands will not work anymore.
+    self.lkl=dict()
+      
+    # adding the likelihood directory to the path, to import the module
+    # then, for each library, calling an instance of the likelihood.
+    # Beware, though, if you add new likelihoods, they should go to the
+    # folder likelihoods/yourlike/yourlike.py, and contain a yourlike.data,
+    # otherwise the following set of commands will not work anymore.
 
-	# For the logging if log_flag is True, each likelihood will log its
-	# parameters
+    # For the logging if log_flag is True, each likelihood will log its
+    # parameters
 
-      for elem in self.exp:
+    for elem in self.exp:
 
-	folder = os.path.abspath(path['MontePython'])+ "/../likelihoods/%s" % elem
-	# add the folder of the likelihood to the path of libraries to...
-	if folder not in sys.path:
-	  sys.path.insert(0, folder)
-	# ... import easily the likelihood.py program
-	exec "import %s" % elem
-	# if the parameter file is not a log.param, the code should log all the
-	# likelihood relevant parameters
-	if self.param.find('log.param')==-1:
-	  exec "self.lkl['%s'] = %s.%s('%s/%s.data',self,command_line,log_flag)"% (elem,elem,elem,folder,elem)
-	# else, execute a normal initialisation. This can happend, even when
-	# genuinely initializing the code, for instance in case of a restart
-	else:
-	  exec "self.lkl['%s'] = %s.%s(self.param,self)"% (elem,elem,elem)
-    
-      # Finally, log the Class_arguments used. This comes in the end, because
-      # it can be modified inside the likelihoods init functions
-      if log_flag:
-	io.log_Class_arguments(self,command_line)
-	io.log_default_configuration(self,command_line)
+      folder = os.path.abspath(path['MontePython'])+ "/../likelihoods/%s" % elem
+      # add the folder of the likelihood to the path of libraries to...
+      if folder not in sys.path:
+	sys.path.insert(0, folder)
+      # ... import easily the likelihood.py program
+      exec "import %s" % elem
+      # Initialize the likelihoods. Depending on the values of command_line,
+      # log_flag and default, the routine will call slightly different things.
+      # If log_flag, log.param will be appended. If default, some
+      # precomputation will be made. Finally if not default, only a dictionary
+      # containing the .data file will be created, for comparison purpose.
+      exec "self.lkl['%s'] = %s.%s('%s/%s.data',self,command_line,log_flag,default)"% (elem,elem,elem,folder,elem)
 
-    # In case of a comparison, one needs to know whether the likelihoods
-    # share the same properties (same data, prior, etc). To this end, one
-    # reads the already logged parameter file, after having created new
-    # data.likelihood_name dictionaries
-    #if not default:
-      #for elem in self.exp:
-	#exec "print %s.path_clik" % elem
-      #exit()
+    # Finally, log the Class_arguments used. This comes in the end, because
+    # it can be modified inside the likelihoods init functions
+    if log_flag:
+      io.log_Class_arguments(self,command_line)
+      io.log_default_configuration(self,command_line)
 
   # Redefinition of the 'compare' method for two instances of this data class.
   # It will decide which basic operations to perform when the code asked if two
@@ -147,11 +136,21 @@ class data:
 
     # Check if all the experiments are tested again,
     if len(list(set(other.exp).symmetric_difference(set(self.exp))))==0: 
+      # Check that they have been called with the same .data file, stored in
+      # dictionary when initializing.
+      for exp in self.exp:
+	for elem in self.lkl[exp].dictionary:
+	  if self.lkl[exp].dictionary[elem]!=other.lkl[exp].dictionary[elem]:
+	    print 'in your parameter file: ',self.lkl[exp].dictionary
+	    print 'in log.param:           ',other.lkl[exp].dictionary
+	    return -1
+
       # Fill in the unordered version of dictionaries
       for key,elem in self.mcmc_parameters.iteritems():
 	self.uo_params[key]=elem['initial']
       for key,elem in other.mcmc_parameters.iteritems():
 	other.uo_params[key]=elem['initial']
+
 
       # And finally compare them (standard comparison between dictionnaries,
       # will return True if both have the same keys and values associated to
