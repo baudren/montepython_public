@@ -38,6 +38,10 @@ def main():
   if os.path.isfile(conf_file):
     for line in open(conf_file):
       exec(line)
+    for key,value in path.iteritems():
+      if value[-1]!='/':
+	path[key] = value+'/'
+      print path[key]
   else:
     print ' /|\  You must provide a .conf file (default.conf by default)'
     print '/_o_\ in your montepython directory that specifies'
