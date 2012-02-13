@@ -120,9 +120,7 @@ def create_output_files(command_line,data):
     for line in open(command_line.restart,'r'):
       data.out.write(line)
 
-# Simple (and unperfect) tex name transformer. So far, if the greek letter is
-# in the middle of the name, this method will do weird things
-# TODO
+# Simple tex name transformer. 
 def get_tex_name(name,number=1):
   tex_greek = ['omega','tau','alpha','beta','delta','nu','Omega','Lambda','lambda']
   for elem in tex_greek:
