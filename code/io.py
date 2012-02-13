@@ -63,7 +63,7 @@ def log_default_configuration(data,command_line):
 # log.param is crucial, as is it the only place where it is stored.
 def print_parameters(out,data):
   param = data.get_mcmc_parameters(['varying'])
-  out.write('#  -LogLkl\t')
+  out.write('\n#  -LogLkl\t')
   for i in range(len(param)):
     if data.mcmc_parameters[param[i]]['initial'][4]!=1:
       number = 1./(data.mcmc_parameters[param[i]]['initial' ][4])
@@ -113,7 +113,7 @@ def create_output_files(command_line,data):
         suffix=int(files.split('__')[-1])
   suffix+=1
   data.out=open(command_line.folder+outname_base+str(suffix),'w')
-  print '  Creating {0}{1}{2}'.format(command_line.folder,outname_base,suffix)
+  sys.stdout.write('Creating {0}{1}{2}\n'.format(command_line.folder,outname_base,suffix))
   data.out_name='{0}{1}{2}'.format(command_line.folder,outname_base,suffix)
   # in case of a restart, copying the whole thing in the new file
   if command_line.restart is not None:

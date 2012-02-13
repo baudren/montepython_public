@@ -1,7 +1,8 @@
 #------Experiments to test (separated with commas)-----
 # valid options are (so far): clik_fake_planck, hst, clik_wmap_full, acbar,
 # boomerang, quad, bicep, spt, cbi, sn, newdat
-data.exp=['hst','acbar','clik_wmap_lowl']
+#data.exp=['hst','acbar','clik_wmap_lowl']
+data.exp=['hst','acbar']
 
 # Parameter list, data.params[class name] = [mean, min, max, 1-sigma, scale, role]
 # - if min max irrelevant, put to -1
@@ -19,7 +20,8 @@ data.params['h']         = [0.703,  -1,-1, 0.025,1,   'cosmo']
 # class name
 data.params['A_SZ']	 = [1,       0, 2, 0.1,1,  'nuisance']
 
-data.Class_arguments     = { 'sBBN file':'/scratch/audren/class/bbn/sBBN.dat'}
+data.Class_arguments['sBBN file']   = data.path['class']+'bbn/sBBN.dat'
+data.Class_arguments['k_pivot'] = 0.002
 
 #------ Mcmc parameters ----
 data.N=10

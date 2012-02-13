@@ -8,8 +8,7 @@ class sn(likelihood):
 
   def __init__(self,path,data,command_line,log_flag,default):
 
-    likelihood.__init__(self,path,data,command_line)
-    
+    likelihood.__init__(self,path,data,command_line,log_flag,default)
     if not default:
       return
 
@@ -75,6 +74,6 @@ class sn(likelihood):
     chi_squared = AT - (BT**2)/self.inv_covmat_sum
 
     # return ln(L)
-    self.loglkl = - 0.5 * chi_squared 
+    lkl = - 0.5 * chi_squared 
 
-    return self.loglkl
+    return lkl

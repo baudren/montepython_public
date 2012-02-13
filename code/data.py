@@ -74,9 +74,9 @@ class data:
     # This step is obviously skipped for a comparison
     if default:
 
-      sys.stdout.write('testing likelihoods for:\n')
+      sys.stdout.write('Testing likelihoods for:\n -> ')
       for i in range(len(self.exp)):
-	sys.stdout.write(self.exp[i]+',\t')
+	sys.stdout.write(self.exp[i]+', ')
       sys.stdout.write('\n')
       
       # logging the parameter file (only if folder does not exist !)

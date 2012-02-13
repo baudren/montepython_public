@@ -28,7 +28,6 @@ class likelihood():
     if log_flag: 
       io.log_likelihood_parameters(self,command_line)
 
-
   # This is a placeholder, to remind that, for a brand new likelihood, you need
   # to define its computation.
   def loglkl(self,_cosmo,data):

@@ -164,7 +164,7 @@ def get_cov(data,command_line):
       i+=1
 
   # Final print out, the actually used covariance matrix
-  print '\nDeduced starting covariance matrix:'
+  sys.stdout.write('\nDeduced starting covariance matrix:\n')
   print parameter_names
   print M
 
@@ -342,18 +342,19 @@ def chain(_cosmo,data,command_line):
   if N>1:
     io.print_vector([data.out,sys.stdout],N-1,loglike,data)
 
+
   # Warn the user that the code finished because of class failures.
   if (failed == num_failure):
-    print ' /|\   The computation failed {0} times, \n'.format(failed)
-    print '/_o_\  Please check the values of your parameters'
+    sys.stdout.write('\n\n /|\   The computation failed {0} times, \n'.format(failed))
+    sys.stdout.write('/_o_\  Please check the values of your parameters\n')
 
   # Print out some information on the finished chain
   rate=acc/(acc+rej)
-  print '#  {0} steps done, acceptance rate:'.format(command_line.N),rate
+  sys.stdout.write('\n#  {0} steps done, acceptance rate: {1}\n'.format(command_line.N,rate))
   
   # For a restart, and if the code did not fail too much, erase the starting
   # point to keep only the new, longer chain.
   if ((command_line.restart is not None) and (failed < num_failure)):
     os.remove(command_line.restart)
-    print '  deleting starting point of the chain {0}'.format(command_line.restart)
+    sys.stdout.write('  deleting starting point of the chain {0}\n'.format(command_line.restart))
   return rate,max_loglike

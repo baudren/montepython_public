@@ -43,6 +43,8 @@ def main():
     print '/_o_\ in your montepython directory that specifies'
     print '      the correct locations for MontePython, Class, Clik...'
 
+  sys.stdout.write('Running MontePython version 0.9\n')
+
   # If the info flag was used, read a potential chain (or set of chains) to be
   # analysed with default procedure. If the argument is a .info file, then it
   # will extract information from it (plots to compute, chains to analyse,
@@ -63,6 +65,7 @@ def main():
       folder += ''.join(elem+'/')
     command_line.param = folder+'log.param'
     command_line.folder = folder
+    sys.stdout.write('Reading {0} file'.format(command_line.restart))
     Data = data.data(command_line,path)
 
   # Else, fill in data, starting from  parameter file, If output folder already
