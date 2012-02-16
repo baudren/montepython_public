@@ -476,11 +476,11 @@ class info:
 
       # normalized histogram
       hist,bin_edges=np.histogram(chain[:,i+2],bins=bin_number,weights=chain[:,0],normed=False)
-      hist /= np.max(hist)
       bincenters = 0.5*(bin_edges[1:]+bin_edges[:-1])
 
       # interpolated histogram (if available)
       interp_hist,interp_grid = self.cubic_interpolation(hist,bincenters)
+      interp_hist /= np.max(interp_hist)
 
       if comp:
 	try:
@@ -488,9 +488,9 @@ class info:
 	  # error. Then compute the comparative histogram
 	  ii = np.where( backup_comp_names == self.ref_names[i] )[0][0]
 	  comp_hist,comp_bin_edges = np.histogram(comp_chain[:,ii+2],bins=bin_number,weights=comp_chain[:,0],normed=False)
-	  comp_hist /= np.max(comp_hist)
 	  comp_bincenters = 0.5*(comp_bin_edges[1:]+comp_bin_edges[:-1])
 	  interp_comp_hist,interp_comp_grid = self.cubic_interpolation(comp_hist,comp_bincenters)
+	  interp_comp_hist /= np.max(interp_comp_hist)
 	  comp_done = True
 	except IndexError : # If the name was not found, return the error. This will be then plotted at the end
 	  comp_done = False
@@ -600,9 +600,9 @@ class info:
 	ii = np.where(backup_comp_names == comp_ref_names[i-len(self.ref_names)])[0][0]
 
 	comp_hist,comp_bin_edges = np.histogram(comp_chain[:,ii+2],bins=bin_number,weights=comp_chain[:,0],normed=False)
-	comp_hist /= np.max(comp_hist)
 	comp_bincenters = 0.5*(comp_bin_edges[1:]+comp_bin_edges[:-1])
 	interp_comp_hist,interp_comp_grid = self.cubic_interpolation(comp_hist,comp_bincenters)
+	interp_comp_hist /= np.max(interp_comp_hist)
 
 	comp_bounds = self.minimum_credible_intervals(comp_hist,comp_bincenters,lvls)
 	if comp_bounds is False:
