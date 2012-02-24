@@ -48,6 +48,12 @@ class likelihood():
 	    self.dictionary[key] = value
       data_file.seek(0)
       data_file.close()
+    try:
+      if (self.data_directory[-1]!='/'):
+	self.data_directory[-1]+='/'
+	print self.data_directory
+    except:
+      pass
 
   def get_cl(self,_cosmo):
 
@@ -65,28 +71,41 @@ class likelihood():
   # WARNING: so far, there is no way to enforce a parameter where smaller is
   # better. TODO
   def need_Class_arguments(self,data,dictionary):
+    array_flag = False
     for key,value in dictionary.iteritems():
       try :
 	data.Class_arguments[key]
 	try:
 	  float(data.Class_arguments[key])
 	  num_flag = True
-	except:
-	  num_flag = False
+	except ValueError: num_flag = False
+	except TypeError:  
+	  num_flag = True
+	  array_flag = True
+	
       except KeyError:
 	try:
 	  float(value)
 	  num_flag = True
 	  data.Class_arguments[key] = 0
-	except:
+	except ValueError:
 	  num_flag = False
 	  data.Class_arguments[key] = ''
+	except TypeError:
+	  num_flag = True
+	  array_flag = True
       if num_flag is False:
 	if data.Class_arguments[key].find(value)==-1:
 	  data.Class_arguments[key] += ' '+value+' '
       else:
-	if float(data.Class_arguments[key])<value:
-	  data.Class_arguments[key] = value
+	if array_flag is False:
+	  if float(data.Class_arguments[key])<value:
+	    data.Class_arguments[key] = value
+	else:
+	  data.Class_arguments[key] = '%.2g' % value[0]
+	  for i in range(1,len(value)):
+	    data.Class_arguments[key] += ',%.2g' % (value[i])
+
 
 
   def read_contamination_spectra(self,data):

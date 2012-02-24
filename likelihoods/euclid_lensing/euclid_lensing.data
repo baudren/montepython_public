@@ -1,0 +1,24 @@
+euclid_lensing.data_directory = data.path['data']
+euclid_lensing.fiducial_file  = "Euclid5_fiducial_nonlinear.dat"
+
+# number of l values used to compute C_l
+euclid_lensing.nlmax = 30		
+# logarithmic l step for C_l
+euclid_lensing.dlnl  = 0.2		
+# number of discrete z values in selection function file
+euclid_lensing.nzmax = 151		
+
+# number of bins of the survey
+euclid_lensing.nbin  = 5		
+# maximum redshift covered by survey
+euclid_lensing.zmax  = 3		
+# sky coverage
+euclid_lensing.fsky  = 0.5		
+# precision with which bin edges are computed
+euclid_lensing.dz    = 0.1		
+
+# noise computation
+euclid_lensing.rms_shear = 0.22
+# number of galaxies per square arcminutes
+euclid_lensing.gal_per_sqarcmn = 35	
+

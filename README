@@ -8,7 +8,7 @@
 -----------------------
   Move the .tgz file to your convenience, untar its content
 
-  $ tar -zxvf montepython-x.y.tgz
+  $ tar -zxvf montepython-vx.y.tgz
   
   This will create a directory named MontePython into your current directory.
   If you add the following line to your ~/.bashrc file:
