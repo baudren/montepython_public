@@ -12,6 +12,8 @@ euclid_pk.zmax  = 2.0
 euclid_pk.fsky  = 0.5
 # precision with which bin edges are computed
 euclid_pk.dz    = 0.1
+# precision on the mu variable
+euclid_pk.mu_size = 100
 
 # noise computation
 euclid_pk.Pshot = 0.0
