@@ -6,9 +6,10 @@
 
 ## The MontePython part
 -----------------------
-  Move the .tgz file to your convenience, untar its content
+  Move the .tar.bz2 file to your convenience, untar its content
 
-  $ tar -zxvf montepython-vx.y.tgz
+  $ bunzip2 montepython-vx.y.tar.bz2
+  $ tar -xvf montepython-vx.y.tar
   
   This will create a directory named MontePython into your current directory.
   If you add the following line to your ~/.bashrc file:
@@ -62,9 +63,13 @@ there for this, afterall.
   This should be change to wherever is your prefered python distribution
 installed. For standard distribution, this should already be working.
 
-  2- You then have to edit the two lines labeled:
-    path['class']='/my/path/to/class'
-    path['clik'] ='/my/path/to/clik/examples'
+  2- You then have to edit the line labeled:
+    root = '/my/general/path/to/my/codes/'
+
+  and adapt the following lines:
+
+    path['class']=root+'class'
+    path['clik'] =root+'clik/examples'
   to the values relevant for your system.
 
 
@@ -97,35 +102,8 @@ less steps, one can type:
 
   $ ./MontePython.py -info planck/*
 
+
 ## The details
 --------------
 
-  One folder will contain only one cosmological scenario (one set of
-experiments, and one set of priors). If you try to run a chain in an existing
-folder with a different parameter file, the program will only mention it to
-you.
-  In your planck/ folder, at the end of a run, there will be three files. One
-contains the chain, devoid of all information except the values of the
-parameters (cosmomc format). It is named according to the date, the number of
-steps, and the number of time you launched a chain with these parameters.
-  For instance, an output folder can contain these files:
-  
-  2011-11-23_10000__1
-  2011-11-23_10000__2
-  2011-11-24_10000__1
-
-  The numerotation is automatic and taken care of by the program. There are
-also two log files, log.dat and log.param.
-
-  log.dat will contain a new line for each __SUCCESSFUL__ run, so here, if the
-previous exemple is continued, I will have the following log.dat:
-
-  2011-11-23_10000__1 :  [ Omega_b Omega_cdm tau_reio h A_s n_s ]	acceptance rate: 0.02,	 -LogLike: [ 398.32]
-  2011-11-23_10000__2 :  [ Omega_b Omega_cdm tau_reio h A_s n_s ]	acceptance rate: 0.018,	 -LogLike: [ 400.21]
-  2011-11-24_10000__1 :  [ Omega_b Omega_cdm tau_reio h A_s n_s ]	acceptance rate: 0.02,	 -LogLike: [ 397.42]
-
-  Note: The existence of this file is crucial for the -info option to work!
-
-  finally, log.param stores the parameters called to make the run. If these
-differs from the ones you try to use, the warning will be printed, and the 
-** FILE WILL BE REPLACED **
+  Please refer to the pdf documentation for further details.
