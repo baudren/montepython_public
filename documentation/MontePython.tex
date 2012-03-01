@@ -347,4 +347,21 @@
   \end{itemize}
 
 
+  \newpage
+  \section{Example of a complete work session with MontePython}
+  Let us get through a typical work session with this code. We start from the
+  example.param file. We will test here a $\Lambda$CDM model on the likelihoods
+  of the Hubble Space Telescope (HST) and the South Pole Telescope (SPT)
+  experiments.\\
+
+  To this end, our example.param file will contain as first lines the following:
+  
+  \begin{alltt}
+    data.experiments = ['hst','spt']
+  \end{alltt}
+
+  Moreover, by looking at the file \verb?likelihoods/spt/spt.data?, one can see
+  that this particular likelihood requires three nuisance parameters, be them
+  fixed or varying: this file contains the following line:
+  \verb?spt.use_nuisance	   = ['SPT_SZ','SPT_PS','SPT_CL']?
 \end{document}

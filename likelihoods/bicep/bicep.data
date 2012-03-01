@@ -1,3 +1,4 @@
-# this files give the path to the .newdat file where the experiment is entirely described.
+# BICEP likelihood requires a .newdat file, describing all relevant properties
+# of the experiment. 
 bicep.data_directory 	= data.path['data']
 bicep.file             = 'BICEP_20090618.newdat'

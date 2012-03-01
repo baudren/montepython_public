@@ -119,9 +119,9 @@ class euclid_lensing(likelihood):
 
     # If the file exists, initialize the fiducial values
     self.Cl_fid = np.zeros((self.nlmax,self.nbin,self.nbin),'float64')
-    self.fid_values_exists = False
+    self.fid_values_exist = False
     if os.path.exists(self.data_directory+'/'+self.fiducial_file):
-      self.fid_values_exists = True
+      self.fid_values_exist = True
       fid_file = open(self.data_directory+'/'+self.fiducial_file,'r')
       line = fid_file.readline()
       while line.find('#')!=-1:
@@ -224,7 +224,7 @@ class euclid_lensing(likelihood):
 
 
     # Write fiducial model spectra if needed (exit in that case)
-    if self.fid_values_exists is False:
+    if self.fid_values_exist is False:
       # Store the values now, and exit.
       fid_file = open(self.data_directory+'/'+self.fiducial_file,'w')
       fid_file.write('# Fiducial parameters')

@@ -1,3 +1,4 @@
-# this files give the path to the .newdat file where the experiment is entirely described.
-cbi.data_directory 	= data.path['data']
-cbi.file             = 'BICEP_20090618.newdat'
+# CBI likelihood requires a .newdat file, describing all relevant
+# properties of the experiment. 
+cbi.data_directory  = data.path['data']
+cbi.file            = 'BICEP_20090618.newdat'
