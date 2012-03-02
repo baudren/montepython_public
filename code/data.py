@@ -75,8 +75,8 @@ class data:
     if default:
 
       sys.stdout.write('Testing likelihoods for:\n -> ')
-      for i in range(len(self.exp)):
-	sys.stdout.write(self.exp[i]+', ')
+      for i in range(len(self.experiments)):
+	sys.stdout.write(self.experiments[i]+', ')
       sys.stdout.write('\n')
       
       # logging the parameter file (only if folder does not exist !)
@@ -99,7 +99,7 @@ class data:
     # For the logging if log_flag is True, each likelihood will log its
     # parameters
 
-    for elem in self.exp:
+    for elem in self.experiments:
 
       folder = os.path.abspath(path['MontePython'])+ "/../likelihoods/%s" % elem
       # add the folder of the likelihood to the path of libraries to...
@@ -131,31 +131,31 @@ class data:
       print '/!\ Warning, you are running with a different version of Class'
 
     # Defines unordered version of the dictionaries of parameters
-    self.uo_params  = {}
-    other.uo_params = {}
+    self.uo_parameters  = {}
+    other.uo_parameters = {}
 
     # Check if all the experiments are tested again,
-    if len(list(set(other.exp).symmetric_difference(set(self.exp))))==0: 
+    if len(list(set(other.experiments).symmetric_difference(set(self.experiments))))==0: 
       # Check that they have been called with the same .data file, stored in
       # dictionary when initializing.
-      for exp in self.exp:
-	for elem in self.lkl[exp].dictionary:
-	  if self.lkl[exp].dictionary[elem]!=other.lkl[exp].dictionary[elem]:
-	    print 'in your parameter file: ',self.lkl[exp].dictionary
-	    print 'in log.param:           ',other.lkl[exp].dictionary
+      for experiment in self.experiments:
+	for elem in self.lkl[experiment].dictionary:
+	  if self.lkl[experiment].dictionary[elem]!=other.lkl[experiment].dictionary[elem]:
+	    print 'in your parameter file: ',self.lkl[experiment].dictionary
+	    print 'in log.param:           ',other.lkl[experiment].dictionary
 	    return -1
 
       # Fill in the unordered version of dictionaries
       for key,elem in self.mcmc_parameters.iteritems():
-	self.uo_params[key]=elem['initial']
+	self.uo_parameters[key]=elem['initial']
       for key,elem in other.mcmc_parameters.iteritems():
-	other.uo_params[key]=elem['initial']
+	other.uo_parameters[key]=elem['initial']
 
 
       # And finally compare them (standard comparison between dictionnaries,
       # will return True if both have the same keys and values associated to
       # them.
-      return cmp(self.uo_params,other.uo_params) 
+      return cmp(self.uo_parameters,other.uo_parameters) 
     else:
       return -1
     
@@ -180,7 +180,7 @@ class data:
 
     # Define temporary quantities, only to simplify the input in the parameter
     # file
-    self.params=od()
+    self.parameters=od()
 
     # Read from the parameter file everything
     try:
@@ -190,9 +190,9 @@ class data:
       exit()
     self.read_file(self.param_file)
 
-    # Transform from params dictionnary to mcmc_parameters dictionary of
+    # Transform from parameters dictionnary to mcmc_parameters dictionary of
     # dictionaries, method defined just below
-    self.from_input_to_mcmc_parameters(self.params)
+    self.from_input_to_mcmc_parameters(self.parameters)
 
 
   def from_input_to_mcmc_parameters(self,dictionary):

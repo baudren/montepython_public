@@ -1,5 +1,5 @@
+import os,sys
 import argparse # Python module to handle command line arguments
-import os
 
 # Definition of the object, below will be added all the possible options. This
 # will also create an automatic help command, available through the option -h

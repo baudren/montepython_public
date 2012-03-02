@@ -209,7 +209,7 @@ class info:
     # Recovering parameter names and scales, creating tex names,
     for line in param:
       if line.find('#')==-1:
-	if line.find('data.params')!=-1 :
+	if line.find('data.parameters')!=-1 :
 	  name = line.split("'")[1]
 	  if float(line.split('=')[-1].split(',')[-3].replace(' ','')) != 0:
 	    temp = [float(elem) for elem in line.split(",")[1:3]]

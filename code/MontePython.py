@@ -8,6 +8,15 @@
 
 #-------------------IMPORT-PACKAGES-------------------------------------
 
+import os,sys
+# Check for python version
+version = sys.version[:3]
+if float(version) < 2.7:
+  print '\n\n /|\  You must have Python >= 2.7,' 
+  print '/_o_\ or install manually the following modules for your older distribution:'
+  print '      argparse and OrderedDict (from collections)'
+  exit()
+
 try:
   from classy import Class
 except ImportError:
@@ -20,9 +29,6 @@ import parser	# parsing the input command line
 import io	# all the input/output mechanisms
 import mcmc	# the actual Monte Carlo chain procedure, along with the useful functions
 import data	# data handling
-
-import os,sys
-
 
 #------------------MAIN-DEFINITION--------------------------------------
 def main():
