@@ -1,27 +1,30 @@
 #------Experiments to test (separated with commas)-----
 # valid options are (so far): clik_fake_planck, hst, clik_wmap_full, acbar,
 # boomerang, quad, bicep, spt, cbi, sn, newdat
-#data.exp=['hst','acbar','clik_wmap_lowl']
-data.exp=['hst','acbar']
+data.experiments=['euclid_pk']
 
-# Parameter list, data.params[class name] = [mean, min, max, 1-sigma, scale, role]
+# Parameter list, data.parameters[class name] = [mean, min, max, 1-sigma, scale, role]
 # - if min max irrelevant, put to -1
 # - if fixed, put 1-sigma to 0
 # - if scale irrelevant, put to 1, otherwise to the appropriate factor
 # - role is either 'cosmo' or 'nuisance'
 
 # WMAP_7 best fit parameters, with expected Planck errors
-data.params['omega_b'] 	 = [2.249,   -1,-1,0.056,0.01,'cosmo']
-data.params['omega_cdm'] = [0.1120, -1,-1, 0.0056,1,  'cosmo']
-data.params['n_s']       = [0.963,  -1,-1, 0.007,1,   'cosmo']
-data.params['A_s']       = [2.42,   -1,-1, 0.11, 1e-9,'cosmo']
-data.params['h']         = [0.703,  -1,-1, 0.025,1,   'cosmo']
+data.parameters['omega_b'] 	 = [2.249,   -1,-1,0.056,0.01,'cosmo']
+data.parameters['omega_cdm'] = [0.1120, -1,-1, 0.0056,1,  'cosmo']
+data.parameters['n_s']       = [0.963,  -1,-1, 0.007,1,   'cosmo']
+data.parameters['A_s']       = [2.42,   -1,-1, 0.11, 1e-9,'cosmo']
+data.parameters['h']         = [0.703,  -1,-1, 0.025,1,   'cosmo']
 # Nuisance parameter list, same call, except the name does not have to be a
 # class name
-data.params['A_SZ']	 = [1,       0, 2, 0.1,1,  'nuisance']
+#data.parameters['SPT_SZ']	= [1,       0, 2, 0.1,1,  'nuisance']
+#data.parameters['SPT_PS']	= [10,	-1,-1, 0, 1, 'nuisance']
+#data.parameters['SPT_CL']	= [2, 	-1,-1, 0, 1, 'nuisance']
+data.parameters['P_shot']	= [50, 0,100, 50, 1, 'nuisance']
 
-data.Class_arguments['sBBN file']   = data.path['class']+'bbn/sBBN.dat'
-data.Class_arguments['k_pivot'] = 0.002
+# Class parameters
+
+data.Class_arguments['sBBN file'] = data.path['class']+'/bbn/sBBN.dat'
 
 #------ Mcmc parameters ----
 data.N=10

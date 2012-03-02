@@ -1,6 +1,8 @@
 euclid_pk.data_directory = data.path['data']
 euclid_pk.fiducial_file  = "Euclid5_fiducial_nonlinear_pk.dat"
 
+euclid_pk.use_nuisance = ['P_shot']
+
 # number of bins of the survey
 euclid_pk.nbin  = 16
 # width of bins Delta z
