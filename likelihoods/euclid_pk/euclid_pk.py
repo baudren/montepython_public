@@ -20,7 +20,6 @@ class euclid_pk(likelihood):
     # then n_g(\bar z) = int_{\bar z - dz/2}^{\bar z + dz/2} dn/dz dz
     # self.z_mean will contain the central values
 
-    self.n_g = np.zeros(self.nbin,'float64')
     self.z_mean = np.zeros(self.nbin,'float64')
     i=0
     for z in np.arange(self.zmin,self.zmax+self.dz,self.dz):
@@ -41,12 +40,12 @@ class euclid_pk(likelihood):
       self.z[i] = z
       i+=1
 
+    self.need_Class_arguments(data,{'z_max_pk':self.z[-1]})
+
     # For each bin, compute the biais function,
     self.b = np.zeros(self.nbin,'float64')
     for Bin in range(self.nbin):
       self.b[Bin] = sqrt(self.z_mean[Bin]+1.)
-
-    self.need_Class_arguments(data,{'z_max_pk':self.z[-1]})
 
     # Force Class to store Pk for k up to an arbitrary number (since self.r is not yet decided)... TODO
     self.need_Class_arguments(data,{'P_k_max_1/Mpc':1.5*self.kmax})
@@ -212,7 +211,8 @@ class euclid_pk(likelihood):
     for index_k in range(self.k_size):
       for index_z in range(2*self.nbin+1):
 	for index_mu in range(self.mu_size):
-	  self.k[index_k,index_z,index_mu] = sqrt((1.-mu[index_mu]**2)*self.D_A_fid[index_z]**2/D_A[index_z]**2 + mu[index_mu]**2*H[index_z]**2/self.H_fid[index_z]**2 )*self.k_fid[index_k]
+	  #self.k[index_k,index_z,index_mu] = sqrt((1.-mu[index_mu]**2)*self.D_A_fid[index_z]**2/D_A[index_z]**2 + mu[index_mu]**2*H[index_z]**2/self.H_fid[index_z]**2 )*self.k_fid[index_k]
+	  self.k[index_k,index_z,index_mu] = (1.-mu[index_mu]**2)*self.D_A_fid[index_z]**2/D_A[index_z]**2 + mu[index_mu]**2*H[index_z]**2/self.H_fid[index_z]**2 *self.k_fid[index_k]
 
     # Recover the non-linear power spectrum from the cosmological module on all
     # the z_boundaries, to compute afterwards beta. This is pk_nl_th from the
