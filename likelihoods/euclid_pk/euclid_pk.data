@@ -12,16 +12,14 @@ euclid_pk.zmin = 0.5
 euclid_pk.zmax  = 2.0
 # sky coverage
 euclid_pk.fsky  = 0.5
-# precision with which bin edges are computed
-euclid_pk.dz    = 0.1
 # precision on the mu variable
 euclid_pk.mu_size = 100
 
-# noise computation
-euclid_pk.Pshot = 0.0
-# number of galaxies per square arcminutes
-#euclid_pk.gal_per_sqarcmn = 35	
+euclid_pk.k_size = 100
 
 # integration boundaries for k (in 1/Mpc)
-euclid_pk.kmin = 0.0001 
-euclid_pk.kmax = 10
+euclid_pk.kmin = 0.001 
+euclid_pk.kmax = 1
+
+# efficiency
+euclid_pk.efficiency = 0.25

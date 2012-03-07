@@ -58,7 +58,6 @@ class euclid_pk(likelihood):
     # spectrum will be computed (and stored for the fiducial model)
     # k_size is deeply arbitrary here, TODO
     
-    self.k_size = 100
     self.k_fid = np.zeros(self.k_size,'float64')
     for i in range(self.k_size):
       self.k_fid[i] = exp( i*1.0 /(self.k_size-1) * log(self.kmax/self.kmin) + log(self.kmin))
@@ -89,6 +88,8 @@ class euclid_pk(likelihood):
     self.n_g[13] = 2229.282
     self.n_g[14] = 1732.706
     self.n_g[15] = 1333.091
+
+    self.n_g = self.n_g * self.efficiency
 
     # If the file exists, initialize the fiducial values,
     # the spectrum will be read first, with k_size values of k and nbin values
@@ -158,7 +159,7 @@ class euclid_pk(likelihood):
     # shell times the sky coverage:
     self.V_survey = np.zeros(self.nbin,'float64')
     for index_z in range(self.nbin):
-      self.V_survey[index_z] = 4.*pi*(r[2*index_z+1]**2)*(1+self.z_mean[index_z])**-3 *self.dz/H[2*index_z+1]
+      self.V_survey[index_z] = 4.*pi*(r[2*index_z+1]**2)*(1+self.z_mean[index_z])**(-3) *self.dz/H[2*index_z+1]
     
     # Define the mu scale
     mu = np.zeros(self.mu_size,'float64')
@@ -192,7 +193,7 @@ class euclid_pk(likelihood):
     beta_fid = np.zeros((self.k_size,self.nbin),'float64')
     for index_k in range(self.k_size):
       for index_z in range(self.nbin):
-	beta_fid[index_k,index_z] = -1./(2.*self.b[index_z]) * (1.+self.z_mean[index_z]) * log(self.pk_nl_fid[index_k,2*index_z+2] / self.pk_nl_fid[index_k,2*index_z])/(2.*self.dz)
+	beta_fid[index_k,index_z] = -1./(2.*self.b[index_z]) * (1.+self.z_mean[index_z]) * log(self.pk_nl_fid[index_k,2*index_z+2] / self.pk_nl_fid[index_k,2*index_z])/(self.dz)
 
     # Compute the tilde P_fid(k_ref,z,mu) = H_fid(z)/D_A_fid(z)**2 ( 1 + beta_fid(k_fid,z)mu^2)^2 P_nl_fid(k_fid,z)exp ( -k_fid^2 mu^2 sigma_r_fid^2)
     self.tilde_P_fid = np.zeros((self.k_size,self.nbin,self.mu_size),'float64')
@@ -211,8 +212,7 @@ class euclid_pk(likelihood):
     for index_k in range(self.k_size):
       for index_z in range(2*self.nbin+1):
 	for index_mu in range(self.mu_size):
-	  #self.k[index_k,index_z,index_mu] = sqrt((1.-mu[index_mu]**2)*self.D_A_fid[index_z]**2/D_A[index_z]**2 + mu[index_mu]**2*H[index_z]**2/self.H_fid[index_z]**2 )*self.k_fid[index_k]
-	  self.k[index_k,index_z,index_mu] = (1.-mu[index_mu]**2)*self.D_A_fid[index_z]**2/D_A[index_z]**2 + mu[index_mu]**2*H[index_z]**2/self.H_fid[index_z]**2 *self.k_fid[index_k]
+	  self.k[index_k,index_z,index_mu] = sqrt((1.-mu[index_mu]**2)*self.D_A_fid[index_z]**2/D_A[index_z]**2 + mu[index_mu]**2*H[index_z]**2/self.H_fid[index_z]**2 )*self.k_fid[index_k]
 
     # Recover the non-linear power spectrum from the cosmological module on all
     # the z_boundaries, to compute afterwards beta. This is pk_nl_th from the
@@ -230,7 +230,7 @@ class euclid_pk(likelihood):
     for index_k in range(self.k_size):
       for index_z in range(self.nbin):
 	for index_mu in range(self.mu_size):
-	  beta_th[index_k,index_z,index_mu] = -1./(2.*self.b[index_z]) * (1.+self.z_mean[index_z]) * log(pk_nl_th[index_k,2*index_z+2,index_mu]/pk_nl_th[index_k,2*index_z,index_mu])/(2.*self.dz)
+	  beta_th[index_k,index_z,index_mu] = -1./(2.*self.b[index_z]) * (1.+self.z_mean[index_z]) * log(pk_nl_th[index_k,2*index_z+2,index_mu]/pk_nl_th[index_k,2*index_z,index_mu])/(self.dz)
     
     # Compute \tilde P_th(k,mu,z) = H(z)/D_A(z)^2 * (1 + beta(z,k) mu^2)^2 P_nl_th (k,z) exp(-k^2 mu^2 sigma_r^2)
     self.tilde_P_th = np.zeros( (self.k_size,self.nbin,self.mu_size), 'float64')
