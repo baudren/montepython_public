@@ -523,7 +523,7 @@ class info:
 	fontsize2d,ticksize2d = self.get_fontsize( len(self.tex_names) )
 	ax2d.set_xticklabels(['%.4g' % s for s in ticks[i]],fontsize=ticksize2d)
 	ax2d.set_title('%s= $%.4g^{+%.4g}_{%.4g}$' % (self.tex_names[i],self.mean[i],bounds[0][1],bounds[0][0]),fontsize=fontsize2d)
-	ax2d.plot(bincenters,hist,color='red',linewidth=2,ls='-')
+	ax2d.plot(interp_grid,interp_hist,color='red',linewidth=2,ls='-')
 	ax2d.axis([x_range[i][0], x_range[i][1],0,1.05])
 
       fontsize1d,ticksize1d = self.get_fontsize( max(num_columns,num_lines))
@@ -561,7 +561,8 @@ class info:
 	      lkl_mean[j] += math.exp( best_minus_lkl - chain[k,1])*chain[k,0]
 	      norm[j] += chain[k,0]
 	  lkl_mean[j] /= norm[j]
-	lkl_mean *= max(hist)/max(lkl_mean)
+	#lkl_mean *= max(hist)/max(lkl_mean)
+	lkl_mean /= max(lkl_mean)
 	interp_lkl_mean,interp_grid = self.cubic_interpolation(lkl_mean,bincenters)
 	ax2d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=2)
 	ax1d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=4)
