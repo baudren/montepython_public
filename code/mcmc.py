@@ -110,10 +110,13 @@ def get_cov(data,command_line):
 
     # Trick if parameter_names contains less things than covnames:
     temp_names_2 = []
+    h = 0
+    not_in = [elem for elem in covnames if elem not in temp_names]
     for k in range(len(covnames)):
-      try:
-	temp_names_2.append([elem for elem in temp_names if elem == covnames[k]][0])
-      except:
+      if covnames[k] not in not_in:
+	temp_names_2.append(temp_names[h])
+	h+=1
+      else:
 	temp_names_2.append('')
 
     for k in range(len(covnames)):
