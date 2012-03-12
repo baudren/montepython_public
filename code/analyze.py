@@ -561,7 +561,6 @@ class info:
       if comp_done:
 	ax1d.plot(interp_comp_grid,interp_comp_hist,color='red',linewidth=2,ls='-')
 
-
       # mean likelihood (optional, if comparison, it will not be printed)
       if plot_2d:
 	lkl_mean=np.zeros(len(bincenters),'float64')
@@ -577,6 +576,14 @@ class info:
 	interp_lkl_mean,interp_grid = self.cubic_interpolation(lkl_mean,bincenters)
 	ax2d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=2)
 	ax1d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=4)
+
+      if command_line.subplot is True:
+	if not comp_done:
+	  extent2d = ax2d.get_window_extent().transformed(fig2d.dpi_scale_trans.inverted())
+	  fig2d.savefig(self.folder+'plots/{0}_{1}.pdf'.format(self.folder.split('/')[-2],self.ref_names[i]), bbox_inches=extent2d.expanded(1.1, 1.4))
+	else:
+	  extent1d = ax1d.get_window_extent().transformed(fig1d.dpi_scale_trans.inverted())
+	  fig1d.savefig(self.folder+'plots/{0}_{1}.pdf'.format(self.folder.split('/')[-2],self.ref_names[i]), bbox_inches=extent1d.expanded(1.1, 1.4))
 
       # Now do the rest of the triangle plot
       if plot_2d:
@@ -604,6 +611,19 @@ class info:
 	  cs = ax2dsub.contour(y_centers,x_centers,n,extent=extent,levels=self.ctr_level(n,lvls),colors="k",zorder=5)
 	  ax2dsub.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=6)
 
+	  if command_line.subplot is True:
+	    fig_temp=plt.figure(3,figsize=(6,6))
+	    fig_temp.clf()
+	    ax_temp=fig_temp.add_subplot(111)
+	    ax_temp.set_xticks(ticks[j])
+	    ax_temp.set_yticks(ticks[i])
+	    ax_temp.imshow(n, extent=extent, aspect='auto',interpolation='gaussian',origin='lower',cmap=matplotlib.cm.Reds)
+	    ax_temp.set_xticklabels(['%.4g' % s for s in ticks[j]],fontsize=ticksize2d)
+	    ax_temp.set_xticklabels(['%.4g' % s for s in ticks[j]],fontsize=ticksize2d)
+	    cs = ax_temp.contour(y_centers,x_centers,n,extent=extent,levels=self.ctr_level(n,lvls),colors="k",zorder=5)
+	    ax_temp.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=6)
+	    fig_temp.savefig(self.folder+'plots/{0}_2d_{1}-{2}.pdf'.format(self.folder.split('/')[-2],self.ref_names[i],self.ref_names[j]))
+
     # Plot the remaining 1d diagram for the parameters only in the comp folder
     if comp:
       for i in range(len(self.ref_names),len(self.ref_names)+len(comp_ref_names)):
@@ -628,6 +648,9 @@ class info:
 	ax1d.axis([comp_x_range[ii][0], comp_x_range[ii][1],0,1.05])
 	ax1d.set_title('%s= $%.4g^{+%.4g}_{%.4g}$' % (comp_tex_names[i-len(self.ref_names)],comp_mean[ii],comp_bounds[0][1],comp_bounds[0][0]),fontsize=fontsize1d)
 	ax1d.plot(interp_comp_grid,interp_comp_hist,color='red',linewidth=2,ls='-')
+	if command_line.subplot is True:
+	  extent1d = ax1d.get_window_extent().transformed(fig1d.dpi_scale_trans.inverted())
+	  fig1d.savefig(self.folder+'plots/{0}_{1}.pdf'.format(self.folder.split('/')[-2],self.ref_names[i]), bbox_inches=extent1d.expanded(1.1, 1.4))
 	
     # If plots/ folder in output folder does not exist, create it
     if os.path.isdir(self.folder+'plots') is False:
