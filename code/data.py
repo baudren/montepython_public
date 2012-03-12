@@ -249,3 +249,8 @@ class data:
           del self.Class_arguments[elem]
         except (KeyError):
           pass
+      if elem == 'f_cdi':
+        try:
+          self.Class_arguments['n_cdi']   =self.Class_arguments['n_s']
+        except (KeyError):
+          pass
