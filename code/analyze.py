@@ -587,10 +587,12 @@ class info:
 	    ax2dsub.set_yticklabels(['%.4g' % s for s in ticks[i]],fontsize=ticksize2d)
 	  else:
 	    ax2dsub.set_yticklabels([''])
-	  ax2dsub.imshow(n.T, extent=extent, aspect='auto',interpolation='gaussian',origin='lower',cmap=matplotlib.cm.Reds)
+	  #ax2dsub.imshow(n.T, extent=extent, aspect='auto',interpolation='gaussian',origin='lower',cmap=matplotlib.cm.Reds)
+	  ax2dsub.imshow(n, extent=extent, aspect='auto',interpolation='gaussian',origin='lower',cmap=matplotlib.cm.Reds)
 
 	  # plotting contours, using the ctr_level method (from Karim Benabed)
-	  cs = ax2dsub.contour(y_centers,x_centers,n.T,extent=extent,levels=self.ctr_level(n.T,lvls),colors="k",zorder=5)
+	  cs = ax2dsub.contour(y_centers,x_centers,n,extent=extent,levels=self.ctr_level(n,lvls),colors="k",zorder=5)
+	  #cs = ax2dsub.contour(y_centers,x_centers,n.T,extent=extent,levels=self.ctr_level(n.T,lvls),colors="k",zorder=5)
 	  ax2dsub.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=6)
 
     # Plot the remaining 1d diagram for the parameters only in the comp folder
