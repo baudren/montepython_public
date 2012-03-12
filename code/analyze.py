@@ -209,6 +209,8 @@ class info:
     # Recovering parameter names and scales, creating tex names,
     for line in param:
       if line.find('#')==-1:
+	if line.find('data.experiments')!=-1:
+	  self.experiments = line.split('=')[-1].replace('[','').replace(']','').replace('\n','').replace("'","").split(',')
 	if line.find('data.parameters')!=-1 :
 	  name = line.split("'")[1]
 	  if float(line.split('=')[-1].split(',')[-3].replace(' ','')) != 0:
@@ -367,12 +369,21 @@ class info:
       else:
 	fig2d = plt.figure(1,figsize=aspect)
 
+    exps = ''
+    for exp in self.experiments:
+      exps+=exp
+      exps+=', '
+    exps = exps[:-2].replace('_',' ')
+
+    plt.figtext(0.4,0.95,'Experiments: '+exps,fontsize=40,alpha=0.6)
+    plt.figtext(0.9, 0.7,'Monte Python',fontsize=70, rotation=90,alpha=0.15)
     fig1d = plt.figure(2,figsize=aspect)
 
     # clear figure
     plt.clf()
 
-    
+    #fig2d.savefig(self.folder+'plots/{0}_triangle.pdf'.format(self.folder.split('/')[-2]))
+    #exit()
     n = np.shape(chain)[1]-2
     if not scales:
      scales = np.ones(n)
@@ -587,12 +598,10 @@ class info:
 	    ax2dsub.set_yticklabels(['%.4g' % s for s in ticks[i]],fontsize=ticksize2d)
 	  else:
 	    ax2dsub.set_yticklabels([''])
-	  #ax2dsub.imshow(n.T, extent=extent, aspect='auto',interpolation='gaussian',origin='lower',cmap=matplotlib.cm.Reds)
 	  ax2dsub.imshow(n, extent=extent, aspect='auto',interpolation='gaussian',origin='lower',cmap=matplotlib.cm.Reds)
 
 	  # plotting contours, using the ctr_level method (from Karim Benabed)
 	  cs = ax2dsub.contour(y_centers,x_centers,n,extent=extent,levels=self.ctr_level(n,lvls),colors="k",zorder=5)
-	  #cs = ax2dsub.contour(y_centers,x_centers,n.T,extent=extent,levels=self.ctr_level(n.T,lvls),colors="k",zorder=5)
 	  ax2dsub.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=6)
 
     # Plot the remaining 1d diagram for the parameters only in the comp folder
