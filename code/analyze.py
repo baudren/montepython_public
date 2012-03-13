@@ -612,6 +612,7 @@ class info:
 	  ax2dsub.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=6)
 
 	  if command_line.subplot is True:
+	    # Store the individual 2d plots
 	    fig_temp=plt.figure(3,figsize=(6,6))
 	    fig_temp.clf()
 	    ax_temp=fig_temp.add_subplot(111)
@@ -623,6 +624,29 @@ class info:
 	    cs = ax_temp.contour(y_centers,x_centers,n,extent=extent,levels=self.ctr_level(n,lvls),colors="k",zorder=5)
 	    ax_temp.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=6)
 	    fig_temp.savefig(self.folder+'plots/{0}_2d_{1}-{2}.pdf'.format(self.folder.split('/')[-2],self.ref_names[i],self.ref_names[j]))
+
+	    # store the coordinates of the points for further plotting.
+	    plot_file = open(self.folder+'plots/{0}_2d_{1}-{2}.dat'.format(self.folder.split('/')[-2],self.ref_names[i],self.ref_names[j]),'w')
+	    plot_file.write('# contour for confidence level {0}\n'.format(levels[2]))
+	    for elem in cs.collections[0].get_paths():
+	      points = elem.vertices
+	      for k in range(np.shape(points)[0]):
+		plot_file.write("%.8g\t %.8g\n" % (points[k,0],points[k,1]))
+	    plot_file.write("\n\n")
+
+	    plot_file.write('# contour for confidence level {0}\n'.format(levels[1]))
+	    for elem in cs.collections[1].get_paths():
+	      points = elem.vertices
+	      for k in range(np.shape(points)[0]):
+		plot_file.write("%.8g\t %.8g\n" % (points[k,0],points[k,1]))
+	    plot_file.write("\n\n")
+
+	    plot_file.write('# contour for confidence level {0}\n'.format(levels[0]))
+	    for elem in cs.collections[2].get_paths():
+	      points = elem.vertices
+	      for k in range(np.shape(points)[0]):
+		plot_file.write("%.8g\t %.8g\n" % (points[k,0],points[k,1]))
+	    plot_file.close()
 
     # Plot the remaining 1d diagram for the parameters only in the comp folder
     if comp:
