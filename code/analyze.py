@@ -110,14 +110,39 @@ class info:
     self.info.write('\n 1-sigma + :\t')
     for elem in self.bounds:
       self.info.write('%.7f\t' % (elem[0][1]))
-    #self.info.write('\n 2-sigma - :\t')
-    #for elem in self.bounds:
-      #self.info.write('%.7f\t' % (elem[1][0]))
-    #self.info.write('\n 2-sigma + :\t')
-    #for elem in self.bounds:
-      #self.info.write('%.7f\t' % (elem[1][1]))
+    self.info.write('\n 2-sigma - :\t')
+    for elem in self.bounds:
+      self.info.write('%.7f\t' % (elem[1][0]))
+    self.info.write('\n 2-sigma + :\t')
+    for elem in self.bounds:
+      self.info.write('%.7f\t' % (elem[1][1]))
+    self.info.write('\n 3-sigma - :\t')
+    for elem in self.bounds:
+      self.info.write('%.7f\t' % (elem[2][0]))
+    self.info.write('\n 3-sigma + :\t')
+    for elem in self.bounds:
+      self.info.write('%.7f\t' % (elem[2][1]))
 
-  
+    # bounds 
+    self.info.write('\n 1-sigma > :\t')
+    for i in range(np.shape(self.bounds)[0]):
+      self.info.write('%.7f\t' % (self.mean[i]+self.bounds[i,0,0]))
+    self.info.write('\n 1-sigma < :\t')
+    for i in range(np.shape(self.bounds)[0]):
+      self.info.write('%.7f\t' % (self.mean[i]+self.bounds[i,0,1]))
+    self.info.write('\n 2-sigma > :\t')
+    for i in range(np.shape(self.bounds)[0]):
+      self.info.write('%.7f\t' % (self.mean[i]+self.bounds[i,1,0]))
+    self.info.write('\n 2-sigma < :\t')
+    for i in range(np.shape(self.bounds)[0]):
+      self.info.write('%.7f\t' % (self.mean[i]+self.bounds[i,1,1]))
+    self.info.write('\n 3-sigma > :\t')
+    for i in range(np.shape(self.bounds)[0]):
+      self.info.write('%.7f\t' % (self.mean[i]+self.bounds[i,2,0]))
+    self.info.write('\n 3-sigma < :\t')
+    for i in range(np.shape(self.bounds)[0]):
+      self.info.write('%.7f\t' % (self.mean[i]+self.bounds[i,2,1]))
+
   def prepare(self,Files,is_main_chain=True):
 
     # Scan the whole input folder, and include all chains in it (all files with
@@ -707,6 +732,8 @@ class info:
     bounds = np.zeros((len(levels),2))
     j = 0
     delta = bincenters[1]-bincenters[0]
+    left_edge = max(histogram[0] - 0.5*(histogram[1]-histogram[0]),0.)
+    right_edge = max(histogram[-1] + 0.5*(histogram[-1]-histogram[-2]),0.)
     failed = False
     for level in levels:
       norm = float((sum(histogram)-0.5*(histogram[0]+histogram[-1]))*delta)
@@ -730,11 +757,21 @@ class info:
 
 	# left
 	if indices[0]>0:
-	  top += 0.5 * (water_level + histogram[indices[0]]) * (delta)*(histogram[indices[0]]-water_level)/(histogram[indices[0]]-histogram[indices[0]-1])
+	  top += 0.5 * (water_level + histogram[indices[0]]) * delta *(histogram[indices[0]]-water_level)/(histogram[indices[0]]-histogram[indices[0]-1])
+	else:
+	  if (left_edge > water_level):
+	    top += 0.25*(left_edge+histogram[indices[0]])*delta
+	  else:
+	    top += 0.25 * (water_level + histogram[indices[0]]) * delta * (histogram[indices[0]]-water_level)/(histogram[indices[0]]-left_edge)
 
 	# right
 	if indices[-1]<(len(histogram)-1) :
 	  top += 0.5 * (water_level + histogram[indices[-1]]) * (delta)*(histogram[indices[-1]]-water_level)/(histogram[indices[-1]]-histogram[indices[-1]+1])
+	else:
+	  if (right_edge > water_level):
+	    top += 0.25*(right_edge+histogram[indices[-1]])*delta
+	  else:
+	    top += 0.25 * (water_level + histogram[indices[-1]]) * delta * (histogram[indices[-1]]-water_level)/(histogram[indices[-1]]-right_edge)
 
 	if top/norm >= level:
 	  water_level_down = water_level
@@ -750,12 +787,20 @@ class info:
       if indices[0]>0:
 	bounds[j][0] = bincenters[indices[0]] - delta*(histogram[indices[0]]-water_level)/(histogram[indices[0]]-histogram[indices[0]-1])
       else:
-	bounds[j][0] = bincenters[0]
+	if (left_edge > water_level):          
+	  bounds[j][0] = bincenters[0]-0.5*delta
+	else:
+	  bounds[j][0] = bincenters[indices[0]] - 0.5*delta*(histogram[indices[0]]-water_level)/(histogram[indices[0]]-left_edge)
+
       # max
       if indices[-1]<(len(histogram)-1):
 	bounds[j][1] = bincenters[indices[-1]]+ delta*(histogram[indices[-1]]-water_level)/(histogram[indices[-1]]-histogram[indices[-1]+1])
       else:
-	bounds[j][1] = bincenters[-1]
+	if (right_edge > water_level):
+	  bounds[j][1] = bincenters[-1]+0.5*delta
+	else:
+	  bounds[j][1] = bincenters[indices[-1]]+ 0.5*delta*(histogram[indices[-1]]-water_level)/(histogram[indices[-1]]-right_edge)
+
       j+=1
 	
     return bounds
