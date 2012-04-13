@@ -660,3 +660,141 @@ class likelihood_clik(likelihood):
     lkl = self.add_nuisance_prior(lkl,data)
 
     return lkl
+
+###################################
+# MOCK CMB TYPE LIKELIHOOD
+# --> mock planck, cmbpol, etc.
+###################################
+class likelihood_mock_cmb(likelihood):
+
+  def __init__(self,path,data,command_line,log_flag,default):
+
+    likelihood.__init__(self,path,data,command_line,log_flag,default)
+
+    self.need_Class_arguments(data,{'lensing':'yes', 'output':'tCl lCl pCl'})
+    
+    if not default:
+      return
+      
+    ################
+    # Noise spectrum 
+    ################
+
+    # convert arcmin to radians
+    self.theta_fwhm *= np.array([math.pi/60/180])
+    self.sigma_T *= np.array([math.pi/60/180])
+    self.sigma_P *= np.array([math.pi/60/180])
+
+    # compute noise in muK**2
+    self.noise_T=np.zeros(self.l_max+1,'float64')    
+    self.noise_P=np.zeros(self.l_max+1,'float64')
+
+    for l in range(self.l_min,self.l_max+1):
+      self.noise_T[l]=0
+      self.noise_P[l]=0
+      for channel in range(self.num_channels):
+        self.noise_T[l] += self.sigma_T[channel]**-2*math.exp(-l*(l+1)*self.theta_fwhm[channel]**2/8/math.log(2))
+        self.noise_P[l] += self.sigma_T[channel]**-2*math.exp(-l*(l+1)*self.theta_fwhm[channel]**2/8/math.log(2))
+      self.noise_T[l]=1/self.noise_T[l]
+      self.noise_P[l]=1/self.noise_P[l]
+
+    # impose that CLASS computes Cl's up to maximum l needed by window function
+    self.need_Class_arguments(data,{'l_max_scalars':self.l_max})
+
+    ###########
+    # Read data
+    ###########
+
+    print self.data_directory+'/'+self.fiducial_file
+
+    # If the file exists, initialize the fiducial values
+    self.Cl_fid = np.zeros((3,self.l_max+1),'float64')
+    self.fid_values_exist = False
+    if os.path.exists(self.data_directory+'/'+self.fiducial_file):
+      self.fid_values_exist = True
+      fid_file = open(self.data_directory+'/'+self.fiducial_file,'r')
+      line = fid_file.readline()
+      while line.find('#')!=-1:
+	line = fid_file.readline()
+      while (line.find('\n')!=-1 and len(line)==1):
+	line = fid_file.readline()
+      for l in range(self.l_min,self.l_max+1):
+        ll=int(line.split()[0])
+        self.Cl_fid[0,ll]=float(line.split()[1])
+        self.Cl_fid[1,ll]=float(line.split()[2])
+        self.Cl_fid[2,ll]=float(line.split()[3])
+        line = fid_file.readline()
+        #print 'reading',ll,self.Cl_fid[0,ll],self.Cl_fid[1,ll],self.Cl_fid[2,ll]
+
+    # Else the file will be created in the loglkl() function. 
+
+    # end of initialisation
+    return
+
+  def loglkl(self,_cosmo,data):
+
+    # get Cl's from CLASS (returned in muK**2 units)
+    cl = self.get_cl(_cosmo)
+
+    # get likelihood
+    lkl = self.compute_lkl(cl,_cosmo,data)
+
+    return lkl
+
+  def compute_lkl(self,cl,_cosmo,data):
+
+    # for testing, print signal and noise spectra
+    #for l in range(self.l_min,self.l_max):
+    #  print l,cl['tt'][l],self.noise_T[l],cl['ee'][l],self.noise_P[l]
+    #exit()
+
+    # Write fiducial model spectra if needed (exit in that case)
+    if self.fid_values_exist is False:
+      # Store the values now, and exit.
+      print 'write in',self.data_directory+'/'+self.fiducial_file
+      fid_file = open(self.data_directory+'/'+self.fiducial_file,'w')
+      fid_file.write('# Fiducial parameters')
+      for key,value in data.mcmc_parameters.iteritems():
+	fid_file.write(', %s = %.5g' % (key,value['current']*value['initial'][4]))
+      fid_file.write('\n')
+      for l in range(self.l_min,self.l_max+1):
+        fid_file.write("%5d  " % l)
+        fid_file.write("%.8g  " % (cl['tt'][l]+self.noise_T[l]))
+        fid_file.write("%.8g  " % (cl['ee'][l]+self.noise_P[l]))
+        fid_file.write("%.8g  " % cl['te'][l])
+        fid_file.write("\n")
+      print '\n\n /|\  Writting fiducial model in {0}, exiting now'.format(self.data_directory+self.fiducial_file)
+      print '/_o_\ You should restart a new chain'
+      exit()
+
+    # compute likelihood
+
+    chi2=0
+
+    Cov_obs=np.zeros((2,2),'float64')
+    Cov_the=np.zeros((2,2),'float64')
+    Cov_mix=np.zeros((2,2),'float64')
+
+    for l in range(self.l_min,self.l_max+1):
+
+      Cov_obs=np.array([[self.Cl_fid[0,l],self.Cl_fid[2,l]],[self.Cl_fid[2,l],self.Cl_fid[1,l]]])
+      Cov_the=np.array([[cl['tt'][l]+self.noise_T[l],cl['te'][l]],[cl['te'][l],cl['ee'][l]+self.noise_P[l]]])
+
+      det_obs=np.linalg.det(Cov_obs) 
+      det_the=np.linalg.det(Cov_the)
+      det_mix=0.
+
+      for i in range(2):
+	Cov_mix = np.copy(Cov_the)
+        Cov_mix[:,i] = Cov_obs[:,i]
+	det_mix += np.linalg.det(Cov_mix)
+        
+      #print 'obs',l,det_obs,Cov_obs[0,0]*Cov_obs[1,1]-Cov_obs[1,0]*Cov_obs[0,1]
+      #print 'the',l,det_the,Cov_the[0,0]*Cov_the[1,1]-Cov_the[1,0]*Cov_the[0,1]
+      #print 'mix',l,det_mix,self.Cl_fid[0,l]*(cl['ee'][l]+self.noise_P[l])+(cl['tt'][l]+self.noise_T[l])*self.Cl_fid[1,l]-2.*self.Cl_fid[2,l]*cl['te'][l]
+
+      chi2 += (2.*l+1.)*self.f_sky*(det_mix/det_the + math.log(det_the/det_obs) - 2)
+
+    #print chi2  
+
+    return -chi2/2
