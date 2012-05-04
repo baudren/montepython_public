@@ -2,8 +2,13 @@ import os,sys                             # Basic python module to handle file w
 import math
 import random as rd 
 import numpy  as np                       # Numerical Python module
-from collections import OrderedDict as od # A modified version of Python dictionary, 
-					  # in order to keep track of the order in it (much the same as in an array)
+
+# A modified version of Python dictionary
+# in order to keep track of the order in it (much the same as in an array)
+try:
+  from collections import OrderedDict as od 
+except: # in case an older version of Python is used, this module does not belong to collections.
+  from ordereddict import OrderedDict as od
 from datetime    import date              
 
 import io # Needs to talk to io.py file for the logging of parameters
@@ -82,7 +87,12 @@ class data:
       # logging the parameter file (only if folder does not exist !)
       if command_line.folder[-1]!='/':
 	command_line.folder+='/'
-      if not os.path.exists(command_line.folder):
+      if (os.path.exists(command_line.folder) and not os.path.exists(command_line.folder+'log.param')):
+	print ' /|\  your output folder should either contain some runs,'
+	print '/_o_\ or does not exist at all'
+	exit()
+	#print 'pas bien'
+      if not os.path.exists(command_line.folder) :
 	os.mkdir(command_line.folder)
 	# Logging of parameters
         io.log_parameters(self,command_line)
