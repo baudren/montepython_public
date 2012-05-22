@@ -109,8 +109,8 @@ def create_output_files(command_line,data):
   suffix=0
   for files in os.listdir(command_line.folder):
     if files.find(outname_base)!=-1:
-      if int(files.split('__')[-1])>suffix:
-        suffix=int(files.split('__')[-1])
+      if int(files.split('__')[-1].split('.')[0])>suffix:
+        suffix=int(files.split('__')[-1].split('.')[0])
   suffix+=1
   data.out=open(command_line.folder+outname_base+str(suffix)+'.txt','w')
   sys.stdout.write('Creating {0}{1}{2}.txt\n'.format(command_line.folder,outname_base,suffix))
