@@ -694,7 +694,7 @@ class likelihood_mock_cmb(likelihood):
       self.noise_P[l]=0
       for channel in range(self.num_channels):
         self.noise_T[l] += self.sigma_T[channel]**-2*math.exp(-l*(l+1)*self.theta_fwhm[channel]**2/8/math.log(2))
-        self.noise_P[l] += self.sigma_T[channel]**-2*math.exp(-l*(l+1)*self.theta_fwhm[channel]**2/8/math.log(2))
+        self.noise_P[l] += self.sigma_P[channel]**-2*math.exp(-l*(l+1)*self.theta_fwhm[channel]**2/8/math.log(2))
       self.noise_T[l]=1/self.noise_T[l]
       self.noise_P[l]=1/self.noise_P[l]
 
