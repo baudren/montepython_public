@@ -96,7 +96,7 @@ less steps, one can type:
 
   If you want to analyse the details of a particular chain, just run 
 
-  $ ./MontePython.py -info planck/2011-11-23_10000__1
+  $ ./MontePython.py -info planck/2011-11-23_10000__1.txt
 
   or, the more time consuming version, analyse all chains in folder
 

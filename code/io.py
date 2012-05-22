@@ -112,9 +112,9 @@ def create_output_files(command_line,data):
       if int(files.split('__')[-1])>suffix:
         suffix=int(files.split('__')[-1])
   suffix+=1
-  data.out=open(command_line.folder+outname_base+str(suffix),'w')
-  sys.stdout.write('Creating {0}{1}{2}\n'.format(command_line.folder,outname_base,suffix))
-  data.out_name='{0}{1}{2}'.format(command_line.folder,outname_base,suffix)
+  data.out=open(command_line.folder+outname_base+str(suffix)+'.txt','w')
+  sys.stdout.write('Creating {0}{1}{2}.txt\n'.format(command_line.folder,outname_base,suffix))
+  data.out_name='{0}{1}{2}.txt'.format(command_line.folder,outname_base,suffix)
   # in case of a restart, copying the whole thing in the new file
   if command_line.restart is not None:
     for line in open(command_line.restart,'r'):
