@@ -248,8 +248,17 @@ def chain(_cosmo,data,command_line):
   loglike=0
   failure=False    # Failure flag
 
-  # Recover the covariance matrix according to the input
-  sigma_eig,U=get_cov(data,command_line)
+  # Recover the covariance matrix according to the input, if the varying set of
+  # parameters is non-zero
+  if data.get_mcmc_parameters(['varying']) != []:
+    sigma_eig,U=get_cov(data,command_line)
+  # In case of a fiducial run, simply run once and print out the likelihood
+  else:
+    print ' /|\  You are running with no varying parameters...'
+    print '/_o_\ Computing model for only one point'
+    failure,loglike = compute_lkl(_cosmo,data)
+    io.print_vector([data.out,sys.stdout],1,loglike,data)
+    return 1,loglike
 
   # Counter for the number of failures
   failed=0
