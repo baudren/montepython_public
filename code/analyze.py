@@ -154,7 +154,7 @@ class info:
       if Files[0][-1]!='/':
 	Files[0]+='/'
       folder = Files[0]
-      Files = [folder+elem for elem in os.listdir(folder) if elem.find('.')==-1]
+      Files = [folder+elem for elem in os.listdir(folder) if (elem.find('.txt')!=-1 and elem.find('__')!=-1)]
       for elem in np.copy(Files):
 	if os.path.isdir('{0}'.format(elem)) is True:
 	  Files.remove(elem)
@@ -173,8 +173,6 @@ class info:
 	  if os.path.isdir('{0}'.format(elem)) is True:
 	    Files.remove(elem)
 	  elif os.path.getsize(elem) < 600:
-	    Files.remove(elem)
-	  elif elem.find('.')!=-1:
 	    Files.remove(elem)
 
     # Check if the log.param file exists
