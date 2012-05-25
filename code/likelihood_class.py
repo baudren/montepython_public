@@ -23,6 +23,15 @@ class likelihood():
       path = command_line.folder+'log.param'
     self.read_from_file(path,data)
 
+    # Check if the nuisance parameters are defined
+    try :
+      for nuisance in self.use_nuisance:
+	if nuisance not in data.get_mcmc_parameters(['nuisance']):
+	  print nuisance+' must be defined, either fixed or varying, for {0} likelihood'.format(self.name)
+	  exit()
+    except AttributeError:
+      pass
+
     # Append to the log.param the value used (WARNING: so far no comparison is
     # done to ensure that the experiments share the same parameters)
     if log_flag: 
@@ -51,7 +60,6 @@ class likelihood():
     try:
       if (self.data_directory[-1]!='/'):
 	self.data_directory[-1]+='/'
-	print self.data_directory
     except:
       pass
 
@@ -109,13 +117,14 @@ class likelihood():
 
 
   def read_contamination_spectra(self,data):
-    failure = False
-    for nuisance in self.use_nuisance:
-      if nuisance not in data.get_mcmc_parameters(['nuisance']):
-	print nuisance+' must be defined, either fixed or varying, for {0} likelihood'.format(self.name)
-	failure=True
-    if failure:
-      exit()
+    # TO DO: normally this is not needed anymore.
+    #failure = False
+    #for nuisance in self.use_nuisance:
+      #if nuisance not in data.get_mcmc_parameters(['nuisance']):
+	#print nuisance+' must be defined, either fixed or varying, for {0} likelihood'.format(self.name)
+	#failure=True
+    #if failure:
+      #exit()
 
     for nuisance in self.use_nuisance:
       # read spectrum contamination (so far, assumes only temperature contamination; will be trivial to generalize to polarization when such templates will become relevant)
@@ -705,8 +714,6 @@ class likelihood_mock_cmb(likelihood):
     # Read data
     ###########
 
-    print self.data_directory+'/'+self.fiducial_file
-
     # If the file exists, initialize the fiducial values
     self.Cl_fid = np.zeros((3,self.l_max+1),'float64')
     self.fid_values_exist = False
@@ -751,7 +758,6 @@ class likelihood_mock_cmb(likelihood):
     # Write fiducial model spectra if needed (exit in that case)
     if self.fid_values_exist is False:
       # Store the values now, and exit.
-      print 'write in',self.data_directory+'/'+self.fiducial_file
       fid_file = open(self.data_directory+'/'+self.fiducial_file,'w')
       fid_file.write('# Fiducial parameters')
       for key,value in data.mcmc_parameters.iteritems():
@@ -763,9 +769,9 @@ class likelihood_mock_cmb(likelihood):
         fid_file.write("%.8g  " % (cl['ee'][l]+self.noise_P[l]))
         fid_file.write("%.8g  " % cl['te'][l])
         fid_file.write("\n")
-      print '\n\n /|\  Writting fiducial model in {0}, exiting now'.format(self.data_directory+self.fiducial_file)
-      print '/_o_\ You should restart a new chain'
-      exit()
+      print '\n\n /|\  Writting fiducial model in {0}'.format(self.data_directory+self.fiducial_file)
+      print '/_o_\ for {0} likelihood'.format(self.name)
+      return 1
 
     # compute likelihood
 

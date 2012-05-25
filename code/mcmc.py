@@ -31,11 +31,28 @@ def compute_lkl(_cosmo,data):
 
   # For each desired likelihood, compute its value against the theoretical model
   loglike=0
+  flag_wrote_fiducial = 0
+
   for likelihood in data.lkl.itervalues():
-    loglike+=likelihood.loglkl(_cosmo,data)
+    value = likelihood.loglkl(_cosmo,data)
+    loglike += value
+    # In case the fiducial file was written, store this information
+    if value==1:
+      flag_wrote_fiducial += 1
+
 
   # Clean the cosmological strucutre
   _cosmo._struct_cleanup(set(["lensing","nonlinear","spectra","primordial","transfer","perturb","thermodynamics","background","bessel"]))
+
+  if flag_wrote_fiducial > 0:
+    if flag_wrote_fiducial == len(data.lkl):
+      print '--> Fiducial file(s) was(were) created, please start a new chain'
+      exit()
+    else:
+      print '--> Some non-existing fiducial files were created, but potentially not all of them'
+      print '--> Please check now manually on the headers of the corresponding that all'
+      print '    parameters are coherent for your tested models'
+      exit()
 
   return failure,loglike
 

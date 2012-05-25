@@ -145,7 +145,8 @@ class euclid_pk(likelihood):
 
     # H is incidentally also dz/dr
     r,H = _cosmo.z_of_r(self.z)
-    D_A = _cosmo._angular_distance(self.z)
+    for i in range(len(D_A)):
+      D_A[i] = _cosmo._angular_distance(self.z[i])
     #for Bin in range(self.nbin+2):
       #print '%.4g %.4g %.4g %.4g' % (H[Bin],D_A[Bin],self.H_fid[Bin],self.D_A_fid[Bin])
     #exit()
@@ -183,9 +184,9 @@ class euclid_pk(likelihood):
 	fid_file.write('%.8g %.8g\n' % (H[index_z],D_A[index_z]))
       for index_z in range(self.nbin):
 	fid_file.write('%.8g\n' % sigma_r[index_z])
-      print '\n\n /|\  Writting fiducial model in {0}, exiting now'.format(self.data_directory+self.fiducial_file)
-      print '/_o_\ You should restart a new chain'
-      exit()
+      print '\n\n /|\  Writting fiducial model in {0}'.format(self.data_directory+self.fiducial_file)
+      print '/_o_\ for {0} likelihood'.format(self.name)
+      return 1
 
     # Compute the beta_fid function, for observed spectrum,
     # beta_fid(k_fid,z) = 1/2b(z) * d log(P_nl_fid(k_fid,z))/d log a

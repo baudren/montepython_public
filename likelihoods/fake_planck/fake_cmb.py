@@ -237,7 +237,7 @@ class euclid_lensing(likelihood):
 	    fid_file.write("%.8g\n" % Cl[nl,Bin1,Bin2])
       print '\n\n /|\  Writting fiducial model in {0}, exiting now'.format(self.data_directory+self.fiducial_file)
       print '/_o_\ You should restart a new chain'
-      exit()
+      return 1
 
     # Spline Cl[nl,Bin1,Bin2] along l
     ddCl     = np.zeros((self.nlmax,self.nbin,self.nbin),'float64')
