@@ -1,1 +1,4 @@
-clik_wmap_lowl.path_clik = data.path['clik']+'wmap_7_2-32_gibbs_2_band_EE.clik'
+# Grab the clik version of wmap
+
+clik_wmap_lowl.path_clik = data.path['clik']+'wmap_7_2-32_gibbs.clik'
+
