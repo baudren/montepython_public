@@ -3,7 +3,7 @@
 # valid options are (so far): acbar, bicep, boomerang, cbi,
 # fake_planck_bluebook, hst, quad, sn, spt
 
-data.experiments=['hst','acbar']
+data.experiments=['hst']
 
 #------ Parameter list -------
 
@@ -16,11 +16,14 @@ data.experiments=['hst','acbar']
 # Cosmological parameters list
 
 data.parameters['omega_b'] 	 = [2.249,   -1,-1,0.056,0.01,'cosmo']
-data.parameters['omega_cdm'] = [0.1120, -1,-1, 0.0056,1,  'cosmo']
-data.parameters['n_s']       = [0.963,  -1,-1, 0.007,1,   'cosmo']
-data.parameters['A_s']       = [2.42,   -1,-1, 0.11, 1e-9,'cosmo']
-data.parameters['h']         = [0.703,  -1,-1, 0.025,1,   'cosmo']
+data.parameters['omega_cdm'] 	= [0.1120, -1,-1, 0.0056,1,  'cosmo']
+data.parameters['n_s']       	= [0.963,  -1,-1, 0.007,1,   'cosmo']
+data.parameters['A_s']       	= [2.42,   -1,-1, 0.11, 1e-9,'cosmo']
+data.parameters['h']         	= [0.703,  -1,-1, 0.025,1,   'cosmo']
 
+data.parameters['xe_1'] 	= [ 0.8, 0, 1, 0.2, 1, 'cosmo']
+data.parameters['xe_2'] 	= [ 0.2, 0, 1, 0.2, 1, 'cosmo']
+data.parameters['xe_3'] 	= [ 0.1, 0, 1, 0.2, 1, 'cosmo']
 # Nuisance parameter list, same call, except the name does not have to be a class name
 
 #data.parameters['SPT_SZ']	= [1,       0, 2, 0.1,1,  'nuisance']
@@ -30,6 +33,12 @@ data.parameters['h']         = [0.703,  -1,-1, 0.025,1,   'cosmo']
 # Other class parameters (fixed parameters, precision parameters, etc.)
 
 data.Class_arguments['sBBN file'] = data.path['class']+'/bbn/sBBN.dat'
+
+# Example of how to treat an array quantity in Class
+data.Class_arguments['reio_parametrization'] 	= 'reio_bins_tanh'
+data.Class_arguments['binned_reio_num']		= 3
+data.Class_arguments['binned_reio_step_sharpness'] = 0.3
+data.Class_arguments['binned_reio_z']		= '8,12,16'
 
 #------ Mcmc parameters ----
 

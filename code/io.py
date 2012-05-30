@@ -80,7 +80,7 @@ def print_parameters(out,data):
 # mode, you will be able to monitor the progress of the chain.
 def print_vector(out,N,loglkl,data):
   for j in range(len(out)):
-    out[j].write('%d  %.8g\t' % (N,-loglkl))
+    out[j].write('%d  %.6g\t' % (N,-loglkl))
     for elem in data.get_mcmc_parameters(['varying']):
       out[j].write('%.6f\t' % data.mcmc_parameters[elem]['last_accepted'])
     out[j].write('\n')

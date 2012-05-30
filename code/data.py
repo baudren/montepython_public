@@ -220,6 +220,7 @@ class data:
       else:
 	self.mcmc_parameters[key]['status']    = 'varying'
 
+
   # Method that returns a convenient, ordered array of parameter names that
   # correspond of the table_of_strings argument. 
   
@@ -264,3 +265,30 @@ class data:
           self.Class_arguments['n_cdi']   =self.Class_arguments['n_s']
         except (KeyError):
           pass
+      # We only do that on xe_1, for there is at least one of them.
+      if elem.find('xe_1') != -1:
+	try:
+	  # To pass this option, you must have set a number of Class settings
+	  # reio_parametrization to reio_bins_tanh, binned_reio_z set, and binned_reio_num
+	  # First, you need to set reio_parametrization to reio_bins_tanh
+	  if (self.Class_arguments['reio_parametrization'] != 'reio_bins_tanh'):
+	    print ' /|\  Warning, you set binned_reio_xe to some values'
+	    print '/_o_\ without setting reio_parametrization to reio_bins_tanh'
+	    exit()
+	  else:
+	    try:
+	      size = self.Class_arguments['binned_reio_num']
+	    except (KeyError):
+	      print ' /|\  You need to set reio_binnumber to the value corresponding to'
+	      print '/_o_\ the one in binned_reio_xe'
+	      exit()
+	  string = ''
+	  for i in range(1,size+1):
+	    string += '%.4g' % self.Class_arguments['xe_%d' % i]
+	    del self.Class_arguments['xe_%d' % i]
+	    if i != size:
+	      string += ','
+	    
+	  self.Class_arguments['binned_reio_xe'] = string
+	except (KeyError):
+	  pass
