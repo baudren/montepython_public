@@ -218,7 +218,7 @@ def get_new_pos(data,eigv,U,k):
     # Choice here between sequential and global change of direction
     if data.jumping == 'global':
       for i in range(len(vector)):
-	sigmas[i]=(math.sqrt(1/eigv[i]/len(vector)))*rd.gauss(0,1)*2.4
+        sigmas[i]=(math.sqrt(1/eigv[i]/len(vector)))*rd.gauss(0,1)*2.4
     elif data.jumping == 'sequential':
       i = k%len(vector)
       sigmas[i] = (math.sqrt(1/eigv[i]))*rd.gauss(0,1)*2.4
@@ -233,9 +233,9 @@ def get_new_pos(data,eigv,U,k):
     for elem in parameter_names:
       value = data.mcmc_parameters[elem]['initial']
       if(value[1]!=-1 and vector_new[i]<value[1]):
-	flag+=1 # if a boundary value is reached, increment
+        flag+=1 # if a boundary value is reached, increment
       elif(value[2]!=-1 and vector_new[i]>value[2]):
-	flag+=1 # same
+        flag+=1 # same
       i+=1
 
   # At this point, all boundary conditions are fullfilled. The value of

@@ -66,11 +66,11 @@ def print_parameters(out,data):
   out.write('\n#  -LogLkl\t')
   for i in range(len(param)):
     if data.mcmc_parameters[param[i]]['initial'][4]!=1:
-      number = 1./(data.mcmc_parameters[param[i]]['initial' ][4])
-      if number > 0.01:
-	out.write('%0.d%s\t' % (int(1.0/number),param[i]))
+      number = data.mcmc_parameters[param[i]]['initial' ][4]
+      if (number > 100 or number < 0.01):
+        out.write('%0.e%s\t' % (number,param[i]))
       else:
-	out.write('%0.e%s\t' % (1.0/number,param[i]))
+        out.write('%0.2g%s\t' % (number,param[i]))
     else:
       out.write('{0}\t'.format(param[i]))
   out.write('\n')
