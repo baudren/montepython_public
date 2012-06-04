@@ -68,11 +68,12 @@ def print_parameters(out,data):
     if data.mcmc_parameters[param[i]]['initial'][4]!=1:
       number = data.mcmc_parameters[param[i]]['initial' ][4]
       if (number > 100. or number < 0.01):
-        out.write('%0.e%-11s' % (1./number,param[i]))
+	string = '%0.e%s' % (1./number,param[i])
       else:
-        out.write('%0.2g%-12s' % (1./number,param[i]))
+	string = '%0.2g%s' % (1./number,param[i])
     else:
-      out.write('%-16s' % param[i])
+      string = '%s' % param[i]
+    out.write("%-16s" % string)
   for elem in data.derived_parameters_list:
     out.write('%-16s' % elem)
   out.write('\n')
