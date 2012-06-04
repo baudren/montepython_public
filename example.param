@@ -40,6 +40,9 @@ data.Class_arguments['binned_reio_num']		= 3
 data.Class_arguments['binned_reio_step_sharpness'] = 0.3
 data.Class_arguments['binned_reio_z']		= '8,12,16'
 
+# If needed, compute the following derived parameters
+data.derived_parameters_list = ['sigma_8','tau_reio']
+
 #------ Mcmc parameters ----
 
 data.N=10

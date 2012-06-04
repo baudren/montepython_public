@@ -73,6 +73,8 @@ def print_parameters(out,data):
         out.write('%0.2g%s\t' % (number,param[i]))
     else:
       out.write('{0}\t'.format(param[i]))
+  for elem in data.derived_parameters_list:
+    out.write('{0}\t'.format(elem))
   out.write('\n')
 
 # Prints the last accepted values to out, which here is an array containing
@@ -83,6 +85,8 @@ def print_vector(out,N,loglkl,data):
     out[j].write('%d  %.6g\t' % (N,-loglkl))
     for elem in data.get_mcmc_parameters(['varying']):
       out[j].write('%.6f\t' % data.mcmc_parameters[elem]['last_accepted'])
+    for elem in data.derived_parameters_list:
+      out[j].write('%.6f\t' % data.derived_parameters[elem]['last_accepted'])
     out[j].write('\n')
 
 def refresh_file(data):

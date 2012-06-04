@@ -204,6 +204,13 @@ class data:
     # dictionaries, method defined just below
     self.from_input_to_mcmc_parameters(self.parameters)
 
+    # Initialize the derived parameters, if any are asked
+    try :
+      self.create_derived_parameters(self.derived_parameters_list)
+    # If there are none, just set the list to an empty list
+    except :
+      self.derived_parameters_list = []
+
 
   def from_input_to_mcmc_parameters(self,dictionary):
     # At the end of this initialization, every field but one is filled for
@@ -217,8 +224,17 @@ class data:
       if value[3] == 0:
 	self.mcmc_parameters[key]['status']    = 'fixed'
 	self.mcmc_parameters[key]['current']   = value[0]
-      else:
+      else :
 	self.mcmc_parameters[key]['status']    = 'varying'
+
+
+  # Affect to each string in the derived_parameters_list a dictionary, ready to
+  # be affected with the current and last_accepted values
+  def create_derived_parameters(self,derived_parameters_list):
+
+    data.derived_parameters = od()
+    for elem in derived_parameters_list:
+      data.derived_parameters[elem] = {'current':0.0,'last_accepted':0.0}
 
 
   # Method that returns a convenient, ordered array of parameter names that

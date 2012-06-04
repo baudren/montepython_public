@@ -40,6 +40,9 @@ def compute_lkl(_cosmo,data):
     if value==1:
       flag_wrote_fiducial += 1
 
+  # Compute the derived parameters if relevant
+  if data.derived_parameters_list != []:
+    _cosmo.get_current_derived_parameters(data)
 
   # Clean the cosmological strucutre
   _cosmo._struct_cleanup(set(["lensing","nonlinear","spectra","primordial","transfer","perturb","thermodynamics","background","bessel"]))
@@ -49,9 +52,9 @@ def compute_lkl(_cosmo,data):
       print '--> Fiducial file(s) was(were) created, please start a new chain'
       exit()
     else:
-      print '--> Some non-existing fiducial files were created, but potentially not all of them'
+      print '--> Some previously non-existing fiducial files were created, but potentially not all of them'
       print '--> Please check now manually on the headers of the corresponding that all'
-      print '    parameters are coherent for your tested models'
+      print '--> parameters are coherent for your tested models'
       exit()
 
   return failure,loglike
@@ -66,8 +69,8 @@ def read_args_from_chain(data,chain):
   parameter_names = data.get_mcmc_parameters(['varying'])
 
   # BE CAREFUL: Here it works because of the particular presentation of the
-  # chain, and the use of tabbings. Please keep this in mind if having
-  # difficulties
+  # chain, and the use of tabbings (not spaces). Please keep this in mind if
+  # having difficulties
   i = 1
   for elem in parameter_names:
     data.mcmc_parameters[elem]['last_accepted'] = float(Chain.tail(1)[0].split('\t')[i])
@@ -161,15 +164,15 @@ def get_cov(data,command_line):
     for zeros in np.where(indices_1 == 0)[0]:
       M_temp[zeros,:] = 0
       M_temp[:,zeros] = 0
-    #Remove names that are in covnames but not in param_names
+    # Remove names that are in covnames but not in param_names
     for h in range(len(covnames)):
       if covnames[h] in parameter_names:
 	indices_2[h]=1
-    #print indices_2
+    # There, put zeros in the final matrix (the sigmas will be used there)
     for zeros in np.where(indices_2 == 0)[0]:
       M[zeros,:] = 0
       M[:,zeros] = 0
-    # super trick
+    # super trick, now everything is in place
     M_temp[M_temp == 1]=M[M!=0]
     M = np.copy(M_temp)
     # on all other lines, just use sigma^2
@@ -253,6 +256,8 @@ def get_new_pos(data,eigv,U,k):
 def accept_step(data):
   for elem in data.get_mcmc_parameters(['varying']):
     data.mcmc_parameters[elem]['last_accepted'] = data.mcmc_parameters[elem]['current']
+  for elem in data.derived_parameters.iterkeys():
+    data.derived_parameters[elem]['last_accepted'] = data.derived_parameters[elem]['current']
 
 
 ######################
@@ -269,7 +274,8 @@ def chain(_cosmo,data,command_line):
   # parameters is non-zero
   if data.get_mcmc_parameters(['varying']) != []:
     sigma_eig,U=get_cov(data,command_line)
-  # In case of a fiducial run, simply run once and print out the likelihood
+  # In case of a fiducial run (all parameters fixed), simply run once and print
+  # out the likelihood
   else:
     print ' /|\  You are running with no varying parameters...'
     print '/_o_\ Computing model for only one point'
