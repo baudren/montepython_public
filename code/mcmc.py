@@ -256,7 +256,7 @@ def get_new_pos(data,eigv,U,k):
 def accept_step(data):
   for elem in data.get_mcmc_parameters(['varying']):
     data.mcmc_parameters[elem]['last_accepted'] = data.mcmc_parameters[elem]['current']
-  for elem in data.derived_parameters.iterkeys():
+  for elem in data.derived_parameters_list:
     data.derived_parameters[elem]['last_accepted'] = data.derived_parameters[elem]['current']
 
 
