@@ -225,6 +225,9 @@ class info:
     boundaries= []
     scales    = []
 
+    derived_names = []
+    derived_tex_names = []
+
     if is_main_chain:
       Files = self.Files
       param = self.param
@@ -243,6 +246,14 @@ class info:
 	    scales.append(float(line.split('=')[-1].split(",")[4].replace(' ','')))
 	    number = 1./scales[-1]
 	    tex_names.append(io.get_tex_name(name,number=number))
+	if line.find('data.derived_parameters_list')!=-1:
+	  for elem in line.split('=')[-1].strip(' ').replace('[','').replace(']','').replace('\n','').replace("'","").split(','):
+	    ref_names.append(elem)
+	    tex_names.append(io.get_tex_name(elem,1))
+	    boundaries.append([-1.,-1.])
+	    scales.append(1.)
+	  #print derived_names,derived_tex_names
+	  #exit()
     scales = np.diag(scales)
     param.seek(0)
 
