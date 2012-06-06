@@ -63,6 +63,8 @@ def log_default_configuration(data,command_line):
 # log.param is crucial, as is it the only place where it is stored.
 def print_parameters(out,data):
   param = data.get_mcmc_parameters(['varying'])
+  for elem in data.get_mcmc_parameters(['derived']):
+    param.append(elem)
   out.write('\n#  -LogLkl\t')
   for i in range(len(param)):
     if data.mcmc_parameters[param[i]]['initial'][4]!=1:
@@ -74,8 +76,6 @@ def print_parameters(out,data):
     else:
       string = '%s' % param[i]
     out.write("%-16s" % string)
-  for elem in data.derived_parameters_list:
-    out.write('%-16s' % elem)
   out.write('\n')
 
 # Prints the last accepted values to out, which here is an array containing
@@ -86,8 +86,8 @@ def print_vector(out,N,loglkl,data):
     out[j].write('%d  %.6g\t' % (N,-loglkl))
     for elem in data.get_mcmc_parameters(['varying']):
       out[j].write('%.6e\t' % data.mcmc_parameters[elem]['last_accepted'])
-    for elem in data.derived_parameters_list:
-      out[j].write('%.6e\t' % data.derived_parameters[elem]['last_accepted'])
+    for elem in data.get_mcmc_parameters(['derived']):
+      out[j].write('%.6e\t' % data.mcmc_parameters[elem]['last_accepted'])
     out[j].write('\n')
 
 def refresh_file(data):

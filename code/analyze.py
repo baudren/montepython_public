@@ -237,21 +237,21 @@ class info:
       if line.find('#')==-1:
 	if line.find('data.experiments')!=-1:
 	  self.experiments = line.split('=')[-1].replace('[','').replace(']','').replace('\n','').replace("'","").split(',')
-	if line.find('data.parameters')!=-1 :
+	if line.find('data.parameters')!=-1:
 	  name = line.split("'")[1]
-	  if float(line.split('=')[-1].split(',')[-3].replace(' ','')) != 0:
+	  if (float(line.split('=')[-1].split(',')[-3].replace(' ','')) != 0 or str(line.split('=')[-1].split(',')[-1].replace(' ','').replace(']','').replace('\n','').replace("'","").replace("\t",'')) == 'derived' ):
 	    temp = [float(elem) for elem in line.split(",")[1:3]]
 	    boundaries.append(temp)
 	    ref_names.append(name)
 	    scales.append(float(line.split('=')[-1].split(",")[4].replace(' ','')))
 	    number = 1./scales[-1]
 	    tex_names.append(io.get_tex_name(name,number=number))
-	if line.find('data.derived_parameters_list')!=-1:
-	  for elem in line.split('=')[-1].strip(' ').replace('[','').replace(']','').replace('\n','').replace("'","").split(','):
-	    ref_names.append(elem)
-	    tex_names.append(io.get_tex_name(elem,1))
-	    boundaries.append([-1.,-1.])
-	    scales.append(1.)
+	#if line.find('data.derived_parameters_list')!=-1:
+	  #for elem in line.split('=')[-1].strip(' ').replace('[','').replace(']','').replace('\n','').replace("'","").split(','):
+	    #ref_names.append(elem)
+	    #tex_names.append(io.get_tex_name(elem,1))
+	    #boundaries.append([-1.,-1.])
+	    #scales.append(1.)
 	  #print derived_names,derived_tex_names
 	  #exit()
     scales = np.diag(scales)

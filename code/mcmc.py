@@ -41,7 +41,7 @@ def compute_lkl(_cosmo,data):
       flag_wrote_fiducial += 1
 
   # Compute the derived parameters if relevant
-  if data.derived_parameters_list != []:
+  if data.get_mcmc_parameters(['derived']) != []:
     _cosmo.get_current_derived_parameters(data)
 
   # Clean the cosmological strucutre
@@ -67,6 +67,8 @@ def read_args_from_chain(data,chain):
   # new method, tail). The class is defined in code/io.py
   Chain = io.File(chain,'r')
   parameter_names = data.get_mcmc_parameters(['varying'])
+
+  # Warning, that feature was not tested since the adding of derived paramaters
 
   # BE CAREFUL: Here it works because of the particular presentation of the
   # chain, and the use of tabbings (not spaces). Please keep this in mind if
@@ -256,8 +258,8 @@ def get_new_pos(data,eigv,U,k):
 def accept_step(data):
   for elem in data.get_mcmc_parameters(['varying']):
     data.mcmc_parameters[elem]['last_accepted'] = data.mcmc_parameters[elem]['current']
-  for elem in data.derived_parameters_list:
-    data.derived_parameters[elem]['last_accepted'] = data.derived_parameters[elem]['current']
+  for elem in data.get_mcmc_parameters(['derived']):
+    data.mcmc_parameters[elem]['last_accepted'] = data.mcmc_parameters[elem]['current']
 
 
 ######################
