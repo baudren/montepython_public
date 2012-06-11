@@ -1,5 +1,4 @@
 from likelihood_class import likelihood
-import time
 import os
 import numpy as np
 from math import exp,log,sqrt,pi
@@ -193,7 +192,6 @@ class euclid_pk(likelihood):
     # beta_fid(k_fid,z) = 1/2b(z) * d log(P_nl_fid(k_fid,z))/d log a
     #                   = -1/2b(z)* (1+z) d log(P_nl_fid(k_fid,z))/dz 
     beta_fid = np.zeros((self.k_size,self.nbin),'float64')
-    debut = time.time()
     for index_z in range(self.nbin):
       #for index_k in range(self.k_size):
       ## the loop over index_k is hidden with the very specific numpy expression, for speed-up
@@ -254,7 +252,6 @@ class euclid_pk(likelihood):
     for index_z in range(self.nbin):
       self.P_shot[index_z] = self.H_fid[2*index_z+1]/(self.D_A_fid[2*index_z+1]**2*self.b[index_z]**2)*(data.mcmc_parameters['P_shot']['current']*data.mcmc_parameters['P_shot']['initial'][4] + 1./self.n_g[index_z])
       
-    middle = time.time()
     # finally compute chi2, for each z_mean
     chi2 = 0.0
     #mu_integrand_lo,mu_integrand_hi = 0.0,0.0
@@ -291,9 +288,6 @@ class euclid_pk(likelihood):
         mu_integrand_hi = ((k_integrand[1:] + k_integrand[0:-1])*.5*(self.k_fid[1:] - self.k_fid[:-1])).sum()
         chi2 += (mu_integrand_hi + mu_integrand_lo)/2.*(mu[index_mu] - mu[index_mu-1])
 
-    end = time.time()
-    print end-middle,middle-debut
-    exit()
     return - chi2/2.
 
   def integrand(self,index_k,index_z,index_mu):
