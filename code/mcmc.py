@@ -43,6 +43,9 @@ def compute_lkl(_cosmo,data):
   # Compute the derived parameters if relevant
   if data.get_mcmc_parameters(['derived']) != []:
     _cosmo.get_current_derived_parameters(data)
+  for elem in data.get_mcmc_parameters(['derived']):
+    data.mcmc_parameters[elem]['current'] /= data.mcmc_parameters[elem]['initial'][4]
+
 
   # Clean the cosmological strucutre
   _cosmo._struct_cleanup(set(["lensing","nonlinear","spectra","primordial","transfer","perturb","thermodynamics","background","bessel"]))
