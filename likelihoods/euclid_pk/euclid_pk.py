@@ -188,22 +188,24 @@ class euclid_pk(likelihood):
       print '/_o_\ for {0} likelihood'.format(self.name)
       return 1
 
+    # NOTE: Many following loops will be hidden in a very specific numpy
+    # expression, for (a more than significant) speed-up. All the following
+    # loops keep the same pattern.  The semi-colon denotes the whole range of
+    # indices, so beta_fid[:,index_z] denotes the array of length self.k_size
+    # at redshift z[index_z]
+
     # Compute the beta_fid function, for observed spectrum,
     # beta_fid(k_fid,z) = 1/2b(z) * d log(P_nl_fid(k_fid,z))/d log a
     #                   = -1/2b(z)* (1+z) d log(P_nl_fid(k_fid,z))/dz 
+    
     beta_fid = np.zeros((self.k_size,self.nbin),'float64')
     for index_z in range(self.nbin):
-      #for index_k in range(self.k_size):
-      ## the loop over index_k is hidden with the very specific numpy expression, for speed-up
-        #beta_fid[index_k,index_z] = -1./(2.*self.b[index_z]) * (1.+self.z_mean[index_z]) * log(self.pk_nl_fid[index_k,2*index_z+2] / self.pk_nl_fid[index_k,2*index_z])/(self.dz)
       beta_fid[:,index_z] = -1./(2.*self.b[index_z]) * (1.+self.z_mean[index_z]) * np.log(self.pk_nl_fid[:,2*index_z+2] / self.pk_nl_fid[:,2*index_z])/(self.dz)
 
     # Compute the tilde P_fid(k_ref,z,mu) = H_fid(z)/D_A_fid(z)**2 ( 1 + beta_fid(k_fid,z)mu^2)^2 P_nl_fid(k_fid,z)exp ( -k_fid^2 mu^2 sigma_r_fid^2)
     self.tilde_P_fid = np.zeros((self.k_size,self.nbin,self.mu_size),'float64')
     for index_z in range(self.nbin):
       for index_mu in range(self.mu_size):
-        #for index_k in range(self.k_size):
-          #self.tilde_P_fid[index_k,index_z,index_mu] = self.H_fid[2*index_z+1]/(self.D_A_fid[2*index_z+1]**2) * (1. + beta_fid[index_k,index_z]*(mu[index_mu]**2))**2 * self.pk_nl_fid[index_k,2*index_z+1]*exp( - self.k_fid[index_k]**2 *mu[index_mu]**2*self.sigma_r_fid[index_z]**2)
           self.tilde_P_fid[:,index_z,index_mu] = self.H_fid[2*index_z+1]/(self.D_A_fid[2*index_z+1]**2) * (1. + beta_fid[:,index_z]*(mu[index_mu]**2))**2 * self.pk_nl_fid[:,2*index_z+1]*np.exp( - self.k_fid[:]**2 *mu[index_mu]**2*self.sigma_r_fid[index_z]**2)
 
     ######################
@@ -215,18 +217,12 @@ class euclid_pk(likelihood):
     self.k = np.zeros((self.k_size,2*self.nbin+1,self.mu_size),'float64')
     for index_k in range(self.k_size):
       for index_z in range(2*self.nbin+1):
-        #for index_mu in range(self.mu_size):
-          #self.k[index_k,index_z,index_mu] = sqrt((1.-mu[index_mu]**2)*self.D_A_fid[index_z]**2/D_A[index_z]**2 + mu[index_mu]**2*H[index_z]**2/self.H_fid[index_z]**2 )*self.k_fid[index_k]
         self.k[index_k,index_z,:] = np.sqrt((1.-mu[:]**2)*self.D_A_fid[index_z]**2/D_A[index_z]**2 + mu[:]**2*H[index_z]**2/self.H_fid[index_z]**2 )*self.k_fid[index_k]
 
     # Recover the non-linear power spectrum from the cosmological module on all
     # the z_boundaries, to compute afterwards beta. This is pk_nl_th from the
     # notes.
     pk_nl_th = np.zeros((self.k_size,2*self.nbin+1,self.mu_size),'float64')
-    #for index_z in range(2*self.nbin+1):
-      #for index_mu in range(self.mu_size):
-        #for index_k in range(self.k_size):
-	  #pk_nl_th[index_k,index_z,index_mu] = _cosmo._pk(self.k[index_k,index_z,index_mu],self.z[index_z])
     pk_nl_th = _cosmo._get_pk(self.k,self.z,self.k_size,2*self.nbin+1,self.mu_size)
 
     # Compute the beta function for nl, 
@@ -235,17 +231,13 @@ class euclid_pk(likelihood):
     beta_th = np.zeros((self.k_size,self.nbin,self.mu_size),'float64')
     for index_k in range(self.k_size):
       for index_z in range(self.nbin):
-        #for index_mu in range(self.mu_size):
-          #beta_th[index_k,index_z,index_mu] = -1./(2.*self.b[index_z]) * (1.+self.z_mean[index_z]) * log(pk_nl_th[index_k,2*index_z+2,index_mu]/pk_nl_th[index_k,2*index_z,index_mu])/(self.dz)
-          beta_th[index_k,index_z,:] = -1./(2.*self.b[index_z]) * (1.+self.z_mean[index_z]) * np.log(pk_nl_th[index_k,2*index_z+2,:]/pk_nl_th[index_k,2*index_z,:])/(self.dz)
+	  beta_th[index_k,index_z,:] = -1./(2.*self.b[index_z]) * (1.+self.z_mean[index_z]) * np.log(pk_nl_th[index_k,2*index_z+2,:]/pk_nl_th[index_k,2*index_z,:])/(self.dz)
     
     # Compute \tilde P_th(k,mu,z) = H(z)/D_A(z)^2 * (1 + beta(z,k) mu^2)^2 P_nl_th (k,z) exp(-k^2 mu^2 sigma_r^2)
     self.tilde_P_th = np.zeros( (self.k_size,self.nbin,self.mu_size), 'float64')
     for index_k in range(self.k_size):
       for index_z in range(self.nbin):
-        #for index_mu in range(self.mu_size):
-          #self.tilde_P_th[index_k,index_z,index_mu] = H[2*index_z+1]/(D_A[2*index_z+1]**2) * (1. + beta_th[index_k,index_z,index_mu]*mu[index_mu]*mu[index_mu])**2* pk_nl_th[index_k,2*index_z+1,index_mu]*exp(-self.k[index_k,2*index_z+1,index_mu]**2*mu[index_mu]**2*sigma_r[index_z]**2)
-        self.tilde_P_th[index_k,index_z,:] = H[2*index_z+1]/(D_A[2*index_z+1]**2) * (1. + beta_th[index_k,index_z,:]*mu[:]*mu[:])**2* pk_nl_th[index_k,2*index_z+1,:]*np.exp(-self.k[index_k,2*index_z+1,:]**2*mu[:]**2*sigma_r[index_z]**2)
+	self.tilde_P_th[index_k,index_z,:] = H[2*index_z+1]/(D_A[2*index_z+1]**2) * (1. + beta_th[index_k,index_z,:]*mu[:]*mu[:])**2* pk_nl_th[index_k,2*index_z+1,:]*np.exp(-self.k[index_k,2*index_z+1,:]**2*mu[:]**2*sigma_r[index_z]**2)
 
     # Shot noise spectrum, deduced from the nuisance parameter P_shot
     self.P_shot = np.zeros( (self.nbin),'float64')
@@ -254,44 +246,21 @@ class euclid_pk(likelihood):
       
     # finally compute chi2, for each z_mean
     chi2 = 0.0
-    #mu_integrand_lo,mu_integrand_hi = 0.0,0.0
-    k_integrand_lo,k_integrand_hi   = 0.0,0.0
 
     mu_integrand_lo,mu_integrand_hi = 0.0,0.0
     k_integrand  = np.zeros(self.k_size,'float64')
-    #for index_z in range(self.nbin):
-      ##integrate over mu
-      ##compute first the value in mu = lower bound = -1
-      #k_integrand_hi = self.integrand(0,index_z,0)
-      #mu_integrand_hi = 0
-      #for index_k in range(1,self.k_size):
-        #k_integrand_lo = k_integrand_hi
-        #k_integrand_hi = self.integrand(index_k,index_z,0)
-        #mu_integrand_hi += (k_integrand_hi + k_integrand_lo)/2.*(self.k_fid[index_k] - self.k_fid[index_k-1])
-      #for index_mu in range(1,self.mu_size):
-        #mu_integrand_lo = mu_integrand_hi
-        #mu_integrand_hi = 0
-        #k_integrand_hi = self.integrand(0,index_z,index_mu)
-        #for index_k in range(1,self.k_size):
-          #k_integrand_lo = k_integrand_hi
-          #k_integrand_hi = self.integrand(index_k,index_z,index_mu)
-          #mu_integrand_hi += (k_integrand_hi + k_integrand_lo)/2.*(self.k_fid[index_k] - self.k_fid[index_k-1])
-        #chi2 += (mu_integrand_hi + mu_integrand_lo)/2.*(mu[index_mu] - mu[index_mu-1])
 
     for index_z in range(self.nbin):
-      k_integrand = self.integrand_k(index_z,0)
-      mu_integrand_hi = ((k_integrand[1:] + k_integrand[0:-1])*.5*(self.k_fid[1:] - self.k_fid[:-1])).sum()
+      k_integrand = self.integrand(index_z,0)
+      mu_integrand_hi = np.sum((k_integrand[1:] + k_integrand[0:-1])*.5*(self.k_fid[1:] - self.k_fid[:-1]))
       for index_mu in range(1,self.mu_size):
-        mu_integrand_lo = mu_integrand_hi
-        mu_integrand_hi = 0
-        k_integrand = self.integrand_k(index_z,index_mu)
-        mu_integrand_hi = ((k_integrand[1:] + k_integrand[0:-1])*.5*(self.k_fid[1:] - self.k_fid[:-1])).sum()
-        chi2 += (mu_integrand_hi + mu_integrand_lo)/2.*(mu[index_mu] - mu[index_mu-1])
+	mu_integrand_lo = mu_integrand_hi
+	mu_integrand_hi = 0
+	k_integrand = self.integrand(index_z,index_mu)
+	mu_integrand_hi = np.sum((k_integrand[1:] + k_integrand[0:-1])*.5*(self.k_fid[1:] - self.k_fid[:-1]))
+	chi2 += (mu_integrand_hi + mu_integrand_lo)/2.*(mu[index_mu] - mu[index_mu-1])
 
     return - chi2/2.
 
-  def integrand(self,index_k,index_z,index_mu):
-    return self.k_fid[index_k]**2/(2.*pi)**2*self.V_survey[index_z]/2.*((self.tilde_P_th[index_k,index_z,index_mu] - self.tilde_P_fid[index_k,index_z,index_mu])/(self.tilde_P_th[index_k,index_z,index_mu]+self.P_shot[index_z]))**2
-
-  def integrand_k(self,index_z,index_mu):
+  def integrand(self,index_z,index_mu):
     return self.k_fid[:]**2/(2.*pi)**2*self.V_survey[index_z]/2.*((self.tilde_P_th[:,index_z,index_mu] - self.tilde_P_fid[:,index_z,index_mu])/(self.tilde_P_th[:,index_z,index_mu]+self.P_shot[index_z]))**2

@@ -61,7 +61,7 @@ class euclid_lensing(likelihood):
     # Force Class to store Pk for redshifts up to max(self.z)
     self.need_Class_arguments(data,{'z_max_pk':self.z[-1]})
     # Force Class to store Pk for k up to an arbitrary number (since self.r is not yet decided)... TODO
-    self.need_Class_arguments(data,{'P_k_max_1/Mpc':5})
+    self.need_Class_arguments(data,{'P_k_max_1/Mpc':self.k_max})
 
     # In case of a comparison, stop here
     if not default:

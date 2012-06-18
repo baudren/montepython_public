@@ -1,5 +1,5 @@
 euclid_pk.data_directory = data.path['data']
-euclid_pk.fiducial_file  = "Euclid5_fiducial_nonlinear_pk.dat"
+euclid_pk.fiducial_file  = "Euclid5_fiducial_nonlinear_pk_ncdm_nl.dat"
 
 euclid_pk.use_nuisance = ['P_shot']
 
@@ -19,7 +19,7 @@ euclid_pk.k_size = 100
 
 # integration boundaries for k (in 1/Mpc)
 euclid_pk.kmin = 0.001 
-euclid_pk.kmax = 1
+euclid_pk.kmax = 2
 
 # efficiency
 euclid_pk.efficiency = 0.25
