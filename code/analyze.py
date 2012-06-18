@@ -93,55 +93,67 @@ class info:
 
     # Write down to the .info file all necessary information
     self.info.write('\n param names:\t')
-    for elem in self.ref_names:
-      self.info.write('%s\t' % (elem))
+    for i in range(len(self.ref_names)):
+      if self.scales[i,i] != 1: 
+	if (float(self.scales[i,i]) > 100. or (self.scales[i,i]) < 0.01):
+	  string = '%0.e%s' % (1./self.scales[i,i],self.ref_names[i])
+	elif (float(self.scales[i,i] < 1)):
+	  string = '%2d%s' % (1./self.scales[i,i],self.ref_names[i])
+	else :
+	  string = '%2g%s' % (1./self.scales[i,i],self.ref_names[i])
+      else:
+	string = '%s' % self.ref_names[i]
+      self.info.write("%-16s" % string)
+
+    #for elem in self.ref_names:
+      #self.info.write('%s\t' % (elem))
     self.info.write('\n R-1 values:\t')
     for elem in self.R:
-      self.info.write('%.7f\t' % (elem-1.))
+      self.info.write('%.6f\t' % (elem-1.))
     self.info.write('\n Best Fit:\t')
     for elem in chain[a[0],2:]:
-      self.info.write('%.7f\t' % (elem))
+      self.info.write('%.6e\t' % (elem))
     self.info.write('\n mean    :\t')
     for elem in self.mean:
-      self.info.write('%.7f\t' % (elem))
-    self.info.write('\n 1-sigma - :\t')
+      self.info.write('%.6e\t' % (elem))
+    self.info.write('\n\n 1-sigma - :\t')
     for elem in self.bounds:
-      self.info.write('%.7f\t' % (elem[0][0]))
+      self.info.write('%.6e\t' % (elem[0][0]))
     self.info.write('\n 1-sigma + :\t')
     for elem in self.bounds:
-      self.info.write('%.7f\t' % (elem[0][1]))
+      self.info.write(' %.6e\t' % (elem[0][1]))
     self.info.write('\n 2-sigma - :\t')
     for elem in self.bounds:
-      self.info.write('%.7f\t' % (elem[1][0]))
+      self.info.write('%.6e\t' % (elem[1][0]))
     self.info.write('\n 2-sigma + :\t')
     for elem in self.bounds:
-      self.info.write('%.7f\t' % (elem[1][1]))
+      self.info.write(' %.6e\t' % (elem[1][1]))
     self.info.write('\n 3-sigma - :\t')
     for elem in self.bounds:
-      self.info.write('%.7f\t' % (elem[2][0]))
+      self.info.write('%.6e\t' % (elem[2][0]))
     self.info.write('\n 3-sigma + :\t')
     for elem in self.bounds:
-      self.info.write('%.7f\t' % (elem[2][1]))
+      self.info.write(' %.6e\t' % (elem[2][1]))
 
     # bounds 
-    self.info.write('\n 1-sigma > :\t')
+    self.info.write('\n\n 1-sigma > :\t')
     for i in range(np.shape(self.bounds)[0]):
-      self.info.write('%.7f\t' % (self.mean[i]+self.bounds[i,0,0]))
+      self.info.write('%.6e\t' % (self.mean[i]+self.bounds[i,0,0]))
     self.info.write('\n 1-sigma < :\t')
     for i in range(np.shape(self.bounds)[0]):
-      self.info.write('%.7f\t' % (self.mean[i]+self.bounds[i,0,1]))
+      self.info.write('%.6e\t' % (self.mean[i]+self.bounds[i,0,1]))
     self.info.write('\n 2-sigma > :\t')
     for i in range(np.shape(self.bounds)[0]):
-      self.info.write('%.7f\t' % (self.mean[i]+self.bounds[i,1,0]))
+      self.info.write('%.6e\t' % (self.mean[i]+self.bounds[i,1,0]))
     self.info.write('\n 2-sigma < :\t')
     for i in range(np.shape(self.bounds)[0]):
-      self.info.write('%.7f\t' % (self.mean[i]+self.bounds[i,1,1]))
+      self.info.write('%.6e\t' % (self.mean[i]+self.bounds[i,1,1]))
     self.info.write('\n 3-sigma > :\t')
     for i in range(np.shape(self.bounds)[0]):
-      self.info.write('%.7f\t' % (self.mean[i]+self.bounds[i,2,0]))
+      self.info.write('%.6e\t' % (self.mean[i]+self.bounds[i,2,0]))
     self.info.write('\n 3-sigma < :\t')
     for i in range(np.shape(self.bounds)[0]):
-      self.info.write('%.7f\t' % (self.mean[i]+self.bounds[i,2,1]))
+      self.info.write('%.6e\t' % (self.mean[i]+self.bounds[i,2,1]))
 
   def prepare(self,Files,is_main_chain=True):
 
