@@ -1,5 +1,8 @@
 import os,sys
-from collections import OrderedDict as od
+try:
+  from collections import OrderedDict as od
+except:
+  from ordereddict import OrderedDict as od
 import numpy as np
 import math
 
@@ -66,7 +69,9 @@ class likelihood():
   def get_cl(self,_cosmo):
 
     # get C_l^XX from CLASS
+    print 'ici'
     cl = _cosmo.lensed_cl()
+    print 'marche plus'
 
     # convert dimensionless C_l's to C_l in muK**2
     T = _cosmo._T_cmb()

@@ -7,7 +7,9 @@ import numpy  as np                       # Numerical Python module
 # in order to keep track of the order in it (much the same as in an array)
 try:
   from collections import OrderedDict as od 
-except: # in case an older version of Python is used, this module does not belong to collections.
+except: 
+  # in case an older version of Python is used, this module does not belong to
+  # collections. Please remind to put that into your PYTHONPATH variable.
   from ordereddict import OrderedDict as od
 from datetime    import date              
 
@@ -29,7 +31,7 @@ class data:
     if default:
       self.param = command_line.param
     else:
-      self.param = command_line.folder+'/log.param'
+      self.param = command_line.folder+'log.param'
 
     # Recover jumping method from command_line
     self.jumping = command_line.jumping
@@ -288,7 +290,6 @@ class data:
 	    del self.Class_arguments['xe_%d' % i]
 	    if i != size:
 	      string += ','
-	    
 	  self.Class_arguments['binned_reio_xe'] = string
 	except (KeyError):
 	  pass

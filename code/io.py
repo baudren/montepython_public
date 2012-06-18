@@ -8,7 +8,10 @@ import os,sys
 import re     # Module to handle regular expressions (powerful tool to manipulate strings)
 import random as rd
 import numpy as np
-from collections import OrderedDict as od
+try:
+  from collections import OrderedDict as od
+except:
+  from ordereddict import OrderedDict as od    
 from datetime import date
 
 # Writes the beginning of log.param, starting with the header with Class

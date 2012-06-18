@@ -1,29 +1,22 @@
 #!/usr/bin/python
 
-####################
+##############################################################
 # Monte-Python, a Monte Carlo Markov Chain code (with Class!)
-# Version 0.9
+# Version 0.9.2
 # written by Benjamin Audren
-####################
+##############################################################
 
 #-------------------IMPORT-PACKAGES-------------------------------------
 
+# Python modules
 import os,sys
-# Check for python version
+
+# Checking for python version
 version = sys.version[:3]
 if float(version) < 2.7:
   print '\n\n /|\  You must have Python >= 2.7,' 
   print '/_o_\ or install manually the following modules for your older distribution:'
-  print '      argparse and OrderedDict (from collections)'
-  exit()
-
-try:
-  from classy import Class
-except ImportError:
-  print " /|\  You must have installed the classy.pyx"
-  print "/_o_\ please go to /path/to/class/python and run"
-  print "      python setup.py build, followed by python setup.py install --user"
-  exit()
+  print '      argparse and OrderedDict (see MontePython.pdf)'
 
 import parser	# parsing the input command line
 import io	# all the input/output mechanisms
@@ -39,7 +32,10 @@ def main():
   path = {}
   path['MontePython'] = sys.path[0]
 
-  # Configuration file, defaulting to default.conf in your root directory
+  # Configuration file, defaulting to default.conf in your root directory. This
+  # can be changed with the command line option -conf. All changes will be
+  # stored into the log.param of your folder, and hence will be reused for an
+  # ulterior run in the same directory
   conf_file = path['MontePython']+'/../'+command_line.config_file
   if os.path.isfile(conf_file):
     for line in open(conf_file):
@@ -50,7 +46,7 @@ def main():
   else:
     print ' /|\  You must provide a .conf file (default.conf by default)'
     print '/_o_\ in your montepython directory that specifies'
-    print '      the correct locations for MontePython, Class, Clik...'
+    print '      the correct locations for your data folder, Class (, Clik), ...'
 
   sys.stdout.write('Running MontePython version 0.9\n')
 
@@ -101,6 +97,30 @@ def main():
   io.create_output_files(command_line,Data)
 
   # Loading up the cosmological backbone. For the moment, only Class has been wrapped.
+
+  #| Importing the python-wrapped Class from the correct folder, defined in the
+  #| .conf file, or overwritten at this point by the log.param
+  #| If there is a conflict between the log.param value and the .conf file, exiting.
+  if Data.path != path:
+    print ' /|\  Your log.param files is in contradiction with your .conf file,'
+    print '/_o_\ This might mean that you are not computing from the correct Class version'
+    print '      Exiting now'
+    exit()
+  for elem in os.listdir(Data.path['class']+"python/build"):
+    if elem.find("lib.") != -1:
+      classy_path = path['class']+"python/build/"+elem
+
+  #| Inserting the previously found path into the list of folders to search for
+  #| python modules.
+  sys.path.insert(1,classy_path)
+  try:
+    from classy import Class
+  except ImportError:
+    print " /|\  You must have compiled the classy.pyx"
+    print "/_o_\ please go to /path/to/class/python and run"
+    print "      python setup.py build, then python setup.py install --user"
+    exit()
+
   _cosmo=Class()
 
   # MCMC chain 
