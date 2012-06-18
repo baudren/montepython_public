@@ -69,9 +69,7 @@ class likelihood():
   def get_cl(self,_cosmo):
 
     # get C_l^XX from CLASS
-    print 'ici'
     cl = _cosmo.lensed_cl()
-    print 'marche plus'
 
     # convert dimensionless C_l's to C_l in muK**2
     T = _cosmo._T_cmb()
