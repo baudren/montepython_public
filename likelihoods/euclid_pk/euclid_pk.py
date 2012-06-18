@@ -190,7 +190,7 @@ class euclid_pk(likelihood):
 
     # NOTE: Many following loops will be hidden in a very specific numpy
     # expression, for (a more than significant) speed-up. All the following
-    # loops keep the same pattern.  The semi-colon denotes the whole range of
+    # loops keep the same pattern.  The colon denotes the whole range of
     # indices, so beta_fid[:,index_z] denotes the array of length self.k_size
     # at redshift z[index_z]
 
