@@ -1,0 +1,10 @@
+lya.data_directory = data.path['data']+'lya/'
+
+lya.use_nuisance = ['noise_z0','noise_z1','noise_z2','noise_z3','noise_z4','noise_z5','noise_z6','noise_z7','noise_z8','noise_z9','noise_z10','teffvala','teffvals','gvala','gvals','gvals2','t0vala','t0vals','t0vals2','damp','alpha']
+
+lya.num_z = 11
+lya.num_k = 12
+
+lya.table = 'sdss.table.txt'
+lya.covar = 'sdss.covar.txt'
+lya.damp = 'damp_all.txt'
