@@ -97,7 +97,7 @@ def get_cov(data,command_line):
     cov=open('{0}'.format(command_line.cov),'r')
     for line in cov:
       if line.find('#')!=-1:
-	covnames = line.strip('#[').strip(']\n').replace("'","").split(', ')
+	covnames = line.strip('#').replace(' ','').replace('\n','').split(',')
 	M=np.zeros((len(covnames),len(covnames)),'float64')
 	rot=np.zeros((len(covnames),len(covnames)))
       else:
@@ -124,6 +124,7 @@ def get_cov(data,command_line):
     
     # Second print out, after having applied the scale factors
     print '\nFirst treatment (scaling)'
+    print covnames
     print M
 
     # Then, rotate M for the parameters to be well ordered, even if some names
@@ -139,7 +140,7 @@ def get_cov(data,command_line):
     not_in = [elem for elem in covnames if elem not in temp_names]
     for k in range(len(covnames)):
       if covnames[k] not in not_in:
-	temp_names_2.append(temp_names[h])
+        temp_names_2.append(temp_names[h])
 	h+=1
       else:
 	temp_names_2.append('')
@@ -153,10 +154,11 @@ def get_cov(data,command_line):
 	    rot[h][k] = 0.
 	except IndexError:
 	  rot[h][k] = 0.
-    M=np.dot(rot,np.dot(M,rot))
+    M=np.dot(rot,np.dot(M,np.transpose(rot)))
 
     # Third print out
     print '\nSecond treatment (partial reordering and cleaning)'
+    print temp_names_2
     print M
     
     M_temp    = np.ones((len(parameter_names),len(parameter_names)),'float64')

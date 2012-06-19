@@ -1,8 +1,6 @@
 import os,sys
 import re
 import io
-import matplotlib.pyplot as plt
-import matplotlib
 import math
 import numpy as np
 
@@ -20,6 +18,9 @@ class info:
       self.has_interpolate_module = False
       print 'No cubic interpolation done (no interpolate method found in scipy), only linear'
 
+    if command_line.plot:
+      import matplotlib.pyplot as plt
+      import matplotlib
     # At this points, Files could contain either a list of files (that could be
     # only one) or a folder.
     Files     = command_line.files
@@ -68,11 +69,20 @@ class info:
 	if i!=j:
 	  self.covar[j][i]=self.covar[i][j]
 
-    self.cov.write('#{0}\n'.format(self.ref_names))
+    self.cov.write('# ')
+    for i in range(len(self.ref_names)):
+      string = self.ref_names[i]
+      if i != len(self.ref_names)-1:
+        string+=','
+      self.cov.write('%-16s' % string )
+    self.cov.write('\n')
     self.covar = np.dot(self.scales.T,np.dot(self.covar,self.scales))
     for i in range(len(self.ref_names)):
       for j in range(len(self.ref_names)):
-	self.cov.write('{0} '.format(self.covar[i][j]))
+        if self.covar[i][j]>0:
+          self.cov.write(' %.5e\t' % self.covar[i][j])
+        else:
+          self.cov.write('%.5e\t' % self.covar[i][j])
       self.cov.write('\n')
 
     # Sorting by likelihood
