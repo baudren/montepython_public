@@ -3,6 +3,8 @@ import re
 import io
 import math
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib
 
 
 class info:
@@ -17,14 +19,6 @@ class info:
     except ImportError:
       self.has_interpolate_module = False
       print 'No cubic interpolation done (no interpolate method found in scipy), only linear'
-
-    # Try importing matplotlib. If this fails, do not plot anything, but output
-    # the covariance matrix.
-    try:
-      import matplotlib.pyplot as plt
-      import matplotlib
-    except ImportError:
-      command_line.plot = False
 
     # At this points, Files could contain either a list of files (that could be
     # only one) or a folder.
