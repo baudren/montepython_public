@@ -306,7 +306,7 @@ class lya(likelihood):
         for param in range(self.index_num):
           delta_pf += self.taylor[param,kk,zz,0]*delta[param] + self.taylor[param,kk,zz,1]*delta[param]**2
 
-        pk_th[kk,zz] = (self.pk_obs[kk,zz]*(1.+delta_pf) + noise[kk,zz]) * exp(-float(data.mcmc_parameters['alpha']['current']) * self.k[kk]**2)
+        pk_th[kk,zz] = (self.pkth[kk,zz]*(1.+delta_pf) + noise[kk,zz]) * exp(-float(data.mcmc_parameters['alpha']['current']) * self.k[kk]**2)
 
 # chi2: priors
 
