@@ -225,6 +225,28 @@ class euclid_pk(likelihood):
     pk_nl_th = np.zeros((self.k_size,2*self.nbin+1,self.mu_size),'float64')
     pk_nl_th = _cosmo._get_pk(self.k,self.z,self.k_size,2*self.nbin+1,self.mu_size)
 
+    # Recover the non_linear scale computed by halofit. If no scale was
+    # affected, set the scale to one, and make sure that the nuisance parameter
+    # epsilon is set to zero
+    k_sigma = np.zeros(self.nbin, 'float64')
+    #k_sigma = _cosmo._get_nonlinear_scale(self.nbin)
+    # for debugging
+    k_sigma = _cosmo.nonlinear_scale(self.nbin)
+
+    # recover the e_th part of the error function
+    e_th = self.e_lcdm_nl + self.coefficient_f_nu*_cosmo.Omega_nu/_cosmo.Omega_m
+
+    # Compute the Error E_th function
+    E_th = np.zeros((self.k_size,self.nbin,self.mu_size),'float64')
+    for index_z in range(self.nbin):
+      for index_mu in range(self.mu_size):
+        E_th[:,index_z,index_mu] = np.log(self.k[:,2*index_z+1,index_mu]/k_sigma[index_z]) / (1. + np.log(self.k[:,2*index_z+1,index_mu]/k_sigma[index_z])) * e_th
+
+    # Add the error function, with the nuisance parameter, to P_nl_th
+    for index_z in range(self.nbin):
+      for index_mu in range(self.mu_size):
+        pk_nl_th[:,index_z,index_mu] *= (1. + data.mcmc_parameters['epsilon']['current']*data.mcmc_parameters['epsilon']['initial'][4]*E_th[index_k,index_z,:]);
+
     # Compute the beta function for nl, 
     # beta(k,z) = 1/2b(z) * d log(P_nl_th (k,z))/d log a
     #   	= -1/2b(z) *(1+z) d log(P_nl_th (k,z))/dz 
@@ -234,10 +256,11 @@ class euclid_pk(likelihood):
 	  beta_th[index_k,index_z,:] = -1./(2.*self.b[index_z]) * (1.+self.z_mean[index_z]) * np.log(pk_nl_th[index_k,2*index_z+2,:]/pk_nl_th[index_k,2*index_z,:])/(self.dz)
     
     # Compute \tilde P_th(k,mu,z) = H(z)/D_A(z)^2 * (1 + beta(z,k) mu^2)^2 P_nl_th (k,z) exp(-k^2 mu^2 sigma_r^2)
+    # Compute \tilde P_th(k,mu,z) = H(z)/D_A(z)^2 * (1 + beta(z,k) mu^2)^2 P_nl_th (k,z) (1 + epsilon* E(k,z) ) exp(-k^2 mu^2 sigma_r^2)
     self.tilde_P_th = np.zeros( (self.k_size,self.nbin,self.mu_size), 'float64')
     for index_k in range(self.k_size):
       for index_z in range(self.nbin):
-	self.tilde_P_th[index_k,index_z,:] = H[2*index_z+1]/(D_A[2*index_z+1]**2) * (1. + beta_th[index_k,index_z,:]*mu[:]*mu[:])**2* pk_nl_th[index_k,2*index_z+1,:]*np.exp(-self.k[index_k,2*index_z+1,:]**2*mu[:]**2*sigma_r[index_z]**2)
+        self.tilde_P_th[index_k,index_z,:] = H[2*index_z+1]/(D_A[2*index_z+1]**2) * (1. + beta_th[index_k,index_z,:]*mu[:]*mu[:])**2* pk_nl_th[index_k,2*index_z+1,:]*np.exp(-self.k[index_k,2*index_z+1,:]**2*mu[:]**2*sigma_r[index_z]**2)
 
     # Shot noise spectrum, deduced from the nuisance parameter P_shot
     self.P_shot = np.zeros( (self.nbin),'float64')

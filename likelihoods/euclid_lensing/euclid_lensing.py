@@ -197,6 +197,24 @@ class euclid_lensing(likelihood):
       for j in range(1,np.shape(self.eta_z)[0]):
 	pk[i,j] = _cosmo._pk(self.l[i]/self.r[j],self.z[j])
 
+    # Recover the non_linear scale computed by halofit. If no scale was
+    # affected, set the scale to one, and make sure that the nuisance parameter
+    # epsilon is set to zero
+    k_sigma = np.zeros(self.nbin, 'float64')
+    k_sigma = _cosmo.nonlinear_scale(self.z,self.nbin)
+
+    # recover the e_th part of the error function
+    e_th = self.e_lcdm_nl + self.coefficient_f_nu*_cosmo.Omega_nu/_cosmo.Omega_m
+
+    # Compute the Error E_th function
+    E_th = np.zeros((self.nlmax,self.nbin),'float64')
+    for index_z in range(self.nbin):
+      E_th[:,index_z] = np.log(self.l[:,2*index_z+1,index_mu]/k_sigma[index_z]) / (1. + np.log(self.k[:,2*index_z+1,index_mu]/k_sigma[index_z])) * e_th
+
+    # Add the error function, with the nuisance parameter, to P_nl_th
+    for index_z in range(self.nbin):
+      pk[:,index_z] *= (1. + data.mcmc_parameters['epsilon']['current']*data.mcmc_parameters['epsilon']['initial'][4]*E_th[:,index_z])
+
     #for i in range(len(self.l)):
       #print '%.4e' % pk[i,4]
 

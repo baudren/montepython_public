@@ -1,7 +1,7 @@
 euclid_pk.data_directory = data.path['data']
-euclid_pk.fiducial_file  = "Euclid5_fiducial_nonlinear_pk_ncdm_nl.dat"
+euclid_pk.fiducial_file  = "Euclid5_fiducial_nonlinear_pk_ncdm_nl_error.dat"
 
-euclid_pk.use_nuisance = ['P_shot']
+euclid_pk.use_nuisance = ['P_shot','epsilon']
 
 # number of bins of the survey
 euclid_pk.nbin  = 16
@@ -20,6 +20,10 @@ euclid_pk.k_size = 100
 # integration boundaries for k (in 1/Mpc)
 euclid_pk.kmin = 0.001 
 euclid_pk.kmax = 2
+
+# precision of the halofit method
+euclid_pk.e_lcdm_nl = 0.01
+euclid.coefficient_f_nu = 1
 
 # efficiency
 euclid_pk.efficiency = 0.25
