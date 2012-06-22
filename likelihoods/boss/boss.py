@@ -3,7 +3,7 @@ import os
 import numpy as np
 from math import exp
 
-class boss11(likelihood):
+class boss(likelihood):
 
   def __init__(self,path,data,command_line,log_flag,default):
 
@@ -272,7 +272,7 @@ class boss11(likelihood):
 
         # get theoretical spectrum (Taylor expansion)
 
-        delta_pk = 0.
+        delta_pf = 0.
 
         for param in range(self.index_num):
           delta_pf += self.taylor[param,kk,zz,0]*delta[param] + self.taylor[param,kk,zz,1]*delta[param]**2

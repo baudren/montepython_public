@@ -1,9 +1,9 @@
-boss11.data_directory = data.path['data']+'lya/'
+boss.data_directory = data.path['data']+'lya/'
 
-boss11.use_nuisance = ['teffvala','teffvals','gvala','gvals','gvals2','t0vala','t0vals','t0vals2','alpha']
+boss.use_nuisance = ['teffvala','teffvals','gvala','gvals','gvals2','t0vala','t0vals','t0vals2','alpha']
 
-boss11.num_z = 11
-boss11.num_k = 12
+boss.num_z = 11
+boss.num_k = 12
 
-boss11.table = 'PkBossWithSystMcDoFormat.txt'
-boss11.covar = 'PkCorrBossWithSystMcDoFormat.txt'
+boss.table = 'PkBossWithSystMcDoFormat.txt'
+boss.covar = 'PkCorrBossWithSystMcDoFormat.txt'
