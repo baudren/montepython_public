@@ -664,7 +664,7 @@ class info:
 
 	  # plotting contours, using the ctr_level method (from Karim Benabed)
 	  cs = ax2dsub.contour(y_centers,x_centers,n,extent=extent,levels=self.ctr_level(n,lvls),colors="k",zorder=5)
-	  ax2dsub.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=6)
+	  ax2dsub.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=19)
 
 	  if command_line.subplot is True:
 	    # Store the individual 2d plots
@@ -678,7 +678,7 @@ class info:
 	    ax_temp.set_yticklabels(['%.4g' % s for s in ticks[i]],fontsize=ticksize2d)
 	    ax_temp.set_title('%s vs %s' % (self.tex_names[i],self.tex_names[j]),fontsize=fontsize1d)
 	    cs = ax_temp.contour(y_centers,x_centers,n,extent=extent,levels=self.ctr_level(n,lvls),colors="k",zorder=5)
-	    ax_temp.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=6)
+	    ax_temp.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=19)
 	    fig_temp.savefig(self.folder+'plots/{0}_2d_{1}-{2}.pdf'.format(self.folder.split('/')[-2],self.ref_names[i],self.ref_names[j]))
 
 	    # store the coordinates of the points for further plotting.
@@ -849,6 +849,8 @@ class info:
   # parameters. Feel free to modify to your needs.
   def get_fontsize(self,diag_length):
     # for a diagonal of 5, fontsize of 19, for a diagonal of 13, fontsize of 8
-    fontsize = round( 19 - (diag_length-5)*1.38)
-    ticksize = round( 14 - (diag_length-5)*1)
+    fontsize = 19
+#round( 19 - (diag_length-5)*1.38)
+    ticksize = 19
+#round( 14 - (diag_length-5)*1)
     return fontsize,ticksize
