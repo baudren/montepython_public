@@ -208,8 +208,8 @@ class euclid_lensing(likelihood):
 
     # Compute the Error E_th function
     E_th = np.zeros((self.nlmax,self.nbin),'float64')
-    for index_z in range(self.nbin):
-      E_th[:,index_z] = np.log(self.l[:,2*index_z+1,index_mu]/k_sigma[index_z]) / (1. + np.log(self.k[:,2*index_z+1,index_mu]/k_sigma[index_z])) * e_th
+    for index_z in range(1,self.nbin):
+      E_th[:,index_z] = np.log(self.l[:]/k_sigma[index_z]*self.r[index_z]) / (1. + np.log(self.l[:]/k_sigma[index_z]*self.r[index_z])) * e_th
 
     # Add the error function, with the nuisance parameter, to P_nl_th
     for index_z in range(self.nbin):
@@ -323,5 +323,6 @@ class euclid_lensing(likelihood):
 	det_cross += np.linalg.det(newCov)
 
       chi2 += (2.*lll+1.)*self.fsky*(det_cross/det_theory + math.log(det_theory/det_observ) - self.nbin)
-    
+
+    chi2+=(data.mcmc_parameters['epsilon']['current']*data.mcmc_parameters['epsilon']['initial'][4])**2
     return -chi2/2.

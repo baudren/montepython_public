@@ -23,7 +23,7 @@ euclid_pk.kmax = 2
 
 # precision of the halofit method
 euclid_pk.e_lcdm_nl = 0.01
-euclid.coefficient_f_nu = 1
+euclid_pk.coefficient_f_nu = 1
 
 # efficiency
 euclid_pk.efficiency = 0.25

@@ -283,6 +283,8 @@ class euclid_pk(likelihood):
 	mu_integrand_hi = np.sum((k_integrand[1:] + k_integrand[0:-1])*.5*(self.k_fid[1:] - self.k_fid[:-1]))
 	chi2 += (mu_integrand_hi + mu_integrand_lo)/2.*(mu[index_mu] - mu[index_mu-1])
 
+    chi2 += (data.mcmc_parameters['epsilon']['current']*data.mcmc_parameters['epsilon']['initial'][4])**2
+
     return - chi2/2.
 
   def integrand(self,index_z,index_mu):
