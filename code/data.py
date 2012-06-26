@@ -34,7 +34,8 @@ class data:
       self.param = command_line.folder+'log.param'
 
     # Recover jumping method from command_line
-    self.jumping = command_line.jumping
+    self.jumping 	= command_line.jumping
+    self.jumping_factor = command_line.jumping_factor
     self.path = path
 
     # Creation of the two main dictionnaries:

@@ -228,10 +228,10 @@ def get_new_pos(data,eigv,U,k):
     # Choice here between sequential and global change of direction
     if data.jumping == 'global':
       for i in range(len(vector)):
-        sigmas[i]=(math.sqrt(1/eigv[i]/len(vector)))*rd.gauss(0,1)*2.4
+        sigmas[i]=(math.sqrt(1/eigv[i]/len(vector)))*rd.gauss(0,1)*data.jumping_factor
     elif data.jumping == 'sequential':
       i = k%len(vector)
-      sigmas[i] = (math.sqrt(1/eigv[i]))*rd.gauss(0,1)*2.4
+      sigmas[i] = (math.sqrt(1/eigv[i]))*rd.gauss(0,1)*data.jumping_factor
     else:
       print '\n\n  Jumping method unknown (accepted : global (default), sequential)'
 

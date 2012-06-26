@@ -17,6 +17,8 @@ parser.add_argument('-p', metavar='input param file',type=str,dest='param')
 parser.add_argument('-c', metavar='input cov matrix',type=str,dest='cov')
 # -- jumping method	(OPTIONAL)
 parser.add_argument('-j', metavar='jumping method',type=str,dest='jumping',default='global')
+# -- jumping factor	(OPTIONAL)
+parser.add_argument('-f', metavar='jumping factor',type=float,dest='jumping_factor',default=2.4)
 # -- configuration file (OPTIONAL)
 parser.add_argument('-conf', metavar='configuration file',type=str,dest='config_file',default='default.conf')
 
