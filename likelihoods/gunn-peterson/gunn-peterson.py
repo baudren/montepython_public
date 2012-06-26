@@ -11,8 +11,10 @@ class gunn_peterson(likelihood_prior):
 
     lkl=0
 
-    if (xHI_reio>gunn_peterson.xHI_max) lkl=1.e10
-    if (xHI_noreio<gunn_peterson.xHI_min) lkl=1.e10
+    if (xHI_reio>gunn_peterson.xHI_max):
+      lkl=1.e10
+    if (xHI_noreio<gunn_peterson.xHI_min):
+      lkl=1.e10
 
     print "at z=5.5:"xHI_reio,", at z=6:",xHI_reio,lkl
 
