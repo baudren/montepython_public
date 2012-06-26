@@ -22,7 +22,7 @@ class likelihood():
 
     self.name = self.__class__.__name__
     self.folder = os.path.abspath(data.path['MontePython'])+'/../likelihoods/'+self.name+'/'
-    if not default:
+    if (not default or not log_flag):
       path = command_line.folder+'log.param'
     self.read_from_file(path,data)
 

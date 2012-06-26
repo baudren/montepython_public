@@ -19,10 +19,10 @@ euclid_lensing.fsky  = 0.5
 euclid_lensing.dz    = 0.1		
 
 # k_max in 1/Mpc
-euclid_lensing.k_max  = 16
+euclid_lensing.k_max  = 7
 
 # precision of the halofit method
-euclid_lensing.e_lcdm_nl = 0.01
+euclid_lensing.e_lcdm_nl = 0.1
 euclid_lensing.coefficient_f_nu = 1
 # noise computation
 euclid_lensing.rms_shear = 0.22

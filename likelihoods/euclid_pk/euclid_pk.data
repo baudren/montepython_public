@@ -1,5 +1,5 @@
 euclid_pk.data_directory = data.path['data']
-euclid_pk.fiducial_file  = "Euclid5_fiducial_nonlinear_pk_ncdm_nl_error.dat"
+euclid_pk.fiducial_file  = "Euclid5_fiducial_nonlinear_pk_ncdm_nl_err.dat"
 
 euclid_pk.use_nuisance = ['P_shot','epsilon']
 
@@ -22,7 +22,7 @@ euclid_pk.kmin = 0.001
 euclid_pk.kmax = 2
 
 # precision of the halofit method
-euclid_pk.e_lcdm_nl = 0.01
+euclid_pk.e_lcdm_nl = 0.1
 euclid_pk.coefficient_f_nu = 1
 
 # efficiency
