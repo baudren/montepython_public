@@ -205,7 +205,7 @@ def get_cov(data,command_line):
 
 # Routine to obtain a new position in the parameter space from the eigen values
 # of the inverse covariance matrix.
-def get_new_pos(data,eigv,U,k):
+def get_new_pos(data,eigv,U,k,N):
   
   parameter_names = data.get_mcmc_parameters(['varying'])
   vector_new=np.zeros(len(parameter_names),'float64')
@@ -220,43 +220,47 @@ def get_new_pos(data,eigv,U,k):
     for elem in parameter_names:
       vector[parameter_names.index(elem)] = data.mcmc_parameters[elem]['initial'][0]
 
-  flag=1 # Boundaries error management flag
-  while flag!=0:
-    flag=0 # initialize: there are no problems at first
-    rd.seed()
+  rd.seed()
 
-    # Choice here between sequential and global change of direction
-    if data.jumping == 'global':
-      for i in range(len(vector)):
-        sigmas[i]=(math.sqrt(1/eigv[i]/len(vector)))*rd.gauss(0,1)*data.jumping_factor
-    elif data.jumping == 'sequential':
-      i = k%len(vector)
-      sigmas[i] = (math.sqrt(1/eigv[i]))*rd.gauss(0,1)*data.jumping_factor
-    else:
-      print '\n\n  Jumping method unknown (accepted : global (default), sequential)'
+  # Choice here between sequential and global change of direction
+  if data.jumping == 'global':
+    for i in range(len(vector)):
+      sigmas[i]=(math.sqrt(1/eigv[i]/len(vector)))*rd.gauss(0,1)*data.jumping_factor
+  elif data.jumping == 'sequential':
+    i = k%len(vector)
+    sigmas[i] = (math.sqrt(1/eigv[i]))*rd.gauss(0,1)*data.jumping_factor
+  else:
+    print '\n\n  Jumping method unknown (accepted : global (default), sequential)'
 
-    # Fill in the new vector
-    vector_new = vector + np.dot(U,sigmas)
+  # Fill in the new vector
+  vector_new = vector + np.dot(U,sigmas)
 
-    # Check for boundaries problems
-    i=0
-    for elem in parameter_names:
-      value = data.mcmc_parameters[elem]['initial']
-      if(value[1]!=-1 and vector_new[i]<value[1]):
-        flag+=1 # if a boundary value is reached, increment
-      elif(value[2]!=-1 and vector_new[i]>value[2]):
-        flag+=1 # same
-      i+=1
-
-  # At this point, all boundary conditions are fullfilled. The value of
-  # new_vector is then put into the 'current' point in parameter space.
+  # Check for boundaries problems
   i=0
   for elem in parameter_names:
-    data.mcmc_parameters[elem]['current'] = vector_new[i]
+    value = data.mcmc_parameters[elem]['initial']
+    if(value[1]!=-1 and vector_new[i]<value[1]):
+      flag+=1 # if a boundary value is reached, increment
+    elif(value[2]!=-1 and vector_new[i]>value[2]):
+      flag+=1 # same
     i+=1
-    
-  # Propagate the information towards the Class arguments
-  data.update_Class_arguments()
+
+  # At this point, if a boundary condition is not fullfilled, ie, if i is different from zero, return False
+  if i!=0:
+    return False
+  
+  # If it is not the case, proceed with normal computationThe value of
+  # new_vector is then put into the 'current' point in parameter space.
+  else:
+    for elem in parameter_names:
+      data.mcmc_parameters[elem]['current'] = vector_new[i]
+      i+=1
+      
+    # Propagate the information towards the Class arguments
+    data.update_Class_arguments()
+
+    # Return 
+    return True
 
 # Transfer the 'current' point in the varying parameters to the last accepted
 # one.
@@ -331,9 +335,16 @@ def chain(_cosmo,data,command_line):
   while (k <= command_line.N and failed < num_failure):
 
     # Pick a new position ('current' flag in mcmc_parameters), and compute its
-    # likelihood
-    get_new_pos(data,sigma_eig,U,k)
-    failure,newloglike=compute_lkl(_cosmo,data)
+    # likelihood. If get_new_pos returns True, it means it did not encounter
+    # any boundary problem. Otherwise, just increase the multiplicity of the
+    # point and start the loop again
+    if get_new_pos(data,sigma_eig,U,k) is True:
+      failure,newloglike=compute_lkl(_cosmo,data)
+    else: #reject step
+      rej+=1
+      N+=1
+      k+=1
+      continue
     
     # In case of failure in the last step, print out the faulty
     # Class_arguments, and start a new incrementation of the while loop. Note
@@ -347,10 +358,13 @@ def chain(_cosmo,data,command_line):
 
     # Harmless trick to avoid exponentiating large numbers. This decides
     # whether or not the system should move.
-    if newloglike >= loglike:
-      alpha = 1.
+    if (newloglike != data.boundary_loglike):
+      if (newloglike >= loglike):
+	alpha = 1.
+      else:
+	alpha=np.exp(newloglike-loglike)
     else:
-      alpha=np.exp(newloglike-loglike)
+      alpha = -1
 
     if ((alpha == 1.) or (rd.uniform(0,1) < alpha)): # accept step
 

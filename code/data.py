@@ -38,6 +38,11 @@ class data:
     self.jumping_factor = command_line.jumping_factor
     self.path = path
 
+    # Define the boundary loglike, the value used to defined a loglike that is
+    # out of bounds. If a loglike is affected to this value, it will
+    # automatically rejected
+    self.boundary_loglike = 1e30
+
     # Creation of the two main dictionnaries:
 
     # -- Class_arguments, that will contain everything for the cosmological code
