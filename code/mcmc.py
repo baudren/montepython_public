@@ -205,7 +205,7 @@ def get_cov(data,command_line):
 
 # Routine to obtain a new position in the parameter space from the eigen values
 # of the inverse covariance matrix.
-def get_new_pos(data,eigv,U,k,N):
+def get_new_pos(data,eigv,U,k):
   
   parameter_names = data.get_mcmc_parameters(['varying'])
   vector_new=np.zeros(len(parameter_names),'float64')
