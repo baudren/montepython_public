@@ -41,7 +41,7 @@ class data:
     # Define the boundary loglike, the value used to defined a loglike that is
     # out of bounds. If a loglike is affected to this value, it will
     # automatically rejected
-    self.boundary_loglike = 1e30
+    self.boundary_loglike = -1e30
 
     # Creation of the two main dictionnaries:
 

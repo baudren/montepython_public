@@ -236,7 +236,8 @@ def get_new_pos(data,eigv,U,k):
   vector_new = vector + np.dot(U,sigmas)
 
   # Check for boundaries problems
-  i=0
+  i	= 0
+  flag  = 0
   for elem in parameter_names:
     value = data.mcmc_parameters[elem]['initial']
     if(value[1]!=-1 and vector_new[i]<value[1]):
@@ -245,22 +246,23 @@ def get_new_pos(data,eigv,U,k):
       flag+=1 # same
     i+=1
 
-  # At this point, if a boundary condition is not fullfilled, ie, if i is different from zero, return False
-  if i!=0:
+  # At this point, if a boundary condition is not fullfilled, ie, if flag is
+  # different from zero, return False
+  if flag!=0:
     return False
   
   # If it is not the case, proceed with normal computationThe value of
   # new_vector is then put into the 'current' point in parameter space.
-  else:
-    for elem in parameter_names:
-      data.mcmc_parameters[elem]['current'] = vector_new[i]
-      i+=1
-      
-    # Propagate the information towards the Class arguments
-    data.update_Class_arguments()
+  i=0
+  for elem in parameter_names:
+    data.mcmc_parameters[elem]['current'] = vector_new[i]
+    i+=1
+    
+  # Propagate the information towards the Class arguments
+  data.update_Class_arguments()
 
-    # Return 
-    return True
+  # Return 
+  return True
 
 # Transfer the 'current' point in the varying parameters to the last accepted
 # one.
@@ -303,14 +305,18 @@ def chain(_cosmo,data,command_line):
 
   # Pick a position (from last accepted point if restart, from the mean value
   # else)
-  get_new_pos(data,sigma_eig,U,failed)
+  for i in range(100):
+    if get_new_pos(data,sigma_eig,U,failed) is True:
+      break
   # Compute the starting Likelihood
   failure,loglike=compute_lkl(_cosmo,data)
 
   # Failure check of initialization
   while ((failure is True) and (failed<=num_failure)):
     failed +=1
-    get_new_pos(data,sigma_eig,U,failed)
+    for i in range(100):
+      if get_new_pos(data,sigma_eig,U,failed) is True:
+	break
     failure,loglike=compute_lkl(_cosmo,data)
 
   if failure is True:
