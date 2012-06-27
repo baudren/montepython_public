@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from likelihood_class import likelihood
+from likelihood_class import likelihood_prior
 
 class gunn_peterson(likelihood_prior):
   
@@ -11,11 +11,9 @@ class gunn_peterson(likelihood_prior):
 
     lkl=0
 
-    if (xHI_reio>gunn_peterson.xHI_max):
-      lkl=1.e10
-    if (xHI_noreio<gunn_peterson.xHI_min):
-      lkl=1.e10
-
-    print "at z=5.5:"xHI_reio,", at z=6:",xHI_reio,lkl
+    if (xHI_reio>self.xHI_max):
+      lkl=data.boundary_loglike
+    if (xHI_noreio<self.xHI_min):
+      lkl=data.boundary_loglike
 
     return lkl
