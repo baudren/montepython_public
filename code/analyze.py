@@ -367,18 +367,18 @@ class info:
     print 'Computing mean values'
     for i in range(np.shape(mean)[1]):
       for j in range(len(spam)):
-	for k in range(np.shape(spam[j])[0]):
-	  mean[j+1,i] += spam[j][k,0]*spam[j][k,i+2]
-	mean[j+1,i] = mean[j+1,i]/sum(spam[j])[0]
+	mean[j+1,i] = np.sum(spam[j][:,0]*spam[j][:,i+2])/np.sum(spam[j],axis=0)[0]
 	mean[0,i]  += mean[j+1,i]/len(spam)
     
     print 'Computing variance'
     for i in range(np.shape(mean)[1]):
       for j in range(len(spam)):
-	subvar = 0
-	for k in range(np.shape(spam[j])[0]):
-	  subvar 	   += spam[j][k,0]*(spam[j][k,i+2]-mean[0,i]  )**2
-	  var[j+1,i] += spam[j][k,0]*(spam[j][k,i+2]-mean[j+1,i])**2
+	#subvar = 0
+	#for k in range(np.shape(spam[j])[0]):
+	  #subvar 	   += spam[j][k,0]*(spam[j][k,i+2]-mean[0,i]  )**2
+	  #var[j+1,i] += spam[j][k,0]*(spam[j][k,i+2]-mean[j+1,i])**2
+	subvar = np.sum(spam[j][:,0]*(spam[j][:,i+2]-mean[0,i]  )**2)
+	var[j+1,i] = np.sum(spam[j][:,0]*(spam[j][:,i+2]-mean[j+1,i])**2)
 
 	var[0,i]   += subvar/(sum(spam[j])[0]-1)/len(spam)
 	var[j+1,i]  = var[j+1,i]/(sum(spam[j])[0]-1)
@@ -644,11 +644,10 @@ class info:
 	lkl_mean=np.zeros(len(bincenters),'float64')
 	norm=np.zeros(len(bincenters),'float64')
 	for j in range(len(bin_edges)-1):
-	  for k in range(np.shape(chain)[0]):
-	    if (chain[k,i+2]>=bin_edges[j] and chain[k,i+2]<=bin_edges[j+1]):
-	      lkl_mean[j] += math.exp( best_minus_lkl - chain[k,1])*chain[k,0]
-	      norm[j] += chain[k,0]
-	  lkl_mean[j] /= norm[j]
+	  tmp = np.array([elem for elem in chain[:,:] if (elem[i+2]>=bin_edges[j] and elem[i+2]<=bin_edges[j+1])],'float')
+	  lkl_mean[j] += np.sum(np.exp( best_minus_lkl - tmp[:,1])*tmp[:,0])
+	  norm[j] += np.sum(tmp,axis=0)[0]
+	lkl_mean /= norm
 	#lkl_mean *= max(hist)/max(lkl_mean)
 	lkl_mean /= max(lkl_mean)
 	interp_lkl_mean,interp_grid = self.cubic_interpolation(lkl_mean,bincenters)
@@ -656,7 +655,7 @@ class info:
 	ax1d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=4)
 
       if command_line.subplot is True:
-	if not comp_done:
+	if not comp:
 	  extent2d = ax2d.get_window_extent().transformed(fig2d.dpi_scale_trans.inverted())
 	  fig2d.savefig(self.folder+'plots/{0}_{1}.pdf'.format(self.folder.split('/')[-2],self.ref_names[i]), bbox_inches=extent2d.expanded(1.1, 1.4))
 	else:
@@ -872,8 +871,8 @@ class info:
   # parameters. Feel free to modify to your needs.
   def get_fontsize(self,diag_length):
     # for a diagonal of 5, fontsize of 19, for a diagonal of 13, fontsize of 8
-    fontsize = 19
-#round( 19 - (diag_length-5)*1.38)
-    ticksize = 19
-#round( 14 - (diag_length-5)*1)
+    #fontsize = 19
+    fontsize = round( 19 - (diag_length-5)*1.38)
+    #ticksize = 19
+    ticksize = round( 14 - (diag_length-5)*1)
     return fontsize,ticksize
