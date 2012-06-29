@@ -309,36 +309,42 @@ class info:
       print 'scanning file {0}'.format(File)
       # cheese will brutally contain everything in the chain File being scanned
       cheese = (np.array([[float(elem) for elem in line.split()] for line in open(File,'r')]))
+      local_max_lkl = min(cheese[:,1]) # beware, it is the min because we are talking about '- log likelihood'
       line_count = 0
       for line in open(File,'r'):
 	line_count+=1
-      self.log.write("%s\t Number of steps:%d\tSteps accepted:%d\tacc = %.2g\tmin(-loglike) = %.5g " % (File,sum(cheese[:,0]),line_count,line_count*1.0/sum(cheese[:,0]),max_lkl))
+      self.log.write("%s\t Number of steps:%d\tSteps accepted:%d\tacc = %.2g\tmin(-loglike) = %.5g " % (File,sum(cheese[:,0]),line_count,line_count*1.0/sum(cheese[:,0]),local_max_lkl))
       self.log.write("\n")
       total += sum(cheese[:,0])
 
       # Removing burn-in
       start = 0
-      while cheese[start,1]>max_lkl+2:
-	start+=1
-      print '  Removed {0} points of burn-in'.format(start)
+      try:
+	while cheese[start,1]>max_lkl+2:
+	  start+=1
+	print '  Removed {0} points of burn-in'.format(start)
+      except IndexError:
+	print '  Removed entire chain: not converged'
 
-      # ham contains cheese without the burn-in
-      ham = np.copy(cheese[start::])
 
-      # Deal with single file case
-      if len(Files) == 1:
-	print '  Beware, convergence computed for a single file'
-	bacon   = np.copy(cheese[::3,:])
-	egg     = np.copy(cheese[1::3,:])
-	sausage = np.copy(cheese[2::3,:])
+      # ham contains cheese without the burn-in, if there are any points left
+      if np.shape(cheese)[0] > start:
+	ham = np.copy(cheese[start::])
 
-	spam.append(bacon)
-	spam.append(egg)
-	spam.append(sausage)
-	continue
-      
-      # Adding resulting table to spam
-      spam.append(ham)
+	# Deal with single file case
+	if len(Files) == 1:
+	  print '  Beware, convergence computed for a single file'
+	  bacon   = np.copy(cheese[::3,:])
+	  egg     = np.copy(cheese[1::3,:])
+	  sausage = np.copy(cheese[2::3,:])
+
+	  spam.append(bacon)
+	  spam.append(egg)
+	  spam.append(sausage)
+	  continue
+	
+	# Adding resulting table to spam
+	spam.append(ham)
 
 
     # Now that the list spam contains all the different chains removed of their
