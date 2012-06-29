@@ -287,14 +287,28 @@ class info:
     # Total number of steps done:
     total = 0
 
-    # Circle through all files
+    # max_lkl will be appended with all the maximum likelihoods of files, then
+    # will be replaced by its own maximum. This way, the global maximum
+    # likelihood will be used as a reference, and not each chain's maximum.
+    max_lkl = []
+
+    # Circle through all files to find the maximum
+    print 'Finding global maximum of likelihood'
+    for File in Files:
+      i=Files.index(File)
+      # cheese will brutally contain everything in the chain File being scanned
+      cheese = (np.array([[float(elem) for elem in line.split()] for line in open(File,'r')]))
+      max_lkl.append(min(cheese[:,1])) # beware, it is the min because we are talking about '- log likelihood'
+
+    # Selecting only the true maximum.
+    max_lkl = min(max_lkl)
+
+    # Restarting the circling through files
     for File in Files:
       i=Files.index(File)
       print 'scanning file {0}'.format(File)
       # cheese will brutally contain everything in the chain File being scanned
       cheese = (np.array([[float(elem) for elem in line.split()] for line in open(File,'r')]))
-      max_lkl = min(cheese[:,1]) # beware, it is the min because we are talking about '- log likelihood'
-
       line_count = 0
       for line in open(File,'r'):
 	line_count+=1
@@ -344,6 +358,7 @@ class info:
     between = 0
 
     # Compute mean and variance for each chain
+    print 'Computing mean values'
     for i in range(np.shape(mean)[1]):
       for j in range(len(spam)):
 	for k in range(np.shape(spam[j])[0]):
@@ -351,6 +366,7 @@ class info:
 	mean[j+1,i] = mean[j+1,i]/sum(spam[j])[0]
 	mean[0,i]  += mean[j+1,i]/len(spam)
     
+    print 'Computing variance'
     for i in range(np.shape(mean)[1]):
       for j in range(len(spam)):
 	subvar = 0
@@ -367,6 +383,7 @@ class info:
     # the different chains (within), and the variance of the means (between)
     # TODO: verify the validity of this computation for chains of different
     # length !
+    print 'Computing convergence'
     for i in range(np.shape(mean)[1]):
       for j in range(len(spam)):
 	within  += var[j+1,i]/len(spam)
