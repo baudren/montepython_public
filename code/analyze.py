@@ -25,6 +25,16 @@ class info:
     Files     = command_line.files
     binnumber = command_line.bins
 
+    # Read a potential file describing changes to be done for the parameter
+    # names, and number of paramaters plotted (can be let empty, all will then
+    # be plotted)
+    if command_line.optional_plot_file is not None:
+      for line in open(command_line.optional_plot_file[0],'r'):
+	exec(line.replace('info.','self.'))
+    else:
+      self.to_change = {}
+      self.to_plot   = []
+
     # Prepare the files, according to the case, load the log.param, and
     # prepare the output (plots folder, .covmat, .info and .log files). After
     # this step, self.files will contain all chains.
@@ -249,6 +259,8 @@ class info:
     derived_names = []
     derived_tex_names = []
 
+    plotted_parameters = []
+
     if is_main_chain:
       Files = self.Files
       param = self.param
@@ -260,6 +272,13 @@ class info:
 	  self.experiments = line.split('=')[-1].replace('[','').replace(']','').replace('\n','').replace("'","").split(',')
 	if line.find('data.parameters')!=-1:
 	  name = line.split("'")[1]
+	  if name in self.to_change.iterkeys():
+	    name = self.to_change[name]
+	  if self.to_plot==[]:
+	    plotted_parameters.append(name)
+	  else:
+	    if name in self.to_plot:
+	      plotted_parameters.append(name)
 	  if (float(line.split('=')[-1].split(',')[-3].replace(' ','')) != 0 or str(line.split('=')[-1].split(',')[-1].replace(' ','').replace(']','').replace('\n','').replace("'","").replace("\t",'')) == 'derived' ):
 	    temp = [float(elem) for elem in line.split(",")[1:3]]
 	    boundaries.append(temp)
@@ -412,6 +431,8 @@ class info:
 
       self.scales = scales
 
+      self.plotted_parameters = plotted_parameters
+
       return True
     else:
       return spam,ref_names,tex_names,boundaries,mean
@@ -552,179 +573,181 @@ class info:
       num_columns = round(math.sqrt(index)) 
       num_lines   = math.ceil((len(self.ref_names)+len(comp_ref_names))*1.0/num_columns)
     else:
-      num_columns = round(math.sqrt(len(self.ref_names)))
-      num_lines   = math.ceil(len(self.ref_names)*1.0/num_columns)
+      num_columns = round(math.sqrt(len(self.plotted_parameters)))
+      num_lines   = math.ceil(len(self.plotted_parameters)*1.0/num_columns)
 
     # Actual plotting
-    for i in range(len(self.ref_names)):
+    for i in range(len(self.plotted_parameters)):
 
-      # Adding the subplots to the respective figures, this will be the diagonal for the triangle plot.
-      if plot_2d:
-	ax2d=fig2d.add_subplot(len(self.ref_names),len(self.ref_names),i*(len(self.ref_names)+1)+1,yticks=[])
-      ax1d = fig1d.add_subplot(num_lines,num_columns,i+1,yticks=[])
+	index = self.ref_names.index(self.plotted_parameters[i])
+	# Adding the subplots to the respective figures, this will be the diagonal for the triangle plot.
+	if plot_2d:
+	  ax2d=fig2d.add_subplot(len(self.plotted_parameters),len(self.plotted_parameters),i*(len(self.plotted_parameters)+1)+1,yticks=[])
+	ax1d = fig1d.add_subplot(num_lines,num_columns,i+1,yticks=[])
 
-      # normalized histogram
-      hist,bin_edges=np.histogram(chain[:,i+2],bins=bin_number,weights=chain[:,0],normed=False)
-      bincenters = 0.5*(bin_edges[1:]+bin_edges[:-1])
+	# normalized histogram
+	hist,bin_edges=np.histogram(chain[:,index+2],bins=bin_number,weights=chain[:,0],normed=False)
+	bincenters = 0.5*(bin_edges[1:]+bin_edges[:-1])
 
-      # interpolated histogram (if available)
-      interp_hist,interp_grid = self.cubic_interpolation(hist,bincenters)
-      interp_hist /= np.max(interp_hist)
+	# interpolated histogram (if available)
+	interp_hist,interp_grid = self.cubic_interpolation(hist,bincenters)
+	interp_hist /= np.max(interp_hist)
 
-      if comp:
-	try:
-	  # For the names in common, the following line will not output an
-	  # error. Then compute the comparative histogram
-	  ii = np.where( backup_comp_names == self.ref_names[i] )[0][0]
-	  comp_hist,comp_bin_edges = np.histogram(comp_chain[:,ii+2],bins=bin_number,weights=comp_chain[:,0],normed=False)
-	  comp_bincenters = 0.5*(comp_bin_edges[1:]+comp_bin_edges[:-1])
-	  interp_comp_hist,interp_comp_grid = self.cubic_interpolation(comp_hist,comp_bincenters)
-	  interp_comp_hist /= np.max(interp_comp_hist)
-	  comp_done = True
-	except IndexError : # If the name was not found, return the error. This will be then plotted at the end
-	  comp_done = False
-      if comp:
-	if not comp_done:
-	  print '{0} was not found in the second folder'.format(self.ref_names[i])
+	if comp:
+	  try:
+	    # For the names in common, the following line will not output an
+	    # error. Then compute the comparative histogram
+	    ii = np.where( backup_comp_names == self.ref_names[index] )[0][0]
+	    comp_hist,comp_bin_edges = np.histogram(comp_chain[:,ii+2],bins=bin_number,weights=comp_chain[:,0],normed=False)
+	    comp_bincenters = 0.5*(comp_bin_edges[1:]+comp_bin_edges[:-1])
+	    interp_comp_hist,interp_comp_grid = self.cubic_interpolation(comp_hist,comp_bincenters)
+	    interp_comp_hist /= np.max(interp_comp_hist)
+	    comp_done = True
+	  except IndexError : # If the name was not found, return the error. This will be then plotted at the end
+	    comp_done = False
+	if comp:
+	  if not comp_done:
+	    print '{0} was not found in the second folder'.format(self.ref_names[i])
 
-      # minimum credible interval (method by Jan Haman). Fails for multimodal histograms
-      bounds = self.minimum_credible_intervals(hist,bincenters,lvls)
-      if bounds is False: # print out the faulty histogram (try reducing the binnumber to avoir this)
-	print hist
-      else:
-	for elem in bounds:
-	  for j in (0,1):
-	    elem[j] -= self.mean[i]
-	self.bounds[i] = bounds
-
-      if comp_done:
-	comp_bounds = self.minimum_credible_intervals(comp_hist,comp_bincenters,lvls)
-	if comp_bounds is False:
-	  print comp_hist
+	# minimum credible interval (method by Jan Haman). Fails for multimodal histograms
+	bounds = self.minimum_credible_intervals(hist,bincenters,lvls)
+	if bounds is False: # print out the faulty histogram (try reducing the binnumber to avoir this)
+	  print hist
 	else:
-	  for elem in comp_bounds:
+	  for elem in bounds:
 	    for j in (0,1):
-	      elem[j] -= comp_mean[ii]
+	      elem[j] -= self.mean[i]
+	  self.bounds[i] = bounds
 
-      # plotting
-      if plot_2d:
-	ax2d.set_xticks(ticks[i])
-	fontsize2d,ticksize2d = self.get_fontsize( len(self.tex_names) )
-	ax2d.set_xticklabels(['%.4g' % s for s in ticks[i]],fontsize=ticksize2d)
-	ax2d.set_title('%s= $%.4g^{+%.4g}_{%.4g}$' % (self.tex_names[i],self.mean[i],bounds[0][1],bounds[0][0]),fontsize=fontsize2d)
-	ax2d.plot(interp_grid,interp_hist,color='red',linewidth=2,ls='-')
-	ax2d.axis([x_range[i][0], x_range[i][1],0,1.05])
-
-      fontsize1d,ticksize1d = self.get_fontsize( max(num_columns,num_lines))
-      ax1d.set_title('%s= $%.4g^{+%.4g}_{%.4g}$' % (self.tex_names[i],self.mean[i],bounds[0][1],bounds[0][0]),fontsize=fontsize1d)
-      ax1d.set_xticks(ticks[i])
-      ax1d.set_xticklabels(['%.4g' % s for s in ticks[i]],fontsize=ticksize1d)
-      ax1d.axis([x_range[i][0], x_range[i][1],0,1.05])
-      
-      if comp_done:
-	# complex variation of intervals
-	if comp_x_range[ii][0] > x_range[i][0]:
-	  comp_ticks[ii][0] = ticks[i][0]
-	  comp_x_range[ii][0] = x_range[i][0]
-	if comp_x_range[ii][1] < x_range[i][1]:
-	  comp_ticks[ii][2] = ticks[i][2]
-	  comp_x_range[ii][1] = x_range[i][1]
-	comp_ticks[ii][1] = (comp_x_range[ii][1]+comp_x_range[ii][0])/2.
-	ax1d.set_xticks(comp_ticks[ii])
-	ax1d.set_xticklabels(['%.4g' % s for s in comp_ticks[ii]],fontsize=ticksize1d)
-	ax1d.axis([comp_x_range[ii][0], comp_x_range[ii][1],0,1.05])
-
-
-      ax1d.plot(interp_grid,interp_hist,color='black',linewidth=2,ls='-')
-      if comp_done:
-	ax1d.plot(interp_comp_grid,interp_comp_hist,color='red',linewidth=2,ls='-')
-
-      # mean likelihood (optional, if comparison, it will not be printed)
-      if plot_2d:
-	lkl_mean=np.zeros(len(bincenters),'float64')
-	norm=np.zeros(len(bincenters),'float64')
-	for j in range(len(bin_edges)-1):
-	  tmp = np.array([elem for elem in chain[:,:] if (elem[i+2]>=bin_edges[j] and elem[i+2]<=bin_edges[j+1])],'float')
-	  lkl_mean[j] += np.sum(np.exp( best_minus_lkl - tmp[:,1])*tmp[:,0])
-	  norm[j] += np.sum(tmp,axis=0)[0]
-	lkl_mean /= norm
-	#lkl_mean *= max(hist)/max(lkl_mean)
-	lkl_mean /= max(lkl_mean)
-	interp_lkl_mean,interp_grid = self.cubic_interpolation(lkl_mean,bincenters)
-	ax2d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=2)
-	ax1d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=4)
-
-      if command_line.subplot is True:
-	if not comp:
-	  extent2d = ax2d.get_window_extent().transformed(fig2d.dpi_scale_trans.inverted())
-	  fig2d.savefig(self.folder+'plots/{0}_{1}.pdf'.format(self.folder.split('/')[-2],self.ref_names[i]), bbox_inches=extent2d.expanded(1.1, 1.4))
-	else:
-	  extent1d = ax1d.get_window_extent().transformed(fig1d.dpi_scale_trans.inverted())
-	  fig1d.savefig(self.folder+'plots/{0}_{1}.pdf'.format(self.folder.split('/')[-2],self.ref_names[i]), bbox_inches=extent1d.expanded(1.1, 1.4))
-
-      # Now do the rest of the triangle plot
-      if plot_2d:
-	for j in range(i):
-	  ax2dsub=fig2d.add_subplot(len(self.ref_names),len(self.ref_names),(i)*len(self.ref_names)+j+1)
-	  n,xedges,yedges=np.histogram2d(chain[:,i+2],chain[:,j+2],weights=chain[:,0],bins=(bin_number,bin_number),normed=False)
-	  extent = [x_range[j][0], x_range[j][1], x_range[i][0], x_range[i][1]]
-	  x_centers = 0.5*(xedges[1:]+xedges[:-1])
-	  y_centers = 0.5*(yedges[1:]+yedges[:-1])
-
-	  ax2dsub.set_xticks(ticks[j])
-	  if i == len(self.ref_names)-1:
-	    ax2dsub.set_xticklabels(['%.4g' % s for s in ticks[j]],fontsize=ticksize2d)
+	if comp_done:
+	  comp_bounds = self.minimum_credible_intervals(comp_hist,comp_bincenters,lvls)
+	  if comp_bounds is False:
+	    print comp_hist
 	  else:
-	    ax2dsub.set_xticklabels([''])
+	    for elem in comp_bounds:
+	      for j in (0,1):
+		elem[j] -= comp_mean[ii]
 
-	  ax2dsub.set_yticks(ticks[i])
-	  if j == 0:
-	    ax2dsub.set_yticklabels(['%.4g' % s for s in ticks[i]],fontsize=ticksize2d)
+	# plotting
+	if plot_2d:
+	  ax2d.set_xticks(ticks[index])
+	  fontsize2d,ticksize2d = self.get_fontsize( len(self.tex_names) )
+	  ax2d.set_xticklabels(['%.4g' % s for s in ticks[index]],fontsize=ticksize2d)
+	  ax2d.set_title('%s= $%.4g^{+%.4g}_{%.4g}$' % (self.tex_names[index],self.mean[index],bounds[0][1],bounds[0][0]),fontsize=fontsize2d)
+	  ax2d.plot(interp_grid,interp_hist,color='red',linewidth=2,ls='-')
+	  ax2d.axis([x_range[index][0], x_range[index][1],0,1.05])
+
+	fontsize1d,ticksize1d = self.get_fontsize( max(num_columns,num_lines))
+	ax1d.set_title('%s= $%.4g^{+%.4g}_{%.4g}$' % (self.tex_names[index],self.mean[index],bounds[0][1],bounds[0][0]),fontsize=fontsize1d)
+	ax1d.set_xticks(ticks[index])
+	ax1d.set_xticklabels(['%.4g' % s for s in ticks[index]],fontsize=ticksize1d)
+	ax1d.axis([x_range[index][0], x_range[index][1],0,1.05])
+	
+	if comp_done:
+	  # complex variation of intervals
+	  if comp_x_range[ii][0] > x_range[index][0]:
+	    comp_ticks[ii][0] = ticks[index][0]
+	    comp_x_range[ii][0] = x_range[index][0]
+	  if comp_x_range[ii][1] < x_range[index][1]:
+	    comp_ticks[ii][2] = ticks[index][2]
+	    comp_x_range[ii][1] = x_range[index][1]
+	  comp_ticks[ii][1] = (comp_x_range[ii][1]+comp_x_range[ii][0])/2.
+	  ax1d.set_xticks(comp_ticks[ii])
+	  ax1d.set_xticklabels(['%.4g' % s for s in comp_ticks[ii]],fontsize=ticksize1d)
+	  ax1d.axis([comp_x_range[ii][0], comp_x_range[ii][1],0,1.05])
+
+
+	ax1d.plot(interp_grid,interp_hist,color='black',linewidth=2,ls='-')
+	if comp_done:
+	  ax1d.plot(interp_comp_grid,interp_comp_hist,color='red',linewidth=2,ls='-')
+
+	# mean likelihood (optional, if comparison, it will not be printed)
+	if plot_2d:
+	  lkl_mean=np.zeros(len(bincenters),'float64')
+	  norm=np.zeros(len(bincenters),'float64')
+	  for j in range(len(bin_edges)-1):
+	    tmp = np.array([elem for elem in chain[:,:] if (elem[index+2]>=bin_edges[j] and elem[index+2]<=bin_edges[j+1])],'float')
+	    lkl_mean[j] += np.sum(np.exp( best_minus_lkl - tmp[:,1])*tmp[:,0])
+	    norm[j] += np.sum(tmp,axis=0)[0]
+	  lkl_mean /= norm
+	  #lkl_mean *= max(hist)/max(lkl_mean)
+	  lkl_mean /= max(lkl_mean)
+	  interp_lkl_mean,interp_grid = self.cubic_interpolation(lkl_mean,bincenters)
+	  ax2d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=2)
+	  ax1d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=4)
+
+	if command_line.subplot is True:
+	  if not comp:
+	    extent2d = ax2d.get_window_extent().transformed(fig2d.dpi_scale_trans.inverted())
+	    fig2d.savefig(self.folder+'plots/{0}_{1}.pdf'.format(self.folder.split('/')[-2],self.ref_names[index]), bbox_inches=extent2d.expanded(1.1, 1.4))
 	  else:
-	    ax2dsub.set_yticklabels([''])
-	  ax2dsub.imshow(n, extent=extent, aspect='auto',interpolation='gaussian',origin='lower',cmap=matplotlib.cm.Reds)
+	    extent1d = ax1d.get_window_extent().transformed(fig1d.dpi_scale_trans.inverted())
+	    fig1d.savefig(self.folder+'plots/{0}_{1}.pdf'.format(self.folder.split('/')[-2],self.ref_names[index]), bbox_inches=extent1d.expanded(1.1, 1.4))
 
-	  # plotting contours, using the ctr_level method (from Karim Benabed)
-	  cs = ax2dsub.contour(y_centers,x_centers,n,extent=extent,levels=self.ctr_level(n,lvls),colors="k",zorder=5)
-	  ax2dsub.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=19)
+	# Now do the rest of the triangle plot
+	if plot_2d:
+	  for j in range(i):
+	    second_index = self.ref_names.index(self.plotted_parameters[j])
+	    ax2dsub=fig2d.add_subplot(len(self.plotted_parameters),len(self.plotted_parameters),(i)*len(self.plotted_parameters)+j+1)
+	    n,xedges,yedges=np.histogram2d(chain[:,index+2],chain[:,second_index+2],weights=chain[:,0],bins=(bin_number,bin_number),normed=False)
+	    extent = [x_range[second_index][0], x_range[second_index][1], x_range[index][0], x_range[index][1]]
+	    x_centers = 0.5*(xedges[1:]+xedges[:-1])
+	    y_centers = 0.5*(yedges[1:]+yedges[:-1])
 
-	  if command_line.subplot is True:
-	    # Store the individual 2d plots
-	    fig_temp=plt.figure(3,figsize=(6,6))
-	    fig_temp.clf()
-	    ax_temp=fig_temp.add_subplot(111)
-	    ax_temp.set_xticks(ticks[j])
-	    ax_temp.set_yticks(ticks[i])
-	    ax_temp.imshow(n, extent=extent, aspect='auto',interpolation='gaussian',origin='lower',cmap=matplotlib.cm.Reds)
-	    ax_temp.set_xticklabels(['%.4g' % s for s in ticks[j]],fontsize=ticksize2d)
-	    ax_temp.set_yticklabels(['%.4g' % s for s in ticks[i]],fontsize=ticksize2d)
-	    ax_temp.set_title('%s vs %s' % (self.tex_names[i],self.tex_names[j]),fontsize=fontsize1d)
-	    cs = ax_temp.contour(y_centers,x_centers,n,extent=extent,levels=self.ctr_level(n,lvls),colors="k",zorder=5)
-	    ax_temp.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=19)
-	    fig_temp.savefig(self.folder+'plots/{0}_2d_{1}-{2}.pdf'.format(self.folder.split('/')[-2],self.ref_names[i],self.ref_names[j]))
+	    ax2dsub.set_xticks(ticks[second_index])
+	    if i == len(self.plotted_parameters)-1:
+	      ax2dsub.set_xticklabels(['%.4g' % s for s in ticks[second_index]],fontsize=ticksize2d)
+	    else:
+	      ax2dsub.set_xticklabels([''])
 
-	    # store the coordinates of the points for further plotting.
-	    plot_file = open(self.folder+'plots/{0}_2d_{1}-{2}.dat'.format(self.folder.split('/')[-2],self.ref_names[i],self.ref_names[j]),'w')
-	    plot_file.write('# contour for confidence level {0}\n'.format(levels[2]))
-	    for elem in cs.collections[0].get_paths():
-	      points = elem.vertices
-	      for k in range(np.shape(points)[0]):
-		plot_file.write("%.8g\t %.8g\n" % (points[k,0],points[k,1]))
-	    plot_file.write("\n\n")
+	    ax2dsub.set_yticks(ticks[index])
+	    if j == 0:
+	      ax2dsub.set_yticklabels(['%.4g' % s for s in ticks[index]],fontsize=ticksize2d)
+	    else:
+	      ax2dsub.set_yticklabels([''])
+	    ax2dsub.imshow(n, extent=extent, aspect='auto',interpolation='gaussian',origin='lower',cmap=matplotlib.cm.Reds)
 
-	    plot_file.write('# contour for confidence level {0}\n'.format(levels[1]))
-	    for elem in cs.collections[1].get_paths():
-	      points = elem.vertices
-	      for k in range(np.shape(points)[0]):
-		plot_file.write("%.8g\t %.8g\n" % (points[k,0],points[k,1]))
-	    plot_file.write("\n\n")
+	    # plotting contours, using the ctr_level method (from Karim Benabed)
+	    cs = ax2dsub.contour(y_centers,x_centers,n,extent=extent,levels=self.ctr_level(n,lvls),colors="k",zorder=5)
+	    ax2dsub.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=19)
 
-	    plot_file.write('# contour for confidence level {0}\n'.format(levels[0]))
-	    for elem in cs.collections[2].get_paths():
-	      points = elem.vertices
-	      for k in range(np.shape(points)[0]):
-		plot_file.write("%.8g\t %.8g\n" % (points[k,0],points[k,1]))
-	    plot_file.close()
+	    if command_line.subplot is True:
+	      # Store the individual 2d plots
+	      fig_temp=plt.figure(3,figsize=(6,6))
+	      fig_temp.clf()
+	      ax_temp=fig_temp.add_subplot(111)
+	      ax_temp.set_xticks(ticks[second_index])
+	      ax_temp.set_yticks(ticks[index])
+	      ax_temp.imshow(n, extent=extent, aspect='auto',interpolation='gaussian',origin='lower',cmap=matplotlib.cm.Reds)
+	      ax_temp.set_xticklabels(['%.4g' % s for s in ticks[second_index]],fontsize=ticksize2d)
+	      ax_temp.set_yticklabels(['%.4g' % s for s in ticks[index]],fontsize=ticksize2d)
+	      ax_temp.set_title('%s vs %s' % (self.tex_names[index],self.tex_names[second_index]),fontsize=fontsize1d)
+	      cs = ax_temp.contour(y_centers,x_centers,n,extent=extent,levels=self.ctr_level(n,lvls),colors="k",zorder=5)
+	      ax_temp.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=19)
+	      fig_temp.savefig(self.folder+'plots/{0}_2d_{1}-{2}.pdf'.format(self.folder.split('/')[-2],self.ref_names[index],self.ref_names[second_index]))
+
+	      # store the coordinates of the points for further plotting.
+	      plot_file = open(self.folder+'plots/{0}_2d_{1}-{2}.dat'.format(self.folder.split('/')[-2],self.ref_names[index],self.ref_names[second_index]),'w')
+	      plot_file.write('# contour for confidence level {0}\n'.format(levels[2]))
+	      for elem in cs.collections[0].get_paths():
+		points = elem.vertices
+		for k in range(np.shape(points)[0]):
+		  plot_file.write("%.8g\t %.8g\n" % (points[k,0],points[k,1]))
+	      plot_file.write("\n\n")
+
+	      plot_file.write('# contour for confidence level {0}\n'.format(levels[1]))
+	      for elem in cs.collections[1].get_paths():
+		points = elem.vertices
+		for k in range(np.shape(points)[0]):
+		  plot_file.write("%.8g\t %.8g\n" % (points[k,0],points[k,1]))
+	      plot_file.write("\n\n")
+
+	      plot_file.write('# contour for confidence level {0}\n'.format(levels[0]))
+	      for elem in cs.collections[2].get_paths():
+		points = elem.vertices
+		for k in range(np.shape(points)[0]):
+		  plot_file.write("%.8g\t %.8g\n" % (points[k,0],points[k,1]))
+	      plot_file.close()
 
     # Plot the remaining 1d diagram for the parameters only in the comp folder
     if comp:
