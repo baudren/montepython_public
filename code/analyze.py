@@ -274,7 +274,6 @@ class info:
 	  name = line.split("'")[1]
 	  if name in self.to_change.iterkeys():
 	    name = self.to_change[name]
-	  print name
 	  if (float(line.split('=')[-1].split(',')[-3].replace(' ','')) != 0 or str(line.split('=')[-1].split(',')[-1].replace(' ','').replace(']','').replace('\n','').replace("'","").replace("\t",'')) == 'derived' ):
             if self.to_plot==[]:
               plotted_parameters.append(name)
@@ -646,6 +645,7 @@ class info:
 	
 	if comp_done:
 	  # complex variation of intervals
+          ii = np.where( backup_comp_names == self.ref_names[index] )[0][0]
 	  if comp_x_range[ii][0] > x_range[index][0]:
 	    comp_ticks[ii][0] = ticks[index][0]
 	    comp_x_range[ii][0] = x_range[index][0]
@@ -664,18 +664,21 @@ class info:
 
 	# mean likelihood (optional, if comparison, it will not be printed)
 	if plot_2d:
-	  lkl_mean=np.zeros(len(bincenters),'float64')
-	  norm=np.zeros(len(bincenters),'float64')
-	  for j in range(len(bin_edges)-1):
-	    tmp = np.array([elem for elem in chain[:,:] if (elem[index+2]>=bin_edges[j] and elem[index+2]<=bin_edges[j+1])],'float')
-	    lkl_mean[j] += np.sum(np.exp( best_minus_lkl - tmp[:,1])*tmp[:,0])
-	    norm[j] += np.sum(tmp,axis=0)[0]
-	  lkl_mean /= norm
-	  #lkl_mean *= max(hist)/max(lkl_mean)
-	  lkl_mean /= max(lkl_mean)
-	  interp_lkl_mean,interp_grid = self.cubic_interpolation(lkl_mean,bincenters)
-	  ax2d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=2)
-	  ax1d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=4)
+          try:
+            lkl_mean=np.zeros(len(bincenters),'float64')
+            norm=np.zeros(len(bincenters),'float64')
+            for j in range(len(bin_edges)-1):
+              tmp = np.array([elem for elem in chain[:,:] if (elem[index+2]>=bin_edges[j] and elem[index+2]<=bin_edges[j+1])],'float')
+              lkl_mean[j] += np.sum(np.exp( best_minus_lkl - tmp[:,1])*tmp[:,0])
+              norm[j] += np.sum(tmp,axis=0)[0]
+            lkl_mean /= norm
+            #lkl_mean *= max(hist)/max(lkl_mean)
+            lkl_mean /= max(lkl_mean)
+            interp_lkl_mean,interp_grid = self.cubic_interpolation(lkl_mean,bincenters)
+            ax2d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=2)
+            ax1d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=4)
+          except:
+            print 'could not find likelihood contour for ',self.ref_names[index]
 
 	if command_line.subplot is True:
 	  if not comp:
@@ -752,31 +755,32 @@ class info:
 
     # Plot the remaining 1d diagram for the parameters only in the comp folder
     if comp:
-      for i in range(len(self.ref_names),len(self.ref_names)+len(comp_ref_names)):
+      if len(self.plotted_parameters) == len(self.ref_names):
+        for i in range(len(self.ref_names),len(self.ref_names)+len(comp_ref_names)):
 
-	ax1d = fig1d.add_subplot(num_lines,num_columns,i+1,yticks=[])
-	ii = np.where(backup_comp_names == comp_ref_names[i-len(self.ref_names)])[0][0]
+          ax1d = fig1d.add_subplot(num_lines,num_columns,i+1,yticks=[])
+          ii = np.where(backup_comp_names == comp_ref_names[i-len(self.ref_names)])[0][0]
 
-	comp_hist,comp_bin_edges = np.histogram(comp_chain[:,ii+2],bins=bin_number,weights=comp_chain[:,0],normed=False)
-	comp_bincenters = 0.5*(comp_bin_edges[1:]+comp_bin_edges[:-1])
-	interp_comp_hist,interp_comp_grid = self.cubic_interpolation(comp_hist,comp_bincenters)
-	interp_comp_hist /= np.max(interp_comp_hist)
+          comp_hist,comp_bin_edges = np.histogram(comp_chain[:,ii+2],bins=bin_number,weights=comp_chain[:,0],normed=False)
+          comp_bincenters = 0.5*(comp_bin_edges[1:]+comp_bin_edges[:-1])
+          interp_comp_hist,interp_comp_grid = self.cubic_interpolation(comp_hist,comp_bincenters)
+          interp_comp_hist /= np.max(interp_comp_hist)
 
-	comp_bounds = self.minimum_credible_intervals(comp_hist,comp_bincenters,lvls)
-	if comp_bounds is False:
-	  print comp_hist
-	else:
-	  for elem in comp_bounds:
-	    for j in (0,1):
-	      elem[j] -= comp_mean[ii]
-	ax1d.set_xticks(comp_ticks[ii])
-	ax1d.set_xticklabels(['%.4g' % s for s in comp_ticks[ii]],fontsize=ticksize1d)
-	ax1d.axis([comp_x_range[ii][0], comp_x_range[ii][1],0,1.05])
-	ax1d.set_title('%s= $%.4g^{+%.4g}_{%.4g}$' % (comp_tex_names[i-len(self.ref_names)],comp_mean[ii],comp_bounds[0][1],comp_bounds[0][0]),fontsize=fontsize1d)
-	ax1d.plot(interp_comp_grid,interp_comp_hist,color='red',linewidth=2,ls='-')
-	if command_line.subplot is True:
-	  extent1d = ax1d.get_window_extent().transformed(fig1d.dpi_scale_trans.inverted())
-	  fig1d.savefig(self.folder+'plots/{0}_{1}.pdf'.format(self.folder.split('/')[-2],self.ref_names[i]), bbox_inches=extent1d.expanded(1.1, 1.4))
+          comp_bounds = self.minimum_credible_intervals(comp_hist,comp_bincenters,lvls)
+          if comp_bounds is False:
+            print comp_hist
+          else:
+            for elem in comp_bounds:
+              for j in (0,1):
+                elem[j] -= comp_mean[ii]
+          ax1d.set_xticks(comp_ticks[ii])
+          ax1d.set_xticklabels(['%.4g' % s for s in comp_ticks[ii]],fontsize=ticksize1d)
+          ax1d.axis([comp_x_range[ii][0], comp_x_range[ii][1],0,1.05])
+          ax1d.set_title('%s= $%.4g^{+%.4g}_{%.4g}$' % (comp_tex_names[i-len(self.ref_names)],comp_mean[ii],comp_bounds[0][1],comp_bounds[0][0]),fontsize=fontsize1d)
+          ax1d.plot(interp_comp_grid,interp_comp_hist,color='red',linewidth=2,ls='-')
+          if command_line.subplot is True:
+            extent1d = ax1d.get_window_extent().transformed(fig1d.dpi_scale_trans.inverted())
+            fig1d.savefig(self.folder+'plots/{0}_{1}.pdf'.format(self.folder.split('/')[-2],self.ref_names[i]), bbox_inches=extent1d.expanded(1.1, 1.4))
 	
     # If plots/ folder in output folder does not exist, create it
     if os.path.isdir(self.folder+'plots') is False:
