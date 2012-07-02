@@ -279,7 +279,7 @@ def accept_step(data):
 def chain(_cosmo,data,command_line):
 
   ## Initialisation
-  num_failure=10   # Default number of accepted failure
+  num_failure=1000   # Default number of accepted failure
   loglike=0
   failure=False    # Failure flag
 

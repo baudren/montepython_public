@@ -274,12 +274,13 @@ class info:
 	  name = line.split("'")[1]
 	  if name in self.to_change.iterkeys():
 	    name = self.to_change[name]
-	  if self.to_plot==[]:
-	    plotted_parameters.append(name)
-	  else:
-	    if name in self.to_plot:
-	      plotted_parameters.append(name)
+	  print name
 	  if (float(line.split('=')[-1].split(',')[-3].replace(' ','')) != 0 or str(line.split('=')[-1].split(',')[-1].replace(' ','').replace(']','').replace('\n','').replace("'","").replace("\t",'')) == 'derived' ):
+            if self.to_plot==[]:
+              plotted_parameters.append(name)
+	    else:
+              if name in self.to_plot:
+                plotted_parameters.append(name)
 	    temp = [float(elem) for elem in line.split(",")[1:3]]
 	    boundaries.append(temp)
 	    ref_names.append(name)
