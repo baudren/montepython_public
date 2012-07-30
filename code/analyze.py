@@ -1,5 +1,4 @@
 import os,sys
-import re
 import io
 import math
 import numpy as np
@@ -73,12 +72,11 @@ class info:
     print 'Computing covariance matrix'
     for i in range(len(self.ref_names)):
       for j in range(i,len(self.ref_names)):
-	#for k in range(np.shape(chain)[0]):
-	  #self.covar[i][j]+=chain[k][0]*((chain[k][i+2]-self.mean[i])*(chain[k][j+2]-self.mean[j]))
         self.covar[i,j] = np.sum( chain[:,0]*((chain[:,i+2]-self.mean[i])*(chain[:,j+2]-self.mean[j])))/weight
 	if i!=j:
 	  self.covar[j,i]=self.covar[i,j]
 
+    # Writing it out in name_of_folder.covmat
     self.cov.write('# ')
     for i in range(len(self.ref_names)):
       string = self.backup_names[i]
@@ -125,8 +123,6 @@ class info:
 	string = '%s' % self.ref_names[i]
       self.info.write("%-16s" % string)
 
-    #for elem in self.ref_names:
-      #self.info.write('%s\t' % (elem))
     self.info.write('\n R-1 values:\t')
     for elem in self.R:
       self.info.write('%.6f\t' % (elem-1.))
@@ -175,25 +171,19 @@ class info:
     for i in range(np.shape(self.bounds)[0]):
       self.info.write('%.6e\t' % (self.mean[i]+self.bounds[i,2,1]))
 
+
+  # Scan the whole input folder, and include all chains in it (ending with
+  # .txt to keep compatibility with CosmoMC)
   def prepare(self,Files,is_main_chain=True):
 
-    # Scan the whole input folder, and include all chains in it (all files with
-    # a '.' in their name will be discarded as not mcmc chains (If you want to
-    # have additionnal files than the .param in this folder, please keep this
-    # in  mind
-
+    # If the input command was an entire folder, then grab everything in it
     if os.path.isdir(Files[0]): 
       if Files[0][-1]!='/':
 	Files[0]+='/'
       folder = Files[0]
       Files = [folder+elem for elem in os.listdir(folder) if (elem.find('.txt')!=-1 and elem.find('__')!=-1)]
-      for elem in np.copy(Files):
-	if os.path.isdir('{0}'.format(elem)) is True:
-	  Files.remove(elem)
-	elif os.path.getsize(elem) < 600: # If the file is too short in lines, remove it from the list
-	  Files.remove(elem)
 
-    # Recover the folder, depending on the case
+    # Else, one needs to recover the folder, depending on the case
     else:
       if (len(Files[0].split('/'))==0 or (Files[0].split('/')[0]=='.')):
 	folder = './'
@@ -201,11 +191,18 @@ class info:
 	folder = ''
 	for i in range(len(Files[0].split('/')[:-1])):
 	  folder += Files[0].split('/')[i]+'/'
-	for elem in np.copy(Files):
-	  if os.path.isdir('{0}'.format(elem)) is True:
-	    Files.remove(elem)
-	  elif os.path.getsize(elem) < 600:
-	    Files.remove(elem)
+
+    # Remove too small files to potentially eliminate any problems of chains
+    # being too short, and sub-folders (as the ./plots/ one that will be
+    # created after the first run anyway
+    for elem in np.copy(Files):
+      if os.path.isdir('{0}'.format(elem)) is True:
+        Files.remove(elem)
+      # Note, this limit with the size is taylored for not too huge number of
+      # parameters. Be aware that it might not work when having more than,
+      # say, 20 free parameters.
+      elif os.path.getsize(elem) < 600:   	  
+        Files.remove(elem)
 
     # Check if the log.param file exists
     if os.path.isfile(folder+'log.param') is True:
@@ -278,9 +275,12 @@ class info:
 	if line.find('data.parameters')!=-1:
 	  name = line.split("'")[1]
           backup = name
+          # Rename the names according the .extra file (opt)
 	  if name in self.to_change.iterkeys():
 	    name = self.to_change[name]
 	  if (float(line.split('=')[-1].split(',')[-3].replace(' ','')) != 0 or str(line.split('=')[-1].split(',')[-1].replace(' ','').replace(']','').replace('\n','').replace("'","").replace("\t",'')) == 'derived' ):
+            # The real name is always kept, to have still the class names in
+            # the covmat
             backup_names.append(backup)
             if self.to_plot==[]:
               plotted_parameters.append(name)
@@ -562,10 +562,6 @@ class info:
       
 
     # Borders stuff, might need adjustement for printing on paper.
-    #fig1d.subplots_adjust(bottom=0.03, left=.04, right=0.98, top=0.95, hspace=.35)
-    #if plot_2d:
-      #fig2d.subplots_adjust(bottom=0.03, left=.04, right=0.98, top=0.98, hspace=.35)
-    
     fig1d.subplots_adjust(bottom=0.03, left=.07, right=0.98, top=0.93, hspace=.35)
     if plot_2d:
       fig2d.subplots_adjust(bottom=0.03, left=.07, right=0.98, top=0.93, hspace=.35)
