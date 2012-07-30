@@ -70,6 +70,7 @@ class info:
     self.var    = self.var[0]
     self.covar  = np.zeros((len(self.ref_names),len(self.ref_names)))
     
+    print 'Computing covariance matrix'
     for i in range(len(self.ref_names)):
       for j in range(i,len(self.ref_names)):
 	for k in range(np.shape(chain)[0]):
@@ -339,7 +340,7 @@ class info:
       # Removing burn-in
       start = 0
       try:
-	while cheese[start,1]>max_lkl+2:
+	while cheese[start,1]>max_lkl+3:
 	  start+=1
 	print '  Removed {0} points of burn-in'.format(start)
       except IndexError:
@@ -578,6 +579,8 @@ class info:
 
     # Actual plotting
     for i in range(len(self.plotted_parameters)):
+
+        print 'Computing histograms for ',self.plotted_parameters[i]
 
 	index = self.ref_names.index(self.plotted_parameters[i])
 	# Adding the subplots to the respective figures, this will be the diagonal for the triangle plot.
