@@ -81,7 +81,7 @@ class info:
 
     self.cov.write('# ')
     for i in range(len(self.ref_names)):
-      string = self.ref_names[i]
+      string = self.backup_names[i]
       if i != len(self.ref_names)-1:
         string+=','
       self.cov.write('%-16s' % string )
@@ -257,6 +257,10 @@ class info:
     boundaries= []
     scales    = []
 
+    # Backup names
+    backup_names = []
+
+    # Derived parameters
     derived_names = []
     derived_tex_names = []
 
@@ -273,9 +277,11 @@ class info:
 	  self.experiments = line.split('=')[-1].replace('[','').replace(']','').replace('\n','').replace("'","").split(',')
 	if line.find('data.parameters')!=-1:
 	  name = line.split("'")[1]
+          backup = name
 	  if name in self.to_change.iterkeys():
 	    name = self.to_change[name]
 	  if (float(line.split('=')[-1].split(',')[-3].replace(' ','')) != 0 or str(line.split('=')[-1].split(',')[-1].replace(' ','').replace(']','').replace('\n','').replace("'","").replace("\t",'')) == 'derived' ):
+            backup_names.append(backup)
             if self.to_plot==[]:
               plotted_parameters.append(name)
 	    else:
@@ -422,13 +428,15 @@ class info:
     if is_main_chain:
       self.spam = spam
 
-      self.ref_names = ref_names
-      self.tex_names = tex_names
-      self.boundaries = boundaries
+      self.ref_names    = ref_names
+      self.tex_names    = tex_names
+      self.boundaries   = boundaries
+
+      self.backup_names = backup_names
 
       self.mean = mean
       self.var  = var
-      self.R = R
+      self.R    = R
 
       self.scales = scales
 
@@ -622,8 +630,8 @@ class info:
 	else:
 	  for elem in bounds:
 	    for j in (0,1):
-	      elem[j] -= self.mean[i]
-	  self.bounds[i] = bounds
+	      elem[j] -= self.mean[index]
+	  self.bounds[index] = bounds
 
 	if comp_done:
 	  comp_bounds = self.minimum_credible_intervals(comp_hist,comp_bincenters,lvls)
@@ -905,9 +913,9 @@ class info:
   # parameters. Feel free to modify to your needs.
   def get_fontsize(self,diag_length):
     # for a diagonal of 3, fontsize of 22, for a diagonal of 13, fontsize of ?
-    #fontsize = 22
-    fontsize = round( 19 - (diag_length-5)*1.38)
+    fontsize = 22
+    #fontsize = round( 19 - (diag_length-5)*1.38)
     # for a diagonal of 3, fontsize of 18, for a diagonal of 13, fontsize of ?
-    #ticksize = 18
-    ticksize = round( 14 - (diag_length-5)*1)
+    ticksize = 18
+    #ticksize = round( 14 - (diag_length-5)*1)
     return fontsize,ticksize
