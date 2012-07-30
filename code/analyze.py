@@ -73,11 +73,11 @@ class info:
     print 'Computing covariance matrix'
     for i in range(len(self.ref_names)):
       for j in range(i,len(self.ref_names)):
-	for k in range(np.shape(chain)[0]):
-	  self.covar[i][j]+=chain[k][0]*((chain[k][i+2]-self.mean[i])*(chain[k][j+2]-self.mean[j]))
-	self.covar[i][j]  /= weight
+	#for k in range(np.shape(chain)[0]):
+	  #self.covar[i][j]+=chain[k][0]*((chain[k][i+2]-self.mean[i])*(chain[k][j+2]-self.mean[j]))
+        self.covar[i,j] = np.sum( chain[:,0]*((chain[:,i+2]-self.mean[i])*(chain[:,j+2]-self.mean[j])))/weight
 	if i!=j:
-	  self.covar[j][i]=self.covar[i][j]
+	  self.covar[j,i]=self.covar[i,j]
 
     self.cov.write('# ')
     for i in range(len(self.ref_names)):
@@ -554,10 +554,13 @@ class info:
       
 
     # Borders stuff, might need adjustement for printing on paper.
-    fig1d.subplots_adjust(bottom=0.03, left=.04, right=0.98, top=0.95, hspace=.35)
-    if plot_2d:
-      fig2d.subplots_adjust(bottom=0.03, left=.04, right=0.98, top=0.98, hspace=.35)
+    #fig1d.subplots_adjust(bottom=0.03, left=.04, right=0.98, top=0.95, hspace=.35)
+    #if plot_2d:
+      #fig2d.subplots_adjust(bottom=0.03, left=.04, right=0.98, top=0.98, hspace=.35)
     
+    fig1d.subplots_adjust(bottom=0.03, left=.07, right=0.98, top=0.93, hspace=.35)
+    if plot_2d:
+      fig2d.subplots_adjust(bottom=0.03, left=.07, right=0.98, top=0.93, hspace=.35)
 
     # In case of a comparison, figure out which names are shared, which are
     # unique and thus require a simple treatment.
@@ -901,9 +904,10 @@ class info:
   # Empirical method to adjust font size on the plots to fit the number of
   # parameters. Feel free to modify to your needs.
   def get_fontsize(self,diag_length):
-    # for a diagonal of 5, fontsize of 19, for a diagonal of 13, fontsize of 8
-    #fontsize = 19
+    # for a diagonal of 3, fontsize of 22, for a diagonal of 13, fontsize of ?
+    #fontsize = 22
     fontsize = round( 19 - (diag_length-5)*1.38)
-    #ticksize = 19
+    # for a diagonal of 3, fontsize of 18, for a diagonal of 13, fontsize of ?
+    #ticksize = 18
     ticksize = round( 14 - (diag_length-5)*1)
     return fontsize,ticksize
