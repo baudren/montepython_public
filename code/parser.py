@@ -32,9 +32,11 @@ parser.add_argument('-r', metavar='restart from chain',type=str,dest='restart')
 parser.add_argument('-info', metavar='compute information of desired file',type=str,dest='files',nargs='*')
 # -- number of bins (defaulting to 20)
 parser.add_argument('-bins', metavar='desired number of bins, default is 20',type=int,dest='bins',default=20)
+# -- to remove the mean-likelihood line
+parser.add_argument('-no_mean', metavar='remove the mean likelihood plot',dest='mean_likelihood',action='store_const',const=False,default=True)
 # -- possible comparison folder
 parser.add_argument('-comp',metavar='comparison folder',type=str,dest='comp',nargs=1)
-# -- possible plot file describing custum commands
+# -- possible plot file describing custom commands
 parser.add_argument('-extra',metavar='plot file for custom needs',type=str,dest='optional_plot_file',nargs=1)
 # -- if you just want the covariance matrix, use this option
 parser.add_argument('-noplot',metavar='ommit the plotting part',dest='plot',action='store_const',const=False,default=True)

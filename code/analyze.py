@@ -105,9 +105,9 @@ class info:
     self.bounds = np.zeros((len(self.ref_names),len(self.lvls),2))
     if command_line.plot == True:
       if command_line.comp is None:
-	self.plot_triangle(chain,command_line,bin_number=binnumber)
+	self.plot_triangle(chain,command_line,bin_number=binnumber,levels=self.lvls)
       else:
-	self.plot_triangle(chain,command_line,bin_number=binnumber,comp_chain=comp_chain,comp_ref_names = comp_ref_names,comp_tex_names = comp_tex_names,comp_folder = comp_folder,comp_boundaries = comp_boundaries,comp_mean = comp_mean)
+	self.plot_triangle(chain,command_line,bin_number=binnumber,levels=self.lvls,comp_chain=comp_chain,comp_ref_names = comp_ref_names,comp_tex_names = comp_tex_names,comp_folder = comp_folder,comp_boundaries = comp_boundaries,comp_mean = comp_mean)
 
     # Write down to the .info file all necessary information
     self.info.write('\n param names:\t')
@@ -673,7 +673,7 @@ class info:
 	  ax1d.plot(interp_comp_grid,interp_comp_hist,color='red',linewidth=2,ls='-')
 
 	# mean likelihood (optional, if comparison, it will not be printed)
-	if plot_2d:
+        if (plot_2d and command_line.mean_likelihood):
           try:
             lkl_mean=np.zeros(len(bincenters),'float64')
             norm=np.zeros(len(bincenters),'float64')
