@@ -96,7 +96,8 @@ class info:
     # Sorting by likelihood
     a=chain[:,1].argsort(0)
     total=chain[:,0].sum()
-    self.lvls = [total*0.6826,total*0.954,total*0.997]
+    #self.lvls = (total*0.6826,total*0.954,total*0.997)
+    self.lvls = (68.26,95.4,99.7)
 
     # Computing 1,2 and 3-sigma errors, and plot. This will create the triangle
     # plot and the 1d by default. If you also specified a comparison folder, it
