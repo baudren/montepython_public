@@ -144,12 +144,16 @@ def get_tex_name(name,number=1):
       name = temp_name
     name = "${0}$".format(name)
     return name
-  elif number < 1000:
+  elif (number < 1000 and number > 1):
     name = "$%0.d~%s$" % (number,name)
   else:
     temp_name = "$%0.e%s$" % (number,name)
     m = re.search(r'(?:\$[0-9]*e\+[0]*)([0-9]*)(.*)',temp_name)
-    name = '$10^{'+m.groups()[0]+'}'+m.groups()[1]
+    sign = '+'
+    if m == None:
+      m = re.search(r'(?:\$[0-9]*e\-[0]*)([0-9]*)(.*)',temp_name)
+      sign = '-'
+    name = '$10^{'+sign+m.groups()[0]+'}'+m.groups()[1]
   return name
 
 # New class of file, to provide an equivalent of the tail command (on linux).

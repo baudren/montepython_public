@@ -484,8 +484,8 @@ class info:
       exps+=', '
     exps = exps[:-2].replace('_',' ')
 
-    plt.figtext(0.4,0.95,'Experiments: '+exps,fontsize=40,alpha=0.6)
-    plt.figtext(0.9, 0.7,'Monte Python',fontsize=70, rotation=90,alpha=0.15)
+    #plt.figtext(0.4,0.95,'Experiments: '+exps,fontsize=40,alpha=0.6)
+    #plt.figtext(0.9, 0.7,'Monte Python',fontsize=70, rotation=90,alpha=0.15)
     fig1d = plt.figure(2,figsize=aspect)
 
     # clear figure
@@ -686,8 +686,8 @@ class info:
             #lkl_mean *= max(hist)/max(lkl_mean)
             lkl_mean /= max(lkl_mean)
             interp_lkl_mean,interp_grid = self.cubic_interpolation(lkl_mean,bincenters)
-            ax2d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=2)
-            ax1d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=4)
+            #ax2d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=2)
+            #ax1d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=4)
           except:
             print 'could not find likelihood contour for ',self.ref_names[index]
 
