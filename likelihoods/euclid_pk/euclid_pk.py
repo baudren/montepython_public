@@ -219,6 +219,15 @@ class euclid_pk(likelihood):
       for index_z in range(2*self.nbin+1):
         self.k[index_k,index_z,:] = np.sqrt((1.-mu[:]**2)*self.D_A_fid[index_z]**2/D_A[index_z]**2 + mu[:]**2*H[index_z]**2/self.H_fid[index_z]**2 )*self.k_fid[index_k]
 
+    # Define the alpha function, that will characterize the theoretical
+    # uncertainty. Chosen to be 0.001 at low k, raise between 0.1 and 0.2 to
+    # 0.05
+    self.alpha = np.zeros((self.k_size,2*self.nbin+1,self.mu_size),'float64')
+    for index_k in range(self.k_size):
+      for index_z in range(2*self.nbin+1):
+        self.alpha[index_k,index_z,:] = (np.tanh(60*(self.k[index_k,index_z,:]-0.15)) + 1.)/(2./(0.05-0.001)) + 0.001
+
+
     # Recover the non-linear power spectrum from the cosmological module on all
     # the z_boundaries, to compute afterwards beta. This is pk_nl_th from the
     # notes.
@@ -252,7 +261,7 @@ class euclid_pk(likelihood):
     self.tilde_P_th_corr = np.zeros( (self.k_size,self.nbin,self.mu_size), 'float64')
     for index_k in range(self.k_size):
       for index_z in range(self.nbin):
-	self.tilde_P_th_corr[index_k,index_z,:] = H[2*index_z+1]/(D_A[2*index_z+1]**2) * (1. + beta_th[index_k,index_z,:]*mu[:]*mu[:])**2*data.mcmc_parameters['epsilon']['current']*data.mcmc_parameters['epsilon']['initial'][4]*E_th[index_k,2*index_z+1,:] *np.exp(-self.k[index_k,2*index_z+1,:]**2*mu[:]**2*sigma_r[index_z]**2)
+        self.tilde_P_th_corr[index_k,index_z,:] = H[2*index_z+1]/(D_A[2*index_z+1]**2) * (1. + beta_th[index_k,index_z,:]*mu[:]*mu[:])**2*data.mcmc_parameters['epsilon']['current']*data.mcmc_parameters['epsilon']['initial'][4]*E_th[index_k,2*index_z+1,:] *np.exp(-self.k[index_k,2*index_z+1,:]**2*mu[:]**2*sigma_r[index_z]**2)
 
     # Compute \tilde P_th(k,mu,z) = H(z)/D_A(z)^2 * (1 + beta(z,k) mu^2)^2 P_nl_th (k,z) exp(-k^2 mu^2 sigma_r^2)
     # Compute \tilde P_th(k,mu,z) = H(z)/D_A(z)^2 * (1 + beta(z,k) mu^2)^2 P_nl_th (k,z) (1 + epsilon* E(k,z) ) exp(-k^2 mu^2 sigma_r^2)
@@ -286,5 +295,7 @@ class euclid_pk(likelihood):
 
     return - chi2/2.
 
+  #def integrand(self,index_z,index_mu):
+    #return self.k_fid[:]**2/(2.*pi)**2*self.V_survey[index_z]/2.*((self.tilde_P_th[:,index_z,index_mu] +self.tilde_P_th_corr[:,index_z,index_mu] - self.tilde_P_fid[:,index_z,index_mu])/(self.tilde_P_th[:,index_z,index_mu]+self.tilde_P_th_corr[:,index_z,index_mu]+self.P_shot[index_z]))**2
   def integrand(self,index_z,index_mu):
-    return self.k_fid[:]**2/(2.*pi)**2*self.V_survey[index_z]/2.*((self.tilde_P_th[:,index_z,index_mu] - self.tilde_P_fid[:,index_z,index_mu])/(self.tilde_P_th[:,index_z,index_mu]+self.tilde_P_th_corr[:,index_z,index_mu]+self.P_shot[index_z]))**2
+    return self.k_fid[:]**2/(2.*pi)**2*((self.tilde_P_th[:,index_z,index_mu] +self.tilde_P_th_corr[:,index_z,index_mu] - self.tilde_P_fid[:,index_z,index_mu])/((2./self.V_survey[index_z])*(self.tilde_P_th[:,index_z,index_mu]+self.tilde_P_th_corr[:,index_z,index_mu]+self.P_shot[index_z])**2 + (self.alpha[:,index_z,index_mu]*self.tilde_P_th[:,index_z,index_mu])**2*self.k_fid[:]**3 ))
