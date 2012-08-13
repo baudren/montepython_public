@@ -298,4 +298,4 @@ class euclid_pk(likelihood):
   #def integrand(self,index_z,index_mu):
     #return self.k_fid[:]**2/(2.*pi)**2*self.V_survey[index_z]/2.*((self.tilde_P_th[:,index_z,index_mu] +self.tilde_P_th_corr[:,index_z,index_mu] - self.tilde_P_fid[:,index_z,index_mu])/(self.tilde_P_th[:,index_z,index_mu]+self.tilde_P_th_corr[:,index_z,index_mu]+self.P_shot[index_z]))**2
   def integrand(self,index_z,index_mu):
-    return self.k_fid[:]**2/(2.*pi)**2*((self.tilde_P_th[:,index_z,index_mu] +self.tilde_P_th_corr[:,index_z,index_mu] - self.tilde_P_fid[:,index_z,index_mu])/((2./self.V_survey[index_z])*(self.tilde_P_th[:,index_z,index_mu]+self.tilde_P_th_corr[:,index_z,index_mu]+self.P_shot[index_z])**2 + (self.alpha[:,index_z,index_mu]*self.tilde_P_th[:,index_z,index_mu])**2*self.k_fid[:]**3 ))
+    return self.k_fid[:]**2/(2.*pi)**2*((self.tilde_P_th[:,index_z,index_mu] +self.tilde_P_th_corr[:,index_z,index_mu] - self.tilde_P_fid[:,index_z,index_mu])**2/((2./self.V_survey[index_z])*(self.tilde_P_th[:,index_z,index_mu]+self.tilde_P_th_corr[:,index_z,index_mu]+self.P_shot[index_z])**2 + (self.alpha[:,index_z,index_mu]*self.tilde_P_th[:,index_z,index_mu])**2*self.k_fid[:]**3 ))
