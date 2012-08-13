@@ -200,20 +200,29 @@ class euclid_lensing(likelihood):
     # Recover the non_linear scale computed by halofit. If no scale was
     # affected, set the scale to one, and make sure that the nuisance parameter
     # epsilon is set to zero
-    k_sigma = np.zeros(self.nbin, 'float64')
-    k_sigma = _cosmo.nonlinear_scale(self.z,self.nbin)
+    k_sigma = np.zeros(self.nzmax, 'float64')
+    k_sigma = _cosmo.nonlinear_scale(self.z,self.nzmax)
 
-    # recover the e_th part of the error function
-    e_th = self.e_lcdm_nl + self.coefficient_f_nu*_cosmo.Omega_nu/_cosmo.Omega_m
+    # Define the alpha function, that will characterize the theoretical
+    # uncertainty. Chosen to be 0.001 at low k, raise between 0.1 and 0.2 to
+    # 0.05
+    alpha = np.zeros((len(self.l),self.nzmax),'float64')
+    for i in range(len(self.l)):
+      for j in range(1,np.shape(self.eta_z)[0]):
+        k = self.l[i]/self.r[j]
+        alpha[i,j] = (np.tanh(60*(k - 0.5*k_sigma[j])) + 1.)/(2./(0.05-0.001)) + 0.001
 
-    # Compute the Error E_th function
-    E_th = np.zeros((self.nlmax,self.nbin),'float64')
+    # recover the e_th_nu part of the error function
+    e_th_nu = self.coefficient_f_nu*_cosmo.Omega_nu/_cosmo.Omega_m
+
+    # Compute the Error E_th_nu function
+    E_th_nu = np.zeros((self.nlmax,self.nbin),'float64')
     for index_z in range(1,self.nbin):
-      E_th[:,index_z] = np.log(1. + self.l[:]/k_sigma[index_z]*self.r[index_z]) / (1. + np.log(1. + self.l[:]/k_sigma[index_z]*self.r[index_z])) * e_th
+      E_th_nu[:,index_z] = np.log(1. + self.l[:]/k_sigma[index_z]*self.r[index_z]) / (1. + np.log(1. + self.l[:]/k_sigma[index_z]*self.r[index_z])) * e_th_nu
 
     # Add the error function, with the nuisance parameter, to P_nl_th
     for index_z in range(self.nbin):
-      pk[:,index_z] *= (1. + data.mcmc_parameters['epsilon']['current']*data.mcmc_parameters['epsilon']['initial'][4]*E_th[:,index_z])
+      pk[:,index_z] *= (1. + data.mcmc_parameters['epsilon']['current']*data.mcmc_parameters['epsilon']['initial'][4]*E_th_nu[:,index_z])
 
     #for i in range(len(self.l)):
       #print '%.4e' % pk[i,4]
@@ -221,13 +230,17 @@ class euclid_lensing(likelihood):
     # Start loop over l for computation of C_l^shear
     Cl_integrand = np.zeros((np.shape(self.eta_z)[0],self.nbin,self.nbin),'float64')
     Cl = np.zeros((self.nlmax,self.nbin,self.nbin),'float64')
+    # Start loop over l for computation of E_l
+    El_integrand = np.zeros((np.shape(self.eta_z)[0],self.nbin,self.nbin),'float64')
+    El = np.zeros((self.nlmax,self.nbin,self.nbin),'float64')
     for nl in range(self.nlmax):
   
       # find Cl_integrand = (g(r) / r)**2 * P(l/r,z(r))
       for nr in range(1,nrmax):
 	for Bin1 in range(self.nbin):
 	  for Bin2 in range(self.nbin):
-	    Cl_integrand[nr,Bin1,Bin2] = g[nr,Bin1] * g[nr,Bin2]/(self.r[nr]**2) * pk[nl,nr]
+	    Cl_integrand[nr,Bin1,Bin2] = g[nr,Bin1] * g[nr,Bin2]/(self.r[nr]**2) * pk[nl,nr] 
+	    El_integrand[nr,Bin1,Bin2] = g[nr,Bin1] * g[nr,Bin2]/(self.r[nr]**2) * pk[nl,nr] * alpha[nl,nr]
       
       # Integrate over r to get C_l^shear_ij = P_ij(l)
       # C_l^shear_ij = 9/16 Omega0_m^2 H_0^4 \sum_0^rmax dr (g_i(r) g_j(r) /r**2) P(k=l/r,z(r))
@@ -235,8 +248,11 @@ class euclid_lensing(likelihood):
 	for Bin2 in range(self.nbin):
 	  for nr in range(1,nrmax):
 	    Cl[nl,Bin1,Bin2] += 0.5*(Cl_integrand[nr,Bin1,Bin2]+Cl_integrand[nr-1,Bin1,Bin2])*(self.r[nr]-self.r[nr-1])
+	    El[nl,Bin1,Bin2] += 0.5*(El_integrand[nr,Bin1,Bin2]+El_integrand[nr-1,Bin1,Bin2])*(self.r[nr]-self.r[nr-1])
 	  Cl[nl,Bin1,Bin2] *= 9./16.*(_cosmo._Omega0_m())**2 # in units of Mpc**4
+	  El[nl,Bin1,Bin2] *= 9./16.*(_cosmo._Omega0_m())**2 # in units of Mpc**4
 	  Cl[nl,Bin1,Bin2] *= (_cosmo._h()/2997.9)**4 # dimensionless
+	  El[nl,Bin1,Bin2] *= (_cosmo._h()/2997.9)**4 # dimensionless
 	  if Bin1 == Bin2:
 	    Cl[nl,Bin1,Bin2] += self.noise
 
@@ -257,6 +273,11 @@ class euclid_lensing(likelihood):
       print '/_o_\ for {0} likelihood'.format(self.name)
       return +1
 
+    # Now that the fiducial model is stored, we add the El to both Cl and
+    # Cl_fid
+    Cl          += El
+    Cl_fid       = self.Cl_fid + El
+
     # Spline Cl[nl,Bin1,Bin2] along l
     ddCl     = np.zeros((self.nlmax,self.nbin,self.nbin),'float64')
     u_spline = np.zeros(self.nlmax,'float64')
@@ -270,7 +291,7 @@ class euclid_lensing(likelihood):
 	for nl in range(self.nlmax-2,-1,-1):
 	  ddCl[nl,Bin1,Bin2] = ddCl[nl,Bin1,Bin2]*ddCl[nl+1,Bin1,Bin2] + u_spline[nl]
 
-    # Spline self.Cl_fid[nl,Bin1,Bin2]  along l
+    # Spline Cl_fid[nl,Bin1,Bin2]  along l
     ddCl_fid = np.zeros((self.nlmax,self.nbin,self.nbin),'float64')
     for Bin1 in range(self.nbin):
       for Bin2 in range(self.nbin):
@@ -278,7 +299,7 @@ class euclid_lensing(likelihood):
 	  sig_spline = (self.l[nl]-self.l[nl-1]) / (self.l[nl+1] - self.l[nl])
 	  p_spline   = sig_spline*ddCl_fid[nl-1,Bin1,Bin2]+2.
 	  ddCl_fid[nl,Bin1,Bin2] = (sig_spline-1.)/p_spline
-	  u_spline[nl] = (6.*((self.Cl_fid[nl+1,Bin1,Bin2] - self.Cl_fid[nl,Bin1,Bin2])/(self.l[nl+1]-self.l[nl]) - (self.Cl_fid[nl,Bin1,Bin2]-self.Cl_fid[nl-1,Bin1,Bin2])/(self.l[nl]-self.l[nl-1]))/(self.l[nl+1]-self.l[nl-1]) - sig_spline*u_spline[nl-1])/p_spline
+	  u_spline[nl] = (6.*((Cl_fid[nl+1,Bin1,Bin2] - Cl_fid[nl,Bin1,Bin2])/(self.l[nl+1]-self.l[nl]) - (Cl_fid[nl,Bin1,Bin2]-Cl_fid[nl-1,Bin1,Bin2])/(self.l[nl]-self.l[nl-1]))/(self.l[nl+1]-self.l[nl-1]) - sig_spline*u_spline[nl-1])/p_spline
 	for nl in range(self.nlmax-2,-1,-1):
 	  ddCl_fid[nl,Bin1,Bin2] = ddCl_fid[nl,Bin1,Bin2]*ddCl_fid[nl+1,Bin1,Bin2] + u_spline[nl]
     
@@ -311,7 +332,7 @@ class euclid_lensing(likelihood):
       for Bin1 in range(self.nbin):
 	for Bin2 in range(self.nbin):
 	  Cov_theory[Bin1,Bin2] = a*Cl[klo,Bin1,Bin2] + b*Cl[khi,Bin1,Bin2] + ((a**3-a)*ddCl[klo,Bin1,Bin2] + (b**3-b)*ddCl[khi,Bin1,Bin2])*(h**2)/6.
-	  Cov_observ[Bin1,Bin2] = a*self.Cl_fid[klo,Bin1,Bin2] + b*self.Cl_fid[khi,Bin1,Bin2] + ((a**3-a)*ddCl_fid[klo,Bin1,Bin2] + (b**3-b)*ddCl_fid[khi,Bin1,Bin2])*(h**2)/6.
+	  Cov_observ[Bin1,Bin2] = a*Cl_fid[klo,Bin1,Bin2] + b*Cl_fid[khi,Bin1,Bin2] + ((a**3-a)*ddCl_fid[klo,Bin1,Bin2] + (b**3-b)*ddCl_fid[khi,Bin1,Bin2])*(h**2)/6.
 
       #print lll,Cov_theory[0,0],Cov_theory[1,1],Cov_observ[0,0],Cl[klo,0,0],Cl[khi,0,0]
       det_theory = np.linalg.det(Cov_theory)
