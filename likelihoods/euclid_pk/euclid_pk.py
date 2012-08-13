@@ -21,6 +21,9 @@ class euclid_pk(likelihood):
     # self.z_mean will contain the central values
 
     self.z_mean = np.zeros(self.nbin,'float64')
+
+    # Deduce the dz step from the number of bins and the edge values of z
+    self.dz = (self.zmax-self.zmin)/(self.nbin-1.)
     i=0
     for z in np.arange(self.zmin,self.zmax+self.dz,self.dz):
       self.z_mean[i] = z
@@ -147,9 +150,6 @@ class euclid_pk(likelihood):
     r,H = _cosmo.z_of_r(self.z)
     for i in range(len(D_A)):
       D_A[i] = _cosmo._angular_distance(self.z[i])
-    #for Bin in range(self.nbin+2):
-      #print '%.4g %.4g %.4g %.4g' % (H[Bin],D_A[Bin],self.H_fid[Bin],self.D_A_fid[Bin])
-    #exit()
 
     # Compute sigma_r = dr(z)/dz sigma_z with sigma_z = 0.001(1+z)
     sigma_r = np.zeros(self.nbin,'float64')
@@ -219,14 +219,6 @@ class euclid_pk(likelihood):
       for index_z in range(2*self.nbin+1):
         self.k[index_k,index_z,:] = np.sqrt((1.-mu[:]**2)*self.D_A_fid[index_z]**2/D_A[index_z]**2 + mu[:]**2*H[index_z]**2/self.H_fid[index_z]**2 )*self.k_fid[index_k]
 
-    # Define the alpha function, that will characterize the theoretical
-    # uncertainty. Chosen to be 0.001 at low k, raise between 0.1 and 0.2 to
-    # 0.05
-    self.alpha = np.zeros((self.k_size,2*self.nbin+1,self.mu_size),'float64')
-    for index_k in range(self.k_size):
-      for index_z in range(2*self.nbin+1):
-        self.alpha[index_k,index_z,:] = (np.tanh(60*(self.k[index_k,index_z,:]-0.15)) + 1.)/(2./(0.05-0.001)) + 0.001
-
 
     # Recover the non-linear power spectrum from the cosmological module on all
     # the z_boundaries, to compute afterwards beta. This is pk_nl_th from the
@@ -239,6 +231,14 @@ class euclid_pk(likelihood):
     # epsilon is set to zero
     k_sigma = np.zeros(self.nbin, 'float64')
     k_sigma = _cosmo.nonlinear_scale(self.z,2*self.nbin+1)
+
+    # Define the alpha function, that will characterize the theoretical
+    # uncertainty. Chosen to be 0.001 at low k, raise between 0.1 and 0.2 to
+    # 0.05
+    self.alpha = np.zeros((self.k_size,2*self.nbin+1,self.mu_size),'float64')
+    for index_k in range(self.k_size):
+      for index_z in range(2*self.nbin+1):
+        self.alpha[index_k,index_z,:] = (np.tanh(60*(self.k[index_k,index_z,:]-0.5*k_sigma[index_z])) + 1.)/(2./(0.05-0.001)) + 0.001
 
     # recover the e_th part of the error function
     e_th = self.e_lcdm_nl + self.coefficient_f_nu*_cosmo.Omega_nu/_cosmo.Omega_m
