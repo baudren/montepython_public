@@ -686,8 +686,8 @@ class info:
             #lkl_mean *= max(hist)/max(lkl_mean)
             lkl_mean /= max(lkl_mean)
             interp_lkl_mean,interp_grid = self.cubic_interpolation(lkl_mean,bincenters)
-            #ax2d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=2)
-            #ax1d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=4)
+            ax2d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=2)
+            ax1d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=4)
           except:
             print 'could not find likelihood contour for ',self.ref_names[index]
 
