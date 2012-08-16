@@ -3,7 +3,6 @@ import os
 import numpy as np
 import math
 # Adapted from JL
-import time
 
 class euclid_lensing(likelihood):
 
@@ -163,8 +162,6 @@ class euclid_lensing(likelihood):
 
   def loglkl(self,_cosmo,data):
 
-
-    t1 = time.time()
     # One wants to obtain here the relation between z and r, this is done by
     # asking the cosmological module with the function z_of_r
     self.r = np.zeros(self.nzmax,'float64')
