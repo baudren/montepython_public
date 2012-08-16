@@ -3,6 +3,7 @@ import os
 import numpy as np
 import math
 # Adapted from JL
+import time
 
 class euclid_lensing(likelihood):
 
@@ -95,9 +96,7 @@ class euclid_lensing(likelihood):
     # integrate eta(z) over z (in view of normalizing it to one)
     self.eta_norm = np.zeros(self.nbin,'float64')
     for Bin in range(self.nbin):
-      for nz in range(1,self.nzmax):
-	self.eta_norm[Bin] += 0.5*(self.eta_z[nz,Bin]+self.eta_z[nz-1,Bin])*(self.z[nz]-self.z[nz-1])
-
+      self.eta_norm[Bin] = np.sum(0.5*(self.eta_z[1:,Bin]+self.eta_z[:-1,Bin])*(self.z[1:]-self.z[:-1]))
 
     ################
     # Noise spectrum 
@@ -163,39 +162,34 @@ class euclid_lensing(likelihood):
     return photo_z_dist
 
   def loglkl(self,_cosmo,data):
+
+
+    t1 = time.time()
     # One wants to obtain here the relation between z and r, this is done by
     # asking the cosmological module with the function z_of_r
-    nrmax = len(self.z)
-    self.r = np.zeros(nrmax,'float64')
-    self.dzdr= np.zeros(nrmax,'float64')
+    self.r = np.zeros(self.nzmax,'float64')
+    self.dzdr= np.zeros(self.nzmax,'float64')
 
     self.r,self.dzdr =  _cosmo.z_of_r(self.z)
 
     # Compute now the selection function eta(r) = eta(z) dz/dr normalized to one.
-    self.eta_r = np.zeros(np.shape(self.eta_z),'float64')
-    for Bin in range(np.shape(self.eta_z)[1]):
-      for nr in range(np.shape(self.eta_z)[0]):
-	self.eta_r[nr,Bin] = self.eta_z[nr,Bin]*self.dzdr[nr]/self.eta_norm[Bin]
-	#print '%.4g %.4g %.4g %.4g' % (self.r[nr],self.eta_r[nr,Bin],self.eta_z[nr,Bin],self.dzdr[nr])
-      #print '\n\n'
+    self.eta_r = np.zeros((self.nzmax,self.nbin),'float64')
+    for Bin in range(self.nbin):
+      self.eta_r[:,Bin] = self.eta_z[:,Bin]*self.dzdr[:]/self.eta_norm[Bin]
 
     # Compute function g_i(r), that depends on r and the bin
     # g_i(r) = 2r(1+z(r)) int_0^+\infty drs eta_r(rs) (rs-r)/rs
-    g = np.zeros(np.shape(self.eta_z),'float64')
-    for Bin in range(np.shape(self.eta_z)[1]):
-      for nr in range(1,np.shape(self.eta_z)[0]-1):
-	g[nr,Bin] = 0.
-	for nr2 in range(nr+1,np.shape(self.eta_z)[0]):
-	  g[nr,Bin] += 0.5*(self.eta_r[nr2,Bin]*(self.r[nr2]-self.r[nr])/self.r[nr2] + self.eta_r[nr2-1,Bin]*(self.r[nr2-1]-self.r[nr])/self.r[nr2-1])*(self.r[nr2]-self.r[nr2-1])
-	g[nr,Bin] *= 2.*self.r[nr]*(1.+self.z[nr])
-	#print '%.4g %.4g' % (self.r[nr],g[nr,Bin])
-      #print '\n\n'
+    g = np.zeros((self.nzmax,self.nbin),'float64')
+    for Bin in range(self.nbin):
+      for nr in range(1,self.nzmax-1):
+        g[nr,Bin] = np.sum(0.5*(self.eta_r[nr+1:,Bin]*(self.r[nr+1:]-self.r[nr])/self.r[nr+1:] + self.eta_r[nr:-1,Bin]*(self.r[nr:-1]-self.r[nr])/self.r[nr:-1])*(self.r[nr+1:]-self.r[nr:-1]))
+        g[nr,Bin] *= 2.*self.r[nr]*(1.+self.z[nr])
 
     # Get power spectrum P(k=l/r,z(r)) from cosmological module
-    pk = np.zeros((len(self.l),np.shape(self.eta_z)[0]),'float64')
-    for i in range(len(self.l)):
-      for j in range(1,np.shape(self.eta_z)[0]):
-	pk[i,j] = _cosmo._pk(self.l[i]/self.r[j],self.z[j])
+    pk = np.zeros((self.nlmax,self.nzmax),'float64')
+    for index_l in range(self.nlmax):
+      for index_z in range(1,self.nzmax):
+	pk[index_l,index_z] = _cosmo._pk(self.l[index_l]/self.r[index_z],self.z[index_z])
 
     # Recover the non_linear scale computed by halofit. If no scale was
     # affected, set the scale to one, and make sure that the nuisance parameter
@@ -206,56 +200,51 @@ class euclid_lensing(likelihood):
     # Define the alpha function, that will characterize the theoretical
     # uncertainty. Chosen to be 0.001 at low k, raise between 0.1 and 0.2 to
     # 0.05
-    alpha = np.zeros((len(self.l),self.nzmax),'float64')
-    for i in range(len(self.l)):
-      for j in range(1,np.shape(self.eta_z)[0]):
-        k = self.l[i]/self.r[j]
-        alpha[i,j] = (np.tanh(60*(k - 0.5*k_sigma[j])) + 1.)/(2./(0.05-0.001)) + 0.001
+    t2 = time.time()
+    alpha = np.zeros((self.nlmax,self.nzmax),'float64')
+    for index_l in range(self.nlmax):
+      k = self.l[index_l]/self.r[1:]
+      alpha[index_l,1:] = (np.tanh(60*(k[:] - 0.5*k_sigma[1:])) + 1.)/(2./(0.05-0.001)) + 0.001
 
     # recover the e_th_nu part of the error function
     e_th_nu = self.coefficient_f_nu*_cosmo.Omega_nu/_cosmo.Omega_m
 
     # Compute the Error E_th_nu function
-    E_th_nu = np.zeros((self.nlmax,self.nbin),'float64')
-    for index_z in range(1,self.nbin):
-      E_th_nu[:,index_z] = np.log(1. + self.l[:]/k_sigma[index_z]*self.r[index_z]) / (1. + np.log(1. + self.l[:]/k_sigma[index_z]*self.r[index_z])) * e_th_nu
+    E_th_nu = np.zeros((self.nlmax,self.nzmax),'float64')
+    for index_l in range(1,self.nlmax):
+      E_th_nu[index_l,:] = np.log(1. + self.l[index_l]/k_sigma[:]*self.r[:]) / (1. + np.log(1. + self.l[index_l]/k_sigma[:]*self.r[:])) * e_th_nu
 
     # Add the error function, with the nuisance parameter, to P_nl_th
-    for index_z in range(self.nbin):
-      pk[:,index_z] *= (1. + data.mcmc_parameters['epsilon']['current']*data.mcmc_parameters['epsilon']['initial'][4]*E_th_nu[:,index_z])
-
-    #for i in range(len(self.l)):
-      #print '%.4e' % pk[i,4]
+    for index_l in range(self.nlmax):
+      pk[index_l,:] *= (1. + data.mcmc_parameters['epsilon']['current']*data.mcmc_parameters['epsilon']['initial'][4]*E_th_nu[index_l,:])
 
     # Start loop over l for computation of C_l^shear
-    Cl_integrand = np.zeros((np.shape(self.eta_z)[0],self.nbin,self.nbin),'float64')
+    Cl_integrand = np.zeros((self.nzmax,self.nbin,self.nbin),'float64')
     Cl = np.zeros((self.nlmax,self.nbin,self.nbin),'float64')
     # Start loop over l for computation of E_l
-    El_integrand = np.zeros((np.shape(self.eta_z)[0],self.nbin,self.nbin),'float64')
+    El_integrand = np.zeros((self.nzmax,self.nbin,self.nbin),'float64')
     El = np.zeros((self.nlmax,self.nbin,self.nbin),'float64')
     for nl in range(self.nlmax):
   
       # find Cl_integrand = (g(r) / r)**2 * P(l/r,z(r))
-      for nr in range(1,nrmax):
-	for Bin1 in range(self.nbin):
-	  for Bin2 in range(self.nbin):
-	    Cl_integrand[nr,Bin1,Bin2] = g[nr,Bin1] * g[nr,Bin2]/(self.r[nr]**2) * pk[nl,nr] 
-	    El_integrand[nr,Bin1,Bin2] = g[nr,Bin1] * g[nr,Bin2]/(self.r[nr]**2) * pk[nl,nr] * alpha[nl,nr]
+      for Bin1 in range(self.nbin):
+        for Bin2 in range(self.nbin):
+          Cl_integrand[1:,Bin1,Bin2] = g[1:,Bin1] * g[1:,Bin2]/(self.r[1:]**2) * pk[nl,1:] 
+          El_integrand[1:,Bin1,Bin2] = g[1:,Bin1] * g[1:,Bin2]/(self.r[1:]**2) * pk[nl,1:] * alpha[nl,1:]
       
       # Integrate over r to get C_l^shear_ij = P_ij(l)
       # C_l^shear_ij = 9/16 Omega0_m^2 H_0^4 \sum_0^rmax dr (g_i(r) g_j(r) /r**2) P(k=l/r,z(r))
       for Bin1 in range(self.nbin):
 	for Bin2 in range(self.nbin):
-	  for nr in range(1,nrmax):
-	    Cl[nl,Bin1,Bin2] += 0.5*(Cl_integrand[nr,Bin1,Bin2]+Cl_integrand[nr-1,Bin1,Bin2])*(self.r[nr]-self.r[nr-1])
-	    El[nl,Bin1,Bin2] += 0.5*(El_integrand[nr,Bin1,Bin2]+El_integrand[nr-1,Bin1,Bin2])*(self.r[nr]-self.r[nr-1])
+          Cl[nl,Bin1,Bin2] = np.sum(0.5*(Cl_integrand[1:,Bin1,Bin2]+Cl_integrand[:-1,Bin1,Bin2])*(self.r[1:]-self.r[:-1]))
 	  Cl[nl,Bin1,Bin2] *= 9./16.*(_cosmo._Omega0_m())**2 # in units of Mpc**4
-	  El[nl,Bin1,Bin2] *= 9./16.*(_cosmo._Omega0_m())**2 # in units of Mpc**4
 	  Cl[nl,Bin1,Bin2] *= (_cosmo._h()/2997.9)**4 # dimensionless
+
+          El[nl,Bin1,Bin2] = np.sum(0.5*(El_integrand[1:,Bin1,Bin2]+El_integrand[:-1,Bin1,Bin2])*(self.r[1:]-self.r[:-1]))
+	  El[nl,Bin1,Bin2] *= 9./16.*(_cosmo._Omega0_m())**2 # in units of Mpc**4
 	  El[nl,Bin1,Bin2] *= (_cosmo._h()/2997.9)**4 # dimensionless
 	  if Bin1 == Bin2:
 	    Cl[nl,Bin1,Bin2] += self.noise
-
 
     # Write fiducial model spectra if needed (exit in that case)
     if self.fid_values_exist is False:
@@ -274,7 +263,8 @@ class euclid_lensing(likelihood):
       return +1
 
     # Now that the fiducial model is stored, we add the El to both Cl and
-    # Cl_fid
+    # Cl_fid (we create a new array, otherwise we would modify the self.Cl_fid
+    # from one step to the other)
     Cl          += El
     Cl_fid       = self.Cl_fid + El
 
@@ -283,13 +273,13 @@ class euclid_lensing(likelihood):
     u_spline = np.zeros(self.nlmax,'float64')
     for Bin1 in range(self.nbin):
       for Bin2 in range(self.nbin):
-	for nl in range(1,self.nlmax-1):
-	  sig_spline = (self.l[nl]-self.l[nl-1]) / (self.l[nl+1] - self.l[nl])
-	  p_spline   = sig_spline*ddCl[nl-1,Bin1,Bin2]+2.
-	  ddCl[nl,Bin1,Bin2] = (sig_spline-1.)/p_spline
-	  u_spline[nl] = (6.*((Cl[nl+1,Bin1,Bin2] - Cl[nl,Bin1,Bin2])/(self.l[nl+1]-self.l[nl]) - (Cl[nl,Bin1,Bin2]-Cl[nl-1,Bin1,Bin2])/(self.l[nl]-self.l[nl-1]))/(self.l[nl+1]-self.l[nl-1]) - sig_spline*u_spline[nl-1])/p_spline
-	for nl in range(self.nlmax-2,-1,-1):
-	  ddCl[nl,Bin1,Bin2] = ddCl[nl,Bin1,Bin2]*ddCl[nl+1,Bin1,Bin2] + u_spline[nl]
+        for nl in range(1,self.nlmax-1):
+          sig_spline = (self.l[nl]-self.l[nl-1]) / (self.l[nl+1] - self.l[nl])
+          p_spline   = sig_spline*ddCl[nl-1,Bin1,Bin2]+2.
+          ddCl[nl,Bin1,Bin2] = (sig_spline-1.)/p_spline
+          u_spline[nl] = (6.*((Cl[nl+1,Bin1,Bin2] - Cl[nl,Bin1,Bin2])/(self.l[nl+1]-self.l[nl]) - (Cl[nl,Bin1,Bin2]-Cl[nl-1,Bin1,Bin2])/(self.l[nl]-self.l[nl-1]))/(self.l[nl+1]-self.l[nl-1]) - sig_spline*u_spline[nl-1])/p_spline
+        for nl in range(self.nlmax-2,-1,-1):
+          ddCl[nl,Bin1,Bin2] = ddCl[nl,Bin1,Bin2]*ddCl[nl+1,Bin1,Bin2] + u_spline[nl]
 
     # Spline Cl_fid[nl,Bin1,Bin2]  along l
     ddCl_fid = np.zeros((self.nlmax,self.nbin,self.nbin),'float64')
@@ -302,7 +292,7 @@ class euclid_lensing(likelihood):
 	  u_spline[nl] = (6.*((Cl_fid[nl+1,Bin1,Bin2] - Cl_fid[nl,Bin1,Bin2])/(self.l[nl+1]-self.l[nl]) - (Cl_fid[nl,Bin1,Bin2]-Cl_fid[nl-1,Bin1,Bin2])/(self.l[nl]-self.l[nl-1]))/(self.l[nl+1]-self.l[nl-1]) - sig_spline*u_spline[nl-1])/p_spline
 	for nl in range(self.nlmax-2,-1,-1):
 	  ddCl_fid[nl,Bin1,Bin2] = ddCl_fid[nl,Bin1,Bin2]*ddCl_fid[nl+1,Bin1,Bin2] + u_spline[nl]
-    
+
     # Compute likelihood
     chi2 = 0.
     Cov_theory = np.zeros((self.nbin,self.nbin),'float64')
@@ -345,5 +335,8 @@ class euclid_lensing(likelihood):
 
       chi2 += (2.*lll+1.)*self.fsky*(det_cross/det_theory + math.log(det_theory/det_observ) - self.nbin)
 
+    
+    # Finally adding a gaussian prior on the epsilon nuisance parameter
     chi2+=(data.mcmc_parameters['epsilon']['current']*data.mcmc_parameters['epsilon']['initial'][4])**2
+
     return -chi2/2.
