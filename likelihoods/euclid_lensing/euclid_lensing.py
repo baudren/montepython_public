@@ -196,12 +196,11 @@ class euclid_lensing(likelihood):
 
     # Define the alpha function, that will characterize the theoretical
     # uncertainty. Chosen to be 0.001 at low k, raise between 0.1 and 0.2 to
-    # 0.05
-    t2 = time.time()
+    # self.theoretical_error
     alpha = np.zeros((self.nlmax,self.nzmax),'float64')
     for index_l in range(self.nlmax):
       k = self.l[index_l]/self.r[1:]
-      alpha[index_l,1:] = (np.tanh(60*(k[:] - 0.5*k_sigma[1:])) + 1.)/(2./(0.05-0.001)) + 0.001
+      alpha[index_l,1:] = (np.tanh(60*(k[:] - 0.5*k_sigma[1:])) + 1.)/(2./(self.theoretical_error-0.001)) + 0.001
 
     # recover the e_th_nu part of the error function
     e_th_nu = self.coefficient_f_nu*_cosmo.Omega_nu/_cosmo.Omega_m
