@@ -1,0 +1,3 @@
+# upper bound on T_igm (units : Kelvin), inspire from figure 6 (left) in astro-ph/9912432
+igm_temperature.z = 2
+igm_temperature.Tb_max = 3.2e4
