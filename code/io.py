@@ -139,7 +139,7 @@ def get_tex_name(name,number=1):
     if name.find('_')!=-1:
       temp_name = name.split('_')[0]+'_{'
       for i in range(1,len(name.split('_'))):
-	temp_name += name.split('_')[i]
+	temp_name += name.split('_')[i]+' '
       temp_name += '}'
       name = temp_name
     name = "${0}$".format(name)
