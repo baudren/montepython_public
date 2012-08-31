@@ -10,7 +10,7 @@ euclid_lensing.dlnl  = 0.2
 euclid_lensing.nzmax = 151		
 
 # number of bins of the survey
-euclid_lensing.nbin  = 5		
+euclid_lensing.nbin  = 5
 # maximum redshift covered by survey
 euclid_lensing.zmax  = 3		
 # sky coverage
@@ -22,7 +22,6 @@ euclid_lensing.dz    = 0.1
 euclid_lensing.k_max  = 7
 
 # precision of the halofit method
-euclid_lensing.e_lcdm_nl = 0.1
 euclid_lensing.coefficient_f_nu = 1
 euclid_lensing.theoretical_error = 0.05
 # noise computation
