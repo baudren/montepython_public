@@ -312,7 +312,7 @@ class info:
       self.log.write("\n")
 
     # Total number of steps done:
-    total = 0
+    total_number_of_steps = 0
 
     # max_lkl will be appended with all the maximum likelihoods of files, then
     # will be replaced by its own maximum. This way, the global maximum
@@ -342,7 +342,7 @@ class info:
 	line_count+=1
       self.log.write("%s\t Number of steps:%d\tSteps accepted:%d\tacc = %.2g\tmin(-loglike) = %.5g " % (File,sum(cheese[:,0]),line_count,line_count*1.0/sum(cheese[:,0]),local_max_lkl))
       self.log.write("\n")
-      total += sum(cheese[:,0])
+      total_number_of_steps += sum(cheese[:,0])
 
       # Removing burn-in
       start = 0
@@ -354,8 +354,8 @@ class info:
 	print '  Removed entire chain: not converged'
 
 
-      # ham contains cheese without the burn-in, if there are any points left
-      if np.shape(cheese)[0] > start:
+      # ham contains cheese without the burn-in, if there are any points left (more than 5)
+      if np.shape(cheese)[0] > start+5:
 	ham = np.copy(cheese[start::])
 
 	# Deal with single file case
@@ -376,7 +376,6 @@ class info:
 
     # Now that the list spam contains all the different chains removed of their
     # respective burn-in, proceed to the convergence computation
-    length  = np.mean([sum(elem[:])[0] for elem in spam])
 
     # 2D arrays for mean and var, one column will contain the total (over all
     # chains) mean (resp.  variance), and each other column the respective
@@ -385,47 +384,57 @@ class info:
     mean     = np.zeros((len(spam)+1,np.shape(spam[0])[1]-2))
     var      = np.zeros((len(spam)+1,np.shape(spam[0])[1]-2))
     R 	     = np.zeros(np.shape(spam[0])[1]-2)
-    
-    # Quantities for the Gelman Rubin diagnostic
-    within  = 0
-    between = 0
+
+    # Store the total number of points, and the total in each chain
+    total    = np.zeros(len(spam)+1)
+    for j in range(len(spam)):
+      total[j+1] = np.sum(spam[j][:,0])
+    total[0] = np.sum(total[1:])
 
     # Compute mean and variance for each chain
     print 'Computing mean values'
     for i in range(np.shape(mean)[1]):
       for j in range(len(spam)):
-	mean[j+1,i] = np.sum(spam[j][:,0]*spam[j][:,i+2])/np.sum(spam[j],axis=0)[0]
-	mean[0,i]  += mean[j+1,i]/len(spam)
+        submean     = np.sum(spam[j][:,0]*spam[j][:,i+2])
+        mean[j+1,i] = submean/total[j+1]
+        mean[0,i]  += submean
+      mean[0,i] /= total[0]
     
     print 'Computing variance'
     for i in range(np.shape(mean)[1]):
       for j in range(len(spam)):
-	#subvar = 0
-	#for k in range(np.shape(spam[j])[0]):
-	  #subvar 	   += spam[j][k,0]*(spam[j][k,i+2]-mean[0,i]  )**2
-	  #var[j+1,i] += spam[j][k,0]*(spam[j][k,i+2]-mean[j+1,i])**2
-	subvar = np.sum(spam[j][:,0]*(spam[j][:,i+2]-mean[0,i]  )**2)
-	var[j+1,i] = np.sum(spam[j][:,0]*(spam[j][:,i+2]-mean[j+1,i])**2)
-
-	var[0,i]   += subvar/(sum(spam[j])[0]-1)/len(spam)
-	var[j+1,i]  = var[j+1,i]/(sum(spam[j])[0]-1)
-
+	var[0,i]     += np.sum(spam[j][:,0]*(spam[j][:,i+2]-mean[0,i]  )**2)
+	var[j+1,i]    = np.sum(spam[j][:,0]*(spam[j][:,i+2]-mean[j+1,i])**2)/(total[j+1]-1)
+      var[0,i]  /= (total[0]-1)
     
     # Gelman Rubin Diagnostic:
     # Computes a quantity linked to the ratio of the mean of the variances of
     # the different chains (within), and the variance of the means (between)
-    # TODO: verify the validity of this computation for chains of different
-    # length !
+    # Note: This is not strictly speaking the Gelman Rubin test, defined for
+    # same-length MC chains. Our quantity is defined without the square root,
+    # which should not change much the result: a small sqrt(R) will still be a
+    # small R. The same convention is used in CosmoMC, except for the weighted
+    # average: we decided to do the average taking into account that longer
+    # chains should count more
+    within  = 0
+    between = 0
+
     print 'Computing convergence'
     for i in range(np.shape(mean)[1]):
       for j in range(len(spam)):
-	within  += var[j+1,i]/len(spam)
-	between += sum(spam[j])[0]*(mean[j+1,i]-mean[0,i])**2 / (len(spam)-1)
+        within  += total[j+1]*var[j+1,i]
+        between += total[j+1]*(mean[j+1,i]-mean[0,i])**2
+      within  /= total[0]
+      between /= (total[0]-1)
 
-      R[i] = math.sqrt(((1-1/length)*within+(len(spam)+1)/(len(spam)*length)*between)/within)
+      R[i] = between/within
+      print 'R is ',R[i],' for parameter ',ref_names[i]
     
     # Log finally the total number of steps
-    self.log.write("--> Total number of steps:%d" % total)
+    self.log.write("--> Total number of steps:%d" % total_number_of_steps)
+
+    # If the analysis is done with the main folder (and not the comparison
+    # one), store all relevant quantities in the class.
     if is_main_chain:
       self.spam = spam
 
