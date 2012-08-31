@@ -135,15 +135,13 @@ def get_tex_name(name,number=1):
     if elem in name:
       position = name.find(elem)
       name=name[:position]+"""\\"""+name[position:]
+  if name.find('_')!=-1:
+    temp_name = name.split('_')[0]+'_{'
+    for i in range(1,len(name.split('_'))):
+      temp_name += name.split('_')[i]+' '
+    name = temp_name + '}'
   if number==1: 
-    if name.find('_')!=-1:
-      temp_name = name.split('_')[0]+'_{'
-      for i in range(1,len(name.split('_'))):
-	temp_name += name.split('_')[i]+' '
-      temp_name += '}'
-      name = temp_name
     name = "${0}$".format(name)
-    return name
   elif (number < 1000 and number > 1):
     name = "$%0.d~%s$" % (number,name)
   else:
