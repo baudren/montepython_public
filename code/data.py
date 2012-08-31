@@ -273,6 +273,11 @@ class data:
           self.Class_arguments['n_cdi']   =self.Class_arguments['n_s']
         except (KeyError):
           pass
+      if elem == 'beta':
+        try:
+          self.Class_arguments['alpha'] = 2.*self.Class_arguments['beta']
+        except (KeyError):
+          pass
       # We only do that on xe_1, for there is at least one of them.
       if elem.find('xe_1') != -1:
 	try:
