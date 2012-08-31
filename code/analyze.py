@@ -126,7 +126,7 @@ class info:
 
     self.info.write('\n R-1 values:\t')
     for elem in self.R:
-      self.info.write('%.6f\t' % (elem-1.))
+      self.info.write('%.6f\t' % (elem))
     self.info.write('\n Best Fit:\t')
     for elem in chain[a[0],2:]:
       self.info.write('%.6e\t' % (elem))
@@ -340,7 +340,7 @@ class info:
       line_count = 0
       for line in open(File,'r'):
 	line_count+=1
-      self.log.write("%s\t Number of steps:%d\tSteps accepted:%d\tacc = %.2g\tmin(-loglike) = %.5g " % (File,sum(cheese[:,0]),line_count,line_count*1.0/sum(cheese[:,0]),local_max_lkl))
+      self.log.write("%s\t Number of steps:%d\tSteps accepted:%d\tacc = %.2g\tmin(-loglike) = %.2f " % (File,sum(cheese[:,0]),line_count,line_count*1.0/sum(cheese[:,0]),local_max_lkl))
       self.log.write("\n")
       total_number_of_steps += sum(cheese[:,0])
 
@@ -430,8 +430,9 @@ class info:
       R[i] = between/within
       print 'R is ',R[i],' for parameter ',ref_names[i]
     
-    # Log finally the total number of steps
-    self.log.write("--> Total number of steps:%d" % total_number_of_steps)
+    # Log finally the total number of steps, and absolute loglikelihood
+    self.log.write("--> Total number of steps:%d\n" % total_number_of_steps)
+    self.log.write("--> Minimum of -logLike  :%.2f" % max_lkl)
 
     # If the analysis is done with the main folder (and not the comparison
     # one), store all relevant quantities in the class.
