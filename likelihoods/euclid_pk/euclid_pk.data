@@ -1,5 +1,5 @@
 euclid_pk.data_directory = data.path['data']
-euclid_pk.fiducial_file  = "Euclid_fiducial_pk_ncdm_1.dat"
+euclid_pk.fiducial_file  = "Euclid_fiducial_pk_ncdm_6.dat"
 
 euclid_pk.use_nuisance = ['P_shot','epsilon']
 
@@ -11,13 +11,13 @@ euclid_pk.zmax  = 2.0
 # sky coverage
 euclid_pk.fsky  = 0.5
 # precision on the mu variable
-euclid_pk.mu_size = 100
+euclid_pk.mu_size = 9
 
 euclid_pk.k_size = 100
 
 # integration boundaries for k (in 1/Mpc)
 euclid_pk.kmin = 0.001 
-euclid_pk.kmax = 0.1
+euclid_pk.kmax = 0.6
 
 # precision of the halofit method
 euclid_pk.theoretical_error = 0.05

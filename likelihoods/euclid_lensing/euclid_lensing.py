@@ -17,6 +17,9 @@ class euclid_lensing(likelihood):
     for nl in range(self.nlmax):
       self.l[nl] = 1.*math.exp(self.dlnl*nl)
     
+    #print self.l[:]
+    #exit()
+
     ########################################################
     # Find distribution of dn_dz (not normalized) in each bin
     ########################################################
@@ -70,6 +73,7 @@ class euclid_lensing(likelihood):
     # Fill distribution for each bin (convolving with photo_z distribution)
     self.eta_z = np.zeros((self.nzmax,self.nbin),'float64')
     for Bin in range(self.nbin):
+
       for nz in range(self.nzmax):
 	z = self.z[nz]
 	self.eta_z[nz,Bin] = 0.
@@ -81,7 +85,7 @@ class euclid_lensing(likelihood):
 	    pzd = self.photo_z_distribution(z,self.z[nz2])
 	    integrand_plus = gd*pzd
 	  else:
-	    intergrand_plus = 0.
+	    integrand_plus = 0.
 
 	  if ((self.z[nz2-1] >= self.z_bin_edge[Bin]) and (self.z[nz2-1] <= self.z_bin_edge[Bin+1])):
 	    gd  = self.galaxy_distribution(self.z[nz2-1])
@@ -91,6 +95,10 @@ class euclid_lensing(likelihood):
 	    integrand_minus = 0.
 	  
 	  self.eta_z[nz,Bin] += 0.5*(integrand_plus+integrand_minus)*(self.z[nz2]-self.z[nz2-1])
+
+    #for nz in range(self.nzmax):
+    #  print self.z[nz],self.eta_z[nz,0],self.eta_z[nz,1],self.eta_z[nz,2],self.eta_z[nz,3],self.eta_z[nz,4],self.galaxy_distribution(self.z[nz])
+    #exit()  
 
     # integrate eta(z) over z (in view of normalizing it to one)
     self.eta_norm = np.zeros(self.nbin,'float64')
@@ -180,22 +188,30 @@ class euclid_lensing(likelihood):
     # Compute function g_i(r), that depends on r and the bin
     # g_i(r) = 2r(1+z(r)) int_0^+\infty drs eta_r(rs) (rs-r)/rs
     g = np.zeros((self.nzmax,self.nbin),'float64')
+
     for Bin in range(self.nbin):
       for nr in range(1,self.nzmax-1):
         g[nr,Bin] = np.sum(0.5*(self.eta_r[nr+1:,Bin]*(self.r[nr+1:]-self.r[nr])/self.r[nr+1:] + self.eta_r[nr:-1,Bin]*(self.r[nr:-1]-self.r[nr])/self.r[nr:-1])*(self.r[nr+1:]-self.r[nr:-1]))
+
         g[nr,Bin] *= 2.*self.r[nr]*(1.+self.z[nr])
 
     # Get power spectrum P(k=l/r,z(r)) from cosmological module
     pk = np.zeros((self.nlmax,self.nzmax),'float64')
     for index_l in range(self.nlmax):
       for index_z in range(1,self.nzmax):
+        if (self.l[index_l]/self.r[index_z] > self.k_max):
+          print 'you should increase euclid_lensing.k_max up to at least',self.l[index_l]/self.r[index_z]
+          exit()
 	pk[index_l,index_z] = _cosmo._pk(self.l[index_l]/self.r[index_z],self.z[index_z])
 
     # Recover the non_linear scale computed by halofit. If no scale was
     # affected, set the scale to one, and make sure that the nuisance parameter
     # epsilon is set to zero
     k_sigma = np.zeros(self.nzmax, 'float64')
-    k_sigma = _cosmo.nonlinear_scale(self.z,self.nzmax)
+    if (_cosmo.nonlinear_method == 0):
+      k_sigma[:]=1.e6
+    else :
+      k_sigma = _cosmo.nonlinear_scale(self.z,self.nzmax)
 
     # Define the alpha function, that will characterize the theoretical
     # uncertainty. Chosen to be 0.001 at low k, raise between 0.1 and 0.2 to
@@ -230,6 +246,11 @@ class euclid_lensing(likelihood):
     # Start loop over l for computation of E_l
     El_integrand = np.zeros((self.nzmax,self.nbin,self.nbin),'float64')
     El = np.zeros((self.nlmax,self.nbin,self.nbin),'float64')
+
+    #for index_z in range(self.nzmax):
+    #  print self.z[index_z],self.r[index_z],g[index_z,0]
+    #exit() 
+
     for nl in range(self.nlmax):
   
       # find Cl_integrand = (g(r) / r)**2 * P(l/r,z(r))
@@ -349,6 +370,8 @@ class euclid_lensing(likelihood):
         Cov_observ[Bin1,:] = a*self.Cl_fid[klo,Bin1,:] + b*self.Cl_fid[khi,Bin1,:] + ((a**3-a)*ddCl_fid[klo,Bin1,:] + (b**3-b)*ddCl_fid[khi,Bin1,:])*(h**2)/6.
         Cov_error[Bin1,:]  = a*El[klo,Bin1,:] + b*El[khi,Bin1,:] + ((a**3-a)*ddEl[klo,Bin1,:] + (b**3-b)*ddEl[khi,Bin1,:])*(h**2)/6.
 
+      #print lll,Cov_theory[0,0]-self.noise,Cov_theory[4,4]-self.noise,self.noise,Cov_error[0,0],Cov_error[4,4],math.sqrt(2./(2.*lll+1)*dof)*Cov_theory[0,0],math.sqrt(2./(2.*lll+1)*dof)*Cov_theory[4,4]
+
       #Debugging
       #Cov_theory *= (1e8)
       #Cov_observ *= (1e8)
@@ -368,17 +391,19 @@ class euclid_lensing(likelihood):
       det_theory = np.linalg.det(Cov_theory)
       det_observ = np.linalg.det(Cov_observ)
 
+      if (self.theoretical_error > 0):
+
       #det_cross_obs = 0
       #for i in range(self.nbin):
       #	newCov = np.copy(Cov_theory)
       #	newCov[:,i] = Cov_observ[:,i]
       #	det_cross_obs += np.linalg.det(newCov)
 
-      det_cross_err = 0
-      for i in range(self.nbin):
-	newCov = np.copy(Cov_theory)
-	newCov[:,i] = Cov_error[:,i]
-	det_cross_err += np.linalg.det(newCov)
+        det_cross_err = 0
+        for i in range(self.nbin):
+          newCov = np.copy(Cov_theory)
+          newCov[:,i] = Cov_error[:,i]
+          det_cross_err += np.linalg.det(newCov)
 
       #det_cross_obs_err = 0
       #if (self.nbin>1):
@@ -393,41 +418,41 @@ class euclid_lensing(likelihood):
 
       #epsilon_l = (2.*lll+1.)*self.fsky/2.*(det_cross_err*det_cross_obs/(det_theory)**2-(det_cross_err+det_cross_obs_err)/det_theory)/dof
 
-      # Newton method
-      # Find starting point for the method:
-      #start = (Cov_observ[0,0] - Cov_theory[0,0])/Cov_error[0,0]*(1.+0.3)
-      start = 0
-      step = 0.001*det_theory/det_cross_err
-      error = 1
-      old_chi2 = -1.*data.boundary_loglike
-      error_tol = 0.01
-      epsilon_l = start
-      #print 'starting'
-      #print 'start is',start
-      while error > error_tol:
-        vector = np.array([epsilon_l-step,epsilon_l,epsilon_l+step])
+        # Newton method
+        # Find starting point for the method:
+        #start = (Cov_observ[0,0] - Cov_theory[0,0])/Cov_error[0,0]*(1.+0.3)
+        start = 0
+        step = 0.001*det_theory/det_cross_err
+        error = 1
+        old_chi2 = -1.*data.boundary_loglike
+        error_tol = 0.01
+        epsilon_l = start
+        #print 'starting'
+        #print 'start is',start
+        while error > error_tol:
+          vector = np.array([epsilon_l-step,epsilon_l,epsilon_l+step])
         # Computing the function on three neighbouring points
-        function_vector = np.zeros(3,'float64') 
-        for k in range(3):
-          Cov_theory_plus_error = Cov_theory + vector[k] * Cov_error
+          function_vector = np.zeros(3,'float64') 
+          for k in range(3):
+            Cov_theory_plus_error = Cov_theory + vector[k] * Cov_error
 
-          det_theory_plus_error = np.linalg.det(Cov_theory_plus_error)
+            det_theory_plus_error = np.linalg.det(Cov_theory_plus_error)
 
-          det_theory_plus_error_cross_obs = 0
-          for i in range(self.nbin):
-            newCov = np.copy(Cov_theory_plus_error)
-            newCov[:,i] = Cov_observ[:,i]
-            det_theory_plus_error_cross_obs += np.linalg.det(newCov)
-          function_vector[k] = (2.*lll+1.)*self.fsky*(det_theory_plus_error_cross_obs/det_theory_plus_error + math.log(det_theory_plus_error/det_observ) - self.nbin ) + dof*vector[k]**2 
+            det_theory_plus_error_cross_obs = 0
+            for i in range(self.nbin):
+              newCov = np.copy(Cov_theory_plus_error)
+              newCov[:,i] = Cov_observ[:,i]
+              det_theory_plus_error_cross_obs += np.linalg.det(newCov)
+            function_vector[k] = (2.*lll+1.)*self.fsky*(det_theory_plus_error_cross_obs/det_theory_plus_error + math.log(det_theory_plus_error/det_observ) - self.nbin ) + dof*vector[k]**2 
 
-        # Computing first
-        first_d  = (function_vector[2]-function_vector[0]) / (vector[2]-vector[0])
-        second_d = (function_vector[2]+function_vector[0]-2*function_vector[1]) / (vector[2]-vector[1])**2
+          # Computing first
+          first_d  = (function_vector[2]-function_vector[0]) / (vector[2]-vector[0])
+          second_d = (function_vector[2]+function_vector[0]-2*function_vector[1]) / (vector[2]-vector[1])**2
 
-        # Updating point and error
-        epsilon_l = vector[1] - first_d/second_d
-        error = abs(function_vector[1] - old_chi2)
-        old_chi2 = function_vector[1]
+          # Updating point and error
+          epsilon_l = vector[1] - first_d/second_d
+          error = abs(function_vector[1] - old_chi2)
+          old_chi2 = function_vector[1]
         #print old_chi2,epsilon_l
       #print
         #print 'error and epsilon',error,epsilon_l
@@ -440,27 +465,29 @@ class euclid_lensing(likelihood):
       #print det_cross_obs,self.nbin*det_theory
       #print det_cross_obs_err,det_cross_err*(self.nbin-1)
 
-      Cov_theory_plus_error = Cov_theory + epsilon_l * Cov_error
+        Cov_theory_plus_error = Cov_theory + epsilon_l * Cov_error
 
-      det_theory_plus_error = np.linalg.det(Cov_theory_plus_error)
+        det_theory_plus_error = np.linalg.det(Cov_theory_plus_error)
 
-      det_theory_plus_error_cross_obs = 0
-      for i in range(self.nbin):
-	newCov = np.copy(Cov_theory_plus_error)
-	newCov[:,i] = Cov_observ[:,i]
-	det_theory_plus_error_cross_obs += np.linalg.det(newCov)
+        det_theory_plus_error_cross_obs = 0
+        for i in range(self.nbin):
+          newCov = np.copy(Cov_theory_plus_error)
+          newCov[:,i] = Cov_observ[:,i]
+          det_theory_plus_error_cross_obs += np.linalg.det(newCov)
 
-      chi2 += (2.*lll+1.)*self.fsky*(det_theory_plus_error_cross_obs/det_theory_plus_error + math.log(det_theory_plus_error/det_observ) - self.nbin ) + dof*epsilon_l**2 
+        chi2 += (2.*lll+1.)*self.fsky*(det_theory_plus_error_cross_obs/det_theory_plus_error + math.log(det_theory_plus_error/det_observ) - self.nbin ) + dof*epsilon_l**2 
 
-      #det_theory = np.linalg.det(Cov_theory)
-      #det_observ = np.linalg.det(Cov_observ)
-      #det_cross  = 0.
-      #for i in range(self.nbin):
-      #  newCov = np.copy(Cov_theory)
-      #  newCov[:,i] = Cov_observ[:,i]
-      #  det_cross += np.linalg.det(newCov)
+      else:
 
-      #chi2 += (2.*lll+1.)*self.fsky*(det_cross/det_theory + math.log(det_theory/det_observ) - self.nbin)
+        #det_theory = np.linalg.det(Cov_theory)
+        #det_observ = np.linalg.det(Cov_observ)
+        det_cross  = 0.
+        for i in range(self.nbin):
+          newCov = np.copy(Cov_theory)
+          newCov[:,i] = Cov_observ[:,i]
+          det_cross += np.linalg.det(newCov)
+
+        chi2 += (2.*lll+1.)*self.fsky*(det_cross/det_theory + math.log(det_theory/det_observ) - self.nbin)
       #print epsilon_l,chi2
 
     
