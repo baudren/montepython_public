@@ -133,6 +133,9 @@ class info:
     self.info.write('\n mean    :\t')
     for elem in self.mean:
       self.info.write('%.6e\t' % (elem))
+    self.info.write('\n sigma   :\t')
+    for elem in self.bounds:
+      self.info.write('%.6e\t' % ((elem[0][1]-elem[0][0])/2.))
     self.info.write('\n\n 1-sigma - :\t')
     for elem in self.bounds:
       self.info.write('%.6e\t' % (elem[0][0]))
@@ -920,9 +923,9 @@ class info:
   # parameters. Feel free to modify to your needs.
   def get_fontsize(self,diag_length):
     # for a diagonal of 3, fontsize of 22, for a diagonal of 13, fontsize of ?
-    fontsize = 22
+    fontsize = 20
     #fontsize = round( 19 - (diag_length-5)*1.38)
     # for a diagonal of 3, fontsize of 18, for a diagonal of 13, fontsize of ?
-    ticksize = 18
+    ticksize = 16
     #ticksize = round( 14 - (diag_length-5)*1)
     return fontsize,ticksize
