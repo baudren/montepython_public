@@ -30,9 +30,20 @@ class info:
     if command_line.optional_plot_file is not None:
       for line in open(command_line.optional_plot_file[0],'r'):
 	exec(line.replace('info.','self.'))
+      try:
+        for i in self.to_change.iterkeys():
+          pass
+      except AttributeError:
+        self.to_change = {}
+      try:
+        for i in self.new_scales.iterkeys():
+          pass
+      except AttributeError:
+        self.new_scales = {}
     else:
       self.to_change = {}
       self.to_plot   = []
+      self.new_scales = {}
 
     # Prepare the files, according to the case, load the log.param, and
     # prepare the output (plots folder, .covmat, .info and .log files). After
@@ -111,8 +122,25 @@ class info:
 	self.plot_triangle(chain,command_line,bin_number=binnumber,levels=self.lvls,comp_chain=comp_chain,comp_ref_names = comp_ref_names,comp_tex_names = comp_tex_names,comp_folder = comp_folder,comp_boundaries = comp_boundaries,comp_mean = comp_mean)
 
     # Write down to the .info file all necessary information
+    #self.info.write('\n param names:\t')
+    #for i in range(len(self.ref_names)):
+      #if self.scales[i,i] != 1: 
+	#if (float(self.scales[i,i]) > 100. or (self.scales[i,i]) < 0.01):
+	  #string = '%0.e%s' % (1./self.scales[i,i],self.ref_names[i])
+	#elif (float(self.scales[i,i] < 1)):
+	  #string = '%2d%s' % (1./self.scales[i,i],self.ref_names[i])
+	#else :
+	  #string = '%2g%s' % (1./self.scales[i,i],self.ref_names[i])
+      #else:
+	#string = '%s' % self.ref_names[i]
+      #self.info.write("%-16s" % string)
+
+    indices = []
+    for i in range(len(self.plotted_parameters)):
+      indices.append(self.ref_names.index(self.plotted_parameters[i]))
+
     self.info.write('\n param names:\t')
-    for i in range(len(self.ref_names)):
+    for i in indices:
       if self.scales[i,i] != 1: 
 	if (float(self.scales[i,i]) > 100. or (self.scales[i,i]) < 0.01):
 	  string = '%0.e%s' % (1./self.scales[i,i],self.ref_names[i])
@@ -125,56 +153,108 @@ class info:
       self.info.write("%-16s" % string)
 
     self.info.write('\n R-1 values:\t')
-    for elem in self.R:
-      self.info.write('%.6f\t' % (elem))
+    for i in indices:
+      self.info.write('%.6f\t' % (self.R[i]))
     self.info.write('\n Best Fit:\t')
-    for elem in chain[a[0],2:]:
-      self.info.write('%.6e\t' % (elem))
+    for i in indices:
+      self.info.write('%.6e\t' % (chain[a[0],2:][i]))
     self.info.write('\n mean    :\t')
-    for elem in self.mean:
-      self.info.write('%.6e\t' % (elem))
+    for i in indices:
+      self.info.write('%.6e\t' % (self.mean[i]))
     self.info.write('\n sigma   :\t')
-    for elem in self.bounds:
-      self.info.write('%.6e\t' % ((elem[0][1]-elem[0][0])/2.))
+    for i in indices:
+      self.info.write('%.6e\t' % ((self.bounds[i][0][1]-self.bounds[i][0][0])/2.))
     self.info.write('\n\n 1-sigma - :\t')
-    for elem in self.bounds:
-      self.info.write('%.6e\t' % (elem[0][0]))
+    for i in indices:
+      self.info.write('%.6e\t' % (self.bounds[i][0][0]))
     self.info.write('\n 1-sigma + :\t')
-    for elem in self.bounds:
-      self.info.write(' %.6e\t' % (elem[0][1]))
+    for i in indices:
+      self.info.write(' %.6e\t' % (self.bounds[i][0][1]))
     self.info.write('\n 2-sigma - :\t')
-    for elem in self.bounds:
-      self.info.write('%.6e\t' % (elem[1][0]))
+    for i in indices:
+      self.info.write('%.6e\t' % (self.bounds[i][1][0]))
     self.info.write('\n 2-sigma + :\t')
-    for elem in self.bounds:
-      self.info.write(' %.6e\t' % (elem[1][1]))
+    for i in indices:
+      self.info.write(' %.6e\t' % (self.bounds[i][1][1]))
     self.info.write('\n 3-sigma - :\t')
-    for elem in self.bounds:
-      self.info.write('%.6e\t' % (elem[2][0]))
+    for i in indices:
+      self.info.write('%.6e\t' % (self.bounds[i][2][0]))
     self.info.write('\n 3-sigma + :\t')
-    for elem in self.bounds:
-      self.info.write(' %.6e\t' % (elem[2][1]))
+    for i in indices:
+      self.info.write(' %.6e\t' % (self.bounds[i][2][1]))
+
+    #self.info.write('\n mean    :\t')
+    #for elem in self.mean:
+      #self.info.write('%.6e\t' % (elem))
+    #self.info.write('\n sigma   :\t')
+    #for elem in self.bounds:
+      #self.info.write('%.6e\t' % ((elem[0][1]-elem[0][0])/2.))
+    #self.info.write('\n\n 1-sigma - :\t')
+    #for elem in self.bounds:
+      #self.info.write('%.6e\t' % (elem[0][0]))
+    #self.info.write('\n 1-sigma + :\t')
+    #for elem in self.bounds:
+      #self.info.write(' %.6e\t' % (elem[0][1]))
+    #self.info.write('\n 2-sigma - :\t')
+    #for elem in self.bounds:
+      #self.info.write('%.6e\t' % (elem[1][0]))
+    #self.info.write('\n 2-sigma + :\t')
+    #for elem in self.bounds:
+      #self.info.write(' %.6e\t' % (elem[1][1]))
+    #self.info.write('\n 3-sigma - :\t')
+    #for elem in self.bounds:
+      #self.info.write('%.6e\t' % (elem[2][0]))
+    #self.info.write('\n 3-sigma + :\t')
+    #for elem in self.bounds:
+      #self.info.write(' %.6e\t' % (elem[2][1]))
 
     # bounds 
     self.info.write('\n\n 1-sigma > :\t')
-    for i in range(np.shape(self.bounds)[0]):
+    #for i in range(np.shape(self.bounds)[0]):
+    for i in indices:
       self.info.write('%.6e\t' % (self.mean[i]+self.bounds[i,0,0]))
     self.info.write('\n 1-sigma < :\t')
-    for i in range(np.shape(self.bounds)[0]):
+    for i in indices:
       self.info.write('%.6e\t' % (self.mean[i]+self.bounds[i,0,1]))
     self.info.write('\n 2-sigma > :\t')
-    for i in range(np.shape(self.bounds)[0]):
+    for i in indices:
       self.info.write('%.6e\t' % (self.mean[i]+self.bounds[i,1,0]))
     self.info.write('\n 2-sigma < :\t')
-    for i in range(np.shape(self.bounds)[0]):
+    for i in indices:
       self.info.write('%.6e\t' % (self.mean[i]+self.bounds[i,1,1]))
     self.info.write('\n 3-sigma > :\t')
-    for i in range(np.shape(self.bounds)[0]):
+    for i in indices:
       self.info.write('%.6e\t' % (self.mean[i]+self.bounds[i,2,0]))
     self.info.write('\n 3-sigma < :\t')
-    for i in range(np.shape(self.bounds)[0]):
+    for i in indices:
       self.info.write('%.6e\t' % (self.mean[i]+self.bounds[i,2,1]))
 
+    # Writing the .tex file that will have this table prepared to be imported
+    # in a tex document.
+    self.tex.write("\documentclass{article}\n")
+    self.tex.write("\\begin{document}\n")
+    
+    self.tex.write("\\begin{tabular}{|")
+    for i in indices:
+      self.tex.write("c")
+    self.tex.write("|}\n \hline")
+
+    for i in indices:
+      self.tex.write("%s " % self.tex_names[i])
+      if i!=indices[-1]:
+        self.tex.write(" & ")
+      else:
+        self.tex.write(" \\\\ \hline\n")
+
+    for i in indices:
+      self.tex.write("$%.4g_{%.2g}^{+%.2g}$" % (self.mean[i],self.bounds[i,0,0],self.bounds[i,0,1]))
+      if i!=indices[-1]:
+        self.tex.write(" & ")
+      else:
+        self.tex.write(" \\\\ \hline\n")
+
+    self.tex.write("\\end{tabular}\n")
+    self.tex.write("\\end{document}")
 
   # Scan the whole input folder, and include all chains in it (ending with
   # .txt to keep compatibility with CosmoMC)
@@ -223,10 +303,12 @@ class info:
     # otherwise, call it with the last name
     if (len(folder.split('/')) <= 2 and folder.split('/')[-1] == ''):
       infoname = folder+folder.rstrip('/')+'.info'
+      texname  = folder+folder.rstrip('/')+'.tex'
       covname  = folder+folder.rstrip('/')+'.covmat'
       logname  = folder+folder.rstrip('/')+'.log'
     else:
       infoname = folder+folder.split('/')[-2]+'.info'
+      texname  = folder+folder.split('/')[-2]+'.tex'
       covname  = folder+folder.split('/')[-2]+'.covmat'
       logname  = folder+folder.split('/')[-2]+'.log'
 
@@ -234,6 +316,7 @@ class info:
     # storing everything into the class, return it
     if is_main_chain:
       self.info  = open(infoname,'w')
+      self.tex   = open(texname,'w')
       self.cov   = open(covname,'w')
       self.log   = open(logname,'w')
       self.param = param
@@ -295,6 +378,8 @@ class info:
 	    boundaries.append(temp)
 	    ref_names.append(name)
 	    scales.append(float(line.split('=')[-1].split(",")[4].replace(' ','')))
+            if name in self.new_scales.iterkeys():
+              scales[-1] = self.new_scales[name]
 	    number = 1./scales[-1]
 	    tex_names.append(io.get_tex_name(name,number=number))
 	#if line.find('data.derived_parameters_list')!=-1:
@@ -376,6 +461,11 @@ class info:
 	# Adding resulting table to spam
 	spam.append(ham)
 
+    # Applying now new rules for scales
+    for name in self.new_scales.iterkeys():
+      index = ref_names.index(name)
+      for i in range(len(spam)):
+        spam[i][:,index+2] *= 1./scales[index,index]
 
     # Now that the list spam contains all the different chains removed of their
     # respective burn-in, proceed to the convergence computation
