@@ -1,0 +1,6 @@
+wmap.data_directory 	= data.path['data']
+wmap.file               = 'blabla.dat'
+wmap.use_nuisance	= ['some_nuisance','another_one']
+
+wmap.lmin               = 40
+wmap.lmax               = 1000
