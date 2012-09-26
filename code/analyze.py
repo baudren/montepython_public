@@ -65,7 +65,7 @@ class info:
     # specified output, respectively comp_Files, comp_spam... 
     if command_line.comp is not None:
       comp_Files,comp_folder,comp_param = self.prepare(command_line.comp,is_main_chain = False)
-      comp_spam,comp_ref_names,comp_tex_names,comp_boundaries,comp_mean = self.convergence(is_main_chain = False,Files = comp_Files,param = comp_param)
+      comp_spam,comp_ref_names,comp_tex_names,comp_plotted_parameters,comp_boundaries,comp_mean = self.convergence(is_main_chain = False,Files = comp_Files,param = comp_param)
       comp_mean = comp_mean[0]
       # Create comp_chain
       comp_chain = np.copy(comp_spam[0])
@@ -119,7 +119,7 @@ class info:
       if command_line.comp is None:
 	self.plot_triangle(chain,command_line,bin_number=binnumber,levels=self.lvls)
       else:
-	self.plot_triangle(chain,command_line,bin_number=binnumber,levels=self.lvls,comp_chain=comp_chain,comp_ref_names = comp_ref_names,comp_tex_names = comp_tex_names,comp_folder = comp_folder,comp_boundaries = comp_boundaries,comp_mean = comp_mean)
+	self.plot_triangle(chain,command_line,bin_number=binnumber,levels=self.lvls,comp_chain=comp_chain,comp_ref_names = comp_ref_names,comp_tex_names = comp_tex_names,comp_plotted_parameters=comp_plotted_parameters,comp_folder = comp_folder,comp_boundaries = comp_boundaries,comp_mean = comp_mean)
 
     # Write down to the .info file all necessary information
     #self.info.write('\n param names:\t')
@@ -521,7 +521,10 @@ class info:
       between /= (total[0]-1)
 
       R[i] = between/within
-      print 'R is ',R[i],' for parameter ',ref_names[i]
+      if i == 0:
+        print 'R is ',R[i],'\tfor parameter ',ref_names[i]
+      else:
+        print '     ',R[i],'\tfor parameter ',ref_names[i]
     
     # Log finally the total number of steps, and absolute loglikelihood
     self.log.write("--> Total number of steps:%d\n" % total_number_of_steps)
@@ -548,13 +551,13 @@ class info:
 
       return True
     else:
-      return spam,ref_names,tex_names,boundaries,mean
+      return spam,ref_names,tex_names,plotted_parameters,boundaries,mean
 
   # Plotting routine, also computes the sigma errors. Partly imported from
   # Karim Benabed in pmc. However, many options from this method (if not all of
   # them) are unused, meaning : select, legend, show_prop, show_peak,
   # show_extra, add_legend, tick_at_peak, convolve
-  def plot_triangle(self,chain,command_line,select=None,bin_number=20,scales=(),legend=(),levels=(68.26,95.4,99.7),show_prop=True,fill=68.26,show_mean=True,show_peak=True,show_extra=None,add_legend=r"$=%(peak).4g^{+%(up).3g}_{-%(down).3g}$",aspect=(16,16),fig=None,tick_at_peak=False,convolve=True,comp_chain = None,comp_ref_names = None,comp_tex_names = None, comp_folder = None,comp_boundaries = None,comp_mean = None):
+  def plot_triangle(self,chain,command_line,select=None,bin_number=20,scales=(),legend=(),levels=(68.26,95.4,99.7),show_prop=True,fill=68.26,show_mean=True,show_peak=True,show_extra=None,add_legend=r"$=%(peak).4g^{+%(up).3g}_{-%(down).3g}$",aspect=(16,16),fig=None,tick_at_peak=False,convolve=True,comp_chain = None,comp_ref_names = None,comp_tex_names = None, comp_plotted_parameters = None, comp_folder = None,comp_boundaries = None,comp_mean = None):
 
     # If comparison is asked, don't plot 2d levels
     if command_line.comp is not None:
@@ -674,16 +677,16 @@ class info:
     # unique and thus require a simple treatment.
     if comp:
       index = 1
-      backup_comp_names = np.copy(comp_ref_names)
-      for i in range(len(self.ref_names)):
+      backup_comp_names = np.copy(comp_plotted_parameters)
+      for i in range(len(self.plotted_parameters)):
 	index +=1
-	if self.ref_names[i] in comp_ref_names:
-	  comp_ref_names.remove(self.ref_names[i])
+	if self.plotted_parameters[i] in comp_plotted_parameters:
+	  comp_plotted_parameters.remove(self.plotted_parameters[i])
 	  comp_tex_names.remove(self.tex_names[i])
-      for name in comp_ref_names:
+      for name in comp_plotted_parameters:
 	index +=1
       num_columns = round(math.sqrt(index)) 
-      num_lines   = math.ceil((len(self.ref_names)+len(comp_ref_names))*1.0/num_columns)
+      num_lines   = math.ceil((len(self.plotted_parameters)+len(comp_plotted_parameters))*1.0/num_columns)
     else:
       num_columns = round(math.sqrt(len(self.plotted_parameters)))
       num_lines   = math.ceil(len(self.plotted_parameters)*1.0/num_columns)
@@ -869,32 +872,32 @@ class info:
 
     # Plot the remaining 1d diagram for the parameters only in the comp folder
     if comp:
-      if len(self.plotted_parameters) == len(self.ref_names):
-        for i in range(len(self.ref_names),len(self.ref_names)+len(comp_ref_names)):
+      #if len(self.plotted_parameters) == len(self.ref_names):
+      for i in range(len(self.plotted_parameters),len(self.plotted_parameters)+len(comp_plotted_parameters)):
 
-          ax1d = fig1d.add_subplot(num_lines,num_columns,i+1,yticks=[])
-          ii = np.where(backup_comp_names == comp_ref_names[i-len(self.ref_names)])[0][0]
+        ax1d = fig1d.add_subplot(num_lines,num_columns,i+1,yticks=[])
+        ii = np.where(backup_comp_names == comp_plotted_parameters[i-len(self.plotted_parameters)])[0][0]
 
-          comp_hist,comp_bin_edges = np.histogram(comp_chain[:,ii+2],bins=bin_number,weights=comp_chain[:,0],normed=False)
-          comp_bincenters = 0.5*(comp_bin_edges[1:]+comp_bin_edges[:-1])
-          interp_comp_hist,interp_comp_grid = self.cubic_interpolation(comp_hist,comp_bincenters)
-          interp_comp_hist /= np.max(interp_comp_hist)
+        comp_hist,comp_bin_edges = np.histogram(comp_chain[:,ii+2],bins=bin_number,weights=comp_chain[:,0],normed=False)
+        comp_bincenters = 0.5*(comp_bin_edges[1:]+comp_bin_edges[:-1])
+        interp_comp_hist,interp_comp_grid = self.cubic_interpolation(comp_hist,comp_bincenters)
+        interp_comp_hist /= np.max(interp_comp_hist)
 
-          comp_bounds = self.minimum_credible_intervals(comp_hist,comp_bincenters,lvls)
-          if comp_bounds is False:
-            print comp_hist
-          else:
-            for elem in comp_bounds:
-              for j in (0,1):
-                elem[j] -= comp_mean[ii]
-          ax1d.set_xticks(comp_ticks[ii])
-          ax1d.set_xticklabels(['%.4g' % s for s in comp_ticks[ii]],fontsize=ticksize1d)
-          ax1d.axis([comp_x_range[ii][0], comp_x_range[ii][1],0,1.05])
-          ax1d.set_title('%s= $%.4g^{+%.4g}_{%.4g}$' % (comp_tex_names[i-len(self.ref_names)],comp_mean[ii],comp_bounds[0][1],comp_bounds[0][0]),fontsize=fontsize1d)
-          ax1d.plot(interp_comp_grid,interp_comp_hist,color='red',linewidth=2,ls='-')
-          if command_line.subplot is True:
-            extent1d = ax1d.get_window_extent().transformed(fig1d.dpi_scale_trans.inverted())
-            fig1d.savefig(self.folder+'plots/{0}_{1}.pdf'.format(self.folder.split('/')[-2],self.ref_names[i]), bbox_inches=extent1d.expanded(1.1, 1.4))
+        comp_bounds = self.minimum_credible_intervals(comp_hist,comp_bincenters,lvls)
+        if comp_bounds is False:
+          print comp_hist
+        else:
+          for elem in comp_bounds:
+            for j in (0,1):
+              elem[j] -= comp_mean[ii]
+        ax1d.set_xticks(comp_ticks[ii])
+        ax1d.set_xticklabels(['%.4g' % s for s in comp_ticks[ii]],fontsize=ticksize1d)
+        ax1d.axis([comp_x_range[ii][0], comp_x_range[ii][1],0,1.05])
+        ax1d.set_title('%s= $%.4g^{+%.4g}_{%.4g}$' % (comp_tex_names[i-len(self.ref_names)],comp_mean[ii],comp_bounds[0][1],comp_bounds[0][0]),fontsize=fontsize1d)
+        ax1d.plot(interp_comp_grid,interp_comp_hist,color='red',linewidth=2,ls='-')
+        if command_line.subplot is True:
+          extent1d = ax1d.get_window_extent().transformed(fig1d.dpi_scale_trans.inverted())
+          fig1d.savefig(self.folder+'plots/{0}_{1}.pdf'.format(self.folder.split('/')[-2],self.ref_names[i]), bbox_inches=extent1d.expanded(1.1, 1.4))
 	
     # If plots/ folder in output folder does not exist, create it
     if os.path.isdir(self.folder+'plots') is False:
