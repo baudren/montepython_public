@@ -717,13 +717,14 @@ class info:
 	  try:
 	    # For the names in common, the following line will not output an
 	    # error. Then compute the comparative histogram
-	    ii = np.where( backup_comp_names == self.plotted_parameters[index] )[0][0]
+	    #ii = np.where( comp_ref_names == self.plotted_parameters[i] )[0][0]
+	    ii = comp_ref_names.index(self.plotted_parameters[i] )
 	    comp_hist,comp_bin_edges = np.histogram(comp_chain[:,ii+2],bins=bin_number,weights=comp_chain[:,0],normed=False)
 	    comp_bincenters = 0.5*(comp_bin_edges[1:]+comp_bin_edges[:-1])
 	    interp_comp_hist,interp_comp_grid = self.cubic_interpolation(comp_hist,comp_bincenters)
 	    interp_comp_hist /= np.max(interp_comp_hist)
 	    comp_done = True
-	  except IndexError : # If the name was not found, return the error. This will be then plotted at the end
+	  except ValueError : # If the name was not found, return the error. This will be then plotted at the end
 	    comp_done = False
 	if comp:
 	  if not comp_done:
@@ -765,7 +766,7 @@ class info:
 	
 	if comp_done:
 	  # complex variation of intervals
-          ii = np.where( backup_comp_names == self.plotted_parameters[index] )[0][0]
+          ii = comp_ref_names.index(self.plotted_parameters[i])
 	  if comp_x_range[ii][0] > x_range[index][0]:
 	    comp_ticks[ii][0] = ticks[index][0]
 	    comp_x_range[ii][0] = x_range[index][0]
