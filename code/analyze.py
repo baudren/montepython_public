@@ -65,7 +65,7 @@ class info:
     # specified output, respectively comp_Files, comp_spam... 
     if command_line.comp is not None:
       comp_Files,comp_folder,comp_param = self.prepare(command_line.comp,is_main_chain = False)
-      comp_spam,comp_ref_names,comp_tex_names,comp_plotted_parameters,comp_boundaries,comp_mean = self.convergence(is_main_chain = False,Files = comp_Files,param = comp_param)
+      comp_spam,comp_ref_names,comp_tex_names,comp_backup_names,comp_plotted_parameters,comp_boundaries,comp_mean = self.convergence(is_main_chain = False,Files = comp_Files,param = comp_param)
       comp_mean = comp_mean[0]
       # Create comp_chain
       comp_chain = np.copy(comp_spam[0])
@@ -119,7 +119,7 @@ class info:
       if command_line.comp is None:
 	self.plot_triangle(chain,command_line,bin_number=binnumber,levels=self.lvls)
       else:
-	self.plot_triangle(chain,command_line,bin_number=binnumber,levels=self.lvls,comp_chain=comp_chain,comp_ref_names = comp_ref_names,comp_tex_names = comp_tex_names,comp_plotted_parameters=comp_plotted_parameters,comp_folder = comp_folder,comp_boundaries = comp_boundaries,comp_mean = comp_mean)
+	self.plot_triangle(chain,command_line,bin_number=binnumber,levels=self.lvls,comp_chain=comp_chain,comp_ref_names = comp_ref_names,comp_tex_names = comp_tex_names,comp_backup_names = comp_backup_names,comp_plotted_parameters=comp_plotted_parameters,comp_folder = comp_folder,comp_boundaries = comp_boundaries,comp_mean = comp_mean)
 
     # Write down to the .info file all necessary information
     #self.info.write('\n param names:\t')
@@ -551,13 +551,13 @@ class info:
 
       return True
     else:
-      return spam,ref_names,tex_names,plotted_parameters,boundaries,mean
+      return spam,ref_names,tex_names,backup_names,plotted_parameters,boundaries,mean
 
   # Plotting routine, also computes the sigma errors. Partly imported from
   # Karim Benabed in pmc. However, many options from this method (if not all of
   # them) are unused, meaning : select, legend, show_prop, show_peak,
   # show_extra, add_legend, tick_at_peak, convolve
-  def plot_triangle(self,chain,command_line,select=None,bin_number=20,scales=(),legend=(),levels=(68.26,95.4,99.7),show_prop=True,fill=68.26,show_mean=True,show_peak=True,show_extra=None,add_legend=r"$=%(peak).4g^{+%(up).3g}_{-%(down).3g}$",aspect=(16,16),fig=None,tick_at_peak=False,convolve=True,comp_chain = None,comp_ref_names = None,comp_tex_names = None, comp_plotted_parameters = None, comp_folder = None,comp_boundaries = None,comp_mean = None):
+  def plot_triangle(self,chain,command_line,select=None,bin_number=20,scales=(),legend=(),levels=(68.26,95.4,99.7),show_prop=True,fill=68.26,show_mean=True,show_peak=True,show_extra=None,add_legend=r"$=%(peak).4g^{+%(up).3g}_{-%(down).3g}$",aspect=(16,16),fig=None,tick_at_peak=False,convolve=True,comp_chain = None,comp_ref_names = None,comp_tex_names = None, comp_backup_names = None, comp_plotted_parameters = None, comp_folder = None,comp_boundaries = None,comp_mean = None):
 
     # If comparison is asked, don't plot 2d levels
     if command_line.comp is not None:
@@ -682,7 +682,10 @@ class info:
 	index +=1
 	if self.plotted_parameters[i] in comp_plotted_parameters:
 	  comp_plotted_parameters.remove(self.plotted_parameters[i])
-	  comp_tex_names.remove(self.tex_names[i])
+
+          temp_index = self.ref_names.index(self.plotted_parameters[i])
+	  #comp_tex_names.remove(self.tex_names[temp_index])
+          comp_tex_names.remove(self.tex_names[temp_index])
       for name in comp_plotted_parameters:
 	index +=1
       num_columns = round(math.sqrt(index)) 
@@ -714,7 +717,7 @@ class info:
 	  try:
 	    # For the names in common, the following line will not output an
 	    # error. Then compute the comparative histogram
-	    ii = np.where( backup_comp_names == self.ref_names[index] )[0][0]
+	    ii = np.where( backup_comp_names == self.plotted_parameters[index] )[0][0]
 	    comp_hist,comp_bin_edges = np.histogram(comp_chain[:,ii+2],bins=bin_number,weights=comp_chain[:,0],normed=False)
 	    comp_bincenters = 0.5*(comp_bin_edges[1:]+comp_bin_edges[:-1])
 	    interp_comp_hist,interp_comp_grid = self.cubic_interpolation(comp_hist,comp_bincenters)
@@ -724,7 +727,7 @@ class info:
 	    comp_done = False
 	if comp:
 	  if not comp_done:
-	    print '{0} was not found in the second folder'.format(self.ref_names[i])
+	    print '{0} was not found in the second folder'.format(self.plotted_parameters[i])
 
 	# minimum credible interval (method by Jan Haman). Fails for multimodal histograms
 	bounds = self.minimum_credible_intervals(hist,bincenters,lvls)
@@ -762,7 +765,7 @@ class info:
 	
 	if comp_done:
 	  # complex variation of intervals
-          ii = np.where( backup_comp_names == self.ref_names[index] )[0][0]
+          ii = np.where( backup_comp_names == self.plotted_parameters[index] )[0][0]
 	  if comp_x_range[ii][0] > x_range[index][0]:
 	    comp_ticks[ii][0] = ticks[index][0]
 	    comp_x_range[ii][0] = x_range[index][0]
@@ -795,15 +798,15 @@ class info:
             ax2d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=2)
             ax1d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=4)
           except:
-            print 'could not find likelihood contour for ',self.ref_names[index]
+            print 'could not find likelihood contour for ',self.plotted_parameters[index]
 
 	if command_line.subplot is True:
 	  if not comp:
 	    extent2d = ax2d.get_window_extent().transformed(fig2d.dpi_scale_trans.inverted())
-	    fig2d.savefig(self.folder+'plots/{0}_{1}.pdf'.format(self.folder.split('/')[-2],self.ref_names[index]), bbox_inches=extent2d.expanded(1.1, 1.4))
+	    fig2d.savefig(self.folder+'plots/{0}_{1}.pdf'.format(self.folder.split('/')[-2],self.plotted_parameters[index]), bbox_inches=extent2d.expanded(1.1, 1.4))
 	  else:
 	    extent1d = ax1d.get_window_extent().transformed(fig1d.dpi_scale_trans.inverted())
-	    fig1d.savefig(self.folder+'plots/{0}_{1}.pdf'.format(self.folder.split('/')[-2],self.ref_names[index]), bbox_inches=extent1d.expanded(1.1, 1.4))
+	    fig1d.savefig(self.folder+'plots/{0}_{1}.pdf'.format(self.folder.split('/')[-2],self.plotted_parameters[index]), bbox_inches=extent1d.expanded(1.1, 1.4))
 
 	# Now do the rest of the triangle plot
 	if plot_2d:
@@ -893,7 +896,7 @@ class info:
         ax1d.set_xticks(comp_ticks[ii])
         ax1d.set_xticklabels(['%.4g' % s for s in comp_ticks[ii]],fontsize=ticksize1d)
         ax1d.axis([comp_x_range[ii][0], comp_x_range[ii][1],0,1.05])
-        ax1d.set_title('%s= $%.4g^{+%.4g}_{%.4g}$' % (comp_tex_names[i-len(self.ref_names)],comp_mean[ii],comp_bounds[0][1],comp_bounds[0][0]),fontsize=fontsize1d)
+        ax1d.set_title('%s= $%.4g^{+%.4g}_{%.4g}$' % (comp_tex_names[i-len(self.plotted_parameters)],comp_mean[ii],comp_bounds[0][1],comp_bounds[0][0]),fontsize=fontsize1d)
         ax1d.plot(interp_comp_grid,interp_comp_hist,color='red',linewidth=2,ls='-')
         if command_line.subplot is True:
           extent1d = ax1d.get_window_extent().transformed(fig1d.dpi_scale_trans.inverted())
