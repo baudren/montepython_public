@@ -10,7 +10,7 @@ class sdss_lrgDR4(likelihood):
     likelihood.__init__(self,path,data,command_line,log_flag,default)
 
     # require P(k) from class
-    self.need_Class_arguments(data,{'output':'mPk', 'P_k_max_h/Mpc':2})
+    self.need_Class_arguments(data,{'output':'mPk'})
  
     # In case of a comparison, stop here
     if not default:
@@ -33,7 +33,16 @@ class sdss_lrgDR4(likelihood):
       if i+2 > self.min_mpk_kbands_use and i < self.max_mpk_kbands_use:
         self.kh[i-self.min_mpk_kbands_use+1,0,0]=float(line.split()[0])
     datafile.close()      
+
+    khmax = self.kh[-1,0,0]
     
+    # require k_max from Class
+    self.need_Class_arguments(data,{'P_k_max_h/Mpc':khmax})
+ 
+    # In case of a comparison, stop here
+    if not default:
+      return
+
     # read window functions
     self.n_size=self.max_mpk_points_use-self.min_mpk_points_use+1
 
