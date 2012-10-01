@@ -2,16 +2,18 @@ import os,sys
 import io
 import math
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib
 
+# Module for handling display
+import matplotlib.pyplot as plt
+# The root plotting module, to change options like font sizes, etc...
+import matplotlib
 
 class info:
 
   def __init__(self,command_line):
   
     # Check if the scipy module has the interpolate method correctly installed
-    # (should be the case on every computer...)
+    # (should be the case on every linux distribution with standard numpy)
     try:
       from scipy.interpolate import interp1d
       self.has_interpolate_module = True
@@ -26,30 +28,21 @@ class info:
 
     # Read a potential file describing changes to be done for the parameter
     # names, and number of paramaters plotted (can be let empty, all will then
-    # be plotted)
+    # be plotted). Initialized at empty structures.
+    self.to_change  = {}
+    self.to_plot    = []
+    self.new_scales = {}
+
     if command_line.optional_plot_file is not None:
       for line in open(command_line.optional_plot_file[0],'r'):
 	exec(line.replace('info.','self.'))
-      try:
-        for i in self.to_change.iterkeys():
-          pass
-      except AttributeError:
-        self.to_change = {}
-      try:
-        for i in self.new_scales.iterkeys():
-          pass
-      except AttributeError:
-        self.new_scales = {}
-    else:
-      self.to_change = {}
-      self.to_plot   = []
-      self.new_scales = {}
 
     # Prepare the files, according to the case, load the log.param, and
     # prepare the output (plots folder, .covmat, .info and .log files). After
     # this step, self.files will contain all chains.
     self.prepare(Files)
-    # And compute the mean, maximum of likelihood, 1-sigma variance for this
+
+    # Compute the mean, maximum of likelihood, 1-sigma variance for this
     # main folder. This will create the self.spam chain
     self.convergence()
 
@@ -57,7 +50,7 @@ class info:
     # together. This will serve for the  plotting.
     chain = np.copy(self.spam[0])
     for i in range(len(self.spam)-1):
-     chain = np.append(chain,self.spam[i+1],axis=0)
+      chain = np.append(chain,self.spam[i+1],axis=0)
 
     # In case of comparison, launch the prepare and convergence methods, with
     # an additional flag: is_main_chain=False. This will ensure that all the
@@ -67,13 +60,14 @@ class info:
       comp_Files,comp_folder,comp_param = self.prepare(command_line.comp,is_main_chain = False)
       comp_spam,comp_ref_names,comp_tex_names,comp_backup_names,comp_plotted_parameters,comp_boundaries,comp_mean = self.convergence(is_main_chain = False,Files = comp_Files,param = comp_param)
       comp_mean = comp_mean[0]
+
       # Create comp_chain
       comp_chain = np.copy(comp_spam[0])
       for i in range(len(comp_spam)-1):
 	comp_chain = np.append(comp_chain,comp_spam[i+1],axis=0)
 
-
-    weight = sum(chain)[0] # Total number of steps.
+    # Total number of steps.
+    weight = sum(chain)[0] 
 
     # Covariance matrix computation (for the whole chain)
     self.mean   = self.mean[0]
@@ -95,6 +89,8 @@ class info:
         string+=','
       self.cov.write('%-16s' % string )
     self.cov.write('\n')
+    # Removing scale factors in order to store it with the same convention
+    # than Class
     self.covar = np.dot(self.scales.T,np.dot(self.covar,self.scales))
     for i in range(len(self.ref_names)):
       for j in range(len(self.ref_names)):
@@ -104,16 +100,19 @@ class info:
           self.cov.write('%.5e\t' % self.covar[i][j])
       self.cov.write('\n')
 
-    # Sorting by likelihood
+    # Sorting by likelihood: a will hold the list of indices where the points
+    # are sorted with increasing likelihood.
     a=chain[:,1].argsort(0)
     total=chain[:,0].sum()
-    #self.lvls = (total*0.6826,total*0.954,total*0.997)
+
+    # Defining the sigma contours (1, 2 and 3-sigma)
     self.lvls = (68.26,95.4,99.7)
 
     # Computing 1,2 and 3-sigma errors, and plot. This will create the triangle
-    # plot and the 1d by default. If you also specified a comparison folder, it
-    # will create a versus plot with the 1d comparison of all the common
-    # parameters, plus the 1d distibutions for the others.
+    # and 1d plot by default. 
+    # If you also specified a comparison folder, it will create a versus plot
+    # with the 1d comparison of all the common parameters, plus the 1d
+    # distibutions for the others.
     self.bounds = np.zeros((len(self.ref_names),len(self.lvls),2))
     if command_line.plot == True:
       if command_line.comp is None:
@@ -121,25 +120,15 @@ class info:
       else:
 	self.plot_triangle(chain,command_line,bin_number=binnumber,levels=self.lvls,comp_chain=comp_chain,comp_ref_names = comp_ref_names,comp_tex_names = comp_tex_names,comp_backup_names = comp_backup_names,comp_plotted_parameters=comp_plotted_parameters,comp_folder = comp_folder,comp_boundaries = comp_boundaries,comp_mean = comp_mean)
 
-    # Write down to the .info file all necessary information
-    #self.info.write('\n param names:\t')
-    #for i in range(len(self.ref_names)):
-      #if self.scales[i,i] != 1: 
-	#if (float(self.scales[i,i]) > 100. or (self.scales[i,i]) < 0.01):
-	  #string = '%0.e%s' % (1./self.scales[i,i],self.ref_names[i])
-	#elif (float(self.scales[i,i] < 1)):
-	  #string = '%2d%s' % (1./self.scales[i,i],self.ref_names[i])
-	#else :
-	  #string = '%2g%s' % (1./self.scales[i,i],self.ref_names[i])
-      #else:
-	#string = '%s' % self.ref_names[i]
-      #self.info.write("%-16s" % string)
 
+    # Creating the array indices to hold the proper ordered list of plotted
+    # parameters
     indices = []
     for i in range(len(self.plotted_parameters)):
       indices.append(self.ref_names.index(self.plotted_parameters[i]))
 
-    self.info.write('\n param names:\t')
+    # Write down to the .info file all necessary information
+    self.info.write('\n param names\t:\t')
     for i in indices:
       if self.scales[i,i] != 1: 
 	if (float(self.scales[i,i]) > 100. or (self.scales[i,i]) < 0.01):
@@ -152,12 +141,16 @@ class info:
 	string = '%s' % self.ref_names[i]
       self.info.write("%-16s" % string)
 
-    self.info.write('\n R-1 values:\t')
-    for i in indices:
-      self.info.write('%.6f\t' % (self.R[i]))
-    self.info.write('\n Best Fit:\t')
-    for i in indices:
-      self.info.write('%.6e\t' % (chain[a[0],2:][i]))
+    self.write(self.info,indices,'R-1 values','%.6f',self.R)
+    self.write(self.info,indices,'Best Fit',  '%.6e',chain[a[0],2:])
+    self.write(self.info,indices,'mean',  '%.6e',chain[a[0],2:])
+
+    #self.info.write('\n R-1 values:\t')
+    #for i in indices:
+      #self.info.write('%.6f\t' % (self.R[i]))
+    #self.info.write('\n Best Fit:\t')
+    #for i in indices:
+      #self.info.write('%.6e\t' % (chain[a[0],2:][i]))
     self.info.write('\n mean    :\t')
     for i in indices:
       self.info.write('%.6e\t' % (self.mean[i]))
@@ -428,9 +421,10 @@ class info:
       line_count = 0
       for line in open(File,'r'):
 	line_count+=1
-      self.log.write("%s\t Number of steps:%d\tSteps accepted:%d\tacc = %.2g\tmin(-loglike) = %.2f " % (File,sum(cheese[:,0]),line_count,line_count*1.0/sum(cheese[:,0]),local_max_lkl))
-      self.log.write("\n")
-      total_number_of_steps += sum(cheese[:,0])
+      if is_main_chain:
+        self.log.write("%s\t Number of steps:%d\tSteps accepted:%d\tacc = %.2g\tmin(-loglike) = %.2f " % (File,sum(cheese[:,0]),line_count,line_count*1.0/sum(cheese[:,0]),local_max_lkl))
+        self.log.write("\n")
+        total_number_of_steps += sum(cheese[:,0])
 
       # Removing burn-in
       start = 0
@@ -676,19 +670,14 @@ class info:
     # In case of a comparison, figure out which names are shared, which are
     # unique and thus require a simple treatment.
     if comp:
-      index = 1
       backup_comp_names = np.copy(comp_plotted_parameters)
       for i in range(len(self.plotted_parameters)):
-	index +=1
 	if self.plotted_parameters[i] in comp_plotted_parameters:
 	  comp_plotted_parameters.remove(self.plotted_parameters[i])
 
           temp_index = self.ref_names.index(self.plotted_parameters[i])
-	  #comp_tex_names.remove(self.tex_names[temp_index])
           comp_tex_names.remove(self.tex_names[temp_index])
-      for name in comp_plotted_parameters:
-	index +=1
-      num_columns = round(math.sqrt(index)) 
+      num_columns = round(math.sqrt(len(self.plotted_parameters) + len(comp_plotted_parameters))) 
       num_lines   = math.ceil((len(self.plotted_parameters)+len(comp_plotted_parameters))*1.0/num_columns)
     else:
       num_columns = round(math.sqrt(len(self.plotted_parameters)))
@@ -1005,6 +994,12 @@ class info:
       j+=1
 	
     return bounds
+
+  def write(self,file,indices,name,string,quantity):
+    file.write('\n '+name+'\t:\t')
+    for i in indices:
+      file.write(string % quantity[i]+'\t')
+
 
   def cubic_interpolation(self,hist,bincenters):
     if self.has_interpolate_module:
