@@ -14,12 +14,12 @@ sdss_lrgDR4.max_mpk_points_use = 20
 # Since the windows file starts at k/h=1e-4 then truncate 
 # to matter_power_minkh in cmbtypes.
 # This time the windows file goes to k/h=1.
-sdss_lrgDR4.Q_marge = 'T'
+sdss_lrgDR4.Q_marge = True
 #flat prior on b^2*Q, marginalized analytically
-sdss_lrgDR4.Q_flat = 'T'
+sdss_lrgDR4.Q_flat = True
 sdss_lrgDR4.Ag = 1.4
 
-sdss_lrgDR4.use_scaling = 'T'
+sdss_lrgDR4.use_scaling = True
 
 sdss_lrgDR4.min_mpk_kbands_use = 1
 sdss_lrgDR4.max_mpk_kbands_use = 65
