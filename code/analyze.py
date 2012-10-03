@@ -142,8 +142,12 @@ class info:
       self.info.write("%-16s" % string)
 
     self.write(self.info,indices,'R-1 values','%.6f',self.R)
-    self.write(self.info,indices,'Best Fit',  '%.6e',chain[a[0],2:])
-    self.write(self.info,indices,'mean',  '%.6e',chain[a[0],2:])
+    self.write(self.info,indices,'Best Fit  ','%.6e',chain[a[0],2:])
+    self.write(self.info,indices,'mean      ','%.6e',chain[a[0],2:])
+    self.info.write('\n sigma    \t:\t')
+    for i in indices:
+      self.info.write('%.6e\t' % ((self.bounds[i][0][1]-self.bounds[i][0][0])/2.))
+    #self.write(self.info,indices,'1-sigma - ','%.6e',self.bounds[i][0][0])
 
     #self.info.write('\n R-1 values:\t')
     #for i in indices:
@@ -151,28 +155,25 @@ class info:
     #self.info.write('\n Best Fit:\t')
     #for i in indices:
       #self.info.write('%.6e\t' % (chain[a[0],2:][i]))
-    self.info.write('\n mean    :\t')
-    for i in indices:
-      self.info.write('%.6e\t' % (self.mean[i]))
-    self.info.write('\n sigma   :\t')
-    for i in indices:
-      self.info.write('%.6e\t' % ((self.bounds[i][0][1]-self.bounds[i][0][0])/2.))
-    self.info.write('\n\n 1-sigma - :\t')
+    #self.info.write('\n mean    :\t')
+    #for i in indices:
+      #self.info.write('%.6e\t' % (self.mean[i]))
+    self.info.write('\n\n 1-sigma -\t:\t')
     for i in indices:
       self.info.write('%.6e\t' % (self.bounds[i][0][0]))
-    self.info.write('\n 1-sigma + :\t')
+    self.info.write('\n 1-sigma +\t:\t')
     for i in indices:
       self.info.write(' %.6e\t' % (self.bounds[i][0][1]))
-    self.info.write('\n 2-sigma - :\t')
+    self.info.write('\n 2-sigma -\t:\t')
     for i in indices:
       self.info.write('%.6e\t' % (self.bounds[i][1][0]))
-    self.info.write('\n 2-sigma + :\t')
+    self.info.write('\n 2-sigma +\t:\t')
     for i in indices:
       self.info.write(' %.6e\t' % (self.bounds[i][1][1]))
-    self.info.write('\n 3-sigma - :\t')
+    self.info.write('\n 3-sigma -\t:\t')
     for i in indices:
       self.info.write('%.6e\t' % (self.bounds[i][2][0]))
-    self.info.write('\n 3-sigma + :\t')
+    self.info.write('\n 3-sigma +\t:\t')
     for i in indices:
       self.info.write(' %.6e\t' % (self.bounds[i][2][1]))
 
@@ -202,23 +203,23 @@ class info:
       #self.info.write(' %.6e\t' % (elem[2][1]))
 
     # bounds 
-    self.info.write('\n\n 1-sigma > :\t')
+    self.info.write('\n\n 1-sigma >\t:\t')
     #for i in range(np.shape(self.bounds)[0]):
     for i in indices:
       self.info.write('%.6e\t' % (self.mean[i]+self.bounds[i,0,0]))
-    self.info.write('\n 1-sigma < :\t')
+    self.info.write('\n 1-sigma <\t:\t')
     for i in indices:
       self.info.write('%.6e\t' % (self.mean[i]+self.bounds[i,0,1]))
-    self.info.write('\n 2-sigma > :\t')
+    self.info.write('\n 2-sigma >\t:\t')
     for i in indices:
       self.info.write('%.6e\t' % (self.mean[i]+self.bounds[i,1,0]))
-    self.info.write('\n 2-sigma < :\t')
+    self.info.write('\n 2-sigma <\t:\t')
     for i in indices:
       self.info.write('%.6e\t' % (self.mean[i]+self.bounds[i,1,1]))
-    self.info.write('\n 3-sigma > :\t')
+    self.info.write('\n 3-sigma >\t:\t')
     for i in indices:
       self.info.write('%.6e\t' % (self.mean[i]+self.bounds[i,2,0]))
-    self.info.write('\n 3-sigma < :\t')
+    self.info.write('\n 3-sigma <\t:\t')
     for i in indices:
       self.info.write('%.6e\t' % (self.mean[i]+self.bounds[i,2,1]))
 
