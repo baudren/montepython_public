@@ -10,7 +10,7 @@ class sdss_lrgDR4(likelihood):
     likelihood.__init__(self,path,data,command_line,log_flag,default)
 
     # require P(k) from class
-    self.need_Class_arguments(data,{'output':'mPk'})
+    self.need_cosmo_arguments(data,{'output':'mPk'})
  
     # In case of a comparison, stop here
     if not default:
@@ -36,8 +36,8 @@ class sdss_lrgDR4(likelihood):
 
     khmax = self.kh[-1,0,0]
     
-    # require k_max from Class
-    self.need_Class_arguments(data,{'P_k_max_h/Mpc':khmax})
+    # require k_max from the cosmological module
+    self.need_cosmo_arguments(data,{'P_k_max_h/Mpc':khmax})
  
     # In case of a comparison, stop here
     if not default:

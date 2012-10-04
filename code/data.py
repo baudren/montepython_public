@@ -36,7 +36,7 @@ class data:
     # Recover jumping method from command_line
     self.jumping 	= command_line.jumping
     self.jumping_factor = command_line.jumping_factor
-    self.path = path
+    self.path           = path
 
     # Define the boundary loglike, the value used to defined a loglike that is
     # out of bounds. If a loglike is affected to this value, it will
@@ -45,34 +45,43 @@ class data:
 
     # Creation of the two main dictionnaries:
 
-    # -- Class_arguments, that will contain everything for the cosmological code
-    # Class (no need to keep track of the order), and will be updated from:
+    # -- cosmo_arguments, that will contain everything for the cosmological
+    # code (so far, only Class), and will be updated from:
 
     # -- mcmc_parameters, an ordered dictionary of dictionaries that will contain
     # everything needed by the Monte-Carlo procedure. Every parameter name will
     # be the key of a dictionary, containing: -initial configuration, role,
     # status last_accepted point, and current point
 
-    self.Class_arguments = {}
+    self.cosmo_arguments = {}
     self.mcmc_parameters = od()
 
     # Read from the parameter file to fill properly the mcmc_parameters dictionary.
     self.fill_mcmc_parameters()
 
-    # From mcmc_parameters, update Class_arguments (Class_arguments will always
+    # From mcmc_parameters, update cosmo_arguments (cosmo_arguments will always
     # contain the latest position, and forget anything about previous points,
     # whereas in mcmc_parameters, we will keep track of the last accepted point
-    self.update_Class_arguments()
+    self.update_cosmo_arguments()
 
-    # Recover Class version and subversion,
+    # Determine which cosmological code is in use
+    if path['cosmo'].find('class/') != -1:
+      self.cosmological_module_name = 'Class'
+    else:
+      self.cosmological_module_name = None
+
+    # Recover the cosmological code version (and subversion if relevant). To
+    # implement a new cosmological code, please add another case to the test
+    # below.
     if default:
-      svn_file = open(path['class']+'/include/svnversion.h','r')
-      self.subversion = svn_file.readline().split()[-1].replace('"','')
-      svn_file.close()
-      for line in open(path['class']+'/include/common.h','r'):
-	if line.find('_VERSION_')!=-1:
-	  self.version = line.split()[-1].replace('"','')
-	  break
+      if self.cosmological_module_name == 'Class':
+        svn_file = open(path['cosmo']+'/include/svnversion.h','r')
+        self.subversion = svn_file.readline().split()[-1].replace('"','')
+        svn_file.close()
+        for line in open(path['cosmo']+'/include/common.h','r'):
+          if line.find('_VERSION_')!=-1:
+            self.version = line.split()[-1].replace('"','')
+            break
     else: # read in the existing parameter file
       self.read_version(self.param_file)
 
@@ -132,10 +141,10 @@ class data:
       # containing the .data file will be created, for comparison purpose.
       exec "self.lkl['%s'] = %s.%s('%s/%s.data',self,command_line,log_flag,default)"% (elem,elem,elem,folder,elem)
 
-    # Finally, log the Class_arguments used. This comes in the end, because
+    # Finally, log the cosmo_arguments used. This comes in the end, because
     # it can be modified inside the likelihoods init functions
     if log_flag:
-      io.log_Class_arguments(self,command_line)
+      io.log_cosmo_arguments(self,command_line)
       io.log_default_configuration(self,command_line)
 
   # Redefinition of the 'compare' method for two instances of this data class.
@@ -144,9 +153,9 @@ class data:
   # existing folder, with your own parameter file)
   def __cmp__(self,other):
 
-    # Comparing Class versions (warning only, will not fail the comparison)
+    # Comparing cosmological code versions (warning only, will not fail the comparison)
     if self.version != other.version:
-      print '/!\ Warning, you are running with a different version of Class'
+      print '/!\ Warning, you are running with a different version of your cosmological code'
 
     # Defines unordered version of the dictionaries of parameters
     self.uo_parameters  = {}
@@ -187,7 +196,7 @@ class data:
 
   # Extract version and subversion from an existing log.param
   def read_version(self,_file):
-    # Read the first line (Class version)
+    # Read the first line (cosmological code version)
     first_line = _file.readline()
     self.version = first_line.split()[1]
     self.subversion = first_line.split()[-1].replace(')','').replace('-','')
@@ -248,59 +257,59 @@ class data:
 	table.append(key)
     return table
 
-  # Put in Class_arguments the current values of mcmc_parameters
-  def update_Class_arguments(self):
+  # Put in cosmo_arguments the current values of mcmc_parameters
+  def update_cosmo_arguments(self):
     # For all elements in any cosmological parameters
     for elem in self.get_mcmc_parameters(['cosmo']):
       try:
 	# If they have a current value already, use it
-	self.Class_arguments[elem]   = self.mcmc_parameters[elem]['current']*self.mcmc_parameters[elem]['initial'][4]
+	self.cosmo_arguments[elem]   = self.mcmc_parameters[elem]['current']*self.mcmc_parameters[elem]['initial'][4]
       except KeyError: # it will go there if there is not yet a 'current' field,
 	pass           # In this case, nothing to do.
 
     for elem in self.get_mcmc_parameters(['cosmo']):
       if elem == 'Omega_Lambda':
         try:
-          omega_b      = self.Class_arguments['omega_b']
-          omega_cdm    = self.Class_arguments['omega_cdm']
-          Omega_Lambda = self.Class_arguments['Omega_Lambda']
-          self.Class_arguments['h']   = math.sqrt( (omega_b+omega_cdm) / (1.-Omega_Lambda) )
-          del self.Class_arguments[elem]
+          omega_b      = self.cosmo_arguments['omega_b']
+          omega_cdm    = self.cosmo_arguments['omega_cdm']
+          Omega_Lambda = self.cosmo_arguments['Omega_Lambda']
+          self.cosmo_arguments['h']   = math.sqrt( (omega_b+omega_cdm) / (1.-Omega_Lambda) )
+          del self.cosmo_arguments[elem]
         except (KeyError):
           pass
       if elem == 'f_cdi':
         try:
-          self.Class_arguments['n_cdi']   =self.Class_arguments['n_s']
+          self.cosmo_arguments['n_cdi']   =self.cosmo_arguments['n_s']
         except (KeyError):
           pass
       if elem == 'beta':
         try:
-          self.Class_arguments['alpha'] = 2.*self.Class_arguments['beta']
+          self.cosmo_arguments['alpha'] = 2.*self.cosmo_arguments['beta']
         except (KeyError):
           pass
       # We only do that on xe_1, for there is at least one of them.
       if elem.find('xe_1') != -1:
 	try:
-	  # To pass this option, you must have set a number of Class settings
+	  # To pass this option, you must have set a number of cosmological settings
 	  # reio_parametrization to reio_bins_tanh, binned_reio_z set, and binned_reio_num
 	  # First, you need to set reio_parametrization to reio_bins_tanh
-	  if (self.Class_arguments['reio_parametrization'] != 'reio_bins_tanh'):
+	  if (self.cosmo_arguments['reio_parametrization'] != 'reio_bins_tanh'):
 	    print ' /|\  Warning, you set binned_reio_xe to some values'
 	    print '/_o_\ without setting reio_parametrization to reio_bins_tanh'
 	    exit()
 	  else:
 	    try:
-	      size = self.Class_arguments['binned_reio_num']
+	      size = self.cosmo_arguments['binned_reio_num']
 	    except (KeyError):
 	      print ' /|\  You need to set reio_binnumber to the value corresponding to'
 	      print '/_o_\ the one in binned_reio_xe'
 	      exit()
 	  string = ''
 	  for i in range(1,size+1):
-	    string += '%.4g' % self.Class_arguments['xe_%d' % i]
-	    del self.Class_arguments['xe_%d' % i]
+	    string += '%.4g' % self.cosmo_arguments['xe_%d' % i]
+	    del self.cosmo_arguments['xe_%d' % i]
 	    if i != size:
 	      string += ','
-	  self.Class_arguments['binned_reio_xe'] = string
+	  self.cosmo_arguments['binned_reio_xe'] = string
 	except (KeyError):
 	  pass

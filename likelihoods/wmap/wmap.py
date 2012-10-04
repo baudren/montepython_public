@@ -8,8 +8,8 @@ class wmap(likelihood):
     likelihood.__init__(self,path,data,command_line,log_flag,default)
 
     # Extra definitions....
-    # Extra needed Class paramters
-    self.need_Class_arguments(data,{'output':'mPk'})
+    # Extra needed cosmological paramters
+    self.need_cosmo_arguments(data,{'output':'mPk'})
 
     # In case of a comparison, stop here
     if not default:

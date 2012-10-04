@@ -3,7 +3,7 @@
 # valid options are (so far): acbar, bicep, boomerang, cbi,
 # fake_planck_bluebook, hst, quad, sn, spt
 
-data.experiments=['hst']
+data.experiments=['fake_planck_bluebook']
 
 #------ Parameter list -------
 
@@ -21,27 +21,19 @@ data.parameters['n_s']       	= [0.963,  -1,-1, 0.007,1,   'cosmo']
 data.parameters['A_s']       	= [2.42,   -1,-1, 0.11, 1e-9,'cosmo']
 data.parameters['h']         	= [0.703,  -1,-1, 0.025,1,   'cosmo']
 
-data.parameters['xe_1'] 	= [ 0.8, 0, 1, 0.2, 1, 'cosmo']
-data.parameters['xe_2'] 	= [ 0.2, 0, 1, 0.2, 1, 'cosmo']
-data.parameters['xe_3'] 	= [ 0.1, 0, 1, 0.2, 1, 'cosmo']
 # Nuisance parameter list, same call, except the name does not have to be a class name
 
+data.parameters['epsilon']	= [0,       -1, -1, 0,1,  'nuisance']
+data.parameters['A_SZ']         = [0.96,    -1, -1, 0,1,  'nuisance']
 #data.parameters['SPT_SZ']	= [1,       0, 2, 0.1,1,  'nuisance']
 #data.parameters['SPT_PS']	= [10,	-1,-1, 0, 1, 'nuisance']
 #data.parameters['SPT_CL']	= [2, 	-1,-1, 0, 1, 'nuisance']
 
 # Other class parameters (fixed parameters, precision parameters, etc.)
 
-data.Class_arguments['sBBN file'] = data.path['class']+'/bbn/sBBN.dat'
-
-# Example of how to treat an array quantity in Class
-data.Class_arguments['reio_parametrization'] 	= 'reio_bins_tanh'
-data.Class_arguments['binned_reio_num']		= 3
-data.Class_arguments['binned_reio_step_sharpness'] = 0.3
-data.Class_arguments['binned_reio_z']		= '8,12,16'
+data.cosmo_arguments['sBBN file'] = data.path['cosmo']+'/bbn/sBBN.dat'
 
 # If needed, compute the following derived parameters
-data.derived_parameters_list = ['sigma_8','tau_reio']
 
 #------ Mcmc parameters ----
 

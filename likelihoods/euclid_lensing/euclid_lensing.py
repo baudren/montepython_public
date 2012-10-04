@@ -10,7 +10,7 @@ class euclid_lensing(likelihood):
 
     likelihood.__init__(self,path,data,command_line,log_flag,default)
 
-    self.need_Class_arguments(data,{'output':'mPk'})
+    self.need_cosmo_arguments(data,{'output':'mPk'})
 
     # Define array of l values, and initialize them
     self.l = np.zeros(self.nlmax,'float64')
@@ -61,10 +61,11 @@ class euclid_lensing(likelihood):
     for nz in range(self.nzmax):
       self.z[nz] = (nz*1.0)/(self.nzmax-1.0)*self.zmax
 
-    # Force Class to store Pk for redshifts up to max(self.z)
-    self.need_Class_arguments(data,{'z_max_pk':self.z[-1]})
-    # Force Class to store Pk for k up to an arbitrary number (since self.r is not yet decided)... TODO
-    self.need_Class_arguments(data,{'P_k_max_1/Mpc':self.k_max})
+    # Force the cosmological module to store Pk for redshifts up to max(self.z)
+    self.need_cosmo_arguments(data,{'z_max_pk':self.z[-1]})
+    # Force the cosmological module to store Pk for k up to an arbitrary number
+    # (since self.r is not yet decided)... TODO
+    self.need_cosmo_arguments(data,{'P_k_max_1/Mpc':self.k_max})
 
     # In case of a comparison, stop here
     if not default:

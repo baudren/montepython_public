@@ -9,7 +9,7 @@ class euclid_pk(likelihood):
 
     likelihood.__init__(self,path,data,command_line,log_flag,default)
 
-    self.need_Class_arguments(data,{'output':'mPk'})
+    self.need_cosmo_arguments(data,{'output':'mPk'})
     
     #################
     # find number of galaxies for each mean redshift value
@@ -43,15 +43,16 @@ class euclid_pk(likelihood):
       self.z[i] = z
       i+=1
 
-    self.need_Class_arguments(data,{'z_max_pk':self.z[-1]})
+    self.need_cosmo_arguments(data,{'z_max_pk':self.z[-1]})
 
     # For each bin, compute the biais function,
     self.b = np.zeros(self.nbin,'float64')
     for Bin in range(self.nbin):
       self.b[Bin] = sqrt(self.z_mean[Bin]+1.)
 
-    # Force Class to store Pk for k up to an arbitrary number (since self.r is not yet decided)... TODO
-    self.need_Class_arguments(data,{'P_k_max_1/Mpc':1.5*self.kmax})
+    # Force the cosmological module to store Pk for k up to an arbitrary number
+    # (since self.r is not yet decided)... TODO
+    self.need_cosmo_arguments(data,{'P_k_max_1/Mpc':1.5*self.kmax})
 
     # In case of a comparison, stop here
     if not default:

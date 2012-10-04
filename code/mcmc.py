@@ -9,7 +9,7 @@ import data
 # COMPUTE LKL
 def compute_lkl(_cosmo,data):
   # Prepare the cosmological module with the new set of parameters
-  _cosmo.set(data.Class_arguments)
+  _cosmo.set(data.cosmo_arguments)
 
   # Compute the model, keeping track of the errors
   failure=False
@@ -52,12 +52,12 @@ def compute_lkl(_cosmo,data):
 
   if flag_wrote_fiducial > 0:
     if flag_wrote_fiducial == len(data.lkl):
-      print '--> Fiducial file(s) was(were) created, please start a new chain'
+      print('--> Fiducial file(s) was(were) created, please start a new chain')
       exit()
     else:
-      print '--> Some previously non-existing fiducial files were created, but potentially not all of them'
-      print '--> Please check now manually on the headers of the corresponding that all'
-      print '--> parameters are coherent for your tested models'
+      print('--> Some previously non-existing fiducial files were created, but potentially not all of them')
+      print('--> Please check now manually on the headers of the corresponding that all')
+      print('--> parameters are coherent for your tested models')
       exit()
 
   return failure,loglike
@@ -107,9 +107,9 @@ def get_cov(data,command_line):
 	i+=1
 
     # First print out
-    print '\nInput covariance matrix:'
-    print covnames
-    print M
+    print('\nInput covariance matrix:')
+    print(covnames)
+    print(M)
     # Deal with the all problematic cases. 
     # First, adjust the scales between stored parameters and the ones used in mcmc
     scales = []
@@ -123,9 +123,9 @@ def get_cov(data,command_line):
     M = np.dot(invscales.T,np.dot(M,invscales))
     
     # Second print out, after having applied the scale factors
-    print '\nFirst treatment (scaling)'
-    print covnames
-    print M
+    print('\nFirst treatment (scaling)')
+    print(covnames)
+    print(M)
 
     # Then, rotate M for the parameters to be well ordered, even if some names
     # are missing or some are in extra.
@@ -157,9 +157,9 @@ def get_cov(data,command_line):
     M=np.dot(rot,np.dot(M,np.transpose(rot)))
 
     # Third print out
-    print '\nSecond treatment (partial reordering and cleaning)'
-    print temp_names_2
-    print M
+    print('\nSecond treatment (partial reordering and cleaning)')
+    print(temp_names_2)
+    print(M)
     
     M_temp    = np.ones((len(parameter_names),len(parameter_names)),'float64')
     indices_1 = np.zeros(len(parameter_names))
@@ -195,8 +195,8 @@ def get_cov(data,command_line):
 
   # Final print out, the actually used covariance matrix
   sys.stdout.write('\nDeduced starting covariance matrix:\n')
-  print parameter_names
-  print M
+  print(parameter_names)
+  print(M)
 
   #inverse, and diagonalization
   eigv,eigV=np.linalg.eig(np.linalg.inv(M))
@@ -230,7 +230,7 @@ def get_new_pos(data,eigv,U,k):
     i = k%len(vector)
     sigmas[i] = (math.sqrt(1/eigv[i]))*rd.gauss(0,1)*data.jumping_factor
   else:
-    print '\n\n  Jumping method unknown (accepted : global (default), sequential)'
+    print('\n\n  Jumping method unknown (accepted : global (default), sequential)')
 
   # Fill in the new vector
   vector_new = vector + np.dot(U,sigmas)
@@ -258,8 +258,8 @@ def get_new_pos(data,eigv,U,k):
     data.mcmc_parameters[elem]['current'] = vector_new[i]
     i+=1
     
-  # Propagate the information towards the Class arguments
-  data.update_Class_arguments()
+  # Propagate the information towards the cosmo arguments
+  data.update_cosmo_arguments()
 
   # Return 
   return True
@@ -290,8 +290,8 @@ def chain(_cosmo,data,command_line):
   # In case of a fiducial run (all parameters fixed), simply run once and print
   # out the likelihood
   else:
-    print ' /|\  You are running with no varying parameters...'
-    print '/_o_\ Computing model for only one point'
+    print(' /|\  You are running with no varying parameters...')
+    print('/_o_\ Computing model for only one point')
     failure,loglike = compute_lkl(_cosmo,data)
     io.print_vector([data.out,sys.stdout],1,loglike,data)
     return 1,loglike
@@ -320,8 +320,8 @@ def chain(_cosmo,data,command_line):
     failure,loglike=compute_lkl(_cosmo,data)
 
   if failure is True:
-    print ' /|\   Class tried {0} times to initialize with given parameters, and failed...'.format(num_failure+2)
-    print '/_o_\  You might want to change your starting values, or pick default ones!'
+    print(' /|\   {0} tried {1} times to initialize with given parameters, and failed...'.format(data.cosmological_module_name,num_failure+2))
+    print('/_o_\  You might want to change your starting values, or pick default ones!')
     exit()
 
   # If the first step was finally computed, pick it as the last accepted value
@@ -353,13 +353,13 @@ def chain(_cosmo,data,command_line):
       continue
     
     # In case of failure in the last step, print out the faulty
-    # Class_arguments, and start a new incrementation of the while loop. Note
+    # cosmo_arguments, and start a new incrementation of the while loop. Note
     # that k was not incremented due to the continue statement: this failed
     # point will not count towards the total number of steps asked.
     if(failure==True):
       failed += 1
-      print 'Warning: Class failed due to choice of parameters, picking up new values'
-      print data.Class_arguments
+      print('Warning: %s failed due to choice of parameters, picking up new values' % data.cosmological_module_name)
+      print(data.cosmo_arguments)
       continue
 
     # Harmless trick to avoid exponentiating large numbers. This decides

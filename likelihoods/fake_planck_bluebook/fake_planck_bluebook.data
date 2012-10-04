@@ -9,7 +9,7 @@
 # where to read/write fiducial model:
 
 fake_planck_bluebook.data_directory = data.path['data']
-fake_planck_bluebook.fiducial_file  = 'fake_planck_bluebook_fiducial.dat'
+fake_planck_bluebook.fiducial_file  = 'fake_planck_bluebook_fiducial_ncdm_nl_err.dat'
 
 # experimental sensitivity:
 

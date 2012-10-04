@@ -225,7 +225,7 @@ class boss(likelihood):
 
     # necessary class parameters. mPk and k_max=2h/Mpc needed to have sigma_8 computed and accurate !
 
-    self.need_Class_arguments(data,{'output':'mPk', 'P_k_max_h/Mpc':2})
+    self.need_cosmo_arguments(data,{'output':'mPk', 'P_k_max_h/Mpc':2})
  
     return
   

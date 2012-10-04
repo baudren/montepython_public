@@ -106,22 +106,30 @@ def main():
     print '/_o_\ This might mean that you are not computing from the correct Class version'
     print '      Exiting now'
     exit()
-  for elem in os.listdir(Data.path['class']+"python/build"):
-    if elem.find("lib.") != -1:
-      classy_path = path['class']+"python/build/"+elem
 
-  #| Inserting the previously found path into the list of folders to search for
-  #| python modules.
-  sys.path.insert(1,classy_path)
-  try:
-    from classy import Class
-  except ImportError:
-    print " /|\  You must have compiled the classy.pyx"
-    print "/_o_\ please go to /path/to/class/python and run"
-    print "      python setup.py build, then python setup.py install --user"
+  # If the cosmological code is Class, do the following to import all relevant quantities
+  if Data.cosmological_module_name == 'Class':
+    for elem in os.listdir(Data.path['cosmo']+"python/build"):
+      if elem.find("lib.") != -1:
+        classy_path = path['cosmo']+"python/build/"+elem
+
+    #| Inserting the previously found path into the list of folders to search for
+    #| python modules.
+    sys.path.insert(1,classy_path)
+    try:
+      from classy import Class
+    except ImportError:
+      print(" /|\  You must have compiled the classy.pyx")
+      print("/_o_\ please go to /path/to/class/python and run")
+      print("      python setup.py build, then python setup.py install --user")
+      exit()
+
+    _cosmo=Class()
+  else:
+    print(" /|\  Error: unrecognised cosmological module")
+    print("/_o_\ Be sure to define the correct behaviour")
+    print("      in MontePython.py, and data.py")
     exit()
-
-  _cosmo=Class()
 
   # MCMC chain 
   rate,min_LogLike=mcmc.chain(_cosmo,Data,command_line)

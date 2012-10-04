@@ -21,6 +21,8 @@ parser.add_argument('-j', metavar='jumping method',type=str,dest='jumping',defau
 parser.add_argument('-f', metavar='jumping factor',type=float,dest='jumping_factor',default=2.4)
 # -- configuration file (OPTIONAL)
 parser.add_argument('-conf', metavar='configuration file',type=str,dest='config_file',default='default.conf')
+# -- arbitraty numbering of an output chain (OPTIONAL)
+parser.add_argument('-chain_number', metavar='chain number',type=str,dest='chain_number',default=None)
 
 ###############
 # MCMC restart from chain

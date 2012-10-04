@@ -14,12 +14,13 @@ except:
   from ordereddict import OrderedDict as od    
 from datetime import date
 
-# Writes the beginning of log.param, starting with the header with Class
-# version and subversion, and then recopies entirely the input parameter file
+# Writes the beginning of log.param, starting with the header with the
+# cosmological code version and subversion, and then recopies entirely the
+# input parameter file
 def log_parameters(data,command_line):
   log     = open(command_line.folder+'/log.param','w')
   param_file = open(command_line.param,'r')
-  log.write("#-----Class {0} (subversion {1})-----\n\n".format(data.version,data.subversion))
+  log.write("#-----{0} {1} (subversion {2})-----\n\n".format(data.cosmological_module_name,data.version,data.subversion))
   for line in param_file:
     log.write(line)
   param_file.close()
@@ -36,22 +37,22 @@ def log_likelihood_parameters(likelihood,command_line):
   tolog.close()
   log.close()
 
-# Third function called when writing log.param, it writes down the Class
-# arguments used (it is understood here that all the other parameters for Class
-# are set to their default value, in Class itself). It is written as an update
-# for the dictionary Class_arguments, in order not to erase previously
-# initialized data.
-def log_Class_arguments(data,command_line):
-  if len(data.Class_arguments) >= 1:
+# Third function called when writing log.param, it writes down the
+# cosmo_arguments used (it is understood here that all the other parameters for
+# the cosmological modules are set to their default value directly in the
+# program). It is written as an update for the dictionary cosmo_arguments, in
+# order not to erase previously initialized data.
+def log_cosmo_arguments(data,command_line):
+  if len(data.cosmo_arguments) >= 1:
     log     = open(command_line.folder+'/log.param','a')
-    log.write('\n\n#-----------Class-arguments---------\n')
-    log.write('data.Class_arguments.update({0})\n'.format(data.Class_arguments))
+    log.write('\n\n#-----------Cosmological-arguments---------\n')
+    log.write('data.cosmo_arguments.update({0})\n'.format(data.cosmo_arguments))
     log.close()
 
-# Fourth and last function called when writing log.param, it logs the
-# .conf file used to get the path. Only useful if you have several versions of
-# Class installed in different locations, or different versions of Clik. But,
-# as you never know what might go wrong, it is logged everytime !
+# Fourth and last function called when writing log.param, it logs the .conf
+# file used to get the path. Only useful if you have several versions of your
+# cosmological code installed in different locations, or different versions of
+# Clik. But, as you never know what might go wrong, it is logged everytime !
 def log_default_configuration(data,command_line):
   log = open(command_line.folder+'/log.param','a')
   log.write('\n\n#--------Default-Configuration------\n')
@@ -115,14 +116,19 @@ def create_output_files(command_line,data):
   # output file
   outname_base='{0}_{1}__'.format(date.today(),number)
   suffix=0
-  for files in os.listdir(command_line.folder):
-    if files.find(outname_base)!=-1:
-      if int(files.split('__')[-1].split('.')[0])>suffix:
-        suffix=int(files.split('__')[-1].split('.')[0])
-  suffix+=1
-  data.out=open(command_line.folder+outname_base+str(suffix)+'.txt','w')
-  sys.stdout.write('Creating {0}{1}{2}.txt\n'.format(command_line.folder,outname_base,suffix))
-  data.out_name='{0}{1}{2}.txt'.format(command_line.folder,outname_base,suffix)
+  if command_line.chain_number is None:
+    for files in os.listdir(command_line.folder):
+      if files.find(outname_base)!=-1:
+        if int(files.split('__')[-1].split('.')[0])>suffix:
+          suffix=int(files.split('__')[-1].split('.')[0])
+    suffix+=1
+    data.out=open(command_line.folder+outname_base+str(suffix)+'.txt','w')
+    sys.stdout.write('Creating {0}{1}{2}.txt\n'.format(command_line.folder,outname_base,suffix))
+    data.out_name='{0}{1}{2}.txt'.format(command_line.folder,outname_base,suffix)
+  else:
+    data.out=open(command_line.folder+outname_base+command_line.chain_number+'.txt','w')
+    sys.stdout.write('Creating {0}{1}{2}.txt\n'.format(command_line.folder,outname_base,command_line.chain_number))
+    data.out_name='{0}{1}{2}.txt'.format(command_line.folder,outname_base,command_line.chain_number)
   # in case of a restart, copying the whole thing in the new file
   if command_line.restart is not None:
     for line in open(command_line.restart,'r'):

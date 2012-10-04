@@ -68,7 +68,7 @@ class likelihood():
 
   def get_cl(self,_cosmo):
 
-    # get C_l^XX from CLASS
+    # get C_l^XX from the cosmological code
     cl = _cosmo.lensed_cl()
 
     # convert dimensionless C_l's to C_l in muK**2
@@ -78,16 +78,17 @@ class likelihood():
 
     return cl
 
-  # Ensure that certain Class arguments are defined to the needed value.
-  # WARNING: so far, there is no way to enforce a parameter where smaller is
-  # better. TODO
-  def need_Class_arguments(self,data,dictionary):
+  # Ensure that certain arguments of the cosmological code are defined to the
+  # needed value.  WARNING: so far, there is no way to enforce a parameter
+  # where smaller is better. A bigger value will always override any smaller
+  # one (cl_max, etc...) TODO
+  def need_cosmo_arguments(self,data,dictionary):
     array_flag = False
     for key,value in dictionary.iteritems():
       try :
-	data.Class_arguments[key]
+	data.cosmo_arguments[key]
 	try:
-	  float(data.Class_arguments[key])
+	  float(data.cosmo_arguments[key])
 	  num_flag = True
 	except ValueError: num_flag = False
 	except TypeError:  
@@ -98,36 +99,28 @@ class likelihood():
 	try:
 	  float(value)
 	  num_flag = True
-	  data.Class_arguments[key] = 0
+	  data.cosmo_arguments[key] = 0
 	except ValueError:
 	  num_flag = False
-	  data.Class_arguments[key] = ''
+	  data.cosmo_arguments[key] = ''
 	except TypeError:
 	  num_flag = True
 	  array_flag = True
       if num_flag is False:
-	if data.Class_arguments[key].find(value)==-1:
-	  data.Class_arguments[key] += ' '+value+' '
+	if data.cosmo_arguments[key].find(value)==-1:
+	  data.cosmo_arguments[key] += ' '+value+' '
       else:
 	if array_flag is False:
-	  if float(data.Class_arguments[key])<value:
-	    data.Class_arguments[key] = value
+	  if float(data.cosmo_arguments[key])<value:
+	    data.cosmo_arguments[key] = value
 	else:
-	  data.Class_arguments[key] = '%.2g' % value[0]
+	  data.cosmo_arguments[key] = '%.2g' % value[0]
 	  for i in range(1,len(value)):
-	    data.Class_arguments[key] += ',%.2g' % (value[i])
+	    data.cosmo_arguments[key] += ',%.2g' % (value[i])
 
 
 
   def read_contamination_spectra(self,data):
-    # TO DO: normally this is not needed anymore.
-    #failure = False
-    #for nuisance in self.use_nuisance:
-      #if nuisance not in data.get_mcmc_parameters(['nuisance']):
-	#print nuisance+' must be defined, either fixed or varying, for {0} likelihood'.format(self.name)
-	#failure=True
-    #if failure:
-      #exit()
 
     for nuisance in self.use_nuisance:
       # read spectrum contamination (so far, assumes only temperature contamination; will be trivial to generalize to polarization when such templates will become relevant)
@@ -149,7 +142,6 @@ class likelihood():
       except:
         pass
 
-      # BA : wth?
       # read central value of nuisance parameter
       # if it is not there, assume one by default
       try:
@@ -187,9 +179,10 @@ class likelihood():
 
     return lkl
 
+
 ###################################
 #
-# END OF GENERIC CLASS
+# END OF GENERIC LIKELIHOOD CLASS
 #
 ###################################
 
@@ -215,7 +208,7 @@ class likelihood_newdat(likelihood):
 
     likelihood.__init__(self,path,data,command_line,log_flag,default)
 
-    self.need_Class_arguments(data,{'lensing':'yes', 'output':'tCl lCl pCl'})
+    self.need_cosmo_arguments(data,{'lensing':'yes', 'output':'tCl lCl pCl'})
     
     if not default:
       return
@@ -422,8 +415,9 @@ class likelihood_newdat(likelihood):
     # store maximum value of l needed by window functions
     self.l_max=max(self.win_max)  
 
-    # impose that CLASS computes Cl's up to maximum l needed by window function
-    self.need_Class_arguments(data,{'l_max_scalars':self.l_max})
+    # impose that the cosmological code computes Cl's up to maximum l needed by
+    # the window function
+    self.need_cosmo_arguments(data,{'l_max_scalars':self.l_max})
 
     # deal with nuisance parameters
     try:
@@ -436,7 +430,7 @@ class likelihood_newdat(likelihood):
 
   def loglkl(self,_cosmo,data):
 
-    # get Cl's from CLASS
+    # get Cl's from the cosmological code
     cl = self.get_cl(_cosmo)
 
     # add contamination spectra multiplied by nuisance parameters
@@ -456,7 +450,7 @@ class likelihood_newdat(likelihood):
 
     # checks that Cl's have been computed up to high enough l given window function range. Normally this has been imposed before, so this test could even be supressed.
     if (np.shape(cl['tt'])[0]-1 < self.l_max):
-      print 'CLASS computed Cls till l=',np.shape(cl['tt'])[0]-1,'while window functions need',self.l_max
+      print '%s computed Cls till l=' % data.cosmological_module_name,np.shape(cl['tt'])[0]-1,'while window functions need',self.l_max
       exit()
 
     # compute theoretical bandpowers, store them in theo[points]
@@ -598,7 +592,7 @@ class likelihood_clik(likelihood):
   def __init__(self,path,data,command_line,log_flag,default):
 
     likelihood.__init__(self,path,data,command_line,log_flag,default)
-    self.need_Class_arguments(data,{'lensing':'yes', 'output':'tCl lCl pCl'})
+    self.need_cosmo_arguments(data,{'lensing':'yes', 'output':'tCl lCl pCl'})
 
     if not default:
       return
@@ -612,7 +606,7 @@ class likelihood_clik(likelihood):
       exit()
     self.clik = clik.clik(self.path_clik)
     self.l_max = max(self.clik.get_lmax())
-    self.need_Class_arguments(data,{'l_max_scalars':self.l_max})
+    self.need_cosmo_arguments(data,{'l_max_scalars':self.l_max})
 
     # deal with nuisance parameters
     try:
@@ -625,7 +619,7 @@ class likelihood_clik(likelihood):
 
     nuisance_parameter_names = data.get_mcmc_parameters(['nuisance'])
 
-    # get Cl's from CLASS
+    # get Cl's from the cosmological code
     cl = self.get_cl(_cosmo)
  
     # add contamination spectra multiplied by nuisance parameters
@@ -683,7 +677,7 @@ class likelihood_mock_cmb(likelihood):
 
     likelihood.__init__(self,path,data,command_line,log_flag,default)
 
-    self.need_Class_arguments(data,{'lensing':'yes', 'output':'tCl lCl pCl'})
+    self.need_cosmo_arguments(data,{'lensing':'yes', 'output':'tCl lCl pCl'})
     
     if not default:
       return
@@ -710,8 +704,9 @@ class likelihood_mock_cmb(likelihood):
       self.noise_T[l]=1/self.noise_T[l]
       self.noise_P[l]=1/self.noise_P[l]
 
-    # impose that CLASS computes Cl's up to maximum l needed by window function
-    self.need_Class_arguments(data,{'l_max_scalars':self.l_max})
+    # impose that the cosmological code computes Cl's up to maximum l needed by
+    # the window function
+    self.need_cosmo_arguments(data,{'l_max_scalars':self.l_max})
 
     ###########
     # Read data
@@ -734,7 +729,6 @@ class likelihood_mock_cmb(likelihood):
         self.Cl_fid[1,ll]=float(line.split()[2])
         self.Cl_fid[2,ll]=float(line.split()[3])
         line = fid_file.readline()
-        #print 'reading',ll,self.Cl_fid[0,ll],self.Cl_fid[1,ll],self.Cl_fid[2,ll]
 
     # Else the file will be created in the loglkl() function. 
 
@@ -743,7 +737,7 @@ class likelihood_mock_cmb(likelihood):
 
   def loglkl(self,_cosmo,data):
 
-    # get Cl's from CLASS (returned in muK**2 units)
+    # get Cl's from the cosmological code (returned in muK**2 units)
     cl = self.get_cl(_cosmo)
 
     # get likelihood
@@ -752,11 +746,6 @@ class likelihood_mock_cmb(likelihood):
     return lkl
 
   def compute_lkl(self,cl,_cosmo,data):
-
-    # for testing, print signal and noise spectra
-    #for l in range(self.l_min,self.l_max):
-    #  print l,cl['tt'][l],self.noise_T[l],cl['ee'][l],self.noise_P[l]
-    #exit()
 
     # Write fiducial model spectra if needed (exit in that case)
     if self.fid_values_exist is False:
@@ -797,13 +786,7 @@ class likelihood_mock_cmb(likelihood):
 	Cov_mix = np.copy(Cov_the)
         Cov_mix[:,i] = Cov_obs[:,i]
 	det_mix += np.linalg.det(Cov_mix)
-        
-      #print 'obs',l,det_obs,Cov_obs[0,0]*Cov_obs[1,1]-Cov_obs[1,0]*Cov_obs[0,1]
-      #print 'the',l,det_the,Cov_the[0,0]*Cov_the[1,1]-Cov_the[1,0]*Cov_the[0,1]
-      #print 'mix',l,det_mix,self.Cl_fid[0,l]*(cl['ee'][l]+self.noise_P[l])+(cl['tt'][l]+self.noise_T[l])*self.Cl_fid[1,l]-2.*self.Cl_fid[2,l]*cl['te'][l]
 
       chi2 += (2.*l+1.)*self.f_sky*(det_mix/det_the + math.log(det_the/det_obs) - 2)
-
-    #print chi2  
 
     return -chi2/2

@@ -19,7 +19,7 @@ class info:
       self.has_interpolate_module = True
     except ImportError:
       self.has_interpolate_module = False
-      print 'No cubic interpolation done (no interpolate method found in scipy), only linear'
+      print('No cubic interpolation done (no interpolate method found in scipy), only linear')
 
     # At this points, Files could contain either a list of files (that could be
     # only one) or a folder.
@@ -74,7 +74,7 @@ class info:
     self.var    = self.var[0]
     self.covar  = np.zeros((len(self.ref_names),len(self.ref_names)))
     
-    print 'Computing covariance matrix'
+    print('--> Computing covariance matrix')
     for i in range(len(self.ref_names)):
       for j in range(i,len(self.ref_names)):
         self.covar[i,j] = np.sum( chain[:,0]*((chain[:,i+2]-self.mean[i])*(chain[:,j+2]-self.mean[j])))/weight
@@ -127,107 +127,44 @@ class info:
     for i in range(len(self.plotted_parameters)):
       indices.append(self.ref_names.index(self.plotted_parameters[i]))
 
+    print('--> Writing .info and .tex files')
     # Write down to the .info file all necessary information
     self.info.write('\n param names\t:\t')
     for i in indices:
       if self.scales[i,i] != 1: 
 	if (float(self.scales[i,i]) > 100. or (self.scales[i,i]) < 0.01):
-	  string = '%0.e%s' % (1./self.scales[i,i],self.ref_names[i])
+	  string = ' %0.e%s' % (1./self.scales[i,i],self.ref_names[i])
 	elif (float(self.scales[i,i] < 1)):
-	  string = '%2d%s' % (1./self.scales[i,i],self.ref_names[i])
+	  string = ' %2d%s' % (1./self.scales[i,i],self.ref_names[i])
 	else :
-	  string = '%2g%s' % (1./self.scales[i,i],self.ref_names[i])
+	  string = ' %2g%s' % (1./self.scales[i,i],self.ref_names[i])
       else:
-	string = '%s' % self.ref_names[i]
+	string = ' %s' % self.ref_names[i]
       self.info.write("%-16s" % string)
 
     self.write(self.info,indices,'R-1 values','%.6f',self.R)
     self.write(self.info,indices,'Best Fit  ','%.6e',chain[a[0],2:])
     self.write(self.info,indices,'mean      ','%.6e',chain[a[0],2:])
-    self.info.write('\n sigma    \t:\t')
-    for i in indices:
-      self.info.write('%.6e\t' % ((self.bounds[i][0][1]-self.bounds[i][0][0])/2.))
-    #self.write(self.info,indices,'1-sigma - ','%.6e',self.bounds[i][0][0])
-
-    #self.info.write('\n R-1 values:\t')
-    #for i in indices:
-      #self.info.write('%.6f\t' % (self.R[i]))
-    #self.info.write('\n Best Fit:\t')
-    #for i in indices:
-      #self.info.write('%.6e\t' % (chain[a[0],2:][i]))
-    #self.info.write('\n mean    :\t')
-    #for i in indices:
-      #self.info.write('%.6e\t' % (self.mean[i]))
-    self.info.write('\n\n 1-sigma -\t:\t')
-    for i in indices:
-      self.info.write('%.6e\t' % (self.bounds[i][0][0]))
-    self.info.write('\n 1-sigma +\t:\t')
-    for i in indices:
-      self.info.write(' %.6e\t' % (self.bounds[i][0][1]))
-    self.info.write('\n 2-sigma -\t:\t')
-    for i in indices:
-      self.info.write('%.6e\t' % (self.bounds[i][1][0]))
-    self.info.write('\n 2-sigma +\t:\t')
-    for i in indices:
-      self.info.write(' %.6e\t' % (self.bounds[i][1][1]))
-    self.info.write('\n 3-sigma -\t:\t')
-    for i in indices:
-      self.info.write('%.6e\t' % (self.bounds[i][2][0]))
-    self.info.write('\n 3-sigma +\t:\t')
-    for i in indices:
-      self.info.write(' %.6e\t' % (self.bounds[i][2][1]))
-
-    #self.info.write('\n mean    :\t')
-    #for elem in self.mean:
-      #self.info.write('%.6e\t' % (elem))
-    #self.info.write('\n sigma   :\t')
-    #for elem in self.bounds:
-      #self.info.write('%.6e\t' % ((elem[0][1]-elem[0][0])/2.))
-    #self.info.write('\n\n 1-sigma - :\t')
-    #for elem in self.bounds:
-      #self.info.write('%.6e\t' % (elem[0][0]))
-    #self.info.write('\n 1-sigma + :\t')
-    #for elem in self.bounds:
-      #self.info.write(' %.6e\t' % (elem[0][1]))
-    #self.info.write('\n 2-sigma - :\t')
-    #for elem in self.bounds:
-      #self.info.write('%.6e\t' % (elem[1][0]))
-    #self.info.write('\n 2-sigma + :\t')
-    #for elem in self.bounds:
-      #self.info.write(' %.6e\t' % (elem[1][1]))
-    #self.info.write('\n 3-sigma - :\t')
-    #for elem in self.bounds:
-      #self.info.write('%.6e\t' % (elem[2][0]))
-    #self.info.write('\n 3-sigma + :\t')
-    #for elem in self.bounds:
-      #self.info.write(' %.6e\t' % (elem[2][1]))
-
+    self.write(self.info,indices,'sigma     ','%.6e',(self.bounds[:,0,1]-self.bounds[:,0,0])/2.)
+    self.info.write('\n')
+    self.write(self.info,indices,'1-sigma - ','%.6e',self.bounds[:,0,0])
+    self.write(self.info,indices,'1-sigma + ','%.6e',self.bounds[:,0,1])
+    self.write(self.info,indices,'2-sigma - ','%.6e',self.bounds[:,1,0])
+    self.write(self.info,indices,'2-sigma + ','%.6e',self.bounds[:,1,1])
+    self.write(self.info,indices,'3-sigma - ','%.6e',self.bounds[:,2,0])
+    self.write(self.info,indices,'3-sigma + ','%.6e',self.bounds[:,2,1])
     # bounds 
-    self.info.write('\n\n 1-sigma >\t:\t')
-    #for i in range(np.shape(self.bounds)[0]):
-    for i in indices:
-      self.info.write('%.6e\t' % (self.mean[i]+self.bounds[i,0,0]))
-    self.info.write('\n 1-sigma <\t:\t')
-    for i in indices:
-      self.info.write('%.6e\t' % (self.mean[i]+self.bounds[i,0,1]))
-    self.info.write('\n 2-sigma >\t:\t')
-    for i in indices:
-      self.info.write('%.6e\t' % (self.mean[i]+self.bounds[i,1,0]))
-    self.info.write('\n 2-sigma <\t:\t')
-    for i in indices:
-      self.info.write('%.6e\t' % (self.mean[i]+self.bounds[i,1,1]))
-    self.info.write('\n 3-sigma >\t:\t')
-    for i in indices:
-      self.info.write('%.6e\t' % (self.mean[i]+self.bounds[i,2,0]))
-    self.info.write('\n 3-sigma <\t:\t')
-    for i in indices:
-      self.info.write('%.6e\t' % (self.mean[i]+self.bounds[i,2,1]))
+    self.write(self.info,indices,'1-sigma > ','%.6e',self.mean+self.bounds[:,0,0])
+    self.write(self.info,indices,'1-sigma < ','%.6e',self.mean+self.bounds[:,0,1])
+    self.write(self.info,indices,'2-sigma > ','%.6e',self.mean+self.bounds[:,1,0])
+    self.write(self.info,indices,'2-sigma < ','%.6e',self.mean+self.bounds[:,1,1])
+    self.write(self.info,indices,'3-sigma > ','%.6e',self.mean+self.bounds[:,2,0])
+    self.write(self.info,indices,'3-sigma < ','%.6e',self.mean+self.bounds[:,2,1])
 
     # Writing the .tex file that will have this table prepared to be imported
     # in a tex document.
     self.tex.write("\documentclass{article}\n")
     self.tex.write("\\begin{document}\n")
-    
     self.tex.write("\\begin{tabular}{|")
     for i in indices:
       self.tex.write("c")
@@ -287,10 +224,10 @@ class info:
       if os.path.getsize(folder+'log.param')>0:
 	param = open(folder+'log.param','r')
       else:
-	print '\n\n  The log param file {0} seems empty'.format(folder+'log.param')
+	print('\n\n  The log param file {0} seems empty'.format(folder+'log.param'))
 	exit()
     else:
-      print '\n\n  The log param file {0} is absent ?'.format(folder+'log.param')
+      print('\n\n  The log param file {0} is absent ?'.format(folder+'log.param'))
       exit()
 
     # If the folder has no subdirectory, then go for a simple infoname,
@@ -376,14 +313,6 @@ class info:
               scales[-1] = self.new_scales[name]
 	    number = 1./scales[-1]
 	    tex_names.append(io.get_tex_name(name,number=number))
-	#if line.find('data.derived_parameters_list')!=-1:
-	  #for elem in line.split('=')[-1].strip(' ').replace('[','').replace(']','').replace('\n','').replace("'","").split(','):
-	    #ref_names.append(elem)
-	    #tex_names.append(io.get_tex_name(elem,1))
-	    #boundaries.append([-1.,-1.])
-	    #scales.append(1.)
-	  #print derived_names,derived_tex_names
-	  #exit()
     scales = np.diag(scales)
     param.seek(0)
 
@@ -402,7 +331,7 @@ class info:
     max_lkl = []
 
     # Circle through all files to find the maximum
-    print 'Finding global maximum of likelihood'
+    print('--> Finding global maximum of likelihood')
     for File in Files:
       i=Files.index(File)
       # cheese will brutally contain everything in the chain File being scanned
@@ -415,7 +344,17 @@ class info:
     # Restarting the circling through files
     for File in Files:
       i=Files.index(File)
-      print 'scanning file {0}'.format(File)
+      # To improve presentation, and print only once the full path of the
+      # analyzed folder, we recover the length of the path name, and create an
+      # empty complementary string of this length
+      index_slash = File.rfind('/')
+      complementary_string = ''
+      for j in range(index_slash+2):
+        complementary_string+=' '
+      if i ==0:
+        print '--> Scanning file {0}'.format(File),
+      else:
+        print '                 {0}{1}'.format(complementary_string,File.split('/')[-1]),
       # cheese will brutally contain everything in the chain File being scanned
       cheese = (np.array([[float(elem) for elem in line.split()] for line in open(File,'r')]))
       local_max_lkl = min(cheese[:,1]) # beware, it is the min because we are talking about '- log likelihood'
@@ -432,9 +371,9 @@ class info:
       try:
 	while cheese[start,1]>max_lkl+3:
 	  start+=1
-	print '  Removed {0} points of burn-in'.format(start)
+        print('  \t: Removed {0}\t points of burn-in'.format(start))
       except IndexError:
-	print '  Removed entire chain: not converged'
+        print('  \t: Removed everything: chain not converged')
 
 
       # ham contains cheese without the burn-in, if there are any points left (more than 5)
@@ -443,7 +382,7 @@ class info:
 
 	# Deal with single file case
 	if len(Files) == 1:
-	  print '  Beware, convergence computed for a single file'
+	  print('  Beware, convergence computed for a single file')
 	  bacon   = np.copy(cheese[::3,:])
 	  egg     = np.copy(cheese[1::3,:])
 	  sausage = np.copy(cheese[2::3,:])
@@ -480,7 +419,7 @@ class info:
     total[0] = np.sum(total[1:])
 
     # Compute mean and variance for each chain
-    print 'Computing mean values'
+    print('--> Computing mean values')
     for i in range(np.shape(mean)[1]):
       for j in range(len(spam)):
         submean     = np.sum(spam[j][:,0]*spam[j][:,i+2])
@@ -488,7 +427,7 @@ class info:
         mean[0,i]  += submean
       mean[0,i] /= total[0]
     
-    print 'Computing variance'
+    print('--> Computing variance')
     for i in range(np.shape(mean)[1]):
       for j in range(len(spam)):
 	var[0,i]     += np.sum(spam[j][:,0]*(spam[j][:,i+2]-mean[0,i]  )**2)
@@ -507,7 +446,7 @@ class info:
     within  = 0
     between = 0
 
-    print 'Computing convergence'
+    print('--> Computing convergence')
     for i in range(np.shape(mean)[1]):
       for j in range(len(spam)):
         within  += total[j+1]*var[j+1,i]
@@ -517,9 +456,9 @@ class info:
 
       R[i] = between/within
       if i == 0:
-        print 'R is ',R[i],'\tfor parameter ',ref_names[i]
+        print ' -> R is ',R[i],'\tfor ',ref_names[i]
       else:
-        print '     ',R[i],'\tfor parameter ',ref_names[i]
+        print '         ',R[i],'\tfor ',ref_names[i]
     
     # Log finally the total number of steps, and absolute loglikelihood
     self.log.write("--> Total number of steps:%d\n" % total_number_of_steps)
@@ -685,9 +624,10 @@ class info:
       num_lines   = math.ceil(len(self.plotted_parameters)*1.0/num_columns)
 
     # Actual plotting
+    print('-----------------------------------------------')
     for i in range(len(self.plotted_parameters)):
 
-        print 'Computing histograms for ',self.plotted_parameters[i]
+        print ' -> Computing histograms for ',self.plotted_parameters[i]
 
 	index = self.ref_names.index(self.plotted_parameters[i])
 	# Adding the subplots to the respective figures, this will be the diagonal for the triangle plot.
@@ -718,12 +658,12 @@ class info:
 	    comp_done = False
 	if comp:
 	  if not comp_done:
-	    print '{0} was not found in the second folder'.format(self.plotted_parameters[i])
+	    print('{0} was not found in the second folder'.format(self.plotted_parameters[i]))
 
 	# minimum credible interval (method by Jan Haman). Fails for multimodal histograms
 	bounds = self.minimum_credible_intervals(hist,bincenters,lvls)
 	if bounds is False: # print out the faulty histogram (try reducing the binnumber to avoir this)
-	  print hist
+	  print(hist)
 	else:
 	  for elem in bounds:
 	    for j in (0,1):
@@ -733,7 +673,7 @@ class info:
 	if comp_done:
 	  comp_bounds = self.minimum_credible_intervals(comp_hist,comp_bincenters,lvls)
 	  if comp_bounds is False:
-	    print comp_hist
+	    print(comp_hist)
 	  else:
 	    for elem in comp_bounds:
 	      for j in (0,1):
@@ -789,7 +729,7 @@ class info:
             ax2d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=2)
             ax1d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=4)
           except:
-            print 'could not find likelihood contour for ',self.plotted_parameters[index]
+            print('could not find likelihood contour for ',self.plotted_parameters[index])
 
 	if command_line.subplot is True:
 	  if not comp:
@@ -879,7 +819,7 @@ class info:
 
         comp_bounds = self.minimum_credible_intervals(comp_hist,comp_bincenters,lvls)
         if comp_bounds is False:
-          print comp_hist
+          print(comp_hist)
         else:
           for elem in comp_bounds:
             for j in (0,1):
@@ -896,6 +836,8 @@ class info:
     # If plots/ folder in output folder does not exist, create it
     if os.path.isdir(self.folder+'plots') is False:
       os.mkdir(self.folder+'plots')
+    print('-----------------------------------------------')
+    print('--> Saving figures to .pdf files')
     if plot_2d:
       fig2d.savefig(self.folder+'plots/{0}_triangle.pdf'.format(self.folder.split('/')[-2]))
     if comp:
@@ -940,8 +882,7 @@ class info:
 	indices = [i for i in range(len(histogram)) if histogram[i]>water_level]
 	# check for multimodal posteriors
 	if ((indices[-1]-indices[0]+1)!=len(indices)):
-	  print '  Warning : Can not derive minimum credible intervals for this multimodal posterior'
-	  print histogram
+	  print('    /!\ Warning : could not derive minimum credible intervals (multimodal posterior)')
 	  failed = True
 	  break
 	top = (sum(histogram[indices])-0.5*(histogram[indices[0]]+histogram[indices[-1]]))*(delta)
@@ -971,7 +912,7 @@ class info:
 	# safeguard, just in case
 	ii+=1
 	if (ii>1000):
-	  print '\n\n  the loop to check for sigma deviations was too long to converge'
+	  print('\n\n  the loop to check for sigma deviations was too long to converge')
 	  break
 
       # min
@@ -996,10 +937,14 @@ class info:
 	
     return bounds
 
-  def write(self,file,indices,name,string,quantity):
+  def write(self,file,indices,name,string,quantity,modifiers=None):
     file.write('\n '+name+'\t:\t')
     for i in indices:
-      file.write(string % quantity[i]+'\t')
+      if quantity[i] >= 0:
+        space_string = ' '
+      else:
+        space_string = ''
+      file.write(space_string+string % quantity[i]+'\t')
 
 
   def cubic_interpolation(self,hist,bincenters):
