@@ -9,7 +9,7 @@ euclid_pk.nbin  = 16
 euclid_pk.zmin = 0.5
 euclid_pk.zmax  = 2.0
 # sky coverage
-euclid_pk.fsky  = 0.5
+euclid_pk.fsky  = 0.375
 # precision on the mu variable
 euclid_pk.mu_size = 9
 
@@ -20,7 +20,7 @@ euclid_pk.kmin = 0.001
 euclid_pk.kmax = 0.6
 
 # precision of the halofit method
-euclid_pk.theoretical_error = 0.05
+euclid_pk.theoretical_error = 0.025
 euclid_pk.coefficient_f_nu = 1
 
 # efficiency
