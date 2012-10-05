@@ -65,7 +65,7 @@ class data:
     self.update_cosmo_arguments()
 
     # Determine which cosmological code is in use
-    if path['cosmo'].find('class/') != -1:
+    if path['cosmo'].find('class') != -1:
       self.cosmological_module_name = 'Class'
     else:
       self.cosmological_module_name = None

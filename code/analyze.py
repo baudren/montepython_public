@@ -324,6 +324,7 @@ class info:
 
     # Total number of steps done:
     total_number_of_steps = 0
+    total_number_of_accepted_steps = 0
 
     # max_lkl will be appended with all the maximum likelihoods of files, then
     # will be replaced by its own maximum. This way, the global maximum
@@ -365,6 +366,7 @@ class info:
         self.log.write("%s\t Number of steps:%d\tSteps accepted:%d\tacc = %.2g\tmin(-loglike) = %.2f " % (File,sum(cheese[:,0]),line_count,line_count*1.0/sum(cheese[:,0]),local_max_lkl))
         self.log.write("\n")
         total_number_of_steps += sum(cheese[:,0])
+        total_number_of_accepted_steps += line_count
 
       # Removing burn-in
       start = 0
@@ -461,8 +463,9 @@ class info:
         print '         ',R[i],'\tfor ',ref_names[i]
     
     # Log finally the total number of steps, and absolute loglikelihood
-    self.log.write("--> Total number of steps:%d\n" % total_number_of_steps)
-    self.log.write("--> Minimum of -logLike  :%.2f" % max_lkl)
+    self.log.write("--> Total    number    of    steps: %d\n" % total_number_of_steps)
+    self.log.write("--> Total number of accepted steps: %d\n" % total_number_of_accepted_steps)
+    self.log.write("--> Minimum of -logLike           : %.2f" % max_lkl)
 
     # If the analysis is done with the main folder (and not the comparison
     # one), store all relevant quantities in the class.
