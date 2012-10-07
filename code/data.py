@@ -277,6 +277,19 @@ class data:
           del self.cosmo_arguments[elem]
         except (KeyError):
           pass
+      if elem == 'ln10^{10}A_s':
+        try:
+          self.cosmo_arguments['A_s']   = math.exp(self.cosmo_arguments[elem])/1.e10
+          del self.cosmo_arguments[elem]
+        except (KeyError):
+          pass
+      if elem == 'exp_m_2_tau_As':
+        try:
+          tau_reio = self.cosmo_arguments['tau_reio']
+          self.cosmo_arguments['A_s']   = self.cosmo_arguments[elem]*math.exp(2.*tau_reio)
+          del self.cosmo_arguments[elem]
+        except (KeyError):
+          pass
       if elem == 'f_cdi':
         try:
           self.cosmo_arguments['n_cdi']   =self.cosmo_arguments['n_s']

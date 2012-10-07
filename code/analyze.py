@@ -620,11 +620,13 @@ class info:
 
           temp_index = self.ref_names.index(self.plotted_parameters[i])
           comp_tex_names.remove(self.tex_names[temp_index])
-      num_columns = round(math.sqrt(len(self.plotted_parameters) + len(comp_plotted_parameters))) 
-      num_lines   = math.ceil((len(self.plotted_parameters)+len(comp_plotted_parameters))*1.0/num_columns)
+      num_columns = int(round(math.sqrt(len(self.plotted_parameters) + len(comp_plotted_parameters)))) 
+      num_lines   = int(math.ceil((len(self.plotted_parameters)+len(comp_plotted_parameters))*1.0/num_columns))
     else:
-      num_columns = round(math.sqrt(len(self.plotted_parameters)))
-      num_lines   = math.ceil(len(self.plotted_parameters)*1.0/num_columns)
+      num_columns = int(round(math.sqrt(len(self.plotted_parameters))))
+      num_lines   = int(math.ceil(len(self.plotted_parameters)*1.0/num_columns))
+
+    print num_lines,num_columns
 
     # Actual plotting
     print('-----------------------------------------------')
@@ -636,7 +638,7 @@ class info:
 	# Adding the subplots to the respective figures, this will be the diagonal for the triangle plot.
 	if plot_2d:
 	  ax2d=fig2d.add_subplot(len(self.plotted_parameters),len(self.plotted_parameters),i*(len(self.plotted_parameters)+1)+1,yticks=[])
-	ax1d = fig1d.add_subplot(num_lines,num_columns,i+1,yticks=[])
+        ax1d = fig1d.add_subplot(num_lines,num_columns,i+1,yticks=[])
 
 	# normalized histogram
 	hist,bin_edges=np.histogram(chain[:,index+2],bins=bin_number,weights=chain[:,0],normed=False)
