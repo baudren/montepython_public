@@ -629,8 +629,6 @@ class info:
       num_columns = int(round(math.sqrt(len(self.plotted_parameters))))
       num_lines   = int(math.ceil(len(self.plotted_parameters)*1.0/num_columns))
 
-    print num_lines,num_columns
-
     # Actual plotting
     print('-----------------------------------------------')
     for i in range(len(self.plotted_parameters)):
@@ -878,6 +876,8 @@ class info:
     failed = False
     for level in levels:
       norm = float((sum(histogram)-0.5*(histogram[0]+histogram[-1]))*delta)
+      norm += 0.25*(left_edge+histogram[0])*delta
+      norm += 0.25*(right_edge+histogram[-1])*delta
       water_level_up   = max(histogram)*1.0
       water_level_down = min(histogram)*1.0
       top = 0.
@@ -923,6 +923,11 @@ class info:
 	  print('\n\n  the loop to check for sigma deviations was too long to converge')
 	  break
 
+      print top,norm,abs(top/norm)
+      print bincenters[indices]
+      print histogram[indices],water_level
+      print
+
       # min
       if indices[0]>0:
 	bounds[j][0] = bincenters[indices[0]] - delta*(histogram[indices[0]]-water_level)/(histogram[indices[0]]-histogram[indices[0]-1])
@@ -943,6 +948,7 @@ class info:
 
       j+=1
 	
+    print
     return bounds
 
   def write(self,file,indices,name,string,quantity,modifiers=None):
@@ -969,9 +975,9 @@ class info:
   # parameters. Feel free to modify to your needs.
   def get_fontsize(self,diag_length):
     # for a diagonal of 3, fontsize of 22, for a diagonal of 13, fontsize of ?
-    fontsize = 20
+    fontsize = 18
     #fontsize = round( 19 - (diag_length-5)*1.38)
     # for a diagonal of 3, fontsize of 18, for a diagonal of 13, fontsize of ?
-    ticksize = 16
+    ticksize = 14
     #ticksize = round( 14 - (diag_length-5)*1)
     return fontsize,ticksize
