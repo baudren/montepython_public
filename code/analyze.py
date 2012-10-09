@@ -331,10 +331,13 @@ class info:
     # likelihood will be used as a reference, and not each chain's maximum.
     max_lkl = []
 
-    # Circle through all files to find the maximum
+    # Circle through all files to find the maximum (and largest filename)
+    length_of_largest_filename = 0
     print('--> Finding global maximum of likelihood')
     for File in Files:
       i=Files.index(File)
+      if len(File.split('/')[-1])>length_of_largest_filename:
+        length_of_largest_filename = len(File.split('/')[-1])
       # cheese will brutally contain everything in the chain File being scanned
       cheese = (np.array([[float(elem) for elem in line.split()] for line in open(File,'r')]))
       max_lkl.append(min(cheese[:,1])) # beware, it is the min because we are talking about '- log likelihood'
@@ -353,9 +356,9 @@ class info:
       for j in range(index_slash+2):
         complementary_string+=' '
       if i ==0:
-        print '--> Scanning file {0}'.format(File),
+        exec "print '--> Scanning file %-{0}s' % File,".format(length_of_largest_filename)
       else:
-        print '                 {0}{1}'.format(complementary_string,File.split('/')[-1]),
+        exec "print '                 %s%-{0}s' % (complementary_string,File.split('/')[-1]),".format(length_of_largest_filename)
       # cheese will brutally contain everything in the chain File being scanned
       cheese = (np.array([[float(elem) for elem in line.split()] for line in open(File,'r')]))
       local_max_lkl = min(cheese[:,1]) # beware, it is the min because we are talking about '- log likelihood'
