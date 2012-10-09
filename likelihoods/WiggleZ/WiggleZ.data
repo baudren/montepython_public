@@ -1,0 +1,38 @@
+WiggleZ.data_directory    = data.path['data']+'WiggleZ/'
+
+# number of points and kbands in the input files
+WiggleZ.num_mpk_points_full = 20
+
+# decide which bandpowers to use, min to max
+WiggleZ.min_mpk_points_use = 1
+WiggleZ.max_mpk_points_use = 20
+# as in the Tegmark papers therefore use non linear corrections
+
+# decide which kbands to use N.B. P(k) is set to zero outside
+# these limits. 
+# Since the windows file starts at k/h=1e-4 then truncate 
+# to matter_power_minkh in cmbtypes.
+# This time the windows file goes to k/h=1.
+WiggleZ.Q_marge = True
+#flat prior on b^2*Q, marginalized analytically
+WiggleZ.Q_flat = True
+WiggleZ.Ag = 1.4
+
+WiggleZ.use_scaling = True
+
+WiggleZ.min_mpk_kbands_use = 1
+WiggleZ.max_mpk_kbands_use = 65
+
+# Store in an array the four dataset files, each containing all information for
+# a give redshift bin
+
+WiggleZ.dataset_files = []
+
+WiggleZ.dataset_files.append('wigglez_jan11a.dataset')
+WiggleZ.dataset_files.append('wigglez_jan11b.dataset')
+WiggleZ.dataset_files.append('wigglez_jan11c.dataset')
+WiggleZ.dataset_files.append('wigglez_jan11d.dataset')
+
+# kbands used for Pk, identical accross all redshift bins
+WiggleZ.kbands_file             = 'wigglez_jan11kbands.txt'
+WiggleZ.num_mpk_kbands_full     = 150
