@@ -144,7 +144,7 @@ class info:
 
     self.write(self.info,indices,'R-1 values','%.6f',self.R)
     self.write(self.info,indices,'Best Fit  ','%.6e',chain[a[0],2:])
-    self.write(self.info,indices,'mean      ','%.6e',chain[a[0],2:])
+    self.write(self.info,indices,'mean      ','%.6e',self.mean)
     self.write(self.info,indices,'sigma     ','%.6e',(self.bounds[:,0,1]-self.bounds[:,0,0])/2.)
     self.info.write('\n')
     self.write(self.info,indices,'1-sigma - ','%.6e',self.bounds[:,0,0])
@@ -923,10 +923,10 @@ class info:
 	  print('\n\n  the loop to check for sigma deviations was too long to converge')
 	  break
 
-      print top,norm,abs(top/norm)
-      print bincenters[indices]
-      print histogram[indices],water_level
-      print
+      #print top,norm,abs(top/norm)
+      #print bincenters[indices]
+      #print histogram[indices],water_level
+      #print
 
       # min
       if indices[0]>0:
@@ -948,7 +948,7 @@ class info:
 
       j+=1
 	
-    print
+    #print
     return bounds
 
   def write(self,file,indices,name,string,quantity,modifiers=None):
