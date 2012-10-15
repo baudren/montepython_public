@@ -128,8 +128,9 @@ class info:
       indices.append(self.ref_names.index(self.plotted_parameters[i]))
 
     print('--> Writing .info and .tex files')
-    # Write down to the .info file all necessary information
-    self.info.write('\n param names\t:\t')
+    # Write down to the .h_info file all necessary information
+    self.h_info.write(' param names\t:\t')
+    self.v_info_names = []
     for i in indices:
       if self.scales[i,i] != 1: 
 	if (float(self.scales[i,i]) > 100. or (self.scales[i,i]) < 0.01):
@@ -140,52 +141,45 @@ class info:
 	  string = ' %2g%s' % (1./self.scales[i,i],self.ref_names[i])
       else:
 	string = ' %s' % self.ref_names[i]
-      self.info.write("%-16s" % string)
+      self.v_info_names.append(string)
+      self.h_info.write("%-16s" % string)
 
-    self.write(self.info,indices,'R-1 values','%.6f',self.R)
-    self.write(self.info,indices,'Best Fit  ','%.6e',chain[a[0],2:])
-    self.write(self.info,indices,'mean      ','%.6e',self.mean)
-    self.write(self.info,indices,'sigma     ','%.6e',(self.bounds[:,0,1]-self.bounds[:,0,0])/2.)
-    self.info.write('\n')
-    self.write(self.info,indices,'1-sigma - ','%.6e',self.bounds[:,0,0])
-    self.write(self.info,indices,'1-sigma + ','%.6e',self.bounds[:,0,1])
-    self.write(self.info,indices,'2-sigma - ','%.6e',self.bounds[:,1,0])
-    self.write(self.info,indices,'2-sigma + ','%.6e',self.bounds[:,1,1])
-    self.write(self.info,indices,'3-sigma - ','%.6e',self.bounds[:,2,0])
-    self.write(self.info,indices,'3-sigma + ','%.6e',self.bounds[:,2,1])
+    self.write_h(self.h_info,indices,'R-1 values','%.6f',self.R)
+    self.write_h(self.h_info,indices,'Best Fit  ','%.6e',chain[a[0],2:])
+    self.write_h(self.h_info,indices,'mean      ','%.6e',self.mean)
+    self.write_h(self.h_info,indices,'sigma     ','%.6e',(self.bounds[:,0,1]-self.bounds[:,0,0])/2.)
+    self.h_info.write('\n')
+    self.write_h(self.h_info,indices,'1-sigma - ','%.6e',self.bounds[:,0,0])
+    self.write_h(self.h_info,indices,'1-sigma + ','%.6e',self.bounds[:,0,1])
+    self.write_h(self.h_info,indices,'2-sigma - ','%.6e',self.bounds[:,1,0])
+    self.write_h(self.h_info,indices,'2-sigma + ','%.6e',self.bounds[:,1,1])
+    self.write_h(self.h_info,indices,'3-sigma - ','%.6e',self.bounds[:,2,0])
+    self.write_h(self.h_info,indices,'3-sigma + ','%.6e',self.bounds[:,2,1])
     # bounds 
-    self.write(self.info,indices,'1-sigma > ','%.6e',self.mean+self.bounds[:,0,0])
-    self.write(self.info,indices,'1-sigma < ','%.6e',self.mean+self.bounds[:,0,1])
-    self.write(self.info,indices,'2-sigma > ','%.6e',self.mean+self.bounds[:,1,0])
-    self.write(self.info,indices,'2-sigma < ','%.6e',self.mean+self.bounds[:,1,1])
-    self.write(self.info,indices,'3-sigma > ','%.6e',self.mean+self.bounds[:,2,0])
-    self.write(self.info,indices,'3-sigma < ','%.6e',self.mean+self.bounds[:,2,1])
+    self.h_info.write('\n')
+    self.write_h(self.h_info,indices,'1-sigma > ','%.6e',self.mean+self.bounds[:,0,0])
+    self.write_h(self.h_info,indices,'1-sigma < ','%.6e',self.mean+self.bounds[:,0,1])
+    self.write_h(self.h_info,indices,'2-sigma > ','%.6e',self.mean+self.bounds[:,1,0])
+    self.write_h(self.h_info,indices,'2-sigma < ','%.6e',self.mean+self.bounds[:,1,1])
+    self.write_h(self.h_info,indices,'3-sigma > ','%.6e',self.mean+self.bounds[:,2,0])
+    self.write_h(self.h_info,indices,'3-sigma < ','%.6e',self.mean+self.bounds[:,2,1])
+
+    # Write vertical info file
+    self.v_info.write('%-15s\t: %-6s %-10s %-10s %-10s %-11s %-10s %-11s %-10s %-10s %-10s %-10s %-10s' % ('param names','R-1','Best fit','mean','sigma','1-sigma -','1-sigma +','2-sigma -','2-sigma +','1-sigma >','1-sigma <','2-sigma >','2-sigma <'))
+    for name in self.v_info_names:
+      index = self.v_info_names.index(name)
+      self.v_info.write('\n%-15s\t: %.4f %.4e %.4e %.4e %.4e %.4e %.4e %.4e %.4e %.4e %.4e %.4e' % (name,
+        self.R[index],chain[a[0],2:][index],
+        self.mean[index],
+        (self.bounds[:,0,1][index]-self.bounds[:,0,0][index])/2.,
+        self.bounds[:,0,0][index],self.bounds[:,0,1][index],
+        self.bounds[:,1,0][index],self.bounds[:,1,1][index],
+        self.mean[index]+self.bounds[:,0,0][index],self.mean[index]+self.bounds[:,0,1][index],
+        self.mean[index]+self.bounds[:,1,0][index],self.mean[index]+self.bounds[:,1,1][index]))
 
     # Writing the .tex file that will have this table prepared to be imported
     # in a tex document.
-    self.tex.write("\documentclass{article}\n")
-    self.tex.write("\\begin{document}\n")
-    self.tex.write("\\begin{tabular}{|")
-    for i in indices:
-      self.tex.write("c")
-    self.tex.write("|}\n \hline")
-
-    for i in indices:
-      self.tex.write("%s " % self.tex_names[i])
-      if i!=indices[-1]:
-        self.tex.write(" & ")
-      else:
-        self.tex.write(" \\\\ \hline\n")
-
-    for i in indices:
-      self.tex.write("$%.4g_{%.2g}^{+%.2g}$" % (self.mean[i],self.bounds[i,0,0],self.bounds[i,0,1]))
-      if i!=indices[-1]:
-        self.tex.write(" & ")
-      else:
-        self.tex.write(" \\\\ \hline\n")
-
-    self.tex.write("\\end{tabular}\n")
-    self.tex.write("\\end{document}")
+    self.write_tex(indices)
 
   # Scan the whole input folder, and include all chains in it (ending with
   # .txt to keep compatibility with CosmoMC)
@@ -233,12 +227,14 @@ class info:
     # If the folder has no subdirectory, then go for a simple infoname,
     # otherwise, call it with the last name
     if (len(folder.split('/')) <= 2 and folder.split('/')[-1] == ''):
-      infoname = folder+folder.rstrip('/')+'.info'
+      v_infoname = folder+folder.rstrip('/')+'.v_info'
+      h_infoname = folder+folder.rstrip('/')+'.h_info'
       texname  = folder+folder.rstrip('/')+'.tex'
       covname  = folder+folder.rstrip('/')+'.covmat'
       logname  = folder+folder.rstrip('/')+'.log'
     else:
-      infoname = folder+folder.split('/')[-2]+'.info'
+      v_infoname = folder+folder.split('/')[-2]+'.v_info'
+      h_infoname = folder+folder.split('/')[-2]+'.h_info'
       texname  = folder+folder.split('/')[-2]+'.tex'
       covname  = folder+folder.split('/')[-2]+'.covmat'
       logname  = folder+folder.split('/')[-2]+'.log'
@@ -246,7 +242,8 @@ class info:
     # Distinction between the main chain and the comparative one, instead of
     # storing everything into the class, return it
     if is_main_chain:
-      self.info  = open(infoname,'w')
+      self.v_info  = open(v_infoname,'w')
+      self.h_info  = open(h_infoname,'w')
       self.tex   = open(texname,'w')
       self.cov   = open(covname,'w')
       self.log   = open(logname,'w')
@@ -951,7 +948,7 @@ class info:
     #print
     return bounds
 
-  def write(self,file,indices,name,string,quantity,modifiers=None):
+  def write_h(self,file,indices,name,string,quantity,modifiers=None):
     file.write('\n '+name+'\t:\t')
     for i in indices:
       if quantity[i] >= 0:
@@ -960,6 +957,63 @@ class info:
         space_string = ''
       file.write(space_string+string % quantity[i]+'\t')
 
+    ## Write the headers
+      #file.write('%.16s\t%.10s %.10s %.10s %.10s %.10s %.10s %.10s %.10s %.10s %.10s %.10s %.10s %.10s %.10s %.10s %.10s' % ('param names','R-1','Best fit','mean','sigma','1-sigma - ','1-sigma + ','2-sigma - ','2-sigma + ','3-sigma - ','3-sigma + ','1-sigma > ','1-sigma < ','2-sigma > ','2-sigma < ','3-sigma > ','3-sigma < '))
+    #else:
+      #index = self.v_info_names.index(name)
+      #print index
+      ##file.write('\n%.16s\t:\t%.6f %.6e %.6e' % (name,self.R[index],chain[a[0],2:][index],self.mean[index])
+      #file.write('\n%.16s\t:\t%.6f %.6e' % (name,self.R[index],self.mean[index]))
+    #self.write_h(self.h_info,indices,'Best Fit  ','%.6e',chain[a[0],2:])
+    #self.write_h(self.h_info,indices,'mean      ','%.6e',self.mean)
+    #self.write_h(self.h_info,indices,'sigma     ','%.6e',(self.bounds[:,0,1]-self.bounds[:,0,0])/2.)
+    #self.h_info.write('\n')
+    #self.write_h(self.h_info,indices,'1-sigma - ','%.6e',self.bounds[:,0,0])
+    #self.write_h(self.h_info,indices,'1-sigma + ','%.6e',self.bounds[:,0,1])
+    #self.write_h(self.h_info,indices,'2-sigma - ','%.6e',self.bounds[:,1,0])
+    #self.write_h(self.h_info,indices,'2-sigma + ','%.6e',self.bounds[:,1,1])
+    #self.write_h(self.h_info,indices,'3-sigma - ','%.6e',self.bounds[:,2,0])
+    #self.write_h(self.h_info,indices,'3-sigma + ','%.6e',self.bounds[:,2,1])
+    ## bounds 
+    #self.h_info.write('\n')
+    #self.write_h(self.h_info,indices,'1-sigma > ','%.6e',self.mean+self.bounds[:,0,0])
+    #self.write_h(self.h_info,indices,'1-sigma < ','%.6e',self.mean+self.bounds[:,0,1])
+    #self.write_h(self.h_info,indices,'2-sigma > ','%.6e',self.mean+self.bounds[:,1,0])
+    #self.write_h(self.h_info,indices,'2-sigma < ','%.6e',self.mean+self.bounds[:,1,1])
+    #self.write_h(self.h_info,indices,'3-sigma > ','%.6e',self.mean+self.bounds[:,2,0])
+    #self.write_h(self.h_info,indices,'3-sigma < ','%.6e',self.mean+self.bounds[:,2,1])
+      #for i in indices:
+        #if quantity[i] >= 0:
+          #space_string = ' '
+        #else:
+          #space_string = ''
+        #file.write(space_string+string % quantity[i]+'\t')
+
+  def write_tex(self,indices):
+    
+    self.tex.write("\documentclass{article}\n")
+    self.tex.write("\\begin{document}\n")
+    self.tex.write("\\begin{tabular}{|")
+    for i in indices:
+      self.tex.write("c")
+    self.tex.write("|}\n \hline")
+
+    for i in indices:
+      self.tex.write("%s " % self.tex_names[i])
+      if i!=indices[-1]:
+        self.tex.write(" & ")
+      else:
+        self.tex.write(" \\\\ \hline\n")
+
+    for i in indices:
+      self.tex.write("$%.4g_{%.2g}^{+%.2g}$" % (self.mean[i],self.bounds[i,0,0],self.bounds[i,0,1]))
+      if i!=indices[-1]:
+        self.tex.write(" & ")
+      else:
+        self.tex.write(" \\\\ \hline\n")
+
+    self.tex.write("\\end{tabular}\n")
+    self.tex.write("\\end{document}")
 
   def cubic_interpolation(self,hist,bincenters):
     if self.has_interpolate_module:
