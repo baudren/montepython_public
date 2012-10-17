@@ -614,12 +614,16 @@ class info:
     # unique and thus require a simple treatment.
     if comp:
       backup_comp_names = np.copy(comp_plotted_parameters)
+      print 'backup_comp_names is',backup_comp_names
+      print 'comp_backup_names is',comp_backup_names
+      print 'comp_ref_names is',comp_ref_names
+      print 'comp_tex_names is',comp_tex_names
+      print 'comp_plotted_parameters is',comp_plotted_parameters
+
       for i in range(len(self.plotted_parameters)):
 	if self.plotted_parameters[i] in comp_plotted_parameters:
 	  comp_plotted_parameters.remove(self.plotted_parameters[i])
 
-          temp_index = self.ref_names.index(self.plotted_parameters[i])
-          comp_tex_names.remove(self.tex_names[temp_index])
       num_columns = int(round(math.sqrt(len(self.plotted_parameters) + len(comp_plotted_parameters)))) 
       num_lines   = int(math.ceil((len(self.plotted_parameters)+len(comp_plotted_parameters))*1.0/num_columns))
     else:
@@ -732,7 +736,7 @@ class info:
             ax2d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=2)
             ax1d.plot(interp_grid,interp_lkl_mean,color='red',ls='--',lw=4)
           except:
-            print('could not find likelihood contour for ',self.plotted_parameters[index])
+            print 'could not find likelihood contour for ',self.plotted_parameters[i]
 
 	if command_line.subplot is True:
 	  if not comp:
@@ -813,7 +817,7 @@ class info:
       for i in range(len(self.plotted_parameters),len(self.plotted_parameters)+len(comp_plotted_parameters)):
 
         ax1d = fig1d.add_subplot(num_lines,num_columns,i+1,yticks=[])
-        ii = np.where(backup_comp_names == comp_plotted_parameters[i-len(self.plotted_parameters)])[0][0]
+        ii   = comp_ref_names.index(comp_plotted_parameters[i-len(self.plotted_parameters)])
 
         comp_hist,comp_bin_edges = np.histogram(comp_chain[:,ii+2],bins=bin_number,weights=comp_chain[:,0],normed=False)
         comp_bincenters = 0.5*(comp_bin_edges[1:]+comp_bin_edges[:-1])
@@ -830,7 +834,7 @@ class info:
         ax1d.set_xticks(comp_ticks[ii])
         ax1d.set_xticklabels(['%.4g' % s for s in comp_ticks[ii]],fontsize=ticksize1d)
         ax1d.axis([comp_x_range[ii][0], comp_x_range[ii][1],0,1.05])
-        ax1d.set_title('%s= $%.4g^{+%.4g}_{%.4g}$' % (comp_tex_names[i-len(self.plotted_parameters)],comp_mean[ii],comp_bounds[0][1],comp_bounds[0][0]),fontsize=fontsize1d)
+        ax1d.set_title('%s= $%.4g^{+%.4g}_{%.4g}$' % (comp_tex_names[ii],comp_mean[ii],comp_bounds[0][1],comp_bounds[0][0]),fontsize=fontsize1d)
         ax1d.plot(interp_comp_grid,interp_comp_hist,color='red',linewidth=2,ls='-')
         if command_line.subplot is True:
           extent1d = ax1d.get_window_extent().transformed(fig1d.dpi_scale_trans.inverted())
@@ -956,38 +960,6 @@ class info:
       else:
         space_string = ''
       file.write(space_string+string % quantity[i]+'\t')
-
-    ## Write the headers
-      #file.write('%.16s\t%.10s %.10s %.10s %.10s %.10s %.10s %.10s %.10s %.10s %.10s %.10s %.10s %.10s %.10s %.10s %.10s' % ('param names','R-1','Best fit','mean','sigma','1-sigma - ','1-sigma + ','2-sigma - ','2-sigma + ','3-sigma - ','3-sigma + ','1-sigma > ','1-sigma < ','2-sigma > ','2-sigma < ','3-sigma > ','3-sigma < '))
-    #else:
-      #index = self.v_info_names.index(name)
-      #print index
-      ##file.write('\n%.16s\t:\t%.6f %.6e %.6e' % (name,self.R[index],chain[a[0],2:][index],self.mean[index])
-      #file.write('\n%.16s\t:\t%.6f %.6e' % (name,self.R[index],self.mean[index]))
-    #self.write_h(self.h_info,indices,'Best Fit  ','%.6e',chain[a[0],2:])
-    #self.write_h(self.h_info,indices,'mean      ','%.6e',self.mean)
-    #self.write_h(self.h_info,indices,'sigma     ','%.6e',(self.bounds[:,0,1]-self.bounds[:,0,0])/2.)
-    #self.h_info.write('\n')
-    #self.write_h(self.h_info,indices,'1-sigma - ','%.6e',self.bounds[:,0,0])
-    #self.write_h(self.h_info,indices,'1-sigma + ','%.6e',self.bounds[:,0,1])
-    #self.write_h(self.h_info,indices,'2-sigma - ','%.6e',self.bounds[:,1,0])
-    #self.write_h(self.h_info,indices,'2-sigma + ','%.6e',self.bounds[:,1,1])
-    #self.write_h(self.h_info,indices,'3-sigma - ','%.6e',self.bounds[:,2,0])
-    #self.write_h(self.h_info,indices,'3-sigma + ','%.6e',self.bounds[:,2,1])
-    ## bounds 
-    #self.h_info.write('\n')
-    #self.write_h(self.h_info,indices,'1-sigma > ','%.6e',self.mean+self.bounds[:,0,0])
-    #self.write_h(self.h_info,indices,'1-sigma < ','%.6e',self.mean+self.bounds[:,0,1])
-    #self.write_h(self.h_info,indices,'2-sigma > ','%.6e',self.mean+self.bounds[:,1,0])
-    #self.write_h(self.h_info,indices,'2-sigma < ','%.6e',self.mean+self.bounds[:,1,1])
-    #self.write_h(self.h_info,indices,'3-sigma > ','%.6e',self.mean+self.bounds[:,2,0])
-    #self.write_h(self.h_info,indices,'3-sigma < ','%.6e',self.mean+self.bounds[:,2,1])
-      #for i in indices:
-        #if quantity[i] >= 0:
-          #space_string = ' '
-        #else:
-          #space_string = ''
-        #file.write(space_string+string % quantity[i]+'\t')
 
   def write_tex(self,indices):
     
