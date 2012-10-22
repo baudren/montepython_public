@@ -6,6 +6,7 @@
 \newcommand{\CLASS}{\texttt{CLASS}}
 \newcommand{\MP}{\texttt{Monte Python}}
 \newcommand{\Wlik}{\texttt{Wlik}}
+\newcommand{\Clik}{\texttt{Clik}}
 \newcommand{\tild}{\raise.17ex\hbox{$\scriptstyle\mathtt{\sim}$}}
 
 
@@ -63,18 +64,15 @@
 
   \subsubsection*{Living with different versions of \CLASS}
 
-  If at some point, you have several different coexisting versions of \CLASS~ on
-  the system, and you are worried that \MP~ is not using the good one,
-  rest reassured. As long as you run \MP~ with the proper path to the
-  proper \CLASS, then it will use this one.
+  If at some point, you have several different coexisting versions of \CLASS~
+  on the system, and you are worried that \MP~ is not using the good one, rest
+  reassured. As long as you run \MP~ with the proper path to the proper \CLASS,
+  then it will use this one (see section \ref{sec:installation}: Installation).
 
-  \subsection{\Wlik}
+  \subsection{\Clik: for Planck members only}
 
-  \Wlik
-  Download the latest Wlik public release, with mock planck data from
-  \url{blabla}. Follow the instruction to install it. This step is not
-  compulsory, as for now, \MP~ can run on its own. However, if you want
-  to use the WMAP7 likelihood, and/or planck mock data, you need to install it.\\
+  Download the latest Clik public release. Follow the instruction to install
+  it. This step is not compulsory, as for now, \MP~ can run on its own.
 
   Once it is installed, everytime you will want to use it with \MP,
   you will have to run the following command:
@@ -84,21 +82,22 @@
   \end{alltt}
   
   Alternatively, you can add the previous command to your $\tild$/.bashrc file.
-
+  You can then use the likelihood \verb?clik_fake_planck?.
 
 \newpage
 %%%%%%%% INSTALLATION %%%%%%%%
-\section{Installation}
+\section{Installation\label{sec:installation}}
 
   Move the latest release of \MP~ to your code/ folder, and untar its
   content:
 
   \begin{alltt} 
-    code]\$ tar -xzvf montepython-x.y.tgz 
+    code]\$ bunzip montepython-vx.y.tar.bz2 
+    code]\$ tar -xvf montepython-vx.y.tar
     code]\$ cd montepython
   \end{alltt}
 
- You will have to edit two files (one for every new distribution of \MP, and
+ You will have to edit two files (once for every new distribution of \MP, and
  the other one, once and for all). The first to edit is
  \emph{code/MontePython.py}. Its first line reads:
 
@@ -120,30 +119,34 @@
  At minimum, {\bf default.conf} should contain two lines, filled with the
  relevant information for your machine:
  \begin{alltt}
-   path['class']   = 'path/to/your/class/'
+   path['cosmo']   = 'path/to/your/class/'
    path['data']    = 'path/to/your/montepython/data/'
  \end{alltt}
  
- If you have installed Clik, then you should also add:
+ If you want to use the WMAP 7 likelihood, you should also add
+ \begin{alltt}
+   path['wrapper_wmap']   = 'path/to/your/class/'
+ \end{alltt}
+
+ If you have installed Clik (Planck users), then you should also add:
  \begin{alltt}
    path['clik']    = 'path/to/your/clik/examples/'
  \end{alltt}
  
- To run \MP, simply type \verb?python code/MontePython.py?. Of course,
- you will need to provide more options than that, that will be explained below. 
-
+ To run \MP, simply type \verb?python code/MontePython.py --help?. This will provide you with a short description of the available command line arguments. We will go below, in section blabla, over a typical run of the code.
+ 
 \newpage
 %%%%%%%% SUMMARIZED %%%%%%%%%%
 \section{Summarized behaviour and philosophy of \MP}
 
   The principle is the following. You run \MP~ giving him, at least, a
   parameter file and an output folder. This will create a new folder, store the
-  parameter file (in \emph{folder/log.param}), and start a Markov Chain there.
-  You can then launch new runs in this existing folder, as long as you are
-  using the same parameter file.  Otherwise, the program will simply not
-  launch.\\
+  parameter file, the likelihood properties, the \CLASS~ version (in
+  \emph{folder/log.param}), and start a Markov Chain there.  You can then
+  launch new runs in this existing folder, as long as you are using the same
+  parameter file. Otherwise, the program will simply not launch.\\
 
-  All the configuration files for all the likelihoods, Class parameters and
+  All the configuration files for all the likelihoods, cosmo parameters and
   mcmc parameters will be stored in this folder. This will allow you to make
   reference to this file, rerun anything with the exact same settings as much
   as you want.\\
@@ -164,7 +167,7 @@
   This file contains the following lines:
 
   \begin{alltt}
-    data.exp = ['clik_wmap_full','sn','acbar']
+    data.experiments = ['wmap','spt']
     
     data.params[cosmo_name]       = [mean,min,max,1-sigma prior,scale,'cosmo']
     ...
@@ -172,8 +175,10 @@
     data.params[nuisance_name]    = [mean,min,max,1-sigma prior,scale,'nuisance']
     ...
 
-    data.Class_arguments['perturbation_verbose'] = 3
-    data.Class_arguments['non linear']           = 'one-loop'
+    data.params[cosmo_name]       = [mean,min,max,1-sigma prior,scale,'derived']
+    ...
+
+    data.cosmo_arguments['non linear']           = 'one-loop'
 
     data.N = 10
     data.write_step = 5
@@ -183,7 +188,7 @@
   you want to take into account. The way they work will be explained in
   subsection \ref{ssec:lkl}\\
 
-  In \verb?data.params?, you will list all the Class and nuisance parameter you
+  In \verb?data.params?, you will list all the cosmo and nuisance parameter you
   want to vary (if they differ from the default values). You must give an array
   with six elements in it, in this order: 
   \begin{itemize}
@@ -198,7 +203,7 @@
       'nuisance')
   \end{itemize}
   
-  The procedure for \verb?data.Class_arguments? differs only slightly. What you
+  The procedure for \verb?data.cosmo_arguments? differs only slightly. What you
   pass here as argument is in fact the same value you would use in the
   \verb?explanatory.ini? of your \CLASS~ runs. So it is no array, but either a
   number or a string.\\
@@ -207,9 +212,9 @@
   be interprated by the code as arguments for the cosmological code (only
   \CLASS~ so far). It exists a function that you can edit that will allow you
   not to have a one to one correspondance between these two things. It is
-  located in \verb?code/data.py? and called \verb?update_Class_arguments?. A
+  located in \verb?code/data.py? and called \verb?update_cosmo_arguments?. A
   detailled exemple on how you should modify the function to suit your needs is
-  alreay implemented with the case of $\Omega_{\Lambda}$\\
+  alreay implemented with the case of $\Omega_{\Lambda}$.\\
 
   The two last elements are the number of steps you want your chain to be
   (\verb?data.N?) and the number of accepted steps the system should wait
@@ -221,7 +226,7 @@
   the most time consuming part of the code.\\
 
   {\bf Note}: you will want to overwrite the \verb?data.N? in the command line,
-  with the option \verb? -N 10000?. The value by default in the parameter file
+  with the option \verb?-N 10000?. The value by default in the parameter file
   is intentionnaly low (though you can change it of course). The reason is
   simply to prevent doing any mistake while testing the program on a cluster.
 
@@ -242,7 +247,8 @@
 
   \subsection{Input covariance matrix}
 
-  From any folder containing chains with more than 20 accepted points, you can launch the analyze part of the code by invoking the command:
+  From any folder containing chains with more than 20 accepted points, you can
+  launch the analyze part of the code by invoking the command:
   \begin{alltt}
     python code/MontePython.py -info chains/wmap7_sn/ -bins 15
   \end{alltt}
@@ -303,9 +309,10 @@
   to pass here the entire list of the nuisance parameters the likelihood is
   expecting before running. After, for each nuisance parameter, you need to
   specify the band file, and the scale. Here, you could also have a line that
-  force Class to have certain parameters (a certain $l_{max}$ for instance). To enforce this behaviour, just add:
+  force Class to have certain parameters (a certain $l_{max}$ for instance). To
+  enforce this behaviour, just add:
   \begin{alltt}
-    acbar.need_Class_arguments(data,\{'lensing':'yes', 'output':'tCl lCl pCl'\})
+    acbar.need_cosmo_arguments(data,\{'lensing':'yes', 'output':'tCl lCl pCl'\})
   \end{alltt}
 
   Now in your parameter file, simply input the line \verb?data.exp=['acbar']?,
@@ -346,8 +353,8 @@
     \item \verb?read_from_file?, it will only read your .data file and extract
       properly the information
     \item \verb?get_cl?, returns the properly normalized $C_l$ from Class, in $\mu K^2$.
-    \item \verb?need_Class_arguments?, enforce the definition at a certain
-      value of certain Class parameters. Typically, this will enforce that the
+    \item \verb?need_cosmo_arguments?, enforce the definition at a certain
+      value of certain cosmo parameters. Typically, this will enforce that the
       $C_l$ gets computed until a certain $l$.
     \item \verb?read_contamination_spectra?, TODO julien ?
     \item \verb?add_contamination_spectra?,
