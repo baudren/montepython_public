@@ -1,24 +1,38 @@
 ####################
-# Monte-Python, a Monte Carlo Markov Chain code (with Class!)
-# Version 0.9
+# Monte Python, a Monte Carlo Markov Chain code (with Class!)
+# Version 1.0
 # written by Benjamin Audren
 ####################
 
+## Prerequisites
+-----------------------
+
+  * You need the python program ** version 2.7 ** or above, but less than 3.0.
+  Note that lower versions of python will work, down to 2.6 (tested), if you
+  add manually two extra packages (ordereddict and argparse).
+
+  * Your python of choice must have numpy (version >= 1.4.1), and cython. The
+  later is used to wrap CLASS in python.
+
+  * [opt] If you want to use fully the plotting capabilities of Monte Python,
+  you also need the scipy module, with interpolate.
+
 ## The MontePython part
 -----------------------
-  Move the .tar.bz2 file to your convenience, untar its content
+  Move the .tar.bz2 file to the place of your convenience, untar its content
 
   $ bunzip2 montepython-vx.y.tar.bz2
   $ tar -xvf montepython-vx.y.tar
   
   This will create a directory named MontePython into your current directory.
-  If you add the following line to your ~/.bashrc file:
-  
-  $ export PATH=$PATH:/path/to/MontePython/
 
-  then a simple call MontePython.py anywhere will launch the program.
-  
-  To make this work, you need to install all the necessary libraries.
+  The only file you need to adapt to your local configuration is located in the
+  root directory of Monte Python : default.conf. This file will be read (and
+  stored) whenever you execute the program, and will search for your
+  cosmological code path, your data path, and your wmap wrapper path.
+
+  If you want to call Monte Python from anywhere, please read the pdf
+  documentation.
 
 ## The Class part
 -----------------
@@ -27,10 +41,9 @@
   CFLAG   = -O4 -Wall -fopenmp -fPIC 
   LDFLAG  = -O4 -Wall -fopenmp -fPIC
 
-  while commenting your usual lines for these flags.
-  Now type make clean, then make (and not make class !).
-  This builds the libclass.a, needed for the next step.
-  From there, 
+  while commenting your usual lines for these flags.  Now type make clean, then
+  make (and not make class !).  This builds the libclass.a, needed for the next
+  step. From there, 
 
   cd python/
 
@@ -38,19 +51,28 @@
   python setup.py install --user
 
   If this step fails, check that you have cython installed, numpy (a numerical
-package for python), python (well... did I say this code was in python ?) with
-a version > 2.6.  If this step fails again, kindly ask your sys.admin, (s)he is
-there for this, afterall.
+  package for python), python (well... did I say this code was in python ?) with
+  a version > 2.6.  If this step fails again, kindly ask your sys.admin, (s)he
+  is there for this, after all.
 
-## The Clik part
+## The wmap wrapper part
 ----------------
 
-  Recover the Plik package, that will auto-install itself on any machine.
+  Go to your wrapper_wmap sub-folder, and execute:
+
+  ./waf configure --install_all_deps
+
+  This will automatically install the wrapper
+
+ Recover the Wlik package, that will auto-install itself on any machine.
   Remember before executing any MontePython.py to source the clik profile
 
-  $ source YourClikPath/bin/clik_profile.sh
+  $ source YourWlikPath/bin/clik_profile.sh
 
-  or add this line to your ~/.bashrc
+## For Planck collaborators (for future Planck users)
+-------------------------
+
+  Replace the upper section by Clik
 
 ## Finalizing the installation
 ------------------------------
