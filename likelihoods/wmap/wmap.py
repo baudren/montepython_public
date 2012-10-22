@@ -1,3 +1,4 @@
+import sys
 from likelihood_class import likelihood
 import inspect
 import pywlik
@@ -10,7 +11,6 @@ class wmap(likelihood):
     # Standard initialization, reads the .data
     likelihood.__init__(self,path,data,command_line,log_flag,default)
 
-    # Extra definitions....
     # Extra needed cosmological paramters
     self.need_cosmo_arguments(data,{'output':'tCl pCl lCl','lensing':'yes'})
 
@@ -18,6 +18,7 @@ class wmap(likelihood):
     if not default:
       return
 
+    # try importing the wrapper_wmap
     self.wmaplike = pywlik.wlik(self.data_directory,self.ttmin,self.ttmax,self.temin,self.temax,self.use_gibbs,self.use_lowlpol)
 
     #self.cls = np.loadtxt(self.cl_test_file)
@@ -39,7 +40,7 @@ class wmap(likelihood):
   
   def loglkl(self,_cosmo,data):
 
-    #nuisance_parameter_names = data.get_mcmc_parameters(['nuisance'])
+    nuisance_parameter_names = data.get_mcmc_parameters(['nuisance'])
 
     # get Cl's from the cosmological code
     cl = self.get_cl(_cosmo)
@@ -78,10 +79,9 @@ class wmap(likelihood):
         #index += 1
 
     # compute likelihood
-    print self.wmaplike.get_lmax()
     lkl=self.wmaplike(tot)[0]
 
     # add prior on nuisance parameters
-    #lkl = self.add_nuisance_prior(lkl,data)
+    lkl = self.add_nuisance_prior(lkl,data)
 
     return lkl

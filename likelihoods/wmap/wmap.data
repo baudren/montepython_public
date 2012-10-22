@@ -1,13 +1,11 @@
-#wmap.file               = 'blabla.dat'
-#wmap.use_nuisance	= ['some_nuisance','another_one']
-wmap.wrapper_directory  = data.path['data']+'../wrapper_wmap/'
-#wmap.cl_test_file       = wmap.wrapper_directory+"examples/wmap_7_1200.cltest"
-
-#wmap.use_nuisance	= ['A_SZ']
-#wmap.A_SZ_file          = '../WMAP_SZ_VBand.dat'
-#wmap.A_SZ_scale         = 1.
-
 wmap.data_directory     = data.path['data']+'likelihood_v4p1/'
+
+wmap.use_nuisance	= ['A_SZ']
+wmap.A_SZ_file          = '../WMAP_SZ_VBand.dat'
+wmap.A_SZ_scale         = 1.
+
+wmap.wrapper_directory  = data.path['wrapper_wmap']
+
 wmap.ttmin              = 2
 wmap.ttmax              = 1200
 wmap.temin              = 2
