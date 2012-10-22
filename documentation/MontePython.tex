@@ -4,7 +4,8 @@
 \usepackage{hyperref}
 \usepackage{fullpage}
 \newcommand{\CLASS}{\texttt{CLASS}}
-\newcommand{\MP}{\texttt{Monte Python}~}
+\newcommand{\MP}{\texttt{Monte Python}}
+\newcommand{\Wlik}{\texttt{Wlik}}
 \newcommand{\tild}{\raise.17ex\hbox{$\scriptstyle\mathtt{\sim}$}}
 
 
@@ -27,13 +28,14 @@
   First of all, you need a clean installation of {\bf python} (version $2.x$,
   $x\geq7$, but $<3.0$), with at least the {\bf numpy module} (version
   $\geq1.4.1$) and the {\bf cython module}. This last one is to convert the C
-  code \CLASS ~into a Python class.\\
+  code \CLASS~into a Python class.\\
 
-  If you also want the output plot to have cubic interpolation, you should have a
-  full {\bf scipy module} (at least version $0.9.0$), with the method {\emph
-  interpolate}. In case this one is badly installed, you will have an error
-  message when running the analyze module of Monte Python, and obtain only linear
-  interpolation.
+  If you also want the output plot to have cubic interpolation for analyzing
+  chains, you should have a full {\bf scipy module} (at least version $0.9.0$),
+  with the method {\emph interpolate}. In case this one is badly installed, you
+  will have an error message when running the analyze module of \MP,
+  and obtain only linear interpolation. Though not fatal, it does produce
+  uglier plots.
 
   \subsection{\CLASS}
 
@@ -57,18 +59,24 @@
     >>> from classy import Class
   \end{alltt}
 
-  If you get no error message from this line, you know everything is fine (be
-  carefull not to execute python in the class/python/ folder, for it would not
-  mean it is installed on the whole system.
+  If you get no error message from this line, you know everything is fine.
 
-  \subsection{Clik}
+  \subsubsection*{Living with different versions of \CLASS}
 
-  Download the latest Clik public release, with mock planck data from
+  If at some point, you have several different coexisting versions of \CLASS~ on
+  the system, and you are worried that \MP~ is not using the good one,
+  rest reassured. As long as you run \MP~ with the proper path to the
+  proper \CLASS, then it will use this one.
+
+  \subsection{\Wlik}
+
+  \Wlik
+  Download the latest Wlik public release, with mock planck data from
   \url{blabla}. Follow the instruction to install it. This step is not
-  compulsory, as for now, Monte Python can run on its own. However, if you want
+  compulsory, as for now, \MP~ can run on its own. However, if you want
   to use the WMAP7 likelihood, and/or planck mock data, you need to install it.\\
 
-  Once it is installed, everytime you will want to use it with Monte Python,
+  Once it is installed, everytime you will want to use it with \MP,
   you will have to run the following command:
 
   \begin{alltt}
@@ -82,7 +90,7 @@
 %%%%%%%% INSTALLATION %%%%%%%%
 \section{Installation}
 
-  Move the latest release of Monte Python to your code/ folder, and untar its
+  Move the latest release of \MP~ to your code/ folder, and untar its
   content:
 
   \begin{alltt} 
@@ -90,8 +98,8 @@
     code]\$ cd montepython
   \end{alltt}
 
- You will have to edit two files (one for every new distribution of Monte
- Python, and the other one, once and for all). The first to edit is
+ You will have to edit two files (one for every new distribution of \MP, and
+ the other one, once and for all). The first to edit is
  \emph{code/MontePython.py}. Its first line reads:
 
  \begin{alltt}
@@ -104,7 +112,7 @@
  \verb?code/MontePython.py?), then this line will be disregarded.
 
  The second file to change, and this one is crucial, is {\bf default.conf}, in
- the root directory of the code. This file will tell Monte Python where your
+ the root directory of the code. This file will tell \MP~ where your
  other programs are installed, and where you are storing the data for the
  likelihoods. It will be interpreted as a python file, so be careful to
  reproduce the syntax exactly.
@@ -121,14 +129,14 @@
    path['clik']    = 'path/to/your/clik/examples/'
  \end{alltt}
  
- To run Monte Python, simply type \verb?python code/MontePython.py?. Of course,
+ To run \MP, simply type \verb?python code/MontePython.py?. Of course,
  you will need to provide more options than that, that will be explained below. 
 
 \newpage
 %%%%%%%% SUMMARIZED %%%%%%%%%%
-\section{Summarized behaviour and philosophy of Monte Python}
+\section{Summarized behaviour and philosophy of \MP}
 
-  The principle is the following. You run Monte Python giving him, at least, a
+  The principle is the following. You run \MP~ giving him, at least, a
   parameter file and an output folder. This will create a new folder, store the
   parameter file (in \emph{folder/log.param}), and start a Markov Chain there.
   You can then launch new runs in this existing folder, as long as you are
@@ -192,12 +200,12 @@
   
   The procedure for \verb?data.Class_arguments? differs only slightly. What you
   pass here as argument is in fact the same value you would use in the
-  \verb?explanatory.ini? of your \CLASS runs. So it is no array, but either a
+  \verb?explanatory.ini? of your \CLASS~ runs. So it is no array, but either a
   number or a string.\\
 
   For the moment, remember that all elements you input with 'cosmo' role will
   be interprated by the code as arguments for the cosmological code (only
-  \CLASS so far). It exists a function that you can edit that will allow you
+  \CLASS~ so far). It exists a function that you can edit that will allow you
   not to have a one to one correspondance between these two things. It is
   located in \verb?code/data.py? and called \verb?update_Class_arguments?. A
   detailled exemple on how you should modify the function to suit your needs is
@@ -308,7 +316,7 @@
 
   \subsection{General guidelines to keep in mind}
 
-  Here follows some rules about being sure everything work fine with MontePython.
+  Here follows some rules about being sure everything work fine with \MP.
 \begin{itemize}
   \item Be sure to launch only one experiment by folder. If, after some month,
     you want to relaunch a run from this, simply call the program without any
@@ -348,7 +356,7 @@
 
 
   \newpage
-  \section{Example of a complete work session with MontePython}
+  \section{Example of a complete work session with \MP}
   Let us get through a typical work session with this code. We start from the
   example.param file. We will test here a $\Lambda$CDM model on the likelihoods
   of the Hubble Space Telescope (HST) and the South Pole Telescope (SPT)
