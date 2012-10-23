@@ -10,7 +10,7 @@
 \newcommand{\tild}{\raise.17ex\hbox{$\scriptstyle\mathtt{\sim}$}}
 
 
-\title{ {\huge \bf Monte Python Documentation}\\Release v0.9}
+\title{ {\huge \bf Monte Python Documentation}\\Release v1.0}
 \author{Benjamin Audren}
 
 \begin{document}
@@ -29,20 +29,25 @@
   First of all, you need a clean installation of {\bf python} (version $2.x$,
   $x\geq7$, but $<3.0$), with at least the {\bf numpy module} (version
   $\geq1.4.1$) and the {\bf cython module}. This last one is to convert the C
-  code \CLASS~into a Python class.\\
+  code \CLASS~into a Python class.\par
 
   If you also want the output plot to have cubic interpolation for analyzing
   chains, you should have a full {\bf scipy module} (at least version $0.9.0$),
   with the method {\emph interpolate}. In case this one is badly installed, you
   will have an error message when running the analyze module of \MP,
   and obtain only linear interpolation. Though not fatal, it does produce
-  uglier plots.
+  uglier plots.\par
+
+  Note that you can use the code with Python 2.6 also, even though you need to
+  download two packages separately (ordereddict and argparse). For this, it is
+  just a matter of downloading the two files (ordereddict.py and argparse.py),
+  and placing them in your code directory.\par
 
   \subsection{\CLASS}
 
-  Next in line, you must execute the python wrapper of \CLASS. Download the
+  Next in line, you must compile the python wrapper of \CLASS. Download the
   latest version at \url{http://class-code.net}, and follow the basic
-  instruction.  Instead of the \verb?make class?, do a \verb?make?. This will
+  instruction. Instead of the \verb?make class?, do a \verb?make?. This will
   also create an archiv .ar of the code, useful in the next step. After this, do:
 
   \begin{alltt}
@@ -88,7 +93,7 @@
 %%%%%%%% INSTALLATION %%%%%%%%
 \section{Installation\label{sec:installation}}
 
-  Move the latest release of \MP~ to your code/ folder, and untar its
+  Move the latest release of \MP\, to your code/ folder, and untar its
   content:
 
   \begin{alltt} 
@@ -111,7 +116,7 @@
  \verb?code/MontePython.py?), then this line will be disregarded.
 
  The second file to change, and this one is crucial, is {\bf default.conf}, in
- the root directory of the code. This file will tell \MP~ where your
+ the root directory of the code. This file will tell \MP\, where your
  other programs are installed, and where you are storing the data for the
  likelihoods. It will be interpreted as a python file, so be careful to
  reproduce the syntax exactly.
