@@ -1,9 +1,10 @@
 #!/usr/bin/python
 
 ##############################################################
-# Monte-Python, a Monte Carlo Markov Chain code (with Class!)
-# Version 0.9.2
+# MontePython, a Monte Carlo Markov Chain code (with Class!)
+# Version 1.0.0
 # written by Benjamin Audren
+# Additional parts by Julien Lesgourgues, Karim Benabed
 ##############################################################
 
 #-------------------IMPORT-PACKAGES-------------------------------------
@@ -30,7 +31,13 @@ def main():
 
   # Default configuration
   path = {}
-  path['MontePython'] = sys.path[0]
+  # On execution, sys.path contains all the standard locations for the
+  # libraries, plus, on the first position (index 0), the directory from where
+  # the code is executed. By default, then, the data folder is located in the
+  # same root directory. Any setting in the configuration file will overwrite
+  # this one.
+  path['MontePython'] = sys.path[0]+'/'
+  path['data']        = path['MontePython'].replace('code','data')
 
   # Configuration file, defaulting to default.conf in your root directory. This
   # can be changed with the command line option -conf. All changes will be

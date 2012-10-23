@@ -1,3 +1,6 @@
+# Written by Benjamin Audren
+# Plotting routine adapted from Karim Benabed, and the pmc code
+
 import os,sys
 import io
 import math
@@ -8,10 +11,14 @@ import matplotlib.pyplot as plt
 # The root plotting module, to change options like font sizes, etc...
 import matplotlib
 
+# Module to handle warnings from matplotlib
+import warnings
+
 class info:
 
   def __init__(self,command_line):
   
+    warnings.filterwarnings("error")
     # Check if the scipy module has the interpolate method correctly installed
     # (should be the case on every linux distribution with standard numpy)
     try:
@@ -491,10 +498,8 @@ class info:
       return spam,ref_names,tex_names,backup_names,plotted_parameters,boundaries,mean
 
   # Plotting routine, also computes the sigma errors. Partly imported from
-  # Karim Benabed in pmc. However, many options from this method (if not all of
-  # them) are unused, meaning : select, legend, show_prop, show_peak,
-  # show_extra, add_legend, tick_at_peak, convolve
-  def plot_triangle(self,chain,command_line,select=None,bin_number=20,scales=(),legend=(),levels=(68.26,95.4,99.7),show_prop=True,fill=68.26,show_mean=True,show_peak=True,show_extra=None,add_legend=r"$=%(peak).4g^{+%(up).3g}_{-%(down).3g}$",aspect=(16,16),fig=None,tick_at_peak=False,convolve=True,comp_chain = None,comp_ref_names = None,comp_tex_names = None, comp_backup_names = None, comp_plotted_parameters = None, comp_folder = None,comp_boundaries = None,comp_mean = None):
+  # Karim Benabed in pmc.
+  def plot_triangle(self,chain,command_line,bin_number=20,scales=(),levels=(68.26,95.4,99.7),aspect=(16,16),fig=None,tick_at_peak=False,comp_chain = None,comp_ref_names = None,comp_tex_names = None, comp_backup_names = None, comp_plotted_parameters = None, comp_folder = None,comp_boundaries = None,comp_mean = None):
 
     # If comparison is asked, don't plot 2d levels
     if command_line.comp is not None:
@@ -534,35 +539,11 @@ class info:
     # clear figure
     plt.clf()
 
-    #fig2d.savefig(self.folder+'plots/{0}_triangle.pdf'.format(self.folder.split('/')[-2]))
-    #exit()
+    # Recover the total number of parameters to potentially plot
     n = np.shape(chain)[1]-2
     if not scales:
      scales = np.ones(n)
     scales=np.array(scales)
-
-    #################
-    # Beginning of unused stuff
-    if select==None:
-      select = range(n)
-
-    if show_mean:
-      if not isinstance(show_mean,(list,tuple)): 
-	show_mean=(True,)*(n)
-    else:
-      if not isinstance(show_mean,(list,tuple)): 
-	show_mean=(False,)*(n)
-
-    if show_peak:
-      if not isinstance(show_peak,(list,tuple)): 
-	show_peak=(True,)*(n)
-    else:
-      if not isinstance(show_peak,(list,tuple)): 
-	show_peak=(False,)*(n)
-
-    n = len(select)
-    # End of unused stuff
-    ################
     
     mean = self.mean*scales
     var  = self.var*scales**2
@@ -770,8 +751,12 @@ class info:
 	    ax2dsub.imshow(n, extent=extent, aspect='auto',interpolation='gaussian',origin='lower',cmap=matplotlib.cm.Reds)
 
 	    # plotting contours, using the ctr_level method (from Karim Benabed)
-	    cs = ax2dsub.contour(y_centers,x_centers,n,extent=extent,levels=self.ctr_level(n,lvls),colors="k",zorder=5)
-	    ax2dsub.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=19)
+            try:
+              cs = ax2dsub.contour(y_centers,x_centers,n,extent=extent,levels=self.ctr_level(n,lvls),colors="k",zorder=5)
+              ax2dsub.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=19)
+            except Warning:
+              print('     /!\  The routine could not find the contour of the "%s-%s" 2d-plot'% (self.plotted_parameters[i],self.plotted_parameters[j]))
+              pass
 
 	    if command_line.subplot is True:
 	      # Store the individual 2d plots
@@ -784,8 +769,13 @@ class info:
 	      ax_temp.set_xticklabels(['%.4g' % s for s in ticks[second_index]],fontsize=ticksize2d)
 	      ax_temp.set_yticklabels(['%.4g' % s for s in ticks[index]],fontsize=ticksize2d)
 	      ax_temp.set_title('%s vs %s' % (self.tex_names[index],self.tex_names[second_index]),fontsize=fontsize1d)
-	      cs = ax_temp.contour(y_centers,x_centers,n,extent=extent,levels=self.ctr_level(n,lvls),colors="k",zorder=5)
-	      ax_temp.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=19)
+              try:
+                cs = ax_temp.contour(y_centers,x_centers,n,extent=extent,levels=self.ctr_level(n,lvls),colors="k",zorder=5)
+                ax_temp.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=19)
+              except Warning:
+                print('     /!\  The routine could not find the contour of the "%s-%s" 2d-plot'% (self.plotted_parameters[i],self.plotted_parameters[j]))
+                pass
+
 	      fig_temp.savefig(self.folder+'plots/{0}_2d_{1}-{2}.pdf'.format(self.folder.split('/')[-2],self.ref_names[index],self.ref_names[second_index]))
 
 	      # store the coordinates of the points for further plotting.

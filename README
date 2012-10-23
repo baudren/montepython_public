@@ -4,8 +4,11 @@
 # written by Benjamin Audren
 ####################
 
+If you are searching for specific examples of a work session, please refer to
+the pdf documentation.
+
 ## Prerequisites
------------------------
+----------------
   * You need the python program ** version 2.7 ** or above, but less than 3.0.
   Note that lower versions of python will work, down to 2.6 (tested), if you
   add manually two extra packages (ordereddict and argparse).
@@ -75,7 +78,7 @@
 
 
 ## The wmap wrapper part
-----------------
+------------------------
   Go to your wrapper_wmap sub-folder, and execute:
 
   $ ./waf configure --install_all_deps
@@ -93,7 +96,7 @@
 
 
 ## For Planck collaborators (for future Planck users)
--------------------------
+-----------------------------------------------------
   Replace the upper section by Clik. You also have to source the file everytime
   you want Monte Python to use it.
 
@@ -124,6 +127,6 @@
   $ ./MontePython.py -info planck/
 
 
-## The details
---------------
+## Details and Examples
+-----------------------
   Please refer to the pdf documentation for further details.
