@@ -115,6 +115,7 @@ class WiggleZ(likelihood):
     return
 
   # compute likelihood
+  # translated from WiggleZ_mpklike()
 
   def loglkl(self,_cosmo,data):
 
@@ -144,6 +145,8 @@ class WiggleZ(likelihood):
     P_lin = np.zeros((self.k_size,self.z_size,self.mu_size),'float64')
     P_lin = _cosmo._get_pk(self.k,self.z,self.k_size,self.z_size,self.mu_size)
     P_lin /= (h*scaling)**3
+
+    # need to put here fill_GiggleZTheory()
 
     do_marge = self.Q_marge
 
@@ -186,6 +189,70 @@ class WiggleZ(likelihood):
       chi2=-sum(self.P_obs*covdat)+np.dot(Vec,np.dot(np.linalg.inv(Mat),Vec))-math.log(np.linalg.det(Mat))
 
     else:  
+
+      print self.Q_sigma
+
+      if (self.Q_sigma == 0):
+        do_marge = False
+
+      # allocate chisq=0
+      # allocate old_chisq=1e30
+
+      print self.Use_jennings
+      print self.Use_simpledamp
+      
+      if (self.Use_jennings || self.Use_simpledamp):
+        print "case with Use_jennings or Use_simpledamp not coded yet"
+      else :
+        print "starting analytic marginalisation over bias"
+
+         normV = 0
+         nQ = 6
+         dQ = 0.4
+         for iQ in range(-nQ,nQ+1):
+           Q = self.Q_mid +iQ*self.Q_sigma*dQ 
+           P_th =  np.zeros((self.k_size),'float64')
+           for i in range(self.k_size):
+             if (self.Q_marge):
+               P_th[i] = P_lin[i,0,0]*(1+Q*self.k[i]**2)/(1.+self.Ag*self.k[i]) 
+             else:
+               P_th[i] = P_lin[i,0,0]
+
+           for i_region in range(1,self.num
+ do i_region=1,wmset%num_regions_used
+               imin = (i_region-1)*wmset%num_mpk_points_use+1
+               imax = i_region*wmset%num_mpk_points_use
+               mpk_WPth(:) = matmul(wmset%mpk_W(i_region,:,:),mpk_Pth(:))
+               mpk_Pdata_large(imin:imax) = wmset%mpk_P(i_region,:)
+               mpk_WPth_large(imin:imax) = mpk_WPth(:) 
+               
+               !with analytic marginalization over normalization nuisance (flat prior on b^2)
+               !See appendix F of cosmomc paper
+               
+               !         if (associated(mset%mpk_invcov)) then
+               covdat_large(imin:imax) = matmul(wmset%mpk_invcov(i_region,:,:),wmset%mpk_P(i_region,:))
+               covth_large(imin:imax) = matmul(wmset%mpk_invcov(i_region,:,:),mpk_WPth(:))
+            enddo
+            normV = normV + sum(mpk_WPth_large*covth_large)
+            b_out =  sum(mpk_WPth_large*covdat_large)/sum(mpk_WPth_large*covth_large)
+            if(Feedback.ge.2) print*, "Bias value:", b_out
+            chisq(iQ) = sum(mpk_Pdata_large*covdat_large)  - sum(mpk_WPth_large*covdat_large)**2/normV!  + log(normV)
+
+          
+            if (do_marge) then
+               calweights(iQ) = exp(-(iQ*dQ)**2/2)
+            else 
+               LnLike = chisq(iQ)/2
+               exit
+            end if
+            
+         end do
+         deallocate(covdat_large,covth_large,mpk_Pdata_large,mpk_WPth_large)
+
+
+
+
+
 
       print "case without marginalization and Q_flat not yet coded"
       exit()

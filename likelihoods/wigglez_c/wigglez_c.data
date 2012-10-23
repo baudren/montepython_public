@@ -1,0 +1,40 @@
+wigglez_c.data_directory    = data.path['data']
+
+# number of points and kbands in the input files
+wigglez_c.num_mpk_points_full = 50
+wigglez_c.num_mpk_kbands_full = 100
+
+# use scaling by dv/dv(fid) for Pk
+wigglez_c.use_scaling = False
+
+# decide which bandpowers to use, min to max
+wigglez_c.min_mpk_points_use = 3
+wigglez_c.max_mpk_points_use = 20
+wigglez_c.min_mpk_kbands_use = 1
+wigglez_c.max_mpk_kbands_use = 100
+
+wigglez_c.Q_marge = False
+wigglez_c.Q_mid = 4.0
+wigglez_c.Q_sigma = 1.5
+wigglez_c.Ag = 1.4
+wigglez_c.Use_jennings = False
+wigglez_c.Use_simpledamp = False
+wigglez_c.sigmav = 325
+wigglez_c.use_halofit = True
+
+wigglez_c.Use_giggleZ = True
+wigglez_c.giggleZ_fidpoly=[4.69659, -12.7287, 42.5681, -89.5578, 96.664, -41.2564]
+wigglez_c.giggleZ_fidpk_file = 'gigglezfiducialmodel_matterpower_a.dat'
+wigglez_c.giggleZ_fidpk_size = 500
+
+wigglez_c.redshift=0.60
+
+wigglez_c.has_regions = True
+# regions ordered like in wigglez data files:
+# 9-hr, 11-hr, 15-hr, 22-hr, 0-hr, 1-hr, 3-hr
+wigglez_c.used_region = [True, True, True, True, True, True, True]
+
+wigglez_c.windows_file = 'wigglez_jan11c_windows.txt'
+wigglez_c.kbands_file = 'wigglez_jan11kbands.txt'
+wigglez_c.measurements_file = 'wigglez_jan11c_measurements.txt'
+wigglez_c.covmat_file = 'wigglez_jan11c_cov.txt'
