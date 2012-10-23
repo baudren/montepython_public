@@ -11,6 +11,12 @@ class wigglez_a(likelihood):
 
     # require P(k) from class
     self.need_cosmo_arguments(data,{'output':'mPk'})
+
+    try:
+      self.use_halofit
+    except:
+      self.use_halofit = False
+
     if self.use_halofit:
       self.need_cosmo_arguments(data,{'non linear':'halofit'}) 
 
@@ -30,6 +36,11 @@ class wigglez_a(likelihood):
     khmax = self.kh[-1]
 
     # check if need hight value of k for giggleZ
+    try:
+      self.Use_giggleZ
+    except:
+      self.Use_giggleZ = False
+
     if self.Use_giggleZ:
       datafile = open(self.data_directory+self.giggleZ_fidpk_file,'r')
       counter = 1
@@ -51,6 +62,11 @@ class wigglez_a(likelihood):
       return
 
     # read information on different regions in the sky
+    try:
+      self.has_regions
+    except:
+      self.has_regions = False
+
     if (self.has_regions):
       self.num_regions = len(self.used_region)
       self.num_regions_used = 0
@@ -97,25 +113,38 @@ class wigglez_a(likelihood):
     datafile.close()
 
     # read covariance matrices
-    self.invcov=np.zeros((self.num_regions,self.n_size,self.n_size),'float64')
-    cov = np.zeros((self.n_size,self.n_size),'float64')
-    invcov_tmp = np.zeros((self.n_size,self.n_size),'float64')
+    try:
+      self.covmat_file
+      self.use_covmat = True
+    except:
+      self.use_covmat = False
 
-    datafile = open(self.data_directory+self.covmat_file,'r')
-    for i_region in range(self.num_regions):
-      for i in range(1):
-        line = datafile.readline()
-      for i in range(self.num_mpk_points_full):
-        line = datafile.readline()
-        if i+2 > self.min_mpk_points_use and i < self.max_mpk_points_use:
-          for j in range(self.num_mpk_points_full):
-            if j+2 > self.min_mpk_points_use and j < self.max_mpk_points_use:
-              cov[i-self.min_mpk_points_use+1,j-self.min_mpk_points_use+1]=float(line.split()[j])
-      invcov_tmp=np.linalg.inv(cov)
-      for i in range(self.n_size):
+    self.invcov=np.zeros((self.num_regions,self.n_size,self.n_size),'float64')
+
+    if self.use_covmat:  
+      cov = np.zeros((self.n_size,self.n_size),'float64')
+      invcov_tmp = np.zeros((self.n_size,self.n_size),'float64')
+
+      datafile = open(self.data_directory+self.covmat_file,'r')
+      for i_region in range(self.num_regions):
+        for i in range(1):
+          line = datafile.readline()
+        for i in range(self.num_mpk_points_full):
+          line = datafile.readline()
+          if i+2 > self.min_mpk_points_use and i < self.max_mpk_points_use:
+            for j in range(self.num_mpk_points_full):
+              if j+2 > self.min_mpk_points_use and j < self.max_mpk_points_use:
+                cov[i-self.min_mpk_points_use+1,j-self.min_mpk_points_use+1]=float(line.split()[j])
+        invcov_tmp=np.linalg.inv(cov)
+        for i in range(self.n_size):
+          for j in range(self.n_size):
+            self.invcov[i_region,i,j]=invcov_tmp[i,j]
+      datafile.close()
+    else:
+      for i_region in range(self.num_regions):
         for j in range(self.n_size):
-          self.invcov[i_region,i,j]=invcov_tmp[i,j]
-    datafile.close()
+          self.invcov[i_region,j,j]=1./(self.P_err[i_region,j]**2)
+          
 
     # read fiducial model
     if self.Use_giggleZ:
@@ -128,13 +157,22 @@ class wigglez_a(likelihood):
         self.P_fid[i]=float(line.split()[1])
       datafile.close()
 
+    # assign defaut value to optional parameters not being in the .data
+    try:
+      self.Use_jennings
+    except:
+      self.Use_jennings = False
+
+    try:
+      self.Use_simpledamp
+    except:
+      self.Use_simpledamp = False
+
     return
 
   # compute likelihood
 
   def loglkl(self,_cosmo,data):
-
-    print "get here"
 
     # reduced Hubble parameter
     h = _cosmo._h()
@@ -145,7 +183,7 @@ class wigglez_a(likelihood):
       d_angular *= h  
 
       # radial distance at this redshift, in Mpc/h
-      r,Hz = _cosmo.z_of_r([self.redhsift])
+      r,Hz = _cosmo.z_of_r([self.redshift])
       d_radial = self.redshift*h/Hz[0]
 
       # scaling factor = (d_angular**2 * d_radial)^(1/3) relative
@@ -185,7 +223,7 @@ class wigglez_a(likelihood):
       self.k=self.kh *h*scaling
       # get values of P(k) in Mpc**3
       for i in range(self.k_size):
-        P_lin[i] = _cosmo._pk(self.k[i],self.redshift)
+        P_lin[i] = _cosmo._pk(self.k[i],0)
       # get rescaled values of P(k) in (Mpc/h)**3
       P_lin *= (h/scaling)**3
 
@@ -203,32 +241,31 @@ class wigglez_a(likelihood):
       for i in range(self.k_size):
         k2[i] = P_th[i] * self.k[i]**2
 
-      W_P_th = np.dot(self.window,P_th)
-
-      W_P_th_k2 =  np.zeros((self.n_size),'float64')
-      W_P_th_k2 = np.dot(self.window,k2)
-                
-      w = np.zeros((self.n_size),'float64') 
-      w=1./(self.P_err*self.P_err)
-
+      W_P_th_k2 =  np.zeros((self.n_size),'float64')  
       covdat = np.zeros((self.n_size),'float64') 
-      covdat=self.P_obs*w  
-
       covth = np.zeros((self.n_size),'float64') 
-      covth=W_P_th*w
-
       covth_k2 = np.zeros((self.n_size),'float64') 
-      covth_k2=W_P_th_k2*w
 
-      offdiag=sum(covth*W_P_th_k2)
+      chi2 = 0
+      for i_region in range(self.num_regions):
+        if self.used_region[i_region]:
+          W_P_th = np.dot(self.window[i_region,:],P_th)
+          W_P_th_k2 = np.dot(self.window[i_region,:],k2)
+          
+          covdat  =np.dot(self.invcov[i_region,:,:],self.P_obs[i_region,:])
+          covth   =np.dot(self.invcov[i_region,:,:],W_P_th)
+          covth_k2=np.dot(self.invcov[i_region,:,:],W_P_th_k2)
 
-      Mat=np.zeros((2,2),'float64')
-      Mat=[[sum(covth*W_P_th),offdiag],[offdiag,sum(covth_k2*W_P_th_k2)]]
+          offdiag=sum(covth*W_P_th_k2)
 
-      Vec=np.zeros((2),'float64')
-      Vec=[sum(covdat*W_P_th),sum(covdat*W_P_th_k2)]
+          Mat=np.zeros((2,2),'float64')
+          Mat=[[sum(covth*W_P_th),offdiag],[offdiag,sum(covth_k2*W_P_th_k2)]]
 
-      chi2=-sum(self.P_obs*covdat)+np.dot(Vec,np.dot(np.linalg.inv(Mat),Vec))-math.log(np.linalg.det(Mat))
+          Vec=np.zeros((2),'float64')
+          Vec=[sum(covdat*W_P_th),sum(covdat*W_P_th_k2)]
+
+          chi2+=-sum(self.P_obs[i_region,:]*covdat)+np.dot(Vec,np.dot(np.linalg.inv(Mat),Vec))-math.log(np.linalg.det(Mat))
+
       return -chi2/2
 
     else:  
@@ -240,7 +277,7 @@ class wigglez_a(likelihood):
         print "case with Use_jennings or Use_simpledamp not coded"
         exit()
       else :
-        print "starting analytic marginalisation over bias"
+        #starting analytic marginalisation over bias
 
         P_data_large =  np.zeros((self.n_size*self.num_regions_used),'float64')
         W_P_th_large =  np.zeros((self.n_size*self.num_regions_used),'float64')
@@ -282,7 +319,7 @@ class wigglez_a(likelihood):
                 cov_th_large[imin+i] = np.sum(self.invcov[i_region,i,:]*W_P_th[:])
           normV += np.sum(W_P_th_large*cov_th_large)
           b_out = np.sum(W_P_th_large*cov_dat_large)/np.sum(W_P_th_large*cov_th_large)
-          print "bias value",b_out
+          #print "bias value",b_out
           chisq[iQ+nQ] = np.sum(P_data_large*cov_dat_large)  - np.sum(W_P_th_large*cov_dat_large)**2/normV
           
           if do_marge:
