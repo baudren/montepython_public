@@ -9,36 +9,27 @@ class wigglez_a(likelihood):
 
     likelihood.__init__(self,path,data,command_line,log_flag,default)
 
-    print "read data"
-
     # require P(k) from class
     self.need_cosmo_arguments(data,{'output':'mPk'})
- 
-    # In case of a comparison, stop here
-    if not default:
-      return
-
-    # in this likelihood, the P(k,z) is supposed to be evaluated only in z=0 
-    self.z_size=1
-    self.z = np.zeros((self.z_size),'float64')
-    self.z[0]=self.redshift
+    if self.use_halofit:
+      self.need_cosmo_arguments(data,{'non linear':'halofit'}) 
 
     # read values of k (in h/Mpc)
     self.k_size=self.max_mpk_kbands_use-self.min_mpk_kbands_use+1
     self.mu_size=1
-    self.k = np.zeros((self.k_size,self.z_size,self.mu_size),'float64')
-    self.kh = np.zeros((self.k_size,self.z_size,self.mu_size),'float64')
+    self.k = np.zeros((self.k_size),'float64')
+    self.kh = np.zeros((self.k_size),'float64')
 
     datafile = open(self.data_directory+self.kbands_file,'r')
     for i in range(self.num_mpk_kbands_full):
       line = datafile.readline()
       if i+2 > self.min_mpk_kbands_use and i < self.max_mpk_kbands_use:
-        self.kh[i-self.min_mpk_kbands_use+1,0,0]=float(line.split()[0])
+        self.kh[i-self.min_mpk_kbands_use+1]=float(line.split()[0])
     datafile.close()      
 
-    khmax = self.kh[-1,0,0]
+    khmax = self.kh[-1]
 
-    # check if need hight value of k
+    # check if need hight value of k for giggleZ
     if self.Use_giggleZ:
       datafile = open(self.data_directory+self.giggleZ_fidpk_file,'r')
       counter = 1
@@ -59,8 +50,7 @@ class wigglez_a(likelihood):
     if not default:
       return
 
-
-    # read regions
+    # read information on different regions in the sky
     if (self.has_regions):
       self.num_regions = len(self.used_region)
       self.num_regions_used = 0
@@ -75,10 +65,6 @@ class wigglez_a(likelihood):
       self.num_regions_used = 1
       self.used_region = [True]
  
-    # In case of a comparison, stop here
-    if not default:
-      return
-
     # read window functions
     self.n_size=self.max_mpk_points_use-self.min_mpk_points_use+1
 
@@ -134,25 +120,13 @@ class wigglez_a(likelihood):
     # read fiducial model
     if self.Use_giggleZ:
       self.P_fid=np.zeros((self.k_fid_size),'float64')
-      self.k_fid=np.zeros((self.k_fid_size,self.z_size,self.mu_size),'float64')
+      self.k_fid=np.zeros((self.k_fid_size),'float64')
       datafile = open(self.data_directory+self.giggleZ_fidpk_file,'r')
       for i in range(self.k_fid_size):
         line = datafile.readline()
-        self.k_fid[i,0,0]=float(line.split()[0])
+        self.k_fid[i]=float(line.split()[0])
         self.P_fid[i]=float(line.split()[1])
       datafile.close()
-
-      print self.k_fid[-1,0,0]
-
-    return
-
-  # HARD CODING OF POLYNOMIAL FITS TO FOUR REDSHIFT BINS.
-#  def GiggleZtoICsmooth(self,k,fidpolys):
-
-#    fidpolys[0] = pow(10,4.61900 - 13.7787*k + 58.9410*k**2 - 175.240*k**3 + 284.321*k**4 - 187.284*k**5)
-#    fidpolys[1] = pow(10,4.63079 - 12.6293*k + 42.9265*k**2 - 91.8068*k**3 + 97.8080*k**4 - 37.6330*k**5)
-#    fidpolys[2] = pow(10,4.69659 - 12.7287*k + 42.5681*k**2 - 89.5578*k**3 + 96.6640*k**4 - 41.2564*k**5)
-#    fidpolys[3] = pow(10,4.68490 - 13.4747*k + 53.7172*k**2 - 145.832*k**3 + 216.638*k**4 - 132.782*k**5)
 
     return
 
@@ -167,12 +141,12 @@ class wigglez_a(likelihood):
      
     if self.use_scaling:
       # angular diameter distance at this redshift, in Mpc/h
-      d_angular = _cosmo._angular_distance(self.z_rescaling)
+      d_angular = _cosmo._angular_distance(self.redshift)
       d_angular *= h  
 
       # radial distance at this redshift, in Mpc/h
-      r,Hz = _cosmo.z_of_r([self.z_rescaling])
-      d_radial = z_rescaling*h/Hz[0]
+      r,Hz = _cosmo.z_of_r([self.redhsift])
+      d_radial = self.redshift*h/Hz[0]
 
       # scaling factor = (d_angular**2 * d_radial)^(1/3) relative
       # to a fiducial model
@@ -181,35 +155,37 @@ class wigglez_a(likelihood):
       scaling = 1
 
     # get rescaled values of k in 1/Mpc
-    self.k=self.kh *h*scaling
+    self.k = self.kh *h*scaling
 
     # get P(k) at right values of k, convert it to (Mpc/h)^3 and rescale it
-    P_lin = np.zeros((self.k_size,self.z_size,self.mu_size),'float64')
+    P_lin = np.zeros((self.k_size),'float64')
 
     if self.Use_giggleZ:
 
-      P = np.zeros((self.k_fid_size,self.z_size,self.mu_size),'float64')  
-      P = _cosmo._get_pk(self.k_fid*h,self.z,self.k_fid_size,self.z_size,self.mu_size)
+      P = np.zeros((self.k_fid_size),'float64')  
       
       for i in range(self.k_fid_size):
 
-        fid=0
+        P[i] = _cosmo._pk(self.k_fid[i]*h,self.redshift)
+
+        power=0
         for j in range(6):
-          fid += self.giggleZ_fidpoly[j]*self.k_fid[i,0,0]**j
+          power += self.giggleZ_fidpoly[j]*self.k_fid[i]**j
 
         # rescale P by fiducial model and get it in (Mpc/h)**3
-        P[i,0,0] *= fid/self.P_fid[i]*(h/scaling)**3
+        P[i] *= pow(10,power)/self.P_fid[i]*(h/scaling)**3
 
-        # get rescaled values of k in 1/Mpc
-        self.k=self.kh *h*scaling
+      # get rescaled values of k in 1/Mpc
+      self.k=self.kh *h*scaling
 
-        P_lin[:,0,0]=np.interp(self.k[:,0,0],self.k_fid[:,0,0],P[:,0,0])
+      P_lin = np.interp(self.k,self.k_fid,P)
 
     else:
       # get rescaled values of k in 1/Mpc
       self.k=self.kh *h*scaling
       # get values of P(k) in Mpc**3
-      P_lin = _cosmo._get_pk(self.k,self.z,self.k_size,self.z_size,self.mu_size)
+      for i in range(self.k_size):
+        P_lin[i] = _cosmo._pk(self.k[i],self.redshift)
       # get rescaled values of P(k) in (Mpc/h)**3
       P_lin *= (h/scaling)**3
 
@@ -221,7 +197,7 @@ class wigglez_a(likelihood):
 
       P_th =  np.zeros((self.k_size),'float64')
       for i in range(self.k_size):
-        P_th[i] = P_lin[i,0,0]/(1.+self.Ag*self.k[i]) 
+        P_th[i] = P_lin[i]/(1.+self.Ag*self.k[i]) 
 
       k2 =  np.zeros((self.k_size),'float64')
       for i in range(self.k_size):
@@ -289,9 +265,9 @@ class wigglez_a(likelihood):
           for i in range(self.k_size):
             if self.Q_marge:
               Q = self.Q_mid +iQ*self.Q_sigma*dQ 
-              P_th[i] = P_lin[i,0,0]*(1+Q*self.k[i]**2)/(1.+self.Ag*self.k[i]) 
+              P_th[i] = P_lin[i]*(1+Q*self.k[i]**2)/(1.+self.Ag*self.k[i]) 
             else:
-              P_th[i] = P_lin[i,0,0]
+              P_th[i] = P_lin[i]
 
           for i_region in range(self.num_regions):
             if self.used_region[i_region]:

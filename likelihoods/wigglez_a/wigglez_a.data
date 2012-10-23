@@ -20,6 +20,7 @@ wigglez_a.Ag = 1.4
 wigglez_a.Use_jennings = False
 wigglez_a.Use_simpledamp = False
 wigglez_a.sigmav = 360
+wigglez_a.use_halofit = True
 
 wigglez_a.Use_giggleZ = True
 wigglez_a.giggleZ_fidpoly=[4.61900,-13.7787,58.9410,-175.240,284.321,-187.284]
