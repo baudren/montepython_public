@@ -1,0 +1,39 @@
+import os.path as osp
+import os
+
+import waflib
+import waflib.Logs as _msg
+from waflib import Task
+from waflib.TaskGen import extension, feature, before_method, after_method
+
+@extension('.pyx')
+def add_cython_file(self, node):
+  """
+  Process a *.pyx* file given in the list of source files. No additional
+  feature is required::
+
+    def build(bld):
+      bld(features='c cshlib pyext', source='main.c foo.pyx', target='app')
+  """
+  ext = '.pyx.c'
+  if 'cxx' in self.features:
+    self.env.append_unique('CYTHONFLAGS', '--cplus')
+    ext = '.cc'
+  tsk = self.create_task('cython', node, node.change_ext(ext))
+  self.source += tsk.outputs
+
+def build(ctx):
+    
+  if ctx.env.CYTHON:
+    ctx(
+      features = "c cshlib pyext",
+      source = "pywlik.pyx",
+      target  = "pywlik",
+      includes = "../"+" ../minipmc/"*(not ctx.env.has_pmc),
+      use = "wlik",
+      cflags = "-fopenmp",
+      install_path = "${PYTHONDIR}"
+    )
+  
+  
+  

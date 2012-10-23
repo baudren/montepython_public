@@ -1,0 +1,43 @@
+import os.path as osp
+
+def build(bld):
+  
+  source_wlik = 'wlik.c lklbs.c '.split()
+  source_wlik += [osp.join("minipmc", src) for src in 'errorlist.c io.c distribution.c'.split()]*( not bld.env.has_pmc)
+  source_wlik = [src for src in source_wlik if src]
+  
+  uselib_wlik = [ff for ff in ('lapack dl cfitsio' ).split() if ff]
+  uselib_wmap = []
+  use_wlik = []
+  use_wlik += ["wlikwmap"]
+  
+  bld.shlib(
+    source   = source_wlik,
+    target   = 'wlik', 
+    includes = '.'+" minipmc/"*(not bld.env.has_pmc),
+    uselib   = uselib_wlik,
+    use = use_wlik,
+    cflags = "-fopenmp"
+    )
+      
+  oo_source = [osp.join(bld.env.wmap_src,vv) for vv in "healpix_types.f90 read_archive_map.f90 read_fits.f90  br_mod_dist.f90".split()]
+  bld.objects(
+    features = 'fc',
+    fcflags = bld.env.FCFLAGS_fpic,
+    cflags = bld.env.CFLAGS_cpic,
+    source = oo_source,
+    target = 'wmap_c_obj')
+
+  wmap_src = ['wlik_wmap.f90']+[osp.join(bld.env.wmap_src,vv) for vv in 'WMAP_7yr_options.F90 WMAP_7yr_util.f90 WMAP_7yr_gibbs.F90 WMAP_7yr_tt_pixlike.F90 WMAP_7yr_tt_beam_ptsrc_chisq.f90 WMAP_7yr_teeebb_pixlike.F90 WMAP_7yr_tetbeebbeb_pixlike.F90 WMAP_7yr_likelihood.F90'.split()]
+  bld.objects(
+     features = 'fc',
+     source = wmap_src,
+     use = 'wmap_c_obj ',
+     target = 'wlikwmap',
+     uselib = 'lapack healpix_f90  fc_omp fc_runtime',
+      fcflags = bld.env.FCFLAGS_fpic,
+      cflags = bld.env.CFLAGS_cpic,
+     )
+  uselib_wmap = [ff for ff in ('lapack fc_omp fc_runtime').split() if ff]
+  
+  

@@ -1,0 +1,418 @@
+from waflib import Logs
+import sys
+import os.path as osp
+import re
+
+wlik_version = "4.0p"
+
+sys.path+=["waf_tools"]
+import autoinstall_lib as atl
+
+from waflib.Configure import conf
+
+
+
+def options(ctx):
+  ctx.add_option('--forceinstall_all_deps',action='store_true',default=False,help='Install all dependencies',dest="install_all_deps")
+  ctx.add_option('--install_all_deps',action='store_true',default=False,help='Install all dependencies (if they have not already been installed)',dest="upgrade_all_deps")
+  
+  ctx.load("local_install","waf_tools")
+  ctx.load("try_icc","waf_tools")
+  ctx.load("try_ifort","waf_tools")
+  ctx.load("mbits","waf_tools")
+  ctx.load("any_lapack","waf_tools")
+  ctx.load("cfitsio","waf_tools")
+  ctx.add_option("--wmap_src",action="store",default="",help="location of wmap likelihood sources")
+  ctx.load("python")
+  try:
+    import waflib.Configure
+    if not osp.exists(osp.join(osp.split(waflib.__file__)[0],"extras/cython.py")):
+      waflib.Configure.download_tool("cython",ctx=ctx)  
+    ctx.load("cython",dowload=True)
+  except Exception,e:
+    pass
+
+  
+  import optparse
+  options_numpy(ctx)
+  options_cython(ctx)
+  
+  
+def configure(ctx):
+  import os
+  import os.path as osp
+  allgood = True
+  try:
+    ctx.load("try_icc","waf_tools")
+  except Exception,e:
+    Logs.pprint("RED","No suitable c compiler found (cause: '%s')"%e)
+    ctx.fatal('The configuration failed') 
+  ctx.load("mbits","waf_tools")
+  ctx.load("osx_shlib","waf_tools")
+  try:
+    ctx.load("try_ifort","waf_tools")
+    ctx.env.has_f90 = True
+  except Exception,e:
+    Logs.pprint("RED","No suitable fortran compiler found (cause: '%s')"%e)
+    ctx.fatal('The configuration failed') 
+    ctx.env.has_f90 = False
+    allgood = False
+  ctx.load("local_install","waf_tools")
+  
+  ctx.env.append_value("LIB_PYEMBED",['m','dl','util'])
+  ctx.env.append_value("LIB_PYEXT",['m','dl','util'])
+  ctx.load("python")
+  ppp()
+  if ctx.env.PYTHON[0]!=sys.executable:
+    from waflib.Logs import warn
+    warn("reverting to current executable")
+    ctx.env.PYTHON[0]=sys.executable
+    os.environ["PATH"]=":".join(set(os.environ["PATH"].split(":")+[osp.dirname(sys.executable)]))
+  try:
+    ctx.check_python_headers()
+    # remove unwanted flags for darwin
+    _remove_arch(ctx,"CFLAGS_PYEXT")
+    _remove_arch(ctx,"LINKFLAGS_PYEXT")
+    from distutils.sysconfig import get_config_var
+    for v in ctx.env["DEFINES"]:
+      if "PYTHON" in v:
+        ctx.undefine(v)
+  except Exception,e:
+    #ctx.options.no_pytools = True
+    Logs.pprint("BLUE","No suitable python distribution found")
+    Logs.pprint("BLUE","Cause : '%s'"%e)
+    Logs.pprint("BLUE","Compilation will continue without it (but I strongly advise that you install it)")
+    allgood = False
+
+  # dl
+  ctx.check_cc(lib="dl",mandatory=1,uselib_store="dl")
+  ctx.check_cc(lib="dl",mandatory=0,defines=["HAS_RTLD_DEFAULT"],fragment="#include <dlfcn.h> \nint main() {void* tt = RTLD_DEFAULT;}",msg="checking for RTLD_DEFAULT in dl",uselib_store="dl")
+  
+  #cfitsio
+  ctx.load("cfitsio","waf_tools")
+  
+  # rpath
+  ctx.env.append_value("RPATH",ctx.env.PREFIX+"/lib")
+
+  if (not ctx.env.has_pmc) or ("HAS_LAPACK" not in ctx.env.DEFINES_pmc):
+    #configure lapack
+    ctx.env.has_lapack = True
+    ctx.load("any_lapack","waf_tools")
+
+  # wmap
+  if not ctx.options.wmap_src:
+    atl.installsmthg_pre(ctx,"http://lambda.gsfc.nasa.gov/data/map/dr4/dcp/wmap_likelihood_sw_v4p1.tar.gz","wmap_likelihood_sw_v4p1.tar.gz","src/")
+    ctx.options.wmap_src = "likelihood_v4p1" 
+  ctx.env.wmap_src =   ctx.options.wmap_src
+  
+  configure_numpy(ctx)
+  configure_cython(ctx)
+    
+  print "\nConfigure ok\n\nrun './waf install' now !"
+  
+  
+def build(ctx):
+  import os
+    
+  ctx.recurse("src")
+  ctx.recurse("src/python")
+  
+  ctx.add_post_fun(post)
+
+def _remove_arch(ctx,evn):
+  if sys.platform.lower()=="darwin":
+    cflags_pyext = getattr(ctx.env,evn)
+    cflags_pyext_new = []
+    inarch = 0
+    for cf in cflags_pyext:
+      #print cf,inarch
+      if inarch == 1:
+        inarch = 0
+        continue
+      if cf == "-arch":
+        inarch = 1
+        continue
+      cflags_pyext_new +=[cf]
+    setattr(ctx.env,evn,cflags_pyext_new)
+
+def dist(ctx):
+  import re
+  try:
+    _prepare_src(ctx)
+  except Exception,e:
+    pass
+  ctx.base_name = 'wlik-'+wlik_version
+  res = ctx.cmd_and_log("svnversion")
+  svnversion = res
+  f=open("svnversion","w")
+  print >>f,svnversion
+  f.close()
+  ctx.files = ctx.path.ant_glob("svnversion waf wscript examples/*  **/wscript src/python/* src/* src/minipmc/* waf_tools/*.py" )
+  
+  
+def post(ctx):
+  import shutil
+  from waflib import Utils
+  import os
+  if ctx.cmd == 'install':
+    # install the module file. This is a cheap trick... grml
+    # go around a waf bug which set the wrong chmod to fortran exec
+    build_env_files(ctx)
+    
+def build_env_files(ctx):
+  import os
+  import os.path as ops
+  full_libpath = set(ctx.env.LIBPATH_chealpix + ctx.env.LIBPATH_fc_runtime + ctx.env.LIBPATH_lapack)
+
+  #tcsh and co
+  shell = "csh"
+  name = "clik_profile.csh"
+  shebang = "#! /bin/tcsh"
+  extra=""
+  single_tmpl = "setenv %(VAR)s %(PATH)s\n"
+  block_tmpl = """
+if !($?%(VAR)s) then
+setenv %(VAR)s %(PATH)s
+else
+setenv %(VAR)s %(PATH)s:${%(VAR)s}
+endif
+"""
+  multi_tmpl = """if !($?%(VAR)s) then
+setenv %(VAR)s %(PATH)s
+else
+set newvar=$%(VAR)s
+set newvar=`echo ${newvar} | sed s@:%(PATH)s:@:@g`
+set newvar=`echo ${newvar} | sed s@:%(PATH)s\$@@` 
+set newvar=`echo ${newvar} | sed s@^%(PATH)s:@@`  
+set newvar=%(PATH)s:${newvar}                     
+setenv %(VAR)s %(PATH)s:${newvar} 
+endif"""
+  
+  __dofile(ctx,name,shell,extra,multi_tmpl,single_tmpl,full_libpath)
+
+  #bash and co
+  shell = "sh"
+  name = "clik_profile.sh"
+  shebang = "#! /bin/sh"
+  extra= """function addvar () {
+local tmp="${!1}" ;
+tmp="${tmp//:${2}:/:}" ; tmp="${tmp/#${2}:/}" ; tmp="${tmp/%:${2}/}" ;
+export $1="${2}:${tmp}" ;
+}"""
+  single_tmpl = "%(VAR)s=%(PATH)s\nexport %(VAR)s\n"
+  block_tmpl = """
+if [ -z "${%(VAR)s}" ]; then 
+%(VAR)s=%(PATH)s
+else
+%(VAR)s=%(PATH)s:${%(VAR)s}
+fi
+export %(VAR)s
+"""
+  multi_tmpl = """if [ -z "${%(VAR)s}" ]; then 
+%(VAR)s=%(PATH)s
+export %(VAR)s
+else
+addvar %(VAR)s %(PATH)s
+fi"""
+    
+  __dofile(ctx,name,shell,extra,multi_tmpl,single_tmpl,full_libpath)
+  
+  print "Source clik_profile.sh (or clik_profile.csh) to set the environment variables needed by clik"
+ 
+def __dofile(ctx,name,shell,extra,multi_tmpl,single_tmpl,full_libpath):
+  import sys
+  if sys.platform.lower()=="darwin":
+    LD_LIB = "DYLD_LIBRARY_PATH"
+  else:
+    LD_LIB = "LD_LIBRARY_PATH"
+  f = open(osp.join(ctx.env.BINDIR,name),"w")
+  print >>f,"# this code cannot be run directly"
+  print >>f,"# do 'source %s' from your %s shell or put it in your profile\n"%(osp.join(ctx.env.BINDIR,name),shell)
+  print >>f,extra,"\n"
+  print >>f,multi_tmpl%{"PATH":ctx.env.BINDIR,"VAR":"PATH"}
+  print >>f,multi_tmpl%{"PATH":ctx.env.PYTHONDIR,"VAR":"PYTHONPATH"}
+  for pt in full_libpath:
+    print >>f,multi_tmpl%{"PATH":pt,"VAR":LD_LIB}
+  print >>f,single_tmpl%{"PATH":osp.join(ctx.env.PREFIX,"share/clik"),"VAR":"CLIK_DATA"}
+  print >>f,single_tmpl%{"PATH":",".join(ctx.env.PLG),"VAR":"CLIK_PLUGIN"}
+  f.close()
+
+def options_numpy(ctx):
+  atl.add_python_option(ctx,"numpy")
+def options_cython(ctx):
+  atl.add_python_option(ctx,"cython")
+
+
+def configure_numpy(ctx):
+  import autoinstall_lib as atl
+  atl.configure_python_module(ctx,"numpy","http://sourceforge.net/projects/numpy/files/NumPy/1.6.0/numpy-1.6.0.tar.gz/download","numpy-1.6.0.tar.gz","numpy-1.6.0")
+  import numpy
+  ctx.env.append_value("INCLUDES_PYEXT",numpy.get_include())
+  
+def configure_cython(ctx):
+  import autoinstall_lib as atl
+  from waflib import Utils
+  import os.path as osp
+  import os
+  
+  os.environ["PATH"] = os.environ["PATH"]+":"+osp.dirname(osp.realpath(ctx.env.PYTHON[0]))
+  vv=False
+  atl.configure_python_module(ctx,"cython","http://cython.org/release/Cython-0.14.1.tar.gz","Cython-0.14.1.tar.gz","Cython-0.14.1")
+
+  try:
+    # check for cython
+    atl.check_python_module(ctx,"cython")
+    vv=True
+    version_str = "unknown"
+    ctx.start_msg("Checking cython version (>0.12)")
+    import Cython.Compiler.Version
+    version_str = Cython.Compiler.Version.version
+    version = [int(v) for v in version_str.split(".")]
+    #print version
+    assert version[1]>=12
+    ctx.end_msg(version_str)
+  except Exception,e:
+    if vv:
+      ctx.end_msg("no (%s)"%version_str,'YELLOW')
+    # no cython, install it !
+    atl.configure_python_module(ctx,"cython","http://cython.org/release/Cython-0.14.1.tar.gz","Cython-0.14.1.tar.gz","Cython-0.14.1")
+
+  try:
+    ctx.load("cython")
+  except:
+    ctx.env.CYTHON=[osp.join(ctx.env.BINDIR,"cython")]
+    f=open(osp.join(ctx.env.BINDIR,"cython"))
+    cytxt = f.readlines()
+    f.close()
+    cytxt[1:1] = ["import sys\n","sys.path+=['%s']\n"%str(ctx.env.PYTHONDIR)]
+    f=open(osp.join(ctx.env.BINDIR,"cython"),"w")
+    f.write("".join(cytxt))
+    f.close()
+    os.chmod(osp.join(ctx.env.BINDIR,"cython"),Utils.O755)
+
+
+def ppp():
+  FRAG='''
+#include <Python.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+  void Py_Initialize(void);
+  void Py_Finalize(void);
+#ifdef __cplusplus
+}
+#endif
+int main(int argc, char **argv)
+{
+   Py_Initialize();
+   Py_Finalize();
+   return 0;
+}
+'''
+  @conf
+  def check_python_headers(conf):
+    import os,sys
+    from waflib import Utils,Options,Errors,Logs
+    from waflib.TaskGen import extension,before_method,after_method,feature
+    
+    env=conf.env
+    if not env['CC_NAME']and not env['CXX_NAME']:
+      conf.fatal('load a compiler first (gcc, g++, ..)')
+    if not env['PYTHON_VERSION']:
+      conf.check_python_version()
+    pybin=conf.env.PYTHON
+    if not pybin:
+      conf.fatal('Could not find the python executable')
+    v='prefix SO LDFLAGS LIBDIR LIBPL INCLUDEPY Py_ENABLE_SHARED MACOSX_DEPLOYMENT_TARGET LDSHARED CFLAGS'.split()
+    try:
+      lst=conf.get_python_variables(["get_config_var('%s') or ''"%x for x in v])
+    except RuntimeError:
+      conf.fatal("Python development headers not found (-v for details).")
+    vals=['%s = %r'%(x,y)for(x,y)in zip(v,lst)]
+    conf.to_log("Configuration returned from %r:\n%r\n"%(pybin,'\n'.join(vals)))
+    dct=dict(zip(v,lst))
+    x='MACOSX_DEPLOYMENT_TARGET'
+    if dct[x]:
+      conf.env[x]=conf.environ[x]=dct[x]
+    env['pyext_PATTERN']='%s'+dct['SO']
+    all_flags=dct['LDFLAGS']+' '+dct['CFLAGS']
+    conf.parse_flags(all_flags,'PYEMBED')
+    all_flags=dct['LDFLAGS']+' '+dct['LDSHARED']+' '+dct['CFLAGS']
+    conf.parse_flags(all_flags,'PYEXT')
+    result=None
+    if sys.platform.lower()=="darwin":
+      cf_ext = [vl for vl in env["CFLAGS_PYEXT"] if vl!="-march=native"]
+      cf_ebd = [vl for vl in env["CFLAGS_PYEMBED"] if vl!="-march=native"]
+      env["CFLAGS_PYEMBED"] = cf_ebd
+      env["CFLAGS_PYEXT"] = cf_ext
+    env["CFLAGS_PYEMBED"] =  env["CFLAGS_PYEMBED"]+["-pthread"]
+    env["CFLAGS_PYEXT"] += ["-pthread"]
+    env["LIB_PYEMBED"] =  env["LIB_PYEMBED"]+["pthread"]
+    env["LIB_PYEXT"] += ["pthread"]
+
+
+    for name in('python'+env['PYTHON_VERSION'],'python'+env['PYTHON_VERSION'].replace('.','')):
+      if not result and env['LIBPATH_PYEMBED']:
+        path=env['LIBPATH_PYEMBED']
+        conf.to_log("\n\n# Trying default LIBPATH_PYEMBED: %r\n"%path)
+        result=conf.check(lib=name,uselib='PYEMBED',libpath=path,mandatory=False,msg='Checking for library %s in LIBPATH_PYEMBED'%name)
+      if not result and dct['LIBDIR']:
+        path=[dct['LIBDIR']]
+        conf.to_log("\n\n# try again with -L$python_LIBDIR: %r\n"%path)
+        result=conf.check(lib=name,uselib='PYEMBED',libpath=path,mandatory=False,msg='Checking for library %s in LIBDIR'%name)
+      if not result and dct['LIBPL']:
+        path=[dct['LIBPL']]
+        conf.to_log("\n\n# try again with -L$python_LIBPL (some systems don't install the python library in $prefix/lib)\n")
+        result=conf.check(lib=name,uselib='PYEMBED',libpath=path,mandatory=False,msg='Checking for library %s in python_LIBPL'%name)
+      if not result:
+        path=[os.path.join(dct['prefix'],"libs")]
+        conf.to_log("\n\n# try again with -L$prefix/libs, and pythonXY name rather than pythonX.Y (win32)\n")
+        result=conf.check(lib=name,uselib='PYEMBED',libpath=path,mandatory=False,msg='Checking for library %s in $prefix/libs'%name)
+      if result:
+        break
+    if result:
+      env['LIBPATH_PYEMBED']=path
+      env.append_value('LIB_PYEMBED',[name])
+    else:
+      conf.to_log("\n\n### LIB NOT FOUND\n")
+    if(Utils.is_win32 or sys.platform.startswith('os2')or dct['Py_ENABLE_SHARED']):
+      env['LIBPATH_PYEXT']=env['LIBPATH_PYEMBED']
+      env['LIB_PYEXT']=env['LIB_PYEMBED']
+    num='.'.join(env['PYTHON_VERSION'].split('.')[:2])
+    conf.find_program([''.join(pybin)+'-config','python%s-config'%num,'python-config-%s'%num,'python%sm-config'%num],var='PYTHON_CONFIG',mandatory=False)
+    includes=[]
+    if conf.env.PYTHON_CONFIG:
+      for incstr in conf.cmd_and_log([conf.env.PYTHON_CONFIG,'--includes']).strip().split():
+        if(incstr.startswith('-I')or incstr.startswith('/I')):
+          incstr=incstr[2:]
+        if incstr not in includes:
+          includes.append(incstr)
+      conf.to_log("Include path for Python extensions (found via python-config --includes): %r\n"%(includes,))
+      env['INCLUDES_PYEXT']=includes
+      env['INCLUDES_PYEMBED']=includes
+    else:
+      conf.to_log("Include path for Python extensions ""(found via distutils module): %r\n"%(dct['INCLUDEPY'],))
+      env['INCLUDES_PYEXT']=[dct['INCLUDEPY']]
+      env['INCLUDES_PYEMBED']=[dct['INCLUDEPY']]
+    if env['CC_NAME']=='gcc':
+      env.append_value('CFLAGS_PYEMBED',['-fno-strict-aliasing'])
+      env.append_value('CFLAGS_PYEXT',['-fno-strict-aliasing'])
+    if env['CXX_NAME']=='gcc':
+      env.append_value('CXXFLAGS_PYEMBED',['-fno-strict-aliasing'])
+      env.append_value('CXXFLAGS_PYEXT',['-fno-strict-aliasing'])
+    if env.CC_NAME=="msvc":
+      from distutils.msvccompiler import MSVCCompiler
+      dist_compiler=MSVCCompiler()
+      dist_compiler.initialize()
+      env.append_value('CFLAGS_PYEXT',dist_compiler.compile_options)
+      env.append_value('CXXFLAGS_PYEXT',dist_compiler.compile_options)
+      env.append_value('LINKFLAGS_PYEXT',dist_compiler.ldflags_shared)
+    try:
+      #print env
+      conf.check(header_name='Python.h',define_name='HAVE_PYTHON_H',uselib='PYEMBED',fragment=FRAG,errmsg=':-(')
+    except conf.errors.ConfigurationError:
+      xx=conf.env.CXX_NAME and'cxx'or'c'
+      conf.check_cfg(msg='Asking python-config for the flags (pyembed)',path=conf.env.PYTHON_CONFIG,package='',uselib_store='PYEMBED',args=['--cflags','--libs','--ldflags'])
+      conf.check(header_name='Python.h',define_name='HAVE_PYTHON_H',msg='Getting pyembed flags from python-config',fragment=FRAG,errmsg='Could not build a python embedded interpreter',features='%s %sprogram pyembed'%(xx,xx))
+      conf.check_cfg(msg='Asking python-config for the flags (pyext)',path=conf.env.PYTHON_CONFIG,package='',uselib_store='PYEXT',args=['--cflags','--libs','--ldflags'])
+      conf.check(header_name='Python.h',define_name='HAVE_PYTHON_H',msg='Getting pyext flags from python-config',features='%s %sshlib pyext'%(xx,xx),fragment=FRAG,errmsg='Could not build python extensions')
