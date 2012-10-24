@@ -160,7 +160,7 @@ class likelihood():
 
     # Recover the current value of the nuisance parameter. 
     for nuisance in self.use_nuisance:
-      nuisance_value = float(data.mcmc_parameters[nuisance]['current'])
+      nuisance_value = float(data.mcmc_parameters[nuisance]['current']*data.mcmc_parameters[nuisance]['initial'][4])
 
       # add contamination spectra multiplied by nuisance parameters
       for l in range(2,self.l_max):
@@ -172,7 +172,7 @@ class likelihood():
 
     # Recover the current value of the nuisance parameter. 
     for nuisance in self.use_nuisance:
-      nuisance_value = float(data.mcmc_parameters[nuisance]['current'])
+      nuisance_value = float(data.mcmc_parameters[nuisance]['current']*data.mcmc_parameters[nuisance]['initial'][4])
 
       # add prior on nuisance parameters
       exec "if (self.%s_prior_variance>0): lkl += -0.5*((nuisance_value-self.%s_prior_center)/self.%s_prior_variance)**2" % (nuisance,nuisance,nuisance)
@@ -651,7 +651,7 @@ class likelihood_clik(likelihood):
     # fill with nuisance parameters
     for nuisance in self.clik.get_extra_parameter_names():
       if nuisance in nuisance_parameter_names:
-	nuisance_value = data.mcmc_parameters[nuisance]['current']
+	nuisance_value = data.mcmc_parameters[nuisance]['current']*data.mcmc_parameters[nuisance]['initial'][4]
       else:
 	print 'the likelihood needs a parameter '+nuisance
 	print 'you must pass it through the input file (as a free nuisance parameter or a fixed parameter)'
@@ -835,15 +835,21 @@ class likelihood_mpk(likelihood):
 
     if self.Use_giggleZ:
       datafile = open(self.data_directory+self.giggleZ_fidpk_file,'r')
-      counter = 1
+
       line = datafile.readline()
       k=float(line.split()[0])
-      while (k<khmax):
-        counter += 1
+      line_number=1
+      while (k<self.kh[0]):
         line = datafile.readline()
         k=float(line.split()[0])
+        line_number += 1
+      ifid_discard=line_number-2  
+      while (k<khmax):
+        line = datafile.readline()
+        k=float(line.split()[0])
+        line_number += 1
       datafile.close()
-      self.k_fid_size=counter  
+      self.k_fid_size=line_number-ifid_discard+1  
       khmax=k
 
     if self.use_halofit:  
@@ -946,6 +952,8 @@ class likelihood_mpk(likelihood):
       self.P_fid=np.zeros((self.k_fid_size),'float64')
       self.k_fid=np.zeros((self.k_fid_size),'float64')
       datafile = open(self.data_directory+self.giggleZ_fidpk_file,'r')
+      for i in range(ifid_discard):
+        line = datafile.readline()
       for i in range(self.k_fid_size):
         line = datafile.readline()
         self.k_fid[i]=float(line.split()[0])
