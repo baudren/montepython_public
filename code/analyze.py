@@ -173,8 +173,10 @@ class info:
 
     # Write vertical info file
     self.v_info.write('%-15s\t: %-6s %-10s %-10s %-10s %-11s %-10s %-11s %-10s %-10s %-10s %-10s %-10s' % ('param names','R-1','Best fit','mean','sigma','1-sigma -','1-sigma +','2-sigma -','2-sigma +','1-sigma >','1-sigma <','2-sigma >','2-sigma <'))
-    for name in self.v_info_names:
-      index = self.v_info_names.index(name)
+    for i in range(len(self.v_info_names)):
+      name = self.v_info_names[i]
+      #index = self.v_info_names.index(name)
+      index = indices[i]
       self.v_info.write('\n%-15s\t: %.4f %.4e %.4e %.4e %.4e %.4e %.4e %.4e %.4e %.4e %.4e %.4e' % (name,
         self.R[index],chain[a[0],2:][index],
         self.mean[index],
