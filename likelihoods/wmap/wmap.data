@@ -1,11 +1,21 @@
-#wmap.data_directory     = data.path['data']+'likelihood_v4p1/'
-wmap.data_directory = '/afs/in2p3.fr/group/planck/kbenabed/likelihood_v4p1/'
+# This unusual (compared to other likelihoods) variable, large_data_directory,
+# will point to the place where you downloaded and installed the data for the
+# likelihood.
+# We had to separate it from the usual data_directory, which traditionnaly in
+# the rest of the code points toward the place where nuisance, windows and
+# fiducial informations are stored.
+wmap.large_data_directory  = data.path['data']+'likelihood_v4p1/'
+
+wmap.data_directory      = data.path['data']
 
 wmap.use_nuisance	= ['A_SZ']
 wmap.A_SZ_file          = 'WMAP_SZ_VBand.dat'
 wmap.A_SZ_scale         = 1.
 
-wmap.wrapper_directory  = data.path['data']+'../wmap_wrapper/'
+# This other unusual quantity points to the wrapper of wmap. As it is
+# distributed alongside Monte Python, this option should never change, but in
+# case, you can set it to another location.
+wmap.wrapper_directory  = data.path['MontePython']+'/wmap_wrapper/'
 
 wmap.ttmin              = 2
 wmap.ttmax              = 1200

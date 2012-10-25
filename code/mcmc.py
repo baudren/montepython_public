@@ -42,7 +42,11 @@ def compute_lkl(_cosmo,data):
 
   # Compute the derived parameters if relevant
   if data.get_mcmc_parameters(['derived']) != []:
-    _cosmo.get_current_derived_parameters(data)
+    try:
+      _cosmo.get_current_derived_parameters(data)
+    except NameError:
+      print('Terminating now')
+      exit()
   for elem in data.get_mcmc_parameters(['derived']):
     data.mcmc_parameters[elem]['current'] /= data.mcmc_parameters[elem]['initial'][4]
 
