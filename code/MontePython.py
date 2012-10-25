@@ -37,7 +37,7 @@ def main():
   # same root directory. Any setting in the configuration file will overwrite
   # this one.
   path['MontePython'] = sys.path[0]+'/'
-  path['data']        = path['MontePython'].replace('code','data')
+  path['data']        = path['MontePython'][:-5]+'data/'
 
   # Configuration file, defaulting to default.conf in your root directory. This
   # can be changed with the command line option -conf. All changes will be
