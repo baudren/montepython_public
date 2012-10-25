@@ -24,7 +24,7 @@ wigglez_b.use_halofit = True
 
 wigglez_b.Use_giggleZ = True
 wigglez_b.giggleZ_fidpoly=[4.63079, -12.6293, 42.9265, -91.8068, 97.808, -37.633]
-wigglez_b.giggleZ_fidpk_file = 'gigglezfiducialmodel_matterpower_a.dat'
+wigglez_b.giggleZ_fidpk_file = 'gigglezfiducialmodel_matterpower_b.dat'
 wigglez_b.giggleZ_fidpk_size = 500
 
 wigglez_b.redshift=0.41
