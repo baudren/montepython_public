@@ -126,12 +126,11 @@ class likelihood():
       # read spectrum contamination (so far, assumes only temperature contamination; will be trivial to generalize to polarization when such templates will become relevant)
       exec "self.%s_contamination=np.zeros(self.l_max+1,'float64')" % nuisance
       try:  
-        exec "File = open(self.data_directory+self.%s_file,'r')" % nuisance
+        exec "File = open(data.path['data']+self.%s_file,'r')" % nuisance
         for line in File:
           l=int(float(line.split()[0]))
           if ((l >=2) and (l <= self.l_max)):
             exec "self.%s_contamination[l]=float(line.split()[1])/(l*(l+1.)/2./math.pi)" % nuisance
-
       except:
 	print 'Warning: you did not pass a file name containing a contamination spectrum regulated by the nuisance parameter '+nuisance
 

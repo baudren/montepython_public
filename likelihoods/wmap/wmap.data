@@ -1,14 +1,15 @@
-wmap.data_directory     = data.path['data']+'likelihood_v4p1/'
+#wmap.data_directory     = data.path['data']+'likelihood_v4p1/'
+wmap.data_directory = '/afs/in2p3.fr/group/planck/kbenabed/likelihood_v4p1/'
 
 wmap.use_nuisance	= ['A_SZ']
-wmap.A_SZ_file          = '../WMAP_SZ_VBand.dat'
+wmap.A_SZ_file          = 'WMAP_SZ_VBand.dat'
 wmap.A_SZ_scale         = 1.
 
-wmap.wrapper_directory  = data.path['wrapper_wmap']
+wmap.wrapper_directory  = data.path['data']+'../wmap_wrapper/'
 
 wmap.ttmin              = 2
 wmap.ttmax              = 1200
 wmap.temin              = 2
 wmap.temax              = 1200
 wmap.use_gibbs          = 1
-wmap.use_lowlpol        = 0
+wmap.use_lowlpol        = 1
