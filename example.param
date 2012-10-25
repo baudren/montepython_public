@@ -21,14 +21,14 @@ data.parameters['omega_cdm'] 	= [0.1120, -1,-1, 0.0056,1,  'cosmo']
 data.parameters['n_s']       	= [0.963,  -1,-1, 0.007,1,   'cosmo']
 data.parameters['A_s']       	= [2.42,   -1,-1, 0.11, 1e-9,'cosmo']
 data.parameters['h']         	= [0.703,  -1,-1, 0.025,1,   'cosmo']
-
+data.parameters['tau_reio']    	= [0.085,  -1,-1, 0.015,1,   'cosmo']
 
 # Nuisance parameter list, same call, except the name does not have to be a class name
-data.parameters['epsilon']	= [0,       -1, -1, 0,1,  'nuisance']
 data.parameters['A_SZ']         = [0.96,    -1, -1, 0,1,  'nuisance']
 
 # Derived parameter list
 data.parameters['z_reio']       = [0,       -1, -1, 0,1,  'derived']
+data.parameters['Omega_Lambda'] = [0,       -1, -1, 0,1,  'derived']
 
 # Other class parameters (fixed parameters, precision parameters, etc.)
 data.cosmo_arguments['sBBN file'] = data.path['cosmo']+'/bbn/sBBN.dat'
