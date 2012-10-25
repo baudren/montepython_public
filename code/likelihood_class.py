@@ -671,7 +671,7 @@ class likelihood_clik(likelihood):
 # MOCK CMB TYPE LIKELIHOOD
 # --> mock planck, cmbpol, etc.
 ###################################
-class likelihood_mpk(likelihood):
+class likelihood_mock_cmb(likelihood):
 
   def __init__(self,path,data,command_line,log_flag,default):
 
