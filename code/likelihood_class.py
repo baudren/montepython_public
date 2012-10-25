@@ -1017,9 +1017,10 @@ class likelihood_mpk(likelihood):
         P[i] *= pow(10,power)/self.P_fid[i]*(h/scaling)**3
 
       # get rescaled values of k in 1/Mpc
-      self.k=self.kh *h*scaling
+      #self.k=self.kh *h*scaling
 
-      P_lin = np.interp(self.k,self.k_fid,P)
+      # get P_lin by interpolation. It is still in (Mpc/h)**3
+      P_lin = np.interp(self.kh,self.k_fid,P)
 
     else:
       # get rescaled values of k in 1/Mpc
@@ -1038,11 +1039,11 @@ class likelihood_mpk(likelihood):
 
       P_th =  np.zeros((self.k_size),'float64')
       for i in range(self.k_size):
-        P_th[i] = P_lin[i]/(1.+self.Ag*self.k[i]) 
+        P_th[i] = P_lin[i]/(1.+self.Ag*self.kh[i]) 
 
       k2 =  np.zeros((self.k_size),'float64')
       for i in range(self.k_size):
-        k2[i] = P_th[i] * self.k[i]**2
+        k2[i] = P_th[i] * self.kh[i]**2
 
       W_P_th_k2 =  np.zeros((self.n_size),'float64')  
       covdat = np.zeros((self.n_size),'float64') 
@@ -1101,11 +1102,12 @@ class likelihood_mpk(likelihood):
 
         for iQ in range(-nQ,nQ+1):
           
+          # infer P_th from P_lin. It is still in (Mpc/h)**3
           P_th =  np.zeros((self.k_size),'float64')
           for i in range(self.k_size):
             if self.Q_marge:
               Q = self.Q_mid +iQ*self.Q_sigma*dQ 
-              P_th[i] = P_lin[i]*(1+Q*self.k[i]**2)/(1.+self.Ag*self.k[i]) 
+              P_th[i] = P_lin[i]*(1+Q*self.kh[i]**2)/(1.+self.Ag*self.kh[i]) 
             else:
               P_th[i] = P_lin[i]
 
