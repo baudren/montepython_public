@@ -673,15 +673,15 @@ class info:
 	if plot_2d:
 	  ax2d.set_xticks(ticks[index])
 	  fontsize2d,ticksize2d = self.get_fontsize( len(self.tex_names) )
-	  ax2d.set_xticklabels(['%.4g' % s for s in ticks[index]],fontsize=ticksize2d)
-	  ax2d.set_title('%s= $%.4g^{+%.4g}_{%.4g}$' % (self.tex_names[index],self.mean[index],bounds[0][1],bounds[0][0]),fontsize=fontsize2d)
+	  ax2d.set_xticklabels(['%.3g' % s for s in ticks[index]],fontsize=ticksize2d)
+	  ax2d.set_title('%s= $%.3g^{+%.3g}_{%.3g}$' % (self.tex_names[index],self.mean[index],bounds[0][1],bounds[0][0]),fontsize=fontsize2d)
 	  ax2d.plot(interp_grid,interp_hist,color='red',linewidth=2,ls='-')
 	  ax2d.axis([x_range[index][0], x_range[index][1],0,1.05])
 
 	fontsize1d,ticksize1d = self.get_fontsize( max(num_columns,num_lines))
-	ax1d.set_title('%s= $%.4g^{+%.4g}_{%.4g}$' % (self.tex_names[index],self.mean[index],bounds[0][1],bounds[0][0]),fontsize=fontsize1d)
+	ax1d.set_title('%s= $%.3g^{+%.3g}_{%.3g}$' % (self.tex_names[index],self.mean[index],bounds[0][1],bounds[0][0]),fontsize=fontsize1d)
 	ax1d.set_xticks(ticks[index])
-	ax1d.set_xticklabels(['%.4g' % s for s in ticks[index]],fontsize=ticksize1d)
+	ax1d.set_xticklabels(['%.3g' % s for s in ticks[index]],fontsize=ticksize1d)
 	ax1d.axis([x_range[index][0], x_range[index][1],0,1.05])
 	
 	if comp_done:
@@ -695,7 +695,7 @@ class info:
 	    comp_x_range[ii][1] = x_range[index][1]
 	  comp_ticks[ii][1] = (comp_x_range[ii][1]+comp_x_range[ii][0])/2.
 	  ax1d.set_xticks(comp_ticks[ii])
-	  ax1d.set_xticklabels(['%.4g' % s for s in comp_ticks[ii]],fontsize=ticksize1d)
+	  ax1d.set_xticklabels(['%.3g' % s for s in comp_ticks[ii]],fontsize=ticksize1d)
 	  ax1d.axis([comp_x_range[ii][0], comp_x_range[ii][1],0,1.05])
 
 
@@ -741,13 +741,13 @@ class info:
 
 	    ax2dsub.set_xticks(ticks[second_index])
 	    if i == len(self.plotted_parameters)-1:
-	      ax2dsub.set_xticklabels(['%.4g' % s for s in ticks[second_index]],fontsize=ticksize2d)
+	      ax2dsub.set_xticklabels(['%.3g' % s for s in ticks[second_index]],fontsize=ticksize2d)
 	    else:
 	      ax2dsub.set_xticklabels([''])
 
 	    ax2dsub.set_yticks(ticks[index])
 	    if j == 0:
-	      ax2dsub.set_yticklabels(['%.4g' % s for s in ticks[index]],fontsize=ticksize2d)
+	      ax2dsub.set_yticklabels(['%.3g' % s for s in ticks[index]],fontsize=ticksize2d)
 	    else:
 	      ax2dsub.set_yticklabels([''])
 	    ax2dsub.imshow(n, extent=extent, aspect='auto',interpolation='gaussian',origin='lower',cmap=matplotlib.cm.Reds)
@@ -755,7 +755,7 @@ class info:
 	    # plotting contours, using the ctr_level method (from Karim Benabed)
             try:
               cs = ax2dsub.contour(y_centers,x_centers,n,extent=extent,levels=self.ctr_level(n,lvls),colors="k",zorder=5)
-              ax2dsub.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=19)
+              #ax2dsub.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=19)
             except Warning:
               print('     /!\  The routine could not find the contour of the "%s-%s" 2d-plot'% (self.plotted_parameters[i],self.plotted_parameters[j]))
               pass
@@ -768,12 +768,12 @@ class info:
 	      ax_temp.set_xticks(ticks[second_index])
 	      ax_temp.set_yticks(ticks[index])
 	      ax_temp.imshow(n, extent=extent, aspect='auto',interpolation='gaussian',origin='lower',cmap=matplotlib.cm.Reds)
-	      ax_temp.set_xticklabels(['%.4g' % s for s in ticks[second_index]],fontsize=ticksize2d)
-	      ax_temp.set_yticklabels(['%.4g' % s for s in ticks[index]],fontsize=ticksize2d)
+	      ax_temp.set_xticklabels(['%.3g' % s for s in ticks[second_index]],fontsize=ticksize2d)
+	      ax_temp.set_yticklabels(['%.3g' % s for s in ticks[index]],fontsize=ticksize2d)
 	      ax_temp.set_title('%s vs %s' % (self.tex_names[index],self.tex_names[second_index]),fontsize=fontsize1d)
               try:
                 cs = ax_temp.contour(y_centers,x_centers,n,extent=extent,levels=self.ctr_level(n,lvls),colors="k",zorder=5)
-                ax_temp.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=19)
+                #ax_temp.clabel(cs, cs.levels[:-1], inline=True,inline_spacing=0, fmt=dict(zip(cs.levels[:-1],[r"%d \%%"%int(l*100) for l in lvls[::-1]])), fontsize=19)
               except Warning:
                 print('     /!\  The routine could not find the contour of the "%s-%s" 2d-plot'% (self.plotted_parameters[i],self.plotted_parameters[j]))
                 pass
@@ -824,9 +824,9 @@ class info:
             for j in (0,1):
               elem[j] -= comp_mean[ii]
         ax1d.set_xticks(comp_ticks[ii])
-        ax1d.set_xticklabels(['%.4g' % s for s in comp_ticks[ii]],fontsize=ticksize1d)
+        ax1d.set_xticklabels(['%.3g' % s for s in comp_ticks[ii]],fontsize=ticksize1d)
         ax1d.axis([comp_x_range[ii][0], comp_x_range[ii][1],0,1.05])
-        ax1d.set_title('%s= $%.4g^{+%.4g}_{%.4g}$' % (comp_tex_names[ii],comp_mean[ii],comp_bounds[0][1],comp_bounds[0][0]),fontsize=fontsize1d)
+        ax1d.set_title('%s= $%.3g^{+%.3g}_{%.3g}$' % (comp_tex_names[ii],comp_mean[ii],comp_bounds[0][1],comp_bounds[0][0]),fontsize=fontsize1d)
         ax1d.plot(interp_comp_grid,interp_comp_hist,color='red',linewidth=2,ls='-')
         if command_line.subplot is True:
           extent1d = ax1d.get_window_extent().transformed(fig1d.dpi_scale_trans.inverted())
@@ -993,7 +993,7 @@ class info:
   # parameters. Feel free to modify to your needs.
   def get_fontsize(self,diag_length):
     # for a diagonal of 3, fontsize of 22, for a diagonal of 13, fontsize of ?
-    fontsize = 18
+    fontsize = 15
     #fontsize = round( 19 - (diag_length-5)*1.38)
     # for a diagonal of 3, fontsize of 18, for a diagonal of 13, fontsize of ?
     ticksize = 14
