@@ -1,0 +1,40 @@
+WiggleZ_b.data_directory      = data.path['data']
+
+# number of points and kbands in the input files
+WiggleZ_b.num_mpk_points_full = 50
+WiggleZ_b.num_mpk_kbands_full = 100
+
+# use scaling by dv/dv(fid) for Pk
+WiggleZ_b.use_scaling = False
+
+# decide which bandpowers to use, min to max
+WiggleZ_b.min_mpk_points_use = 3
+WiggleZ_b.max_mpk_points_use = 20
+WiggleZ_b.min_mpk_kbands_use = 1
+WiggleZ_b.max_mpk_kbands_use = 100
+
+WiggleZ_b.Q_marge = False
+WiggleZ_b.Q_mid = 4.0
+WiggleZ_b.Q_sigma = 1.5
+WiggleZ_b.Ag = 1.4
+WiggleZ_b.Use_jennings = False
+WiggleZ_b.Use_simpledamp = False
+WiggleZ_b.sigmav = 308
+WiggleZ_b.use_halofit = True
+
+WiggleZ_b.Use_giggleZ = True
+WiggleZ_b.giggleZ_fidpoly=[4.63079, -12.6293, 42.9265, -91.8068, 97.808, -37.633]
+WiggleZ_b.giggleZ_fidpk_file = 'gigglezfiducialmodel_matterpower_b.dat'
+WiggleZ_b.giggleZ_fidpk_size = 500
+
+WiggleZ_b.redshift=0.41
+
+WiggleZ_b.has_regions = True
+# regions ordered like in WiggleZ data files:
+# 9-hr, 11-hr, 15-hr, 22-hr, 0-hr, 1-hr, 3-hr
+WiggleZ_b.used_region = [True, True, True, True, True, True, True]
+
+WiggleZ_b.windows_file = 'wigglez_jan11b_windows.txt'
+WiggleZ_b.kbands_file = 'wigglez_jan11kbands.txt'
+WiggleZ_b.measurements_file = 'wigglez_jan11b_measurements.txt'
+WiggleZ_b.covmat_file = 'wigglez_jan11b_cov.txt'
