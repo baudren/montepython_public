@@ -74,6 +74,44 @@
   reassured. As long as you run \MP~ with the proper path to the proper \CLASS,
   then it will use this one (see section \ref{sec:installation}: Installation).
 
+  \subsection{WMAP 7 likelihood}
+
+  To use the likelihood of wmap, we propose a python wrapper, located in the
+  \verb?wrapper_wmap? directory. As for the \CLASS wrapper, you will need to
+  install it, although the procedure differs.
+
+  Go to the wrapper directory, and enter:
+
+  \begin{alltt}
+    wrapper_wmap]\$ ./waf configure install_all_deps
+  \end{alltt}
+
+  This should read the configuration of you distribution, install the
+  dependencies (cfitsio) automatically on your machine. For our purpose,
+  though, we prefer using the intel mkl libraries, which are much faster. To
+  tell the code of your local installation of mkl libraries, please use this
+  syntax:
+
+  \begin{alltt}
+    wrapper_wmap]\$ ./waf configure --lapack_mkl=/path/to/intel/mkl/10.3.8 --lapack_mkl_version=10.3
+  \end{alltt}
+
+  Once the configuration is done properly, finalize the installation by typing:
+  
+  \begin{alltt}
+    wrapper_wmap]\$ ./waf install
+  \end{alltt}
+
+  The code will generate a configuration file, that you will need to source
+  before using it with \MP. The file is \verb?clik_profile.sh?, and is located
+  in \verb?wrapper_wmap/bin/?. So before any call to \MP, or inside your
+  scripts, if you want to use the likelihood \verb?`wmap'?, you should call
+
+  \begin{alltt}
+    \tild]\$ source /path/to/MontePython/wrapper_wmap/bin/clik_profile.sh
+  \end{alltt}
+
+
   \subsection{\Clik: for Planck members only}
 
   Download the latest Clik public release. Follow the instruction to install
@@ -97,8 +135,8 @@
   content:
 
   \begin{alltt} 
-    code]\$ bunzip montepython-vx.y.tar.bz2 
-    code]\$ tar -xvf montepython-vx.y.tar
+    code]\$ bunzip montepython-vx.y.z.tar.bz2 
+    code]\$ tar -xvf montepython-vx.y.z.tar
     code]\$ cd montepython
   \end{alltt}
 
@@ -121,18 +159,12 @@
  likelihoods. It will be interpreted as a python file, so be careful to
  reproduce the syntax exactly.
 
- At minimum, {\bf default.conf} should contain two lines, filled with the
+ At minimum, {\bf default.conf} should contain one line, filled with the
  relevant information for your machine:
  \begin{alltt}
    path['cosmo']   = 'path/to/your/class/'
-   path['data']    = 'path/to/your/montepython/data/'
  \end{alltt}
  
- If you want to use the WMAP 7 likelihood, you should also add
- \begin{alltt}
-   path['wrapper_wmap']   = 'path/to/your/class/'
- \end{alltt}
-
  If you have installed Clik (Planck users), then you should also add:
  \begin{alltt}
    path['clik']    = 'path/to/your/clik/examples/'
@@ -174,13 +206,13 @@
   \begin{alltt}
     data.experiments = ['wmap','spt']
     
-    data.params[cosmo_name]       = [mean,min,max,1-sigma prior,scale,'cosmo']
+    data.parameters[cosmo_name]       = [mean,min,max,1-sigma prior,scale,'cosmo']
     ...
 
-    data.params[nuisance_name]    = [mean,min,max,1-sigma prior,scale,'nuisance']
+    data.parameters[nuisance_name]    = [mean,min,max,1-sigma prior,scale,'nuisance']
     ...
 
-    data.params[cosmo_name]       = [mean,min,max,1-sigma prior,scale,'derived']
+    data.parameters[cosmo_name]       = [mean,min,max,1-sigma prior,scale,'derived']
     ...
 
     data.cosmo_arguments['non linear']           = 'one-loop'
@@ -193,7 +225,7 @@
   you want to take into account. The way they work will be explained in
   subsection \ref{ssec:lkl}\\
 
-  In \verb?data.params?, you will list all the cosmo and nuisance parameter you
+  In \verb?data.parameters?, you will list all the cosmo and nuisance parameter you
   want to vary (if they differ from the default values). You must give an array
   with six elements in it, in this order: 
   \begin{itemize}
