@@ -111,22 +111,6 @@
     \tild]\$ source /path/to/MontePython/wrapper_wmap/bin/clik_profile.sh
   \end{alltt}
 
-
-  \subsection{\Clik: for Planck members only}
-
-  Download the latest Clik public release. Follow the instruction to install
-  it. This step is not compulsory, as for now, \MP~ can run on its own.
-
-  Once it is installed, everytime you will want to use it with \MP,
-  you will have to run the following command:
-
-  \begin{alltt}
-    \tild]\$ source path/to/your/clik/bin/profile.sh
-  \end{alltt}
-  
-  Alternatively, you can add the previous command to your $\tild$/.bashrc file.
-  You can then use the likelihood \verb?clik_fake_planck?.
-
 \newpage
 %%%%%%%% INSTALLATION %%%%%%%%
 \section{Installation\label{sec:installation}}
@@ -165,10 +149,10 @@
    path['cosmo']   = 'path/to/your/class/'
  \end{alltt}
  
- If you have installed Clik (Planck users), then you should also add:
- \begin{alltt}
-   path['clik']    = 'path/to/your/clik/examples/'
- \end{alltt}
+ %For members of the Planck collaboration only: if you have installed Clik, then you should also add:
+ %\begin{alltt}
+ %  path['clik']    = 'path/to/your/clik/examples/'
+ %\end{alltt}
  
  To run \MP, simply type \verb?python code/MontePython.py --help?. This will provide you with a short description of the available command line arguments. We will go below, in section blabla, over a typical run of the code.
  
@@ -180,17 +164,17 @@
   parameter file and an output folder. This will create a new folder, store the
   parameter file, the likelihood properties, the \CLASS~ version (in
   \emph{folder/log.param}), and start a Markov Chain there.  You can then
-  launch new runs in this existing folder, as long as you are using the same
-  parameter file. Otherwise, the program will simply not launch.\\
+  launch new runs in this existing folder, as long as you are not using a different
+  parameter file. Otherwise, the program will simply not launch. \\
 
   All the configuration files for all the likelihoods, cosmo parameters and
   mcmc parameters will be stored in this folder. This will allow you to make
-  reference to this file, rerun anything with the exact same settings as much
+  reference to this file, and rerun anything with the exact same settings as much
   as you want.\\
 
-  After analysis, the folder will also contain three more files:
+  After the analysis step described later, the folder will also contain more files:
   \begin{itemize}
-    \item \emph{folder.info}: with summarized convergence properties, mean and
+    \item \emph{folder.v\_info}, \emph{folder.h\_info}:, \emph{folder.tex}:: with summarized convergence properties, mean and
       best-fit values, and 1-sigma deviations.
     \item \emph{folder.log}:  with the detailed properties of all files used to create
       folder.info
@@ -215,7 +199,7 @@
     data.parameters[cosmo_name]       = [mean,min,max,1-sigma prior,scale,'derived']
     ...
 
-    data.cosmo_arguments['non linear']           = 'one-loop'
+    data.cosmo_arguments[comso_name]           = value
 
     data.N = 10
     data.write_step = 5
@@ -234,32 +218,28 @@
     \item {\bf maximum value} (same), 
     \item {\bf 1-sigma prior} (only used when there are no covariance matrix as
       an input),
-    \item {\bf scale} (most of the time, it will be $1$, but occasionnaly can
-      be $1e-9$ for instance) and finally 
-    \item {\bf role} (so far, the only valid options are 'cosmo' and
-      'nuisance')
-  \end{itemize}
+    \item {\bf scale} (most of the time, it will be $1$, but occasionnaly you can use a rescaling factor, for instance {\tt 1.e-9} if you are dealing with {\tt A\_s}) and finally 
+    \item {\bf role} ({\tt 'cosmo'} for mcmc parameters used by the Boltzmann code, {\tt 'nuisance'} for MCMC parameters used only by the likelihoods, and {\tt 'related'} for parameters not varied by the MCMC algorithm, but to to be kept in the chains as derived parameters).
+      \end{itemize}
   
-  The procedure for \verb?data.cosmo_arguments? differs only slightly. What you
+  In  \verb?data.cosmo_arguments?, you can pass any parameter to the Boltzmann code that you want to fix to a non-default value (precision or cosmological parameters, instruction for using or not lensing, tensors, etc., input file needed by the Bolztmann code, etc.).
+  What you
   pass here as argument is in fact the same value you would use in the
-  \verb?explanatory.ini? of your \CLASS~ runs. So it is no array, but either a
+  \verb?explanatory.ini? of your \CLASS~ runs. So it is not an array, but either a
   number or a string.\\
 
-  For the moment, remember that all elements you input with 'cosmo' role will
-  be interprated by the code as arguments for the cosmological code (only
-  \CLASS~ so far). It exists a function that you can edit that will allow you
-  not to have a one to one correspondance between these two things. It is
-  located in \verb?code/data.py? and called \verb?update_cosmo_arguments?. A
-  detailled exemple on how you should modify the function to suit your needs is
-  alreay implemented with the case of $\Omega_{\Lambda}$.\\
+  All elements you input with {\tt 'cosmo'} role will
+  be interpreted by the cosmological code (only
+  \CLASS~ so far). You may wish to use in the MCMC runs a new parameter that can be mapped to a \CLASS~parameter (e.g. $\log(10^{10})A_s$ instead of $A_s$). There is a function, located in \verb?code/data.py?, that you can edit to define such mappings. It is called  \verb?update_cosmo_arguments?. Before calling \CLASS, this function will simply replace in the list of arguments your customized parameters by true \CLASS~parameters. Several exemple of such mappings are
+  alreay implemented, allowing you for instance to use $\Omega_{\Lambda}$ as an MCMC parameter.\\
 
-  The two last elements are the number of steps you want your chain to be
+  The last two elements are the number of steps you want your chain to contain
   (\verb?data.N?) and the number of accepted steps the system should wait
   before writing it down to a file (\verb?data.write_step?). Typically, you
   will need a rather low number here, if you are running on a cluster where
   your jobs might easily get killed, or when you are testing. If instead you
   are afraid of loosing time with writing on disk tasks, you can put it higher.
-  Anyway, I would recommend not to go much higher than 5, for it really is not
+  Anyway, it is recommend not to go much higher than 5, for it really is not
   the most time consuming part of the code.\\
 
   {\bf Note}: you will want to overwrite the \verb?data.N? in the command line,
@@ -274,18 +254,18 @@
   parameters fixed, etc\ldots you should use one folder. This way, the folder
   will keep track of the exact calling of the code, allowing you to reproduce
   the data at later times, or to complete the existing chains. All these
-  important data are stored in your \verb?folder/log.param/? file.\\
+  important data are stored in your \verb?folder/log.param? file.\\
 
   Incidentaly, if you are starting the program in an existing folder, already
   containing a \verb?log.param? file, then you do not even have to specify a
   parameter file: the code will use it automatically. This will avoid mixing
   things up. If you are using one anyway, the code will first check whether the
-  two parameter files are in agreement, and if not, will stop and says so.\\
+  two parameter files are in agreement, and if not, will stop and say so.\\
 
   \subsection{Input covariance matrix}
 
   From any folder containing chains with more than 20 accepted points, you can
-  launch the analyze part of the code by invoking the command:
+  launch the analyze part of the code by invoking a command like:
   \begin{alltt}
     python code/MontePython.py -info chains/wmap7_sn/ -bins 15
   \end{alltt}
@@ -298,8 +278,8 @@
   \begin{alltt}
     python code/MontePython.py -o new_folder -p new.param -c wmap7_sn/wmap7_sn.covmat
   \end{alltt}
-  Here, \verb?new.param? is supposed to have different parameters (for
-  instance, using a varying $z_{reio}$ instead of a fixed one). The program
+  Here, \verb?new.param? could well have different parameters (for
+  instance, using a varying $N_{eff}$ instead of a fixed one). The program
   will then deduce the correct starting covariance matrix of the already
   computed elements, only using the $1\sigma$ prior for new parameters. Do not
   bother to have the same ordering: the code is doing it all for you.
@@ -310,10 +290,11 @@
   They are defined in a very specific way, that you will have to respect
   whenever you want to implement new ones.\\
 
-  Every likelihood is defined in the
+  Every likelihood is defined in a
   \verb?path/to/MontePython/likelihoods/name_of_likelihood/?
   folder. This folder contains at least two files, \verb?name_of_likelihood.py?
-  and \verb?name_of_likelihood.data?\\
+  and \verb?name_of_likelihood.data?. It is crucial that the same name \verb?name_of_likelihood? is used for the folder,
+  for the two files {\tt .data} and {\tt.py}, and for calling this likelihood in the Monte Python input file.\\
 
   The \verb?.py? file defines the class (in python sense) of your likelihood.
   Fortunately for you, parent classes have already been defined in the
@@ -328,7 +309,8 @@
     pass
   \end{alltt}
 
-  Yes, that is all. Now you have to fill in the \verb?.data? file. Continuing
+  Yes, that is all. This created a new class \verb?acbar? inheriting properties from the \verb?likelihood_newdat? class. Again it is crucial that the name of the class is the same as the name of the folder and of the two files {\tt .data} and {\tt.py}.
+    Now you have to fill in the \verb?.data? file. Continuing
   on the example with acbar, which requires a nuisance parameter (either fixed
   or varying), let us take a look at the entirity of the file
   \verb?acbar.data?:
@@ -336,8 +318,8 @@
   \begin{alltt}
     acbar.data_directory = data.path['data']
     acbar.file           = 'acbar2007_v3_corr.newdat'
-    acbar.use_nuisance   = ['A_SZ']
 
+    acbar.use_nuisance   = ['A_SZ']
     acbar.A_SZ_file      = 'WMAP_SZ_VBand.dat'
     acbar.A_SZ_scale     = 0.28
   \end{alltt}
@@ -345,11 +327,11 @@
   The only particular thing is there: the \verb?.use_nuisance? option. You have
   to pass here the entire list of the nuisance parameters the likelihood is
   expecting before running. After, for each nuisance parameter, you need to
-  specify the band file, and the scale. Here, you could also have a line that
+  specify a few quantities that we will detail later.  Here, you could also have a line that
   force Class to have certain parameters (a certain $l_{max}$ for instance). To
   enforce this behaviour, just add:
   \begin{alltt}
-    acbar.need_cosmo_arguments(data,\{'lensing':'yes', 'output':'tCl lCl pCl'\})
+    acbar.need_cosmo_arguments(data,\{'l_max_scalars':3300\})
   \end{alltt}
 
   Now in your parameter file, simply input the line \verb?data.exp=['acbar']?,
@@ -357,18 +339,29 @@
   already in the newdat format ? Create the folder, the two files, put your
   data in \verb?data.path['data']? and the name in the list of experiments and
   here you go. It really is this simple.
+  
+  If you are adding an experiment which does not match with a pre-defined category like \verb?likelihood_newdat? or \verb?likelihood_mpk?, its class should at lease inherit from basic likelihood properties:
+    \begin{alltt}
+  from likelihood_class import likelihood
+
+  class my_favorite_experiment(likelihood):
+    
+  \end{alltt}
+
+  and below you should write explicitly the likelihood code in python, with an initialisation step and a likelihood computation step: you can start from one of the several examples we distribute with the code.
+  
 
   \subsection{General guidelines to keep in mind}
 
   Here follows some rules about being sure everything work fine with \MP.
 \begin{itemize}
   \item Be sure to launch only one experiment by folder. If, after some month,
-    you want to relaunch a run from this, simply call the program without any
-    parameter file, but just the existing output folder. Everything was stored for you.
-  \item When launching a new run by extending a previous one (adding a free
-    $N_{\textrm{eff}}$ to $\Lambda CDM$ for instance), it is often better not to
-    take any starting covariance matrix than one that might not be adapted.
-  \item Also, when launching a new run where you are not sure of your priors,
+    you want to relaunch a run with the same liklihood, simply call the program without any
+    parameter file, but just the existing output folder. The likelihood characteristics were stored for you in the \verb?log.param?.
+%  \item When launching a new run by extending a previous one (adding a free
+ %   $N_{\textrm{eff}}$ to $\Lambda CDM$ for instance), it is often better not to
+  %  take any starting covariance matrix than one that might not be adapted.
+  \item when launching a new run from uncertain priors or from a bad covariance matrix,
     use the \verb?-j sequential? flag. It creates much more correlated chains,
     but this helps get started, produce a meaningful covariance matrix, and
     start again from a better point.
