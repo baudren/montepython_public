@@ -17,12 +17,12 @@ data.experiments=['fake_planck_bluebook']
 
 
 # Cosmological parameters list
-data.parameters['omega_b'] 	= [2.249,   -1,-1,0.0056,0.01,'cosmo']
-data.parameters['omega_cdm'] 	= [0.1120, -1,-1, 0.00056,1,  'cosmo']
-data.parameters['n_s']       	= [0.963,  -1,-1, 0.0007,1,   'cosmo']
-data.parameters['A_s']       	= [2.42,   -1,-1, 0.011, 1e-9,'cosmo']
-data.parameters['h']         	= [0.703,  -1,-1, 0.0025,1,   'cosmo']
-data.parameters['tau_reio']    	= [0.085,  -1,-1, 0.0015,1,   'cosmo']
+data.parameters['omega_b'] 	= [2.249,  -1,-1, 0.016, 0.01,'cosmo']
+data.parameters['omega_cdm'] 	= [0.1120, -1,-1, 0.0016,1,   'cosmo']
+data.parameters['n_s']       	= [0.963,  -1,-1, 0.004, 1,   'cosmo']
+data.parameters['A_s']       	= [2.42,   -1,-1, 0.038, 1e-9,'cosmo']
+data.parameters['h']         	= [0.703,  -1,-1, 0.0065,1,   'cosmo']
+data.parameters['tau_reio']    	= [0.085,  -1,-1, 0.0044,1,   'cosmo']
 
 # Nuisance parameter list, same call, except the name does not have to be a class name
 # For wmap:
