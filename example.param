@@ -6,6 +6,7 @@
 # and clik_fake_planck (for Planck members)
 
 data.experiments=['fake_planck_bluebook']
+#data.experiments=['wmap','spt']
 
 #------ Parameter list -------
 # data.parameters[class name] = [mean, min, max, 1-sigma, scale, role]
