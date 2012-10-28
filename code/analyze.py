@@ -419,6 +419,11 @@ class info:
     # Now that the list spam contains all the different chains removed of their
     # respective burn-in, proceed to the convergence computation
 
+    # Test the length of the list
+    if len(spam) == 0:
+      print('No decently sized chain was found. Please wait a bit to analyze this folder')
+      exit()
+
     # 2D arrays for mean and var, one column will contain the total (over all
     # chains) mean (resp.  variance), and each other column the respective
     # chain mean (resp. chain variance).  R only contains the values for each
@@ -470,10 +475,14 @@ class info:
       between /= (total[0]-1)
 
       R[i] = between/within
+      #if i == 0:
+        #print ' -> R is ',R[i],'\tfor ',ref_names[i]
+      #else:
+        #print '         ',R[i],'\tfor ',ref_names[i]
       if i == 0:
-        print ' -> R is ',R[i],'\tfor ',ref_names[i]
+        print ' -> R is %.6f' % R[i],'\tfor ',ref_names[i]
       else:
-        print '         ',R[i],'\tfor ',ref_names[i]
+        print '         %.6f' % R[i],'\tfor ',ref_names[i]
     
     # Log finally the total number of steps, and absolute loglikelihood
     self.log.write("--> Total    number    of    steps: %d\n" % total_number_of_steps)
