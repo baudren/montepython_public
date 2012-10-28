@@ -349,7 +349,11 @@ class info:
       max_lkl.append(min(cheese[:,1])) # beware, it is the min because we are talking about '- log likelihood'
 
     # Selecting only the true maximum.
-    max_lkl = min(max_lkl)
+    try:
+      max_lkl = min(max_lkl)
+    except ValueError:
+      print('No decently sized chain was found. Please wait a bit to analyze this folder')
+      exit()
 
     # Restarting the circling through files
     for File in Files:
@@ -992,10 +996,11 @@ class info:
   # Empirical method to adjust font size on the plots to fit the number of
   # parameters. Feel free to modify to your needs.
   def get_fontsize(self,diag_length):
-    # for a diagonal of 3, fontsize of 22, for a diagonal of 13, fontsize of ?
-    fontsize = 15
-    #fontsize = round( 19 - (diag_length-5)*1.38)
-    # for a diagonal of 3, fontsize of 18, for a diagonal of 13, fontsize of ?
-    ticksize = 14
-    #ticksize = round( 14 - (diag_length-5)*1)
+    # Approximate values to have roughly nice displays font size
+    fontsize = round( 19 - (diag_length-5)*1.38)
+    ticksize = round( 14 - (diag_length-5)*1)
+    # If the above does not work, please fix the values with the following two
+    # lines (and commenting the above)
+    #fontsize = 15
+    #ticksize = 14
     return fontsize,ticksize
