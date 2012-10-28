@@ -78,48 +78,14 @@ To test for the presence of the modules {\bf numpy},  {\bf scipy},  {\bf cython}
 
 If the installation was successfull, this should work within any directory. If you get no error message from this line, you know everything is fine.
 
-  \subsubsection*{Living with different versions of \CLASS}
-
   If at some point you have several different coexisting versions of \CLASS~on the system, and you are worried that \MP~is not using the good one, rest
   reassured. As long as you run \MP~with the proper path to the proper \CLASS~in your configuration file (see section \ref{sec:installation}: Installation),
   then it will use this one.
-
-  \subsection{WMAP 7 likelihood}
-
-  To use the likelihood of WMAP, we propose a python wrapper, located in the
-  \verb?wrapper_wmap? directory. Just like with the \CLASS~wrapper, you need to
-  install it, although the procedure differs. Go to the wrapper directory, and enter:
-
-  \begin{alltt}
-    wrapper_wmap]\$ ./waf configure install_all_deps
-  \end{alltt}
-
-  This should read the configuration of your distribution, and install the WMAP likelihood code and its
-  dependencies (cfitsio) automatically on your machine. For our purpose,
-  though, we prefer using the intel mkl libraries, which are much faster. To
-  tell the code about your local installation of mkl libraries, please add to the line above some options:
-  \begin{alltt}
-     --lapack_mkl=/path/to/intel/mkl/10.3.8 --lapack_mkl_version=10.3
-  \end{alltt}
-
-  Once the configuration is done properly, finalize the installation by typing:
   
-  \begin{alltt}
-    wrapper_wmap]\$ ./waf install
-  \end{alltt}
-
-  The code will generate a configuration file, that you will need to source
-  before using the WMAP likelihood with \MP. The file is \verb?clik_profile.sh?, and is located
-  in \verb?wrapper_wmap/bin/?. So if you want to use the likelihood \verb?`wmap'?, before any call to \MP~(or inside your
-  scripts), you should execute
-
-  \begin{alltt}
-    \tild]\$ source /path/to/MontePython/wrapper_wmap/bin/clik_profile.sh
-  \end{alltt}
-
-\newpage
 %%%%%%%% INSTALLATION %%%%%%%%
 \section{Installation\label{sec:installation}}
+
+\subsection{Main code}
 
   Move the latest release of \MP~to one of your folders, called e.g. \verb?code/? (for instance, this could be the folder containing also \verb?class/?), and untar its
   content:
@@ -157,7 +123,44 @@ If the installation was successfull, this should work within any directory. If y
  %  path['clik']    = 'path/to/your/clik/examples/'
  %\end{alltt}
  
- To check that \MP~is ready to wrok, simply type \verb?python code/MontePython.py --help? (or just \verb?code/MontePython.py --help?). This will provide you with a short description of the available command line arguments, explained in section \ref{commands}. 
+ To check that \MP~is ready to work, simply type \verb?python code/MontePython.py --help? (or just \verb?code/MontePython.py --help?). This will provide you with a short description of the available command line arguments, explained in section \ref{commands}. 
+
+ \subsection{WMAP 7 likelihood}
+
+  To use the likelihood of WMAP, we propose a python wrapper, located in the
+  \verb?wrapper_wmap? directory. Just like with the \CLASS~wrapper, you need to
+  install it, although the procedure differs. Go to the wrapper directory, and enter:
+
+  \begin{alltt}
+    wrapper_wmap]\$ ./waf configure install_all_deps
+  \end{alltt}
+
+  This should read the configuration of your distribution, and install the WMAP likelihood code and its
+  dependencies (cfitsio) automatically on your machine. For our purpose,
+  though, we prefer using the intel mkl libraries, which are much faster. To
+  tell the code about your local installation of mkl libraries, please add to the line above some options:
+  \begin{alltt}
+     --lapack_mkl=/path/to/intel/mkl/10.3.8 --lapack_mkl_version=10.3
+  \end{alltt}
+
+  Once the configuration is done properly, finalize the installation by typing:
+  
+  \begin{alltt}
+    wrapper_wmap]\$ ./waf install
+  \end{alltt}
+
+  The code will generate a configuration file, that you will need to source
+  before using the WMAP likelihood with \MP. The file is \verb?clik_profile.sh?, and is located
+  in \verb?wrapper_wmap/bin/?. So if you want to use the likelihood \verb?`wmap'?, before any call to \MP~(or inside your
+  scripts), you should execute
+
+  \begin{alltt}
+    \tild]\$ source /path/to/MontePython/wrapper_wmap/bin/clik_profile.sh
+  \end{alltt}
+
+The wrapper will use the original version of the WMAP likelihood codes downloaded and placed in the folder \verb?wrapper_wmap/src/likelihood_v4p1/? during the installation process. This likelihood will be compiled later, when you will call it for the first time from the \MP~code. Before calling it for the first time, you could eventually download the WMAP patch from Wayne Hu's web site, for a faster likelihood.
+
+You should finally download the WMAP data files by yourself, place them anywhere on your system, and specify the path to these data files in the file \verb?likelihoods/wmap/wmap.data?.
 
 \section{Getting started}
 
@@ -389,102 +392,153 @@ When I am pleased with the final plots and result, I can customize the plot cont
 
 \section{Existing and new likelihoods\label{likelihoods}}
 
+\subsection{One likelihood = one directory, one .py and one .data file\label{ssec:lkl}}
 
-  \subsection{Likelihood = a .py and a .data file\label{ssec:lkl}}
+We have seen already that cosmological parameters are passed directly from the input file to \CLASS, and do not appear anywhere in the code itself, i.e. in the files located in the \verb?code/? directory. The situation is the same for likelihoods. You can write the name of a likelihood in the input file, and \MP~will directly call one of the external likelihood codes implemented in the \verb?likelihood/? directory. This means that when you add some new likelihoods, you don't need to declare them in the code. You implement them in the \verb?likelihood? directory, and they are ready to be used if mentioned in the input file.
 
-  To finish this summarized presentation, let us look on the likelihood files.
-  They are defined in a very specific way, that you will have to respect
-  whenever you want to implement new ones.\\
+This can work because a precise syntax must be respected. Each likelihood is associated to a name, e.g. \verb?hst?,  \verb?wmap?,  \verb?WiggleZ? (the name is case-sensitive). This name is used:
+\begin{itemize}
+\item for calling the likelihood in the input file, e.g. \verb?data.experiments = ['hst', ...]?,
+\item for naming the directory of the likelihood, e.g. \verb?likelihoods/hst/?,
+\item for naming the input data file describing the characteristics of the experiment,  \verb?likelihoods/hst/hst.data? (this file can point to raw data files located in the \verb?data? directory)
+\item for naming the python file containing the likelihood code,  \verb?likelihoods/hst/hst.py? 
+\item for naming the class declared in \verb?likelihoods/hst/hst.py? and used also in \verb?likelihoods/hst/hst.data?
+\end{itemize}
+When  implementing new likelihoods, you will have to follow this rule. You could already wish to have two Hubble priors/likelihoods in your folder. For instance, the distributed version of \verb?hst? corresponds to a gaussian prior with standard deviation $h=0.72\pm0.02$. If you want to change these numbers, you can simply edit \verb?likelihoods/hst/hst.data? and change the numbers 0.72 and 0.02. But you could also keep \verb?hst? unchanged and create a new likelihood called e.g. \verb?spitzer?. We will come back to the creation of likelihoods later, but just to illustrate the structure of likelihoods, let us see how to create such a prior/likelihood:
+\begin{alltt}
+$ mkdir likelihoods/spitzer
+$ cp likelihoods/hst/hst.data likelihoods/spitzer/spitzer.data
+$ cp likelihoods/hst/hst.py likelihoods/spitzer/spitzer.py
+\end{alltt}
+Then edit \verb?likelihoods/spitzer/spitzer.py? and replace in the initial declaration the class name \verb?hst? by \verb?spitzer?:
+\begin{alltt}
+class spitzer(likelihood_prior):
+\end{alltt}
+Edit also \verb?likelihoods/spitzer/spitzer.data?, replace the class name \verb?hst? by \verb?spitzer?, and the numbers by your constraint:
+\begin{alltt}
+spitzer.h = 0.743
+spitzer.sigma = 0.021
+\end{alltt}
+You are done. You can simply add \verb?data.experiments = [...,'spitzer', ...]? to the list of experiments in the input parameter file and the likelihood will be used.
 
-  Every likelihood is defined in a
-  \verb?path/to/MontePython/likelihoods/name_of_likelihood/?
-  folder. This folder contains at least two files, \verb?name_of_likelihood.py?
-  and \verb?name_of_likelihood.data?. It is crucial that the same name \verb?name_of_likelihood? is used for the folder,
-  for the two files {\tt .data} and {\tt.py}, and for calling this likelihood in the Monte Python input file.\\
+\subsection{Existing likelihoods}
 
-  The \verb?.py? file defines the class (in python sense) of your likelihood.
-  Fortunately for you, parent classes have already been defined in the
-  \verb?code/likelihood_class.py?. For instance, for all the newdat type of
-  likelihoods (acbar, boomerang, bicep, etc.), their \verb?.py? file will be
-  painfully simple:
+We release the first version of \MP~with the likelihoods:
+\begin{itemize}
+\item \verb?spt?, \verb?bicep?, \verb?cbi?, \verb?acbar?, \verb?bicep?, \verb?quad?, the latest public versions of CMB data from SPT, Bicep, CBI, ACBAR, BICEP and Quad; for the SPT likelihoods we include three nuisance parameters obeying to gaussian priors, like in the original SPT paper, and for ACBAR one nuisance parameter with top-hat prior. These experiments are described by the very same files as in a ComsoMC implementation. They are located in the \verb?data/? directory. For each experiment, there is a master file \verb?xxx.dataset? containing several variables and the names of other files with the raw data. In the files \verb?likelihoods/xxx/xxx.data?, we just give the name of the different \verb?xxx.dataset? files, that \MP~is able to read just like CosmoMC.
+\item \verb?wmap?, original likelihood file accessed through the wmap wrapper. The file \verb?likelihoods/wmap/wmap.data? allows you to call this likelihood with a few different options (e.g. switching on/off Gibbs sampling, choosing the minimum and maximum multipoles to include, etc.) As usual, we implemented the nuisance parameter \verb?A_SZ? with a flat prior. In the input parameter file, you can decide to vary this parameter in the range 0-2, or to fix it to some value.
+\item \verb?hst? is the HST Key Project gaussian prior on $h$,
+\item \verb?sn? constains the luminosity distance-redhsift relation using the Union 2 data compilation,
+\item \verb?WiggleZ? constraints the matter power spectrum $P(k)$ in four different redshift bins using recent WiggleZ data,
+\end{itemize}
+plus a few other likelihoods referring to future experiments, described in the next subsection. All these likelihoods are strictly equivalent to those in the CosmoMC patches released by the various experimental collaborations.
 
+\subsection{Mock data likelihoods}
+
+We also release simplified likelihoods \verb?fake_planck_bluebook?, \verb?euclid_lensing? and \verb?euclid_pk? for doing forecasts for Planck, Euclid (cosmic shear survey) and Euclid (redshift survey).
+
+In the case of Planck, we use a simple gaussian likelihood for TT, TE, EE (like in \verb?astro-ph/0606227? with no lensing extraction) with sensitivity parameters matching the numbers published in the Planck bluebook. In the case of Euclid, our likelihoods and sensitivity parameters are specified in \verb?arXiv:1210.219?. The sensitivity parameters can always be modified by the user, by simply editing the \verb?.data? files.
+
+These likelihoods compare theoretical spectra to a fiducial spectrum (and NOT to random data generated given the fiducial model: this approach is simpler and leads to the same forecast error bars, see \verb?astro-ph/0606227?).
+
+Let us illustrate the way in which this works with \verb?fake_planck_bluebook?, although the two Euclid likelihoods obey exactly to the same logic.
+
+
+When you download the code, the file \verb?likelihoods/fake_planck_bluebook/fake_planck_bluebook.data? has a field
+\verb?fake_planck_bluebook.fiducial_file? pointing to the file\\ \verb?'fake_planck_bluebook_fiducial_ncdm_nl_err.dat'?. You downloaded this file together with the code: it is located in \verb?data? and it contains the TT/TE/EE spectrum of a particular fiducial model (with parameter values logged in the first line of the file). If you launch a run with this likelihood, it will work immediately and fit the various models to this fiducial spectrum.
+
+But you probably wish to choose your own fiducial model. This is extremely simple with \MP. You can delete the provided fiducial file\\\verb?'fake_planck_bluebook_fiducial_ncdm_nl_err.dat'?, or alternatively, you can change the name of the fiducial file in\\ \verb?likelihoods/fake_planck_bluebook/fake_planck_bluebook.data?. When you start the next run, the code will notice that there is no input fiducial spectrum. It will then generate one automatically, write it in the correct file with the correct location, and stop after this single step. Then, you can launch new chains, they will fit this fiducial spectrum. 
+
+When you generate the fiducial model, you probably want to control exactly fiducial parameter values. If you start from an ordinary input file with no particular options, \MP~will perform one random jump and generate the fiducial model. Fiducial parameter values will be logged in the first line of the fiducial file. But you did not choose them yourself. However, when you call \MP~with the intention of generating a fiducial spectrum, you can pass the command line option \verb?-f 0?. This sets the variance of the proposal density to zero. Hence the fiducial model will have precisely the parameter values specified in the input parameter file. The fiducial file is even logged in the \verb?log.param? of all the runs that have been using it.
+
+\subsection{Creating new likelihoods belonging to pre-defined category}
+
+A likelihood is a class (let's call it generically \verb?xxx?), declared and defined in \verb?likelihoods/xxx/xxx.py?, using input numbers and input files names specified in \verb?likelihoods/xxx/xxx.data?. The actual data files should usually be placed in the \verb?data/?folder (with the exception of WMAP data). Such a class will always inherit from the properties of the most generic class defined inside \verb?code/likelihoods_class.py?. But it may fall in the category of some pre-defined likelihoods and inherit more properties. In this case the coding will be extremely simple, you won't need to write a specific likelihood code.
+
+In the current version, pre-defined classes are:
+\begin{itemize}
+\item \verb?likelihood_newdat?, suited for all CMB experiments described by a file in the \verb?.newdat? format (same files as in CosmoMC).
+\item \verb?likelihood_mock_cmb?, suited for all CMB experiments dexcribed with a simplified gaussian likelihood, like our  \verb?fake_planck_bluebook? likelihood.
+\item \verb?likelihood_mpk?, suited for matter power spectrum data that would be described with a \verb?.dataset? file in CosmoMC. This generic likelihood contains a piece of code following closely the routine \verb?mpk? developped for CosmoMC. In the released version of \MP, this likelihood type is only used by each of the four redshift bins of the WiggleZ data, but it is almost ready for being used with other data set in this format.
+\end{itemize}
+Suppose, for instance, that a new CMB dataset \verb?nextcmb? is released in the \verb?.newdat? format. You will then copy the \verb?.newdat? file and other related files (with window functions, etc.) in the folder \verb?data/?. You will then create a new likelihood, starting from an existing one, e.g cbi:
+\begin{alltt}
+$ mkdir likelihoods/nextcmb
+$ cp likelihoods/cbi/cbi.data likelihoods/nextcmb/nextcmb.data
+$ cp likelihoods/cbi/cbi.py likelihoods/nextcmb/nextcmb.py
+\end{alltt}
+The python file should only be there to tell the code that nextcmb is in the \verb?.newdat? format. Hence it should only contain:
   \begin{alltt}
-  from likelihood_class import likelihood_newdat
-
-  class acbar(likelihood_newdat):
+  from likelihood_class import likelihood_newdat 
+  class nextcmb(likelihood_newdat):
     pass
   \end{alltt}
-
-  Yes, that is all. This created a new class \verb?acbar? inheriting properties from the \verb?likelihood_newdat? class. Again it is crucial that the name of the class is the same as the name of the folder and of the two files {\tt .data} and {\tt.py}.
-    Now you have to fill in the \verb?.data? file. Continuing
-  on the example with acbar, which requires a nuisance parameter (either fixed
-  or varying), let us take a look at the entirity of the file
-  \verb?acbar.data?:
-  
+This is enough: the likelihood is fully defined. The data file should only contain the name of the \verb?.newdat? file:
   \begin{alltt}
-    acbar.data_directory = data.path['data']
-    acbar.file           = 'acbar2007_v3_corr.newdat'
+nextcmb.data_directory  = data.path['data']
+nextcmb.file            = 'next-cmb-file.newdat'
+\end{alltt}
+Once tou have edited these few  lines, you are done! No need to tell \MP~that there is a new likelihood! Just call it in your next run by adding \verb?data.experiments = [...,'nextcmb', ...]? to the list of experiments in the input parameter file, and the likelihood will be used.
 
-    acbar.use_nuisance   = ['A_SZ']
-    acbar.A_SZ_file      = 'WMAP_SZ_VBand.dat'
-    acbar.A_SZ_scale     = 0.28
-  \end{alltt}
+You can also define nuisance parameters, contamination spectra and nuisance priors for this likelihood, as explained in the next section.
 
-  The only particular thing is there: the \verb?.use_nuisance? option. You have
-  to pass here the entire list of the nuisance parameters the likelihood is
-  expecting before running. After, for each nuisance parameter, you need to
-  specify a few quantities that we will detail later.  Here, you could also have a line that
-  force Class to have certain parameters (a certain $l_{max}$ for instance). To
-  enforce this behaviour, just add:
-  \begin{alltt}
-    acbar.need_cosmo_arguments(data,\{'l_max_scalars':3300\})
-  \end{alltt}
+\subsection{Creating new likelihoods from scratch}
 
-  Now in your parameter file, simply input the line \verb?data.exp=['acbar']?,
-  and the code will compute the new likelihood. You have a new experiment,
-  already in the newdat format ? Create the folder, the two files, put your
-  data in \verb?data.path['data']? and the name in the list of experiments and
-  here you go. It really is this simple.
-  
-  If you are adding an experiment which does not match with a pre-defined category like \verb?likelihood_newdat? or \verb?likelihood_mpk?, its class should at lease inherit from basic likelihood properties:
-    \begin{alltt}
+The likelihood \verb?sn? is an example of individual likelihood code: the actual code is explicitly written in \verb?sn.py?. To create your own likelihood files, the best to is look at such examples and follow them. We do not provide a full tutorial here, and encourage you to ask for help if needed. Here are however some general indications.
+
+Your customised likelihood should inherit from generic likelihood properties through:
+ \begin{alltt}
   from likelihood_class import likelihood
-
-  class my_favorite_experiment(likelihood):
-    
+  class my-likelihood(likelihood):
   \end{alltt}
 
-  and below you should write explicitly the likelihood code in python, with an initialisation step and a likelihood computation step: you can start from one of the several examples we distribute with the code.
-  
+Implementing the likelihood amounts in developing in the python file \verb?my-likelihood.py? the properties of two essential functions, \verb?__init__? and \verb?__loglkl__?. But you don't need to code everything from scratch, because the generic likelihood already knows the most generic steps.
 
-  \subsection{General guidelines to keep in mind}
- Be sure to launch only one experiment by folder. If, after some month,
-    you want to relaunch a run with the same liklihood, simply call the program without any
-    parameter file, but just the existing output folder. The likelihood characteristics were stored for you in the \verb?log.param?.
+This means that you don't need to write from scratch the parser reading the \verb?.data? file: this will be done automatically at the beginning of the initialization of your likelihood. Consider that any field defined with a line in the \verb?.data? file, e.g. \verb?my-likelihood.variance = 5?, are known in the likelihood code: in this example you could write in the python code something like \verb?chi2+=result**2/self.variance?.
 
-\subsection{Creating (completely new) likelihoods}
-
-  We already saw that adding likelihoods that already come into a certain format
-  (from Clik, or with the newdat format) is a matter of three minutes. However,
-  if one ones to code a new likelihood, one has to understand a bit the way
-  classes work in this code.\\
-
-  The file \verb?code/likelihood_class.py? contains all the basic definitions
-  of likelihoos already implemented. The basic one, \verb?likelihood? will be
-  useful to you if you want to create a new one from scratch. Just let your new
-  class inherit from likelihood, and build over that. The following functions are already coded for you:\\
-
+You don't need either to write from scratch an interface with \CLASS. You just need to write somewhere in the initialization function  some specific parameters that should be passed to \CLASS. For instance, if you need the matter power spectrum, write
+\begin{alltt}
+self.need_cosmo_arguments(data,{'output':'mPk'})
+  \end{alltt}
+  If this likelihood is used, the field \verb?mPk? will be appended to the list of output fields (e.g. \verb?output=tCl,pCl,mPk?), unless it was already there. If you write
+\begin{alltt}
+self.need_cosmo_arguments(data,{'l_max_scalars':3300})
+   \end{alltt}
+   the code will check if \verb?l_max_scalars? was already set at least to 3300, and if not, it will increase it to 3300. But if another likelihood needs more it will be more.
+   
+ You don't need to redefine functions like for instance those defining the role of nuisance parameters (especially for CMB experiments). 
+ If you write in the \verb?.data? file
+ \begin{alltt}
+my-likelihood.use_nuisance           = ['N1','N2'] 
+\end{alltt}
+the code will know that this likelihood cannot work if these two nuisance parameters are not specified  in the parameter input file (they can be varying or fixed; fix them by writing a 0 in the sigma entry). If you try to run without them, the code will stop with an explicit error message.
+If the parameter \verb?N1? has a top-hat prior, no need to write it: just specify prior edges in the input parameter file. If \verb?N2? has a gaussian prior, specify it in the \verb?.data? file, e.g.:
+ \begin{alltt}
+  my-likelihood.N2_prior_center  = 1
+  my-likelihood.N2_prior_variance = 2  
+\end{alltt}
+Since these fields refer to pre-defined properties of the likelihood, you don't need to write explicitly in the code something like \verb?chi2 += (N2-center)**2/variance?, adding the prior is done automatically. Finally, if these nuisance parameters are associated to a CMB dataset, they may stand for a multiplicative factor in front of a contamination spectrum to be added to the theoretical $C_l$'s. This is the case for the nuisance parameters of the \verb?acbar?, \verb?spt? and \verb?wmap? likelihoods delivered with the code, so you can look there for concrete examples. To assign this role to these nuisance parameters, you just need to write
+\begin{alltt}
+  my-likelihood.N1_file = 'contamination_corresponding_to_N1.data'
+\end{alltt}
+and the code will understand what it should do with the parameter \verb?N1? and the file\\
+\verb?data/contamination_associated_to_N1.data?. Optionally, the factor in front of the contamination spectrum can be rescaled by a constant number using the syntax:
+\begin{alltt}
+  my-likelihood.N1_scale = 0.5
+\end{alltt}
+To know exactly what is pre-defined in the generic likelihood class, open the file \verb?code/likelihood_class.py?. You will find the following set of functions:
   \begin{itemize}
-    \item \verb?read_from_file?, it will only read your .data file and extract
+    \item \verb?read_from_file?, to read your \verb?.data? file and extract
       properly the information
-    \item \verb?get_cl?, returns the properly normalized $C_l$ from Class, in $\mu K^2$.
-    \item \verb?need_cosmo_arguments?, enforce the definition at a certain
-      value of certain cosmo parameters. Typically, this will enforce that the
-      $C_l$ gets computed until a certain $l$.
-    \item \verb?read_contamination_spectra?, TODO julien ?
+    \item \verb?get_cl?, to return the properly normalized $C_l$'s from \CLASS, in $\mu K^2$.
+    \item \verb?need_cosmo_arguments?, to enforce the definition of a certain
+      value of certain cosmo parameters (e.g. to enforce that the
+      $C_l$'s get computed until a certain $l$),
+    \item \verb?read_contamination_spectra?, 
     \item \verb?add_contamination_spectra?,
-    \item \verb?add_nuisance_prior?,
+    \item \verb?add_nuisance_prior?.
   \end{itemize}
 
+Creating new likelihoods requires a basic knowledge of python. If you are new in python, once you know the basics, you will realise how concise a code can be. You can compare the length of the likelihood codes that we provide with their equivalent in Fortran in the CosmoMC package.
 
 \end{document}
