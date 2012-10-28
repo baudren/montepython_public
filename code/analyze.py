@@ -896,7 +896,7 @@ class info:
 	indices = [i for i in range(len(histogram)) if histogram[i]>water_level]
 	# check for multimodal posteriors
 	if ((indices[-1]-indices[0]+1)!=len(indices)):
-	  print('    /!\ Warning : could not derive minimum credible intervals (multimodal posterior)')
+	  print('    /!\ Warning: could not derive minimum credible intervals (multimodal posterior)')
 	  failed = True
 	  break
 	top = (sum(histogram[indices])-0.5*(histogram[indices[0]]+histogram[indices[-1]]))*(delta)
@@ -926,7 +926,7 @@ class info:
 	# safeguard, just in case
 	ii+=1
 	if (ii>1000):
-	  print('\n\n  the loop to check for sigma deviations was too long to converge')
+          print('    /!\ Warning: the loop to check for sigma deviations was too long to converge')
 	  break
 
       #print top,norm,abs(top/norm)
