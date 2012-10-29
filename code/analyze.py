@@ -350,7 +350,7 @@ class info:
       # line. If it starts with three blanck spaces, it will be a CosmoMC file,
       # so every element will be separated with three spaces
       if line.startswith("   "):
-        cheese = (np.array([[float(elem) for elem in line.split("   ")] for line in open(File,'r')]))
+        cheese = (np.array([[float(elem) for elem in line[4:].split("   ")] for line in open(File,'r')]))
       # else it is the normal Monte Python convention
       else:
         cheese = (np.array([[float(elem) for elem in line.split()] for line in open(File,'r')]))
