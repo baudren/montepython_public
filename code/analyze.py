@@ -350,7 +350,7 @@ class info:
       # line. If it starts with three blanck spaces, it will be a CosmoMC file,
       # so every element will be separated with three spaces
       if line.startswith("   "):
-        cheese = (np.array([[float(elem) for elem in line[4:].split("   ")] for line in open(File,'r')]))
+        cheese = (np.array([[float(elem) for elem in line[4:].split()] for line in open(File,'r')]))
       # else it is the normal Monte Python convention
       else:
         cheese = (np.array([[float(elem) for elem in line.split()] for line in open(File,'r')]))
@@ -1015,10 +1015,10 @@ class info:
   # parameters. Feel free to modify to your needs.
   def get_fontsize(self,diag_length):
     # Approximate values to have roughly nice displays font size
-    fontsize = round( 19 - (diag_length-5)*1.38)
-    ticksize = round( 14 - (diag_length-5)*1)
+    #fontsize = round( 19 - (diag_length-5)*1.38)
+    #ticksize = round( 14 - (diag_length-5)*1)
     # If the above does not work, please fix the values with the following two
     # lines (and commenting the above)
-    #fontsize = 15
-    #ticksize = 14
+    fontsize = 15
+    ticksize = 14
     return fontsize,ticksize
