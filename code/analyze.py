@@ -345,7 +345,16 @@ class info:
       if len(File.split('/')[-1])>length_of_largest_filename:
         length_of_largest_filename = len(File.split('/')[-1])
       # cheese will brutally contain everything in the chain File being scanned
-      cheese = (np.array([[float(elem) for elem in line.split()] for line in open(File,'r')]))
+      # Small trick, to analyze CosmoMC files directly, since the convention of
+      # spacing is different, we have to test for the configuration of the
+      # line. If it starts with three blanck spaces, it will be a CosmoMC file,
+      # so every element will be separated with three spaces
+      if line.startswith("   "):
+        cheese = (np.array([[float(elem) for elem in line.split("   ")] for line in open(File,'r')]))
+      # else it is the normal Monte Python convention
+      else:
+        cheese = (np.array([[float(elem) for elem in line.split()] for line in open(File,'r')]))
+
       max_lkl.append(min(cheese[:,1])) # beware, it is the min because we are talking about '- log likelihood'
 
     # Selecting only the true maximum.
