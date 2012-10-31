@@ -1,4 +1,3 @@
-from classy import Class
 import os,sys
 import math
 import random as rd

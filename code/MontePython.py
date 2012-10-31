@@ -55,7 +55,7 @@ def main():
     print '/_o_\ in your montepython directory that specifies'
     print '      the correct locations for your data folder, Class (, Clik), ...'
 
-  sys.stdout.write('Running MontePython version 0.9\n')
+  sys.stdout.write('Running MontePython version 1.0\n')
 
   # If the info flag was used, read a potential chain (or set of chains) to be
   # analysed with default procedure. If the argument is a .info file, then it
