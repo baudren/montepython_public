@@ -2,7 +2,7 @@
 
 ##############################################################
 # MontePython, a Monte Carlo Markov Chain code (with Class!)
-# Version 1.0.0
+# Version 1.0.1
 # written by Benjamin Audren
 # Additional parts by Julien Lesgourgues, Karim Benabed
 ##############################################################

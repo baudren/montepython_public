@@ -1,0 +1,5 @@
+v1.0.1: - Removed the first and unwanted line of code/mcmc.py, that was
+pointlessly trying to import again Class. This conflicted in case of a
+non-installation of the Class wrapper.
+	- Modified '0.9' in '1.0' in a print statement in MontePython.py
+v1.0.0: Initial release
