@@ -1,0 +1,5 @@
+# BAO data
+bao.data_directory	= data.path['data']
+bao.file 		= bao.data_directory+'bao_2012.txt'
+bao.rs_rescale          = 153.017/149.0808
+

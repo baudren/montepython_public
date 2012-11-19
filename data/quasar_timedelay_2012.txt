@@ -1,0 +1,11 @@
+# data on quasar time delays
+# the columns are [zd, zs, lambda_d, mu_d, sigma_d]
+# with zd = lens redhsift 
+#      zs = source redhsift
+# other three params refer to the shifted lognormal PDF of the time-delay distance,
+# as in Suyu et al. 2010 (eq. 35) and 2012 (eq. 26)
+#
+# B1608+656 (Suyu et al 2010)
+0.6304	 1.394	  4000.0    7.053     0.2282 
+# RXJ1131-1231 (Suyu et al 2012)
+0.295	 0.658	  1425.6    6.4993     0.19377 
