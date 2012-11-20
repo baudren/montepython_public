@@ -17,9 +17,10 @@ class sn(likelihood):
     self.moduli = np.array([],'float64')
 
     # read redshifts and data points
-    for line in open(self.z_mu_dmu,'r'):
-      self.z		= np.append(self.z,float(line.split()[1]))
-      self.moduli 	= np.append(self.moduli,float(line.split()[2]))
+    for line in open(self.data_directory+self.z_mu_dmu,'r'):
+      if (line.find('#') == -1):
+        self.z		= np.append(self.z,float(line.split()[1]))
+        self.moduli 	= np.append(self.moduli,float(line.split()[2]))
 
     # number of data points
     self.num_points=np.shape(self.z)[0]
@@ -35,9 +36,10 @@ class sn(likelihood):
 
     # read correlation matrix
     i=0
-    for line in open(covmat_filename,'r'):
-      covmat[i] = line.split()
-      i+=1
+    for line in open(self.data_directory+covmat_filename,'r'):
+      if (line.find('#') == -1):
+        covmat[i] = line.split()
+        i+=1
 
     # invert correlation matrix
     self.inv_covmat=np.linalg.inv(covmat)

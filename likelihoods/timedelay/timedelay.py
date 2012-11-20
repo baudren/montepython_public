@@ -1,5 +1,6 @@
 import os
 import numpy as np
+from math import log,sqrt,pi
 from likelihood_class import likelihood
 
 class timedelay(likelihood):
@@ -20,8 +21,8 @@ class timedelay(likelihood):
     self.sigma_d  = np.array([],'float64')
 
     # read redshifts and data points
-    for line in open(self.file,'r'):
-      if (line[0] != '#'):
+    for line in open(self.data_directory+self.file,'r'):
+      if (line.find("#") == -1):
         self.zd		= np.append(self.zd,float(line.split()[0]))
         self.zs		= np.append(self.zs,float(line.split()[1]))
         self.lambda_d 	= np.append(self.lambda_d,float(line.split()[2]))
@@ -49,8 +50,8 @@ class timedelay(likelihood):
       Dt = (1+self.zd[i])*Dd*Ds/Dds
  
       if (Dt > self.lambda_d[i]):
-        lkl = lkl-(np.log(Dt-self.lambda_d[i])-self.mu_d[i])**2/2./self.sigma_d[i]**2-np.log(np.sqrt(2.*np.pi)*(Dt-self.lambda_d[i])*self.sigma_d[i])  
+        lkl = lkl-(log(Dt-self.lambda_d[i])-self.mu_d[i])**2/2./self.sigma_d[i]**2-log(sqrt(2.*pi)*(Dt-self.lambda_d[i])*self.sigma_d[i])  
       else:
-        lkl=-1.e30
+        lkl = data.boundary_loglike
 
     return lkl

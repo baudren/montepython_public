@@ -19,8 +19,8 @@ class bao(likelihood):
     self.type   = np.array([],'int')
 
     # read redshifts and data points
-    for line in open(self.file,'r'):
-      if (line[0] != '#'):
+    for line in open(self.data_directory+self.file,'r'):
+      if (line.find('#') == -1):
         self.z		= np.append(self.z,float(line.split()[0]))
         self.data 	= np.append(self.data,float(line.split()[1]))
         self.error 	= np.append(self.error,float(line.split()[2]))
@@ -50,13 +50,12 @@ class bao(likelihood):
         rs = _cosmo._rs_drag()*self.rs_rescale
         theo = dv/rs
 
-      else: 
-        if (self.type[i] == 4):  
-          theo = dv 
+      elif (self.type[i] == 4):  
+        theo = dv 
 
-        else:
-          print 'BAO data type',self.type[i],' in ',i,'th line not understood'
-          exit()
+      else:
+        print 'BAO data type',self.type[i],' in ',i,'th line not understood'
+        exit()
 
       chi2 += ((theo-self.data[i])/self.error[i])**2
 
