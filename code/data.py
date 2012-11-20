@@ -268,12 +268,23 @@ class data:
 	pass           # In this case, nothing to do.
 
     for elem in self.get_mcmc_parameters(['cosmo']):
+      # infer h from Omega_Lambda and delete Omega_Lambda
       if elem == 'Omega_Lambda':
         try:
           omega_b      = self.cosmo_arguments['omega_b']
           omega_cdm    = self.cosmo_arguments['omega_cdm']
           Omega_Lambda = self.cosmo_arguments['Omega_Lambda']
           self.cosmo_arguments['h']   = math.sqrt( (omega_b+omega_cdm) / (1.-Omega_Lambda) )
+          del self.cosmo_arguments[elem]
+        except (KeyError):
+          pass
+      # infer omega_cdm from Omega_L and delete Omega_L
+      if elem == 'Omega_L':
+        try:
+          omega_b      = self.cosmo_arguments['omega_b']
+          h = self.cosmo_arguments['h']
+          Omega_L = self.cosmo_arguments['Omega_L']
+          self.cosmo_arguments['omega_cdm']  = (1.-Omega_L)*h*h-omega_b
           del self.cosmo_arguments[elem]
         except (KeyError):
           pass
