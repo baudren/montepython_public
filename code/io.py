@@ -13,6 +13,8 @@ try:
 except:
   from ordereddict import OrderedDict as od    
 from datetime import date
+from common import lock,LockException
+import fcntl
 
 # Writes the beginning of log.param, starting with the header with the
 # cosmological code version and subversion, and then recopies entirely the
@@ -116,13 +118,20 @@ def create_output_files(command_line,data):
   # output file
   outname_base='{0}_{1}__'.format(date.today(),number)
   suffix=0
+  Try = True
   if command_line.chain_number is None:
     for files in os.listdir(command_line.folder):
       if files.find(outname_base)!=-1:
         if int(files.split('__')[-1].split('.')[0])>suffix:
           suffix=int(files.split('__')[-1].split('.')[0])
     suffix+=1
-    data.out=open(command_line.folder+outname_base+str(suffix)+'.txt','w')
+    while Try:
+      data.out = open(command_line.folder+outname_base+str(suffix)+'.txt','w')
+      try:
+        lock(data.out, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        Try = False
+      except LockException:
+        suffix+=1
     sys.stdout.write('Creating {0}{1}{2}.txt\n'.format(command_line.folder,outname_base,suffix))
     data.out_name='{0}{1}{2}.txt'.format(command_line.folder,outname_base,suffix)
   else:
