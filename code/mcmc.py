@@ -243,9 +243,9 @@ def get_new_pos(data,eigv,U,k):
   flag  = 0
   for elem in parameter_names:
     value = data.mcmc_parameters[elem]['initial']
-    if(str(value[1])!=str(-1) and vector_new[i]<value[1]):
+    if( (str(value[1])!=str(-1) and value[1] is not None) and vector_new[i]<value[1]):
       flag+=1 # if a boundary value is reached, increment
-    elif(str(value[2])!=str(-1) and vector_new[i]>value[2]):
+    elif( (str(value[2])!=str(-1) and value[1] is not None) and vector_new[i]>value[2]):
       flag+=1 # same
     i+=1
 

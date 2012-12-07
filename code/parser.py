@@ -76,11 +76,18 @@ def parse():
 	# and if the folder already exists, and that no parameter file was
 	# provided, use the log.param
 	if os.path.isdir(args.folder):
-	  if args.param==None:
+          if os.path.exists(args.folder+'log.param'):
+            old_param = args.param
 	    args.param=args.folder+'log.param'
+            if args.param is not None:
+              print ' /!\ Appending to an existing folder: using the log.param instead of %s' % old_param
+          else:
+            if args.param is None:
+              print(' /|\   The requested output folder appears to be empty,\n/_o_\  You must then provide a parameter file,\n       use the command line option -p any.param')
+              exit()
 	else:
 	  if args.param==None:
-	    print ' /|\   No log.param was found in your output folder,\n/_o_\  You must then provide a parameter file,\n       use the command line option -p any.param'
+	    print(' /|\   The requested output folder appears to be non-existent,\n/_o_\  You must then provide a parameter file,\n       use the command line option -p any.param')
 	    exit()
 
   return args

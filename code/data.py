@@ -105,10 +105,13 @@ class data:
       if command_line.folder[-1]!='/':
 	command_line.folder+='/'
       if (os.path.exists(command_line.folder) and not os.path.exists(command_line.folder+'log.param')):
-	print ' /|\  your output folder should either contain some runs,'
-	print '/_o_\ or does not exist at all'
-	exit()
-	#print 'pas bien'
+        if command_line.param != None:
+          print '/!\   Detecting empty folder, logging the parameter file'
+          io.log_parameters(self,command_line)
+          log_flag = True
+	#print ' /|\  your output folder should either contain some runs,'
+	#print '/_o_\ or not exist at all'
+	#exit()
       if not os.path.exists(command_line.folder) :
 	os.mkdir(command_line.folder)
 	# Logging of parameters

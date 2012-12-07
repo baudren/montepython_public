@@ -87,10 +87,13 @@ def main():
   else:
     Data=data.data(command_line,path)
     if command_line.param.find('log.param')==-1:
-      Data_old=data.data(command_line,path,False)
-      if Data!=Data_old:
-        print '\n /|\  You are starting a chain in {0} with different parameters\n/_o_\ than used previously.\n      Exiting'.format(command_line.folder)
-	exit()
+      try:
+        Data_old=data.data(command_line,path,False)
+        if Data!=Data_old:
+          print '\n /|\  You are starting a chain in {0} with different parameters\n/_o_\ than used previously.\n      Exiting'.format(command_line.folder)
+          exit()
+      except AttributeError:
+        pass
 
   # Overwrite arguments from parameter file with the command line
   if command_line.N is None:
