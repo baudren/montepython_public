@@ -5,7 +5,7 @@
 # euclid_pk, euclid_lensing
 # and clik_fake_planck (for Planck members)
 
-data.experiments=['fake_planck_bluebook','spt_2500']
+data.experiments=['fake_planck_bluebook']
 #data.experiments=['wmap','spt']
 
 #------ Parameter list -------
@@ -28,9 +28,9 @@ data.parameters['tau_reio']    	= [0.085,  -1,-1, 0.0044,1,   'cosmo']
 # For wmap:
 #data.parameters['A_SZ']         = [1,    0, 2,   1, 1,  'nuisance']
 # For SPT
-data.parameters['SPT_SZ']       = [5.6,  0,-1, 2.5, 1,  'nuisance']
-data.parameters['SPT_PS']       = [20.4,-1,-1, 2.7, 1, 'nuisance']
-data.parameters['SPT_CL']       = [5.3, -1,-1, 2.3, 1, 'nuisance']
+#data.parameters['SPT_SZ']       = [5.6,  0,-1, 2.5, 1,  'nuisance']
+#data.parameters['SPT_PS']       = [20.4,-1,-1, 2.7, 1, 'nuisance']
+#data.parameters['SPT_CL']       = [5.3, -1,-1, 2.3, 1, 'nuisance']
 
 # Derived parameter list
 data.parameters['z_reio']       = [0,       -1, -1, 0,1,  'derived']

@@ -69,15 +69,9 @@ class likelihood():
   def get_cl(self,_cosmo):
 
     # get C_l^XX from the cosmological code
-    cl = {}
-    for key in ['tt','te','ee','bb']:
-      cl[key] = np.array(self.l_max+1,'float64')
     cl = _cosmo.lensed_cl()
-    #for l in range(2,self.l_max+1):
-      #print l,cl['tt'][l],cl['te'][l],cl['ee'][l]
-    #exit()
 
-    # convert dimensionless C_l's to C_l in muK**2 (done in classy.pyx)
+    # convert dimensionless C_l's to C_l in muK**2
     T = _cosmo._T_cmb()
     for key in cl.iterkeys():
       cl[key] *= (T*1.e6)**2
@@ -778,7 +772,6 @@ class likelihood_mock_cmb(likelihood):
     Cov_the=np.zeros((2,2),'float64')
     Cov_mix=np.zeros((2,2),'float64')
 
-    dummy = False
     for l in range(self.l_min,self.l_max+1):
 
       Cov_obs=np.array([[self.Cl_fid[0,l],self.Cl_fid[2,l]],[self.Cl_fid[2,l],self.Cl_fid[1,l]]])
@@ -793,20 +786,7 @@ class likelihood_mock_cmb(likelihood):
         Cov_mix[:,i] = Cov_obs[:,i]
 	det_mix += np.linalg.det(Cov_mix)
 
-      try:
-        chi2 += (2.*l+1.)*self.f_sky*(det_mix/det_the + math.log(det_the/det_obs) - 2)
-      except ValueError:
-        if not dummy:
-          print('CLASS precision was exceeded in this computation, for l=%d' % l)
-          print('Setting the chi2 for this l to 0 and continuing')
-          print('for the record:')
-          for elem in data.get_mcmc_parameters(['varying']):
-            print elem, ' = ',data.mcmc_parameters[elem]['current']*data.mcmc_parameters[elem]['initial'][4]
-        print "%16e %16e %16e %16e %16e %16e %16e %16e %16e" % (l,cl['tt'][l],self.noise_T[l],cl['te'][l],self.noise_P[l],cl['ee'][l],det_obs,det_the,self.Cl_fid[0,l])
-        dummy = True
-
-    if dummy:
-      exit()
+      chi2 += (2.*l+1.)*self.f_sky*(det_mix/det_the + math.log(det_the/det_obs) - 2)
 
     return -chi2/2
 
