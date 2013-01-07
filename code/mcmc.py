@@ -247,7 +247,19 @@ def get_new_pos(data,eigv,U,k):
       flag+=1 # if a boundary value is reached, increment
     elif( (str(value[2])!=str(-1) and value[1] is not None) and vector_new[i]>value[2]):
       flag+=1 # same
+    if elem == 'beta':
+      i_beta = i
+    if elem == 'lambda':
+      i_lambda = i
     i+=1
+
+  # Special boundaries problems (for TCDM)
+  try:
+    data.mcmc_parameters['beta']['initial']
+    if vector_new[i_beta]+vector_new[i_lambda] < 0:
+      flag +=1
+  except KeyError:
+    pass
 
   # At this point, if a boundary condition is not fullfilled, ie, if flag is
   # different from zero, return False
