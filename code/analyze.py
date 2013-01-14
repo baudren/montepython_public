@@ -33,6 +33,9 @@ class info:
     Files     = command_line.files
     binnumber = command_line.bins
 
+    # Save the extension to output files
+    self.extension = command_line.extension
+
     # Read a potential file describing changes to be done for the parameter
     # names, and number of paramaters plotted (can be let empty, all will then
     # be plotted). Initialized at empty structures.
@@ -746,10 +749,10 @@ class info:
 	if command_line.subplot is True:
 	  if not comp:
 	    extent2d = ax2d.get_window_extent().transformed(fig2d.dpi_scale_trans.inverted())
-	    fig2d.savefig(self.folder+'plots/{0}_{1}.pdf'.format(self.folder.split('/')[-2],self.plotted_parameters[index]), bbox_inches=extent2d.expanded(1.1, 1.4))
+	    fig2d.savefig(self.folder+'plots/{0}_{1}.{2}'.format(self.folder.split('/')[-2],self.plotted_parameters[index],self.extension), bbox_inches=extent2d.expanded(1.1, 1.4))
 	  else:
 	    extent1d = ax1d.get_window_extent().transformed(fig1d.dpi_scale_trans.inverted())
-	    fig1d.savefig(self.folder+'plots/{0}_{1}.pdf'.format(self.folder.split('/')[-2],self.plotted_parameters[index]), bbox_inches=extent1d.expanded(1.1, 1.4))
+	    fig1d.savefig(self.folder+'plots/{0}_{1}.{2}'.format(self.folder.split('/')[-2],self.plotted_parameters[index],self.extension), bbox_inches=extent1d.expanded(1.1, 1.4))
 
 	# Now do the rest of the triangle plot
 	if plot_2d:
@@ -800,7 +803,7 @@ class info:
                 print('     /!\  The routine could not find the contour of the "%s-%s" 2d-plot'% (self.plotted_parameters[i],self.plotted_parameters[j]))
                 pass
 
-	      fig_temp.savefig(self.folder+'plots/{0}_2d_{1}-{2}.pdf'.format(self.folder.split('/')[-2],self.ref_names[index],self.ref_names[second_index]))
+	      fig_temp.savefig(self.folder+'plots/{0}_2d_{1}-{2}.{3}'.format(self.folder.split('/')[-2],self.ref_names[index],self.ref_names[second_index],self.extension))
 
 	      # store the coordinates of the points for further plotting.
 	      plot_file = open(self.folder+'plots/{0}_2d_{1}-{2}.dat'.format(self.folder.split('/')[-2],self.ref_names[index],self.ref_names[second_index]),'w')
@@ -852,19 +855,19 @@ class info:
         ax1d.plot(interp_comp_grid,interp_comp_hist,color='red',linewidth=2,ls='-')
         if command_line.subplot is True:
           extent1d = ax1d.get_window_extent().transformed(fig1d.dpi_scale_trans.inverted())
-          fig1d.savefig(self.folder+'plots/{0}_{1}.pdf'.format(self.folder.split('/')[-2],self.ref_names[i]), bbox_inches=extent1d.expanded(1.1, 1.4))
+          fig1d.savefig(self.folder+'plots/{0}_{1}.{2}'.format(self.folder.split('/')[-2],self.ref_names[i],self.extension), bbox_inches=extent1d.expanded(1.1, 1.4))
 	
     # If plots/ folder in output folder does not exist, create it
     if os.path.isdir(self.folder+'plots') is False:
       os.mkdir(self.folder+'plots')
     print('-----------------------------------------------')
-    print('--> Saving figures to .pdf files')
+    print('--> Saving figures to .{0} files'.format(self.extension))
     if plot_2d:
-      fig2d.savefig(self.folder+'plots/{0}_triangle.pdf'.format(self.folder.split('/')[-2]))
+      fig2d.savefig(self.folder+'plots/{0}_triangle.{1}'.format(self.folder.split('/')[-2],self.extension),  bbox_inches=0)
     if comp:
-      fig1d.savefig(self.folder+'plots/{0}-vs-{1}.pdf'.format(self.folder.split('/')[-2],comp_folder.split('/')[-2]))
+      fig1d.savefig(self.folder+'plots/{0}-vs-{1}.{2}'.format(self.folder.split('/')[-2],comp_folder.split('/')[-2],self.extension), bbox_inches=0)
     else:
-      fig1d.savefig(self.folder+'plots/{0}_1d.pdf'.format(self.folder.split('/')[-2]))
+      fig1d.savefig(self.folder+'plots/{0}_1d.{1}'.format(self.folder.split('/')[-2],self.extension), bbox_inches=0)
 
 
   # Extract the contours for the 2d plots (KB)

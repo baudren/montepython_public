@@ -44,6 +44,8 @@ parser.add_argument('-extra',metavar='plot file for custom needs',type=str,dest=
 parser.add_argument('-noplot',metavar='ommit the plotting part',dest='plot',action='store_const',const=False,default=True)
 # -- if you want to output every single subplots
 parser.add_argument('-all',metavar='plot every single subplot in a separate pdf file',dest='subplot',action='store_const',const=True,default=False)
+# -- to change the extension used to output files (pdf is the default one, but takes long, valid options are png and eps)
+parser.add_argument('-ext',metavar='change extension for the output file',type=str,dest='extension',default='pdf')
 
 
 def parse():
