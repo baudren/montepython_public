@@ -1,3 +1,3 @@
-# Values for Hubble Space Telescope
+# Values for Hubble Space Telescope (following Astro-ph/1103.2976)
 hst.h 			= 0.738
 hst.sigma 		= 0.024
