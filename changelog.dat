@@ -1,3 +1,20 @@
+v1.1.0: - Added the following likelihoods: spt_2500 (full data release), bao,
+	timedelay, and updated the value for hst (1103.2976)
+	- Removed the call to function cosmo_update_arguments() in the
+	initialization of the data module. This was not needed, and
+	complicated the function. Now cosmo_update_arguments does not need the
+	try, except pattern.
+	- Changed the way to handle boundary for proposal density. The "-1"
+	can still be used, when no boundary is meant. "-1." will be
+	interpretated as a boundary of -1 not to cross (useful for w). The
+	user can also use "None".
+	- Added a lockfile system, that should prevent a file from being
+	written simultaneously by two programs, when launching several
+	different runs at the same time.
+	- New extensions available for print-outs with the analyze module. Use
+	the command line option "-ext png", or eps, or pdf (from fastest, to
+	slowest). 
+-----------------------------------------------------------------------
 v1.0.1: - Removed the first and unwanted line of code/mcmc.py, that was
 pointlessly trying to import again Class. This conflicted in case of a
 non-installation of the Class wrapper.
