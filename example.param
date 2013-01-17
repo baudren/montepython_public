@@ -10,7 +10,7 @@ data.experiments=['fake_planck_bluebook']
 
 #------ Parameter list -------
 # data.parameters[class name] = [mean, min, max, 1-sigma, scale, role]
-# - if min max irrelevant, put to -1
+# - if min max irrelevant, put to -1 or None (if you want a boundary of -1, use -1.0)
 # - if fixed, put 1-sigma to 0
 # - if scale irrelevant, put to 1, otherwise to the appropriate factor
 # - role is either 'cosmo', 'nuisance' or 'derived'
