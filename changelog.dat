@@ -1,22 +1,25 @@
-v1.1.0: - Added the following likelihoods: spt_2500 (full data release), bao,
-	timedelay, and updated the value for hst (1103.2976)
-	- Removed the call to function cosmo_update_arguments() in the
-	initialization of the data module. This was not needed, and
-	complicated the function. Now cosmo_update_arguments does not need the
-	try, except pattern.
-	- Changed the way to handle boundary for proposal density. The "-1"
-	can still be used, when no boundary is meant. "-1." will be
-	interpretated as a boundary of -1 not to cross (useful for w). The
-	user can also use "None".
+v1.1.0: - Added the following likelihoods: SPT full data (called spt_2500 in
+	the likelihood directory), compilation of BAO scale data (called bao),
+	compilation of quasar time-delay data (called timedelay), timedelay, and
+	updated the value for hst (1103.2976)
+	- To speed up the production of plots, you can play with a new
+	extension defining the print-out format: use the command-line option
+	"-ext png", or eps, or pdf (from the fastest to the slowest format)
 	- Added a lockfile system, that should prevent a file from being
 	written simultaneously by two programs, when launching several
 	different runs at the same time.
-	- New extensions available for print-outs with the analyze module. Use
-	the command line option "-ext png", or eps, or pdf (from fastest, to
-	slowest). 
+	- Changed a detail in the input file syntax, concerning parameter
+	prior edges. To leave the prior edge undefined, you can still use "-1"
+	as before, or "None". But if your prior edge is really minus one (for
+	instance for w), you can write "-1."
+	- Function cosmo_update_arguments() modified for better readability
+	and simpler use (this function allows to rename or remap input
+	parameters at each step before passing them to CLASS). The syntax
+	pattern "try, except" is not needed anymore
 -----------------------------------------------------------------------
+
 v1.0.1: - Removed the first and unwanted line of code/mcmc.py, that was
-pointlessly trying to import again Class. This conflicted in case of a
-non-installation of the Class wrapper.
+	pointlessly trying to import again Class. This conflicted in case of a
+	non-installation of the Class wrapper.
 	- Modified '0.9' in '1.0' in a print statement in MontePython.py
 v1.0.0: Initial release
