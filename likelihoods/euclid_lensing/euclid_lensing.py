@@ -238,7 +238,7 @@ class euclid_lensing(likelihood):
 
     # Add the error function, with the nuisance parameter, to P_nl_th
     for index_l in range(self.nlmax):
-      pk[index_l,:] *= (1. + data.mcmc_parameters['epsilon']['current']*data.mcmc_parameters['epsilon']['initial'][4]*E_th_nu[index_l,:])
+      pk[index_l,:] *= (1. + data.mcmc_parameters['epsilon']['current']*data.mcmc_parameters['epsilon']['scale']*E_th_nu[index_l,:])
       #pk[index_l,:] *= (1. + alpha[index_l,:])
 
     # Start loop over l for computation of C_l^shear
@@ -280,7 +280,7 @@ class euclid_lensing(likelihood):
       fid_file = open(self.data_directory+'/'+self.fiducial_file,'w')
       fid_file.write('# Fiducial parameters')
       for key,value in data.mcmc_parameters.iteritems():
-	fid_file.write(', %s = %.5g' % (key,value['current']*value['initial'][4]))
+	fid_file.write(', %s = %.5g' % (key,value['current']*value['scale']))
       fid_file.write('\n')
       for nl in range(self.nlmax):
 	for Bin1 in range(self.nbin):
@@ -496,6 +496,6 @@ class euclid_lensing(likelihood):
     #print
     #print chi2
     #exit()
-    chi2+=(data.mcmc_parameters['epsilon']['current']*data.mcmc_parameters['epsilon']['initial'][4])**2
+    chi2+=(data.mcmc_parameters['epsilon']['current']*data.mcmc_parameters['epsilon']['scale'])**2
 
     return -chi2/2.

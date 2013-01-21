@@ -175,7 +175,7 @@ class euclid_pk(likelihood):
       fid_file = open(self.data_directory+'/'+self.fiducial_file,'w')
       fid_file.write('# Fiducial parameters')
       for key,value in data.mcmc_parameters.iteritems():
-	fid_file.write(', %s = %.5g' % (key,value['current']*value['initial'][4]))
+	fid_file.write(', %s = %.5g' % (key,value['current']*value['scale']))
       fid_file.write('\n')
       for index_k in range(self.k_size):
 	for index_z in range(2*self.nbin+1):
@@ -265,7 +265,7 @@ class euclid_pk(likelihood):
 
     for index_z in range(2*self.nbin+1):
       for index_mu in range(self.mu_size):
-        pk_nl_th[:,index_z,index_mu] *= (1.+data.mcmc_parameters['epsilon']['current']*data.mcmc_parameters['epsilon']['initial'][4]*np.log(1. + self.k[:,index_z,index_mu]/k_sigma[index_z]) / (1. + np.log(1.+ self.k[:,index_z,index_mu]/k_sigma[index_z])) * e_th)
+        pk_nl_th[:,index_z,index_mu] *= (1.+data.mcmc_parameters['epsilon']['current']*data.mcmc_parameters['epsilon']['scale']*np.log(1. + self.k[:,index_z,index_mu]/k_sigma[index_z]) / (1. + np.log(1.+ self.k[:,index_z,index_mu]/k_sigma[index_z])) * e_th)
 
     #index_z = self.nbin-1
     #index_mu =self.mu_size-1
@@ -285,7 +285,7 @@ class euclid_pk(likelihood):
     #self.tilde_P_th_corr = np.zeros( (self.k_size,self.nbin,self.mu_size), 'float64')
     #for index_k in range(self.k_size):
     #  for index_z in range(self.nbin):
-    #    self.tilde_P_th_corr[index_k,index_z,:] = H[2*index_z+1]/(D_A[2*index_z+1]**2) * (1. + beta_th[index_k,index_z,:]*mu[:]*mu[:])**2*data.mcmc_parameters['epsilon']['current']*data.mcmc_parameters['epsilon']['initial'][4]*E_th[index_k,2*index_z+1,:]* pk_nl_th[index_k,2*index_z+1,:] *np.exp(-self.k[index_k,2*index_z+1,:]**2*mu[:]**2*sigma_r[index_z]**2)
+    #    self.tilde_P_th_corr[index_k,index_z,:] = H[2*index_z+1]/(D_A[2*index_z+1]**2) * (1. + beta_th[index_k,index_z,:]*mu[:]*mu[:])**2*data.mcmc_parameters['epsilon']['current']*data.mcmc_parameters['epsilon']['scale']*E_th[index_k,2*index_z+1,:]* pk_nl_th[index_k,2*index_z+1,:] *np.exp(-self.k[index_k,2*index_z+1,:]**2*mu[:]**2*sigma_r[index_z]**2)
 
     # Compute \tilde P_th(k,mu,z) = H(z)/D_A(z)^2 * (1 + beta(z,k) mu^2)^2 P_nl_th (k,z) exp(-k^2 mu^2 sigma_r^2)
     # Compute \tilde P_th(k,mu,z) = H(z)/D_A(z)^2 * (1 + beta(z,k) mu^2)^2 P_nl_th (k,z) (1 + epsilon* E(k,z) ) exp(-k^2 mu^2 sigma_r^2)
@@ -297,7 +297,7 @@ class euclid_pk(likelihood):
     # Shot noise spectrum, deduced from the nuisance parameter P_shot
     self.P_shot = np.zeros( (self.nbin),'float64')
     for index_z in range(self.nbin):
-      self.P_shot[index_z] = self.H_fid[2*index_z+1]/(self.D_A_fid[2*index_z+1]**2*self.b[index_z]**2)*(data.mcmc_parameters['P_shot']['current']*data.mcmc_parameters['P_shot']['initial'][4] + 4.*pi*r[2*index_z+1]**2*(r[2*index_z+2]-r[2*index_z])/self.n_g[index_z])
+      self.P_shot[index_z] = self.H_fid[2*index_z+1]/(self.D_A_fid[2*index_z+1]**2*self.b[index_z]**2)*(data.mcmc_parameters['P_shot']['current']*data.mcmc_parameters['P_shot']['scale'] + 4.*pi*r[2*index_z+1]**2*(r[2*index_z+2]-r[2*index_z])/self.n_g[index_z])
       
     #for index_z in range(self.nbin):
     #  for index_k in range(self.k_size):
@@ -331,7 +331,7 @@ class euclid_pk(likelihood):
 	mu_integrand_hi = np.sum((k_integrand[1:] + k_integrand[0:-1])*.5*(self.k_fid[1:] - self.k_fid[:-1]))
 	chi2 += (mu_integrand_hi + mu_integrand_lo)/2.*(mu[index_mu] - mu[index_mu-1])
 
-    chi2 += (data.mcmc_parameters['epsilon']['current']*data.mcmc_parameters['epsilon']['initial'][4])**2
+    chi2 += (data.mcmc_parameters['epsilon']['current']*data.mcmc_parameters['epsilon']['scale'])**2
 
     #print chi2
     #exit()

@@ -81,7 +81,7 @@ class wmap(likelihood):
     # fill with nuisance parameters
     #for nuisance in nuisance_parameter_names:
       #if nuisance == 'A_SZ':
-        #nuisance_value = data.mcmc_parameters[nuisance]['current']*data.mcmc_parameters[nuisance]['initial'][4]
+        #nuisance_value = data.mcmc_parameters[nuisance]['current']*data.mcmc_parameters[nuisance]['scale']
         #tot[index]=nuisance_value
         #index += 1
 
