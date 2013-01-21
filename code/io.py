@@ -73,8 +73,8 @@ def print_parameters(out,data):
     param.append(elem)
   out.write('\n#  -LogLkl\t')
   for i in range(len(param)):
-    if data.mcmc_parameters[param[i]]['initial'][4]!=1:
-      number = data.mcmc_parameters[param[i]]['initial' ][4]
+    if data.mcmc_parameters[param[i]]['scale']!=1:
+      number = data.mcmc_parameters[param[i]]['scale']
       if (number > 100. or number < 0.01):
 	string = '%0.e%s' % (1./number,param[i])
       else:

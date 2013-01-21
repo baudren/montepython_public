@@ -59,11 +59,6 @@ class data:
     # Read from the parameter file to fill properly the mcmc_parameters dictionary.
     self.fill_mcmc_parameters()
 
-    # From mcmc_parameters, update cosmo_arguments (cosmo_arguments will always
-    # contain the latest position, and forget anything about previous points,
-    # whereas in mcmc_parameters, we will keep track of the last accepted point
-    self.update_cosmo_arguments()
-
     # Determine which cosmological code is in use
     if path['cosmo'].find('class') != -1:
       self.cosmological_module_name = 'Class'
@@ -91,6 +86,9 @@ class data:
     # log_flag, initially at False, will help determine if the code should
     # log the parameter file in the folder
     log_flag = False
+
+    # Record if the step is a fast one (only nuisance parameters were changed)
+    self.fast_step = False
 
     # For a true initialization, one should then initialize the likelihoods.
     # This step is obviously skipped for a comparison
@@ -231,7 +229,8 @@ class data:
     # 'last_accepted' one, that will be filled in in the mcmc part.
     for key,value in dictionary.iteritems():
       self.mcmc_parameters[key] = od()
-      self.mcmc_parameters[key]['initial'] = value[0:5]
+      self.mcmc_parameters[key]['initial'] = value[0:4]
+      self.mcmc_parameters[key]['scale']   = value[4]
       self.mcmc_parameters[key]['role']    = value[-1]
       self.mcmc_parameters[key]['tex_name']= io.get_tex_name(key)
       if value[3] == 0:
@@ -264,79 +263,58 @@ class data:
   def update_cosmo_arguments(self):
     # For all elements in any cosmological parameters
     for elem in self.get_mcmc_parameters(['cosmo']):
-      try:
-	# If they have a current value already, use it
-	self.cosmo_arguments[elem]   = self.mcmc_parameters[elem]['current']*self.mcmc_parameters[elem]['initial'][4]
-      except KeyError: # it will go there if there is not yet a 'current' field,
-	pass           # In this case, nothing to do.
+      # Fill in the dictionnary with the current value of parameters
+      self.cosmo_arguments[elem]   = self.mcmc_parameters[elem]['current']*self.mcmc_parameters[elem]['scale']
 
+    # For all elements in the cosmological parameters from the mcmc list,
+    # translate any-one that is not directly a Class parameter into one.
+    # The try: except: syntax ensures that the first call 
     for elem in self.get_mcmc_parameters(['cosmo']):
       # infer h from Omega_Lambda and delete Omega_Lambda
       if elem == 'Omega_Lambda':
-        try:
-          omega_b      = self.cosmo_arguments['omega_b']
-          omega_cdm    = self.cosmo_arguments['omega_cdm']
-          Omega_Lambda = self.cosmo_arguments['Omega_Lambda']
-          self.cosmo_arguments['h']   = math.sqrt( (omega_b+omega_cdm) / (1.-Omega_Lambda) )
-          del self.cosmo_arguments[elem]
-        except (KeyError):
-          pass
+        omega_b      = self.cosmo_arguments['omega_b']
+        omega_cdm    = self.cosmo_arguments['omega_cdm']
+        Omega_Lambda = self.cosmo_arguments['Omega_Lambda']
+        self.cosmo_arguments['h']   = math.sqrt( (omega_b+omega_cdm) / (1.-Omega_Lambda) )
+        del self.cosmo_arguments[elem]
       # infer omega_cdm from Omega_L and delete Omega_L
       if elem == 'Omega_L':
-        try:
-          omega_b      = self.cosmo_arguments['omega_b']
-          h = self.cosmo_arguments['h']
-          Omega_L = self.cosmo_arguments['Omega_L']
-          self.cosmo_arguments['omega_cdm']  = (1.-Omega_L)*h*h-omega_b
-          del self.cosmo_arguments[elem]
-        except (KeyError):
-          pass
+        omega_b      = self.cosmo_arguments['omega_b']
+        h = self.cosmo_arguments['h']
+        Omega_L = self.cosmo_arguments['Omega_L']
+        self.cosmo_arguments['omega_cdm']  = (1.-Omega_L)*h*h-omega_b
+        del self.cosmo_arguments[elem]
       if elem == 'ln10^{10}A_s':
-        try:
-          self.cosmo_arguments['A_s']   = math.exp(self.cosmo_arguments[elem])/1.e10
-          del self.cosmo_arguments[elem]
-        except (KeyError):
-          pass
+        self.cosmo_arguments['A_s']   = math.exp(self.cosmo_arguments[elem])/1.e10
+        del self.cosmo_arguments[elem]
       if elem == 'exp_m_2_tau_As':
-        try:
-          tau_reio = self.cosmo_arguments['tau_reio']
-          self.cosmo_arguments['A_s']   = self.cosmo_arguments[elem]*math.exp(2.*tau_reio)
-          del self.cosmo_arguments[elem]
-        except (KeyError):
-          pass
+        tau_reio = self.cosmo_arguments['tau_reio']
+        self.cosmo_arguments['A_s']   = self.cosmo_arguments[elem]*math.exp(2.*tau_reio)
+        del self.cosmo_arguments[elem]
       if elem == 'f_cdi':
-        try:
-          self.cosmo_arguments['n_cdi']   =self.cosmo_arguments['n_s']
-        except (KeyError):
-          pass
+        self.cosmo_arguments['n_cdi']   =self.cosmo_arguments['n_s']
       if elem == 'beta':
-        try:
-          self.cosmo_arguments['alpha'] = 2.*self.cosmo_arguments['beta']
-        except (KeyError):
-          pass
+        self.cosmo_arguments['alpha'] = 2.*self.cosmo_arguments['beta']
       # We only do that on xe_1, for there is at least one of them.
       if elem.find('xe_1') != -1:
-	try:
-	  # To pass this option, you must have set a number of cosmological settings
-	  # reio_parametrization to reio_bins_tanh, binned_reio_z set, and binned_reio_num
-	  # First, you need to set reio_parametrization to reio_bins_tanh
-	  if (self.cosmo_arguments['reio_parametrization'] != 'reio_bins_tanh'):
-	    print ' /|\  Warning, you set binned_reio_xe to some values'
-	    print '/_o_\ without setting reio_parametrization to reio_bins_tanh'
-	    exit()
-	  else:
-	    try:
-	      size = self.cosmo_arguments['binned_reio_num']
-	    except (KeyError):
-	      print ' /|\  You need to set reio_binnumber to the value corresponding to'
-	      print '/_o_\ the one in binned_reio_xe'
-	      exit()
-	  string = ''
-	  for i in range(1,size+1):
-	    string += '%.4g' % self.cosmo_arguments['xe_%d' % i]
-	    del self.cosmo_arguments['xe_%d' % i]
-	    if i != size:
-	      string += ','
-	  self.cosmo_arguments['binned_reio_xe'] = string
-	except (KeyError):
-	  pass
+        # To pass this option, you must have set a number of cosmological settings
+        # reio_parametrization to reio_bins_tanh, binned_reio_z set, and binned_reio_num
+        # First, you need to set reio_parametrization to reio_bins_tanh
+        if (self.cosmo_arguments['reio_parametrization'] != 'reio_bins_tanh'):
+          print ' /|\  Warning, you set binned_reio_xe to some values'
+          print '/_o_\ without setting reio_parametrization to reio_bins_tanh'
+          exit()
+        else:
+          try:
+            size = self.cosmo_arguments['binned_reio_num']
+          except (KeyError):
+            print ' /|\  You need to set reio_binnumber to the value corresponding to'
+            print '/_o_\ the one in binned_reio_xe'
+            exit()
+        string = ''
+        for i in range(1,size+1):
+          string += '%.4g' % self.cosmo_arguments['xe_%d' % i]
+          del self.cosmo_arguments['xe_%d' % i]
+          if i != size:
+            string += ','
+        self.cosmo_arguments['binned_reio_xe'] = string

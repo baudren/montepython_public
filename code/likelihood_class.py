@@ -159,7 +159,7 @@ class likelihood():
 
     # Recover the current value of the nuisance parameter. 
     for nuisance in self.use_nuisance:
-      nuisance_value = float(data.mcmc_parameters[nuisance]['current']*data.mcmc_parameters[nuisance]['initial'][4])
+      nuisance_value = float(data.mcmc_parameters[nuisance]['current']*data.mcmc_parameters[nuisance]['scale'])
 
       # add contamination spectra multiplied by nuisance parameters
       for l in range(2,self.l_max):
@@ -171,7 +171,7 @@ class likelihood():
 
     # Recover the current value of the nuisance parameter. 
     for nuisance in self.use_nuisance:
-      nuisance_value = float(data.mcmc_parameters[nuisance]['current']*data.mcmc_parameters[nuisance]['initial'][4])
+      nuisance_value = float(data.mcmc_parameters[nuisance]['current']*data.mcmc_parameters[nuisance]['scale'])
 
       # add prior on nuisance parameters
       exec "if (self.%s_prior_variance>0): lkl += -0.5*((nuisance_value-self.%s_prior_center)/self.%s_prior_variance)**2" % (nuisance,nuisance,nuisance)
@@ -650,7 +650,7 @@ class likelihood_clik(likelihood):
     # fill with nuisance parameters
     for nuisance in self.clik.get_extra_parameter_names():
       if nuisance in nuisance_parameter_names:
-	nuisance_value = data.mcmc_parameters[nuisance]['current']*data.mcmc_parameters[nuisance]['initial'][4]
+	nuisance_value = data.mcmc_parameters[nuisance]['current']*data.mcmc_parameters[nuisance]['scale']
       else:
 	print 'the likelihood needs a parameter '+nuisance
 	print 'you must pass it through the input file (as a free nuisance parameter or a fixed parameter)'
@@ -752,7 +752,7 @@ class likelihood_mock_cmb(likelihood):
       fid_file = open(self.data_directory+'/'+self.fiducial_file,'w')
       fid_file.write('# Fiducial parameters')
       for key,value in data.mcmc_parameters.iteritems():
-	fid_file.write(', %s = %.5g' % (key,value['current']*value['initial'][4]))
+	fid_file.write(', %s = %.5g' % (key,value['current']*value['scale']))
       fid_file.write('\n')
       for l in range(self.l_min,self.l_max+1):
         fid_file.write("%5d  " % l)

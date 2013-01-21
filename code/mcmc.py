@@ -5,13 +5,14 @@ import numpy as np
 import io
 import data
 
-# COMPUTE LKL
+# Compute the likelihood
 def compute_lkl(_cosmo,data):
+
   # Prepare the cosmological module with the new set of parameters
   _cosmo.set(data.cosmo_arguments)
 
   # Compute the model, keeping track of the errors
-  failure=False
+
   # In classy.pyx, we made use of two type of python errors, to handle two
   # different situations.
   # - AttributeError is returned if a parameter was not properly set during the
@@ -19,12 +20,13 @@ def compute_lkl(_cosmo,data):
   # Then, the code exits, to prevent running with imaginary parameters. This
   # behaviour is also used in case you want to kill the process.
   # - NameError is returned if Class fails to compute the output given the
-  # parameter values. It will display the Class error, the code will register a
-  # new failure, and start again with a new point.
+  # parameter values. This will be considered as a valid point, but with
+  # minimum likelihood, so will be rejected, resulting in the choice of a new
+  # point.
   try:
     _cosmo._compute(["lensing"])
   except NameError :
-    return True,0 
+    return False,data.boundary_loglike
   except (AttributeError,KeyboardInterrupt):
     exit()
 
@@ -47,8 +49,12 @@ def compute_lkl(_cosmo,data):
       print('Terminating now')
       exit()
   for elem in data.get_mcmc_parameters(['derived']):
-    data.mcmc_parameters[elem]['current'] /= data.mcmc_parameters[elem]['initial'][4]
+    data.mcmc_parameters[elem]['current'] /= data.mcmc_parameters[elem]['scale']
 
+  # Create a new backup of the cosmological structure. If at the next step, the
+  # cosmological parameters were not changed, do not run the cosmological
+  # module again (to be used with the new proposal scheme)
+  #backup = _cosmo
 
   # Clean the cosmological strucutre
   _cosmo._struct_cleanup(set(["lensing","nonlinear","spectra","primordial","transfer","perturb","thermodynamics","background","bessel"]))
@@ -63,7 +69,7 @@ def compute_lkl(_cosmo,data):
       print('--> parameters are coherent for your tested models')
       exit()
 
-  return failure,loglike
+  return loglike
 
 
 # Function used only when the restart flag was set. It will simply pick up the
@@ -118,7 +124,7 @@ def get_cov(data,command_line):
     scales = []
     for elem in covnames:
       if elem in parameter_names:
-	scales.append(data.mcmc_parameters[elem]['initial'][4])
+	scales.append(data.mcmc_parameters[elem]['scale'])
       else:
 	scales.append(1)
     scales = np.diag(scales)
@@ -211,8 +217,8 @@ def get_cov(data,command_line):
 def get_new_pos(data,eigv,U,k):
   
   parameter_names = data.get_mcmc_parameters(['varying'])
-  vector_new=np.zeros(len(parameter_names),'float64')
-  sigmas=np.zeros(len(parameter_names),'float64')
+  vector_new      = np.zeros(len(parameter_names),'float64')
+  sigmas          = np.zeros(len(parameter_names),'float64')
 
   # Write the vector of last accepted points, 
   vector = np.zeros(len(parameter_names),'float64')
@@ -223,6 +229,7 @@ def get_new_pos(data,eigv,U,k):
     for elem in parameter_names:
       vector[parameter_names.index(elem)] = data.mcmc_parameters[elem]['initial'][0]
 
+  # Initialize random seed
   rd.seed()
 
   # Choice here between sequential and global change of direction
@@ -239,15 +246,14 @@ def get_new_pos(data,eigv,U,k):
   vector_new = vector + np.dot(U,sigmas)
 
   # Check for boundaries problems
-  i	= 0
   flag  = 0
   for elem in parameter_names:
+    i = parameter_names.index(elem)
     value = data.mcmc_parameters[elem]['initial']
     if( (str(value[1])!=str(-1) and value[1] is not None) and vector_new[i]<value[1]):
       flag+=1 # if a boundary value is reached, increment
     elif( (str(value[2])!=str(-1) and value[1] is not None) and vector_new[i]>value[2]):
       flag+=1 # same
-    i+=1
 
   # At this point, if a boundary condition is not fullfilled, ie, if flag is
   # different from zero, return False
@@ -256,10 +262,9 @@ def get_new_pos(data,eigv,U,k):
   
   # If it is not the case, proceed with normal computationThe value of
   # new_vector is then put into the 'current' point in parameter space.
-  i=0
   for elem in parameter_names:
+    i = parameter_names.index(elem)
     data.mcmc_parameters[elem]['current'] = vector_new[i]
-    i+=1
     
   # Propagate the information towards the cosmo arguments
   data.update_cosmo_arguments()
@@ -282,9 +287,7 @@ def accept_step(data):
 def chain(_cosmo,data,command_line):
 
   ## Initialisation
-  num_failure=1000   # Default number of accepted failure
   loglike=0
-  failure=False    # Failure flag
 
   # Recover the covariance matrix according to the input, if the varying set of
   # parameters is non-zero
@@ -295,39 +298,24 @@ def chain(_cosmo,data,command_line):
   else:
     print(' /|\  You are running with no varying parameters...')
     print('/_o_\ Computing model for only one point')
-    failure,loglike = compute_lkl(_cosmo,data)
+    loglike = compute_lkl(_cosmo,data)
     io.print_vector([data.out,sys.stdout],1,loglike,data)
     return 1,loglike
-
-  # Counter for the number of failures
-  failed=0
 
   # If restart wanted, pick initial value for arguments
   if command_line.restart is not None:
     read_args_from_chain(data,command_line.restart)
 
   # Pick a position (from last accepted point if restart, from the mean value
-  # else)
+  # else), with a 100 tries.
   for i in range(100):
-    if get_new_pos(data,sigma_eig,U,failed) is True:
+    if get_new_pos(data,sigma_eig,U,i) is True:
       break
+
   # Compute the starting Likelihood
-  failure,loglike=compute_lkl(_cosmo,data)
+  loglike = compute_lkl(_cosmo,data)
 
-  # Failure check of initialization
-  while ((failure is True) and (failed<=num_failure)):
-    failed +=1
-    for i in range(100):
-      if get_new_pos(data,sigma_eig,U,failed) is True:
-	break
-    failure,loglike=compute_lkl(_cosmo,data)
-
-  if failure is True:
-    print(' /|\   {0} tried {1} times to initialize with given parameters, and failed...'.format(data.cosmological_module_name,num_failure+2))
-    print('/_o_\  You might want to change your starting values, or pick default ones!')
-    exit()
-
-  # If the first step was finally computed, pick it as the last accepted value
+  # Choose this step as the last accepted value
   # (accept_step), and modify accordingly the max_loglike
   accept_step(data)
   max_loglike = loglike
@@ -341,30 +329,20 @@ def chain(_cosmo,data,command_line):
   k = 1
   # Main loop, that goes on while the maximum number of failure is not reached,
   # and while the expected amount of steps (N) is not taken.
-  while (k <= command_line.N and failed < num_failure):
+  while k <= command_line.N :
 
     # Pick a new position ('current' flag in mcmc_parameters), and compute its
     # likelihood. If get_new_pos returns True, it means it did not encounter
     # any boundary problem. Otherwise, just increase the multiplicity of the
     # point and start the loop again
     if get_new_pos(data,sigma_eig,U,k) is True:
-      failure,newloglike=compute_lkl(_cosmo,data)
+      newloglike=compute_lkl(_cosmo,data)
     else: #reject step
       rej+=1
       N+=1
       k+=1
       continue
     
-    # In case of failure in the last step, print out the faulty
-    # cosmo_arguments, and start a new incrementation of the while loop. Note
-    # that k was not incremented due to the continue statement: this failed
-    # point will not count towards the total number of steps asked.
-    if(failure==True):
-      failed += 1
-      print('Warning: %s failed due to choice of parameters, picking up new values' % data.cosmological_module_name)
-      print(data.cosmo_arguments)
-      continue
-
     # Harmless trick to avoid exponentiating large numbers. This decides
     # whether or not the system should move.
     if (newloglike != data.boundary_loglike):
@@ -407,19 +385,13 @@ def chain(_cosmo,data,command_line):
   if N>1:
     io.print_vector([data.out,sys.stdout],N-1,loglike,data)
 
-
-  # Warn the user that the code finished because of class failures.
-  if (failed == num_failure):
-    sys.stdout.write('\n\n /|\   The computation failed {0} times, \n'.format(failed))
-    sys.stdout.write('/_o_\  Please check the values of your parameters\n')
-
   # Print out some information on the finished chain
   rate=acc/(acc+rej)
   sys.stdout.write('\n#  {0} steps done, acceptance rate: {1}\n'.format(command_line.N,rate))
   
-  # For a restart, and if the code did not fail too much, erase the starting
-  # point to keep only the new, longer chain.
-  if ((command_line.restart is not None) and (failed < num_failure)):
+  # For a restart, erase the starting point to keep only the new, longer chain.
+  if command_line.restart is not None :
     os.remove(command_line.restart)
     sys.stdout.write('  deleting starting point of the chain {0}\n'.format(command_line.restart))
+
   return rate,max_loglike

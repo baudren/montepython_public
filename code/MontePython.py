@@ -2,7 +2,7 @@
 
 ##############################################################
 # MontePython, a Monte Carlo Markov Chain code (with Class!)
-# Version 1.0.1
+# Version 1.1.0
 # written by Benjamin Audren
 # Additional parts by Julien Lesgourgues, Karim Benabed
 ##############################################################
@@ -55,7 +55,7 @@ def main():
     print '/_o_\ in your montepython directory that specifies'
     print '      the correct locations for your data folder, Class (, Clik), ...'
 
-  sys.stdout.write('Running MontePython version 1.0\n')
+  sys.stdout.write('Running MontePython version 1.1\n')
 
   # If the info flag was used, read a potential chain (or set of chains) to be
   # analysed with default procedure. If the argument is a .info file, then it
