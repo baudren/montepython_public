@@ -87,8 +87,8 @@ class data:
     # log the parameter file in the folder
     log_flag = False
 
-    # Record if the step is a fast one (only nuisance parameters were changed)
-    self.fast_step = False
+    # Record if the cosmological parameters were changed (slow step)
+    self.need_cosmo_update = True
 
     # For a true initialization, one should then initialize the likelihoods.
     # This step is obviously skipped for a comparison
@@ -107,9 +107,6 @@ class data:
           print '/!\   Detecting empty folder, logging the parameter file'
           io.log_parameters(self,command_line)
           log_flag = True
-	#print ' /|\  your output folder should either contain some runs,'
-	#print '/_o_\ or not exist at all'
-	#exit()
       if not os.path.exists(command_line.folder) :
 	os.mkdir(command_line.folder)
 	# Logging of parameters
@@ -258,6 +255,30 @@ class data:
       if number == len(table_of_strings):
 	table.append(key)
     return table
+
+  # Routine to determine whether the value of cosmological parameters were
+  # changed, and if no, to skip recomputation.
+  def check_for_slow_step(self,new_step):
+
+    parameter_names = self.get_mcmc_parameters(['varying'])
+    cosmo_names     = self.get_mcmc_parameters(['cosmo'])
+
+    need_change = 0
+
+    # For all elements in the varying parameters:
+    for elem in parameter_names:
+      i = parameter_names.index(elem)
+      # If it is a cosmological parameter
+      if elem in cosmo_names:
+        if self.mcmc_parameters[elem]['current'] != new_step[i]:
+          need_change += 1
+
+    # If any cosmological value was changed, 
+    if need_change > 0:
+      self.need_cosmo_update = True
+    else:
+      self.need_cosmo_update = False
+
 
   # Put in cosmo_arguments the current values of mcmc_parameters
   def update_cosmo_arguments(self):

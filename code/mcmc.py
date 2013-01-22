@@ -4,31 +4,44 @@ import random as rd
 import numpy as np
 import io
 import data
+import scipy.linalg as la
 
 # Compute the likelihood
 def compute_lkl(_cosmo,data):
 
-  # Prepare the cosmological module with the new set of parameters
-  _cosmo.set(data.cosmo_arguments)
+  # If the cosmological module has already been called once, and if the
+  # cosmological parameters have changed, then clean up, and compute.
+  if (_cosmo.state is True and data.need_cosmo_update is True):
+    _cosmo._struct_cleanup(set(["lensing","nonlinear","spectra","primordial","transfer","perturb","thermodynamics","background","bessel"]))
 
-  # Compute the model, keeping track of the errors
+  # If the data needs to change, then do a normal call to the cosmological
+  # compute function
+  if data.need_cosmo_update:
+    print 'cosmo update'
 
-  # In classy.pyx, we made use of two type of python errors, to handle two
-  # different situations.
-  # - AttributeError is returned if a parameter was not properly set during the
-  # initialisation (for instance, you entered Ommega_cdm instead of Omega_cdm).
-  # Then, the code exits, to prevent running with imaginary parameters. This
-  # behaviour is also used in case you want to kill the process.
-  # - NameError is returned if Class fails to compute the output given the
-  # parameter values. This will be considered as a valid point, but with
-  # minimum likelihood, so will be rejected, resulting in the choice of a new
-  # point.
-  try:
-    _cosmo._compute(["lensing"])
-  except NameError :
-    return False,data.boundary_loglike
-  except (AttributeError,KeyboardInterrupt):
-    exit()
+    # Prepare the cosmological module with the new set of parameters
+    _cosmo.set(data.cosmo_arguments)
+
+    # Compute the model, keeping track of the errors
+
+    # In classy.pyx, we made use of two type of python errors, to handle two
+    # different situations.
+    # - AttributeError is returned if a parameter was not properly set during the
+    # initialisation (for instance, you entered Ommega_cdm instead of Omega_cdm).
+    # Then, the code exits, to prevent running with imaginary parameters. This
+    # behaviour is also used in case you want to kill the process.
+    # - NameError is returned if Class fails to compute the output given the
+    # parameter values. This will be considered as a valid point, but with
+    # minimum likelihood, so will be rejected, resulting in the choice of a new
+    # point.
+    try:
+      _cosmo._compute(["lensing"])
+    except NameError :
+      return data.boundary_loglike
+    except (AttributeError,KeyboardInterrupt):
+      exit()
+  else:
+    print 'cosmo skipped'
 
   # For each desired likelihood, compute its value against the theoretical model
   loglike=0
@@ -55,9 +68,6 @@ def compute_lkl(_cosmo,data):
   # cosmological parameters were not changed, do not run the cosmological
   # module again (to be used with the new proposal scheme)
   #backup = _cosmo
-
-  # Clean the cosmological strucutre
-  _cosmo._struct_cleanup(set(["lensing","nonlinear","spectra","primordial","transfer","perturb","thermodynamics","background","bessel"]))
 
   if flag_wrote_fiducial > 0:
     if flag_wrote_fiducial == len(data.lkl):
@@ -96,7 +106,7 @@ def read_args_from_chain(data,chain):
 # avoid confusions, the code will, by default, print out a succession of 4
 # covariance matrices at the beginning of the run, if starting from an existing
 # one. This way, you can control that the paramters are set properly.
-def get_cov(data,command_line):
+def get_covariance_matrix(data,command_line):
   np.set_printoptions(precision=2,linewidth=150)
   parameter_names = data.get_mcmc_parameters(['varying'])
   i=0
@@ -209,12 +219,12 @@ def get_cov(data,command_line):
 
   #inverse, and diagonalization
   eigv,eigV=np.linalg.eig(np.linalg.inv(M))
-  return eigv,eigV
+  return eigv,eigV,M
 
 
 # Routine to obtain a new position in the parameter space from the eigen values
 # of the inverse covariance matrix.
-def get_new_pos(data,eigv,U,k):
+def get_new_position(data,eigv,U,k,Cholesky,Inverse_Cholesky):
   
   parameter_names = data.get_mcmc_parameters(['varying'])
   vector_new      = np.zeros(len(parameter_names),'float64')
@@ -232,6 +242,7 @@ def get_new_pos(data,eigv,U,k):
   # Initialize random seed
   rd.seed()
 
+  #print Inverse_Cholesky
   # Choice here between sequential and global change of direction
   if data.jumping == 'global':
     for i in range(len(vector)):
@@ -239,11 +250,22 @@ def get_new_pos(data,eigv,U,k):
   elif data.jumping == 'sequential':
     i = k%len(vector)
     sigmas[i] = (math.sqrt(1/eigv[i]))*rd.gauss(0,1)*data.jumping_factor
+  elif data.jumping == 'fast':
+    i = k%len(vector)
+    for j in range(len(vector)):
+      sigmas[j]=(math.sqrt(1/eigv[j]/len(vector)))*Inverse_Cholesky[i,j]*rd.gauss(0,1)*data.jumping_factor
+      #print Inverse_Cholesky[i,j],
+    #print
   else:
-    print('\n\n  Jumping method unknown (accepted : global (default), sequential)')
+    print('\n\n  Jumping method unknown (accepted : global (default), sequential, fast)')
 
   # Fill in the new vector
-  vector_new = vector + np.dot(U,sigmas)
+  if data.jumping in ['global','sequential']:
+    vector_new = vector + np.dot(U,sigmas)
+  else:
+    vector_new = vector + np.dot(Cholesky,sigmas)
+  #print vector_new
+  #exit()
 
   # Check for boundaries problems
   flag  = 0
@@ -260,7 +282,14 @@ def get_new_pos(data,eigv,U,k):
   if flag!=0:
     return False
   
-  # If it is not the case, proceed with normal computationThe value of
+  # Check for a slow step (only after the first time, so we put the test in a
+  # try: statement: the first time, the exception KeyError will be raised)
+  try:
+    data.check_for_slow_step(vector_new)
+  except KeyError:
+    pass
+  
+  # If it is not the case, proceed with normal computation. The value of
   # new_vector is then put into the 'current' point in parameter space.
   for elem in parameter_names:
     i = parameter_names.index(elem)
@@ -292,7 +321,17 @@ def chain(_cosmo,data,command_line):
   # Recover the covariance matrix according to the input, if the varying set of
   # parameters is non-zero
   if data.get_mcmc_parameters(['varying']) != []:
-    sigma_eig,U=get_cov(data,command_line)
+    sigma_eig,U,C=get_covariance_matrix(data,command_line)
+
+  # In the fast-slow method, one need the Cholesky decomposition of the
+  # covariance matrix. Return the Cholesky decomposition as a lower triangular
+  # matrix
+  Cholesky = None
+  Inverse_Cholesky = None
+  if command_line.jumping == 'fast':
+    Cholesky         = la.cholesky(C).T
+    Inverse_Cholesky = np.linalg.inv(Cholesky)
+
   # In case of a fiducial run (all parameters fixed), simply run once and print
   # out the likelihood
   else:
@@ -309,7 +348,7 @@ def chain(_cosmo,data,command_line):
   # Pick a position (from last accepted point if restart, from the mean value
   # else), with a 100 tries.
   for i in range(100):
-    if get_new_pos(data,sigma_eig,U,i) is True:
+    if get_new_position(data,sigma_eig,U,i,Cholesky,Inverse_Cholesky) is True:
       break
 
   # Compute the starting Likelihood
@@ -332,10 +371,11 @@ def chain(_cosmo,data,command_line):
   while k <= command_line.N :
 
     # Pick a new position ('current' flag in mcmc_parameters), and compute its
-    # likelihood. If get_new_pos returns True, it means it did not encounter
+    # likelihood. If get_new_position returns True, it means it did not encounter
     # any boundary problem. Otherwise, just increase the multiplicity of the
     # point and start the loop again
-    if get_new_pos(data,sigma_eig,U,k) is True:
+    if get_new_position(data,sigma_eig,U,k,Cholesky,Inverse_Cholesky) is True:
+      print data.cosmo_arguments
       newloglike=compute_lkl(_cosmo,data)
     else: #reject step
       rej+=1
