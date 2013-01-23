@@ -251,10 +251,9 @@ def get_new_position(data,eigv,U,k,Cholesky,Inverse_Cholesky):
     i = k%len(vector)
     sigmas[i] = (math.sqrt(1/eigv[i]))*rd.gauss(0,1)*data.jumping_factor
   elif data.jumping == 'fast':
+    i = k%len(vector)
     for j in range(len(vector)):
-      sigmas[j] = 0
-      for i in range(len(vector)):
-        sigmas[j]+=(math.sqrt(1/eigv[j]/len(vector)))*Inverse_Cholesky[i,j]*rd.gauss(0,1)*data.jumping_factor
+      sigmas[j]+=(math.sqrt(1/eigv[j]/len(vector)))*Inverse_Cholesky[i,j]*rd.gauss(0,1)*data.jumping_factor
       #print Inverse_Cholesky[i,j],
     #print
   else:
