@@ -251,9 +251,10 @@ def get_new_position(data,eigv,U,k,Cholesky,Inverse_Cholesky):
     i = k%len(vector)
     sigmas[i] = (math.sqrt(1/eigv[i]))*rd.gauss(0,1)*data.jumping_factor
   elif data.jumping == 'fast':
-    i = k%len(vector)
     for j in range(len(vector)):
-      sigmas[j]=(math.sqrt(1/eigv[j]/len(vector)))*Inverse_Cholesky[i,j]*rd.gauss(0,1)*data.jumping_factor
+      sigmas[j] = 0
+      for i in range(len(vector)):
+        sigmas[j]+=(math.sqrt(1/eigv[j]/len(vector)))*Inverse_Cholesky[i,j]*rd.gauss(0,1)*data.jumping_factor
       #print Inverse_Cholesky[i,j],
     #print
   else:
@@ -323,15 +324,6 @@ def chain(_cosmo,data,command_line):
   if data.get_mcmc_parameters(['varying']) != []:
     sigma_eig,U,C=get_covariance_matrix(data,command_line)
 
-  # In the fast-slow method, one need the Cholesky decomposition of the
-  # covariance matrix. Return the Cholesky decomposition as a lower triangular
-  # matrix
-  Cholesky = None
-  Inverse_Cholesky = None
-  if command_line.jumping == 'fast':
-    Cholesky         = la.cholesky(C).T
-    Inverse_Cholesky = np.linalg.inv(Cholesky)
-
   # In case of a fiducial run (all parameters fixed), simply run once and print
   # out the likelihood
   else:
@@ -340,6 +332,15 @@ def chain(_cosmo,data,command_line):
     loglike = compute_lkl(_cosmo,data)
     io.print_vector([data.out,sys.stdout],1,loglike,data)
     return 1,loglike
+
+  # In the fast-slow method, one need the Cholesky decomposition of the
+  # covariance matrix. Return the Cholesky decomposition as a lower triangular
+  # matrix
+  Cholesky = None
+  Inverse_Cholesky = None
+  if command_line.jumping == 'fast':
+    Cholesky         = la.cholesky(C).T
+    Inverse_Cholesky = np.linalg.inv(Cholesky)
 
   # If restart wanted, pick initial value for arguments
   if command_line.restart is not None:
@@ -375,7 +376,6 @@ def chain(_cosmo,data,command_line):
     # any boundary problem. Otherwise, just increase the multiplicity of the
     # point and start the loop again
     if get_new_position(data,sigma_eig,U,k,Cholesky,Inverse_Cholesky) is True:
-      print data.cosmo_arguments
       newloglike=compute_lkl(_cosmo,data)
     else: #reject step
       rej+=1
