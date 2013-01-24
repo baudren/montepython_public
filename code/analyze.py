@@ -99,8 +99,7 @@ class info:
         string+=','
       self.cov.write('%-16s' % string )
     self.cov.write('\n')
-    # Removing scale factors in order to store it with the same convention
-    # than Class
+    # Removing scale factors in order to store true parameter covariance
     self.covar = np.dot(self.scales.T,np.dot(self.covar,self.scales))
     for i in range(len(self.ref_names)):
       for j in range(len(self.ref_names)):
@@ -115,6 +114,23 @@ class info:
     a=chain[:,1].argsort(0)
     total=chain[:,0].sum()
 
+    # Writing the best-fit model in name_of_folder.bestfit
+    self.bf.write('# ')
+    for i in range(len(self.ref_names)):
+      string = self.backup_names[i]
+      if i != len(self.ref_names)-1:
+        string+=','
+      self.bf.write('%-16s' % string )
+    self.bf.write('\n')
+    # Removing scale factors in order to store true parameter values
+    for i in range(len(self.ref_names)):
+      bfvalue = chain[a[0],2+i]*self.scales[i,i]
+      if bfvalue>0:
+          self.bf.write(' %.5e\t' % bfvalue)
+      else:
+          self.bf.write('%.5e\t' % bfvalue)
+    self.bf.write('\n')                                       
+                                          
     # Defining the sigma contours (1, 2 and 3-sigma)
     self.lvls = (68.26,95.4,99.7)
 
@@ -244,12 +260,14 @@ class info:
       texname  = folder+folder.rstrip('/')+'.tex'
       covname  = folder+folder.rstrip('/')+'.covmat'
       logname  = folder+folder.rstrip('/')+'.log'
+      bfname  = folder+folder.rstrip('/')+'.bestfit'
     else:
       v_infoname = folder+folder.split('/')[-2]+'.v_info'
       h_infoname = folder+folder.split('/')[-2]+'.h_info'
       texname  = folder+folder.split('/')[-2]+'.tex'
       covname  = folder+folder.split('/')[-2]+'.covmat'
       logname  = folder+folder.split('/')[-2]+'.log'
+      bfname  = folder+folder.split('/')[-2]+'.bestfit'
 
     # Distinction between the main chain and the comparative one, instead of
     # storing everything into the class, return it
@@ -259,6 +277,7 @@ class info:
       self.tex   = open(texname,'w')
       self.cov   = open(covname,'w')
       self.log   = open(logname,'w')
+      self.bf   = open(bfname,'w')
       self.param = param
 
       self.Files = Files

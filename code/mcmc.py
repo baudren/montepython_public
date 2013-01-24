@@ -100,7 +100,31 @@ def read_args_from_chain(data,chain):
     data.mcmc_parameters[elem]['last_accepted'] = float(Chain.tail(1)[0].split('\t')[i])
     i+=1
 
-# Will deduce the starting covariance matrix, either from the prior, or from an
+# Deduce the starting point either from the input file,
+# or from a best fit file.
+def read_args_from_bf(data,bf):
+  parameter_names = data.get_mcmc_parameters(['varying'])
+  bestfit=open(bf,'r')
+  for line in bestfit:
+    if line.find('#')!=-1:
+      bfnames = line.strip('#').replace(' ','').replace('\n','').split(',')
+      bfvalues=np.zeros(len(bfnames),'float64')
+    else:
+      line=line.split()
+      for i in range(len(line)):
+        bfvalues[i]=line[i]
+
+  print
+  print('\nStarting point for rescaled parameters:')
+  for elem in parameter_names:
+    if elem in bfnames:
+      data.mcmc_parameters[elem]['last_accepted'] = bfvalues[bfnames.index(elem)]/data.mcmc_parameters[elem]['scale']
+      print 'from best-fit file : ',elem,' = ',bfvalues[bfnames.index(elem)]/data.mcmc_parameters[elem]['scale']
+    else:
+      data.mcmc_parameters[elem]['last_accepted'] = data.mcmc_parameters[elem]['initial'][0]
+      print 'from input file    : ',elem,' = ',data.mcmc_parameters[elem]['initial'][0]
+
+# Will deduce the starting covariance matrix, either from the input file, or from an
 # existing matrix. Reordering of the names and scaling take place here, in a
 # serie of potentially hard to read methods. For the sake of clarity, and to
 # avoid confusions, the code will, by default, print out a succession of 4
@@ -341,6 +365,10 @@ def chain(_cosmo,data,command_line):
   # If restart wanted, pick initial value for arguments
   if command_line.restart is not None:
     read_args_from_chain(data,command_line.restart)
+
+  # If restart from best fit file, read first point (overwrite settings of read_args_from_chain)
+  if command_line.bf is not None:
+    read_args_from_bf(data,command_line.bf)  
 
   # Pick a position (from last accepted point if restart, from the mean value
   # else), with a 100 tries.
