@@ -17,7 +17,7 @@ def compute_lkl(_cosmo,data):
   # If the data needs to change, then do a normal call to the cosmological
   # compute function
   if data.need_cosmo_update:
-    print 'cosmo update'
+    #print 'cosmo update'
 
     # Prepare the cosmological module with the new set of parameters
     _cosmo.set(data.cosmo_arguments)
@@ -40,8 +40,8 @@ def compute_lkl(_cosmo,data):
       return data.boundary_loglike
     except (AttributeError,KeyboardInterrupt):
       exit()
-  else:
-    print 'cosmo skipped'
+  #else:
+    #print 'cosmo skipped'
 
   # For each desired likelihood, compute its value against the theoretical model
   loglike=0
@@ -252,10 +252,7 @@ def get_new_position(data,eigv,U,k,Cholesky,Inverse_Cholesky):
     sigmas[i] = (math.sqrt(1/eigv[i]))*rd.gauss(0,1)*data.jumping_factor
   elif data.jumping == 'fast':
     i = k%len(vector)
-    for j in range(len(vector)):
-      sigmas[j]+=(math.sqrt(1/eigv[j]/len(vector)))*Inverse_Cholesky[i,j]*rd.gauss(0,1)*data.jumping_factor
-      #print Inverse_Cholesky[i,j],
-    #print
+    sigmas[i] = rd.gauss(0,1)*data.jumping_factor
   else:
     print('\n\n  Jumping method unknown (accepted : global (default), sequential, fast)')
 

@@ -622,11 +622,11 @@ class info:
     # unique and thus require a simple treatment.
     if comp:
       backup_comp_names = np.copy(comp_plotted_parameters)
-      print 'backup_comp_names is',backup_comp_names
-      print 'comp_backup_names is',comp_backup_names
-      print 'comp_ref_names is',comp_ref_names
-      print 'comp_tex_names is',comp_tex_names
-      print 'comp_plotted_parameters is',comp_plotted_parameters
+      #print 'backup_comp_names is',backup_comp_names
+      #print 'comp_backup_names is',comp_backup_names
+      #print 'comp_ref_names is',comp_ref_names
+      #print 'comp_tex_names is',comp_tex_names
+      #print 'comp_plotted_parameters is',comp_plotted_parameters
 
       for i in range(len(self.plotted_parameters)):
 	if self.plotted_parameters[i] in comp_plotted_parameters:
