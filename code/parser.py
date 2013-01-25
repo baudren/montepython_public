@@ -25,8 +25,9 @@ parser.add_argument('-conf', metavar='configuration file',type=str,dest='config_
 parser.add_argument('-chain_number', metavar='chain number',type=str,dest='chain_number',default=None)
 
 ###############
-# MCMC restart from chain
+# MCMC restart from chain or best fit file
 parser.add_argument('-r', metavar='restart from chain',type=str,dest='restart')
+parser.add_argument('-bf', metavar='restart from best fit file',type=str,dest='bf')
 
 ###############
 # Information

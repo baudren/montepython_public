@@ -190,6 +190,11 @@ class info:
     self.write_h(self.h_info,indices,'3-sigma > ','%.6e',self.mean+self.bounds[:,2,0])
     self.write_h(self.h_info,indices,'3-sigma < ','%.6e',self.mean+self.bounds[:,2,1])
 
+    self.bestfit=np.zeros(len(self.v_info_names))
+    for i in range(len(self.v_info_names)):
+      index = indices[i]
+      self.bestfit[index]=chain[a[0],:][2+index]
+
     # Write vertical info file
     self.v_info.write('%-15s\t: %-6s %-10s %-10s %-10s %-11s %-10s %-11s %-10s %-10s %-10s %-10s %-10s' % ('param names','R-1','Best fit','mean','sigma','1-sigma -','1-sigma +','2-sigma -','2-sigma +','1-sigma >','1-sigma <','2-sigma >','2-sigma <'))
     for i in range(len(self.v_info_names)):
@@ -385,6 +390,8 @@ class info:
     except ValueError:
       print('No decently sized chain was found. Please wait a bit to analyze this folder')
       exit()
+
+    self.max_lkl = max_lkl
 
     # Restarting the circling through files
     for File in Files:
@@ -999,29 +1006,41 @@ class info:
 
   def write_tex(self,indices):
     
-    self.tex.write("\documentclass{article}\n")
-    self.tex.write("\\begin{document}\n")
-    self.tex.write("\\begin{tabular}{|")
-    for i in indices:
-      self.tex.write("c")
-    self.tex.write("|}\n \hline")
+    #self.tex.write("\documentclass{article}\n")
+    #self.tex.write("\\begin{document}\n")
 
-    for i in indices:
-      self.tex.write("%s " % self.tex_names[i])
-      if i!=indices[-1]:
-        self.tex.write(" & ")
-      else:
-        self.tex.write(" \\\\ \hline\n")
-
-    for i in indices:
-      self.tex.write("$%.4g_{%.2g}^{+%.2g}$" % (self.mean[i],self.bounds[i,0,0],self.bounds[i,0,1]))
-      if i!=indices[-1]:
-        self.tex.write(" & ")
-      else:
-        self.tex.write(" \\\\ \hline\n")
-
-    self.tex.write("\\end{tabular}\n")
-    self.tex.write("\\end{document}")
+    # horizontal
+    if 0 is 1:
+      self.tex.write("\\begin{tabular}{|")
+      for i in indices:
+        self.tex.write("c")
+        self.tex.write("|}\n \hline")
+        
+        for i in indices:
+          self.tex.write("%s " % self.tex_names[i])
+          if i!=indices[-1]:
+            self.tex.write(" & ")
+          else:
+            self.tex.write(" \\\\ \hline\n")
+            
+            for i in indices:
+              self.tex.write("$%.4g_{%.2g}^{+%.2g}$" % (self.mean[i],self.bounds[i,0,0],self.bounds[i,0,1]))
+              if i!=indices[-1]:
+                self.tex.write(" & ")
+              else:
+                self.tex.write(" \\\\ \hline\n")
+                
+    # vertical
+    if 1 is 1:                  
+      self.tex.write("\\begin{tabular}{|l|c|c|c|c|} \n \\hline \n")
+      self.tex.write("Param & best-fit & mean$\pm\sigma$ & 95\% lower & 95\% upper \\\\ \\hline \n")    
+      for i in indices:
+        self.tex.write("%s &" % self.tex_names[i])
+        self.tex.write("$%.4g$ & $%.4g_{%.2g}^{+%.2g}$ & $%.4g$ & $%.4g$ \\\\ \n" % (self.bestfit[i],self.mean[i],self.bounds[:,0,0][i],self.bounds[:,0,1][i],self.mean[i]+self.bounds[:,1,0][i],self.mean[i]+self.bounds[:,1,1][i]))
+    self.tex.write("\\hline \n \\end{tabular} \\\\ \n")
+    self.tex.write("$-\ln{\cal L}_\mathrm{min} =%.6g$, minimum $\chi^2=%.4g$ \\\\ \n"% (self.max_lkl,self.max_lkl*2.))
+    #self.tex.write("\\end{tabular}\n")
+    #self.tex.write("\\end{document}")
 
   def cubic_interpolation(self,hist,bincenters):
     if self.has_interpolate_module:

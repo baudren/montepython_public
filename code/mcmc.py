@@ -16,7 +16,7 @@ def compute_lkl(_cosmo,data):
 
   # If the data needs to change, then do a normal call to the cosmological
   # compute function
-  if data.need_cosmo_update:
+  if ((data.need_cosmo_update is True) or (_cosmo.state is False)):
     #print 'cosmo update'
 
     # Prepare the cosmological module with the new set of parameters
@@ -245,10 +245,13 @@ def get_covariance_matrix(data,command_line):
   eigv,eigV=np.linalg.eig(np.linalg.inv(M))
   return eigv,eigV,M
 
+def get_rotation_matrix(m,n):
+
+  return np.identity(m+n)
 
 # Routine to obtain a new position in the parameter space from the eigen values
 # of the inverse covariance matrix.
-def get_new_position(data,eigv,U,k,Cholesky,Inverse_Cholesky):
+def get_new_position(data,eigv,U,k,Cholesky,Inverse_Cholesky,Rotation):
   
   parameter_names = data.get_mcmc_parameters(['varying'])
   vector_new      = np.zeros(len(parameter_names),'float64')
@@ -275,8 +278,23 @@ def get_new_position(data,eigv,U,k,Cholesky,Inverse_Cholesky):
     i = k%len(vector)
     sigmas[i] = (math.sqrt(1/eigv[i]))*rd.gauss(0,1)*data.jumping_factor
   elif data.jumping == 'fast':
-    i = k%len(vector)
-    sigmas[i] = rd.gauss(0,1)*data.jumping_factor
+    i = k%len(vector)    
+    ###############
+    #if i==0:
+    #  Rotation=get_rotation_matrix(len(vector)-4,4)
+    ###############
+    # method fast+global
+    fast = 13
+    slow = len(vector)-fast
+    if i < slow:
+      for j in range(slow):
+        sigmas[j]=(math.sqrt(1./slow))*rd.gauss(0,1)*data.jumping_factor
+    else:
+      for j in range(fast):
+        sigmas[j+slow]=(math.sqrt(1./fast))*rd.gauss(0,1)*data.jumping_factor
+    ####################
+    # method fast+sequential
+    #sigmas[i] = rd.gauss(0,1)*data.jumping_factor
   else:
     print('\n\n  Jumping method unknown (accepted : global (default), sequential, fast)')
 
@@ -358,9 +376,11 @@ def chain(_cosmo,data,command_line):
   # matrix
   Cholesky = None
   Inverse_Cholesky = None
+  Rotation = None
   if command_line.jumping == 'fast':
     Cholesky         = la.cholesky(C).T
     Inverse_Cholesky = np.linalg.inv(Cholesky)
+    Rotation         = np.identity(len(sigma_eig))
 
   # If restart wanted, pick initial value for arguments
   if command_line.restart is not None:
@@ -373,7 +393,7 @@ def chain(_cosmo,data,command_line):
   # Pick a position (from last accepted point if restart, from the mean value
   # else), with a 100 tries.
   for i in range(100):
-    if get_new_position(data,sigma_eig,U,i,Cholesky,Inverse_Cholesky) is True:
+    if get_new_position(data,sigma_eig,U,i,Cholesky,Inverse_Cholesky,Rotation) is True:
       break
 
   # Compute the starting Likelihood
@@ -399,7 +419,7 @@ def chain(_cosmo,data,command_line):
     # likelihood. If get_new_position returns True, it means it did not encounter
     # any boundary problem. Otherwise, just increase the multiplicity of the
     # point and start the loop again
-    if get_new_position(data,sigma_eig,U,k,Cholesky,Inverse_Cholesky) is True:
+    if get_new_position(data,sigma_eig,U,k,Cholesky,Inverse_Cholesky,Rotation) is True:
       newloglike=compute_lkl(_cosmo,data)
     else: #reject step
       rej+=1
