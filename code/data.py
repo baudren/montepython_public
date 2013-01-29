@@ -160,9 +160,15 @@ class data:
     array = []
     # First obvious block is all cosmological parameters
     array.append(len(self.get_mcmc_parameters(['varying','cosmo'])))
-
     # Then, store all nuisance parameters
     nuisance = self.get_mcmc_parameters(['varying','nuisance'])
+
+    for likelihood in self.lkl.itervalues():
+      count = 0
+      for elem in nuisance:
+        if elem in likelihood.nuisance:
+          count += 1
+      likelihood.varying_nuisance_parameters = count
 
     # Then circle through them
     index = 0
@@ -171,11 +177,11 @@ class data:
       flag = False
       # For each one, check if they belong to a likelihood
       for likelihood in self.lkl.itervalues():
-        if elem in likelihood.use_nuisance:
+        if elem in likelihood.nuisance:
           # If yes, store the number of nuisance parameters needed for this likelihood.
           flag = True
-          array.append(len(likelihood.use_nuisance)+array[-1])
-          index += len(likelihood.use_nuisance)
+          array.append(likelihood.varying_nuisance_parameters+array[-1])
+          index += likelihood.varying_nuisance_parameters
           continue
       if not flag:
         # If the loop reaches this part, it means this nuisance parameter was
@@ -333,7 +339,7 @@ class data:
       need_change = 0
       for elem in parameter_names:
         i = parameter_names.index(elem)
-        if elem in likelihood.use_nuisance:
+        if elem in likelihood.nuisance:
           if self.mcmc_parameters[elem]['current'] != new_step[i]:
             need_change += 1
       if need_change>0:

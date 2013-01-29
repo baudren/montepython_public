@@ -35,8 +35,10 @@ class likelihood():
 	if nuisance not in data.get_mcmc_parameters(['nuisance']):
 	  print nuisance+' must be defined, either fixed or varying, for {0} likelihood'.format(self.name)
 	  exit()
+      self.nuisance = self.use_nuisance
     except AttributeError:
       self.use_nuisance = []
+      self.nuisance     = []
 
     # Append to the log.param the value used (WARNING: so far no comparison is
     # done to ensure that the experiments share the same parameters)
@@ -424,8 +426,10 @@ class likelihood_newdat(likelihood):
     # deal with nuisance parameters
     try:
       self.use_nuisance
+      self.nuisance = self.use_nuisance
     except:
       self.use_nuisance = []
+      self.nuisance     = []
     self.read_contamination_spectra(data)
 
     # end of initialisation
@@ -610,12 +614,16 @@ class likelihood_clik(likelihood):
     self.l_max = max(self.clik.get_lmax())
     self.need_cosmo_arguments(data,{'l_max_scalars':self.l_max})
 
+    self.nuisance = list(self.clik.extra_parameter_names)
+
     # deal with nuisance parameters
     try:
       self.use_nuisance
     except:
       self.use_nuisance = []
     self.read_contamination_spectra(data)
+
+    self.nuisance.append(self.use_nuisance)
 
   def loglkl(self,_cosmo,data):
 
