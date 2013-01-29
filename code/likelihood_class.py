@@ -26,6 +26,9 @@ class likelihood():
       path = command_line.folder+'log.param'
     self.read_from_file(path,data)
 
+    # Default state
+    self.need_update = True
+
     # Check if the nuisance parameters are defined
     try :
       for nuisance in self.use_nuisance:
@@ -33,7 +36,7 @@ class likelihood():
 	  print nuisance+' must be defined, either fixed or varying, for {0} likelihood'.format(self.name)
 	  exit()
     except AttributeError:
-      pass
+      self.use_nuisance = []
 
     # Append to the log.param the value used (WARNING: so far no comparison is
     # done to ensure that the experiments share the same parameters)

@@ -113,7 +113,7 @@ class data:
         io.log_parameters(self,command_line)
 	log_flag = True
 
-    self.lkl=dict()
+    self.lkl=od()
       
     # adding the likelihood directory to the path, to import the module
     # then, for each library, calling an instance of the likelihood.
@@ -138,12 +138,46 @@ class data:
       # precomputation will be made. Finally if not default, only a dictionary
       # containing the .data file will be created, for comparison purpose.
       exec "self.lkl['%s'] = %s.%s('%s/%s.data',self,command_line,log_flag,default)"% (elem,elem,elem,folder,elem)
+      
+    # Storing parameters by blocks of speed
+    self.group_parameters_in_blocks()
 
     # Finally, log the cosmo_arguments used. This comes in the end, because
     # it can be modified inside the likelihoods init functions
     if log_flag:
       io.log_cosmo_arguments(self,command_line)
       io.log_default_configuration(self,command_line)
+
+
+  # Block mcmc parameters in terms of speed (this will make as many blocks as
+  # they are likelihoods with nuisance parameters plus one (the slow block of
+  # cosmology))
+  # IMPORTANT NOTE: this routine assumes that the nuisance parameters are
+  # already written sequentially, and grouped together (not necessarilly in the
+  # order described in data.experiments). If you mix up the different nuisance
+  # parameters in the .param file, this routine will not function as intended.
+  def group_parameters_in_blocks(self):
+    array = []
+    # First obvious block is all cosmological parameters
+    array.append(len(self.get_mcmc_parameters(['varying','cosmo'])))
+
+    # Then, store all nuisance parameters
+    nuisance = self.get_mcmc_parameters(['varying','nuisance'])
+
+    # Then circle through them
+    index = 0
+    while index < len(nuisance):
+      elem = nuisance[index]
+      # For each one, check if they belong to a likelihood
+      for likelihood in self.lkl.itervalues():
+        if elem in likelihood.use_nuisance:
+          # If yes, store the number of nuisance parameters needed for this likelihood.
+          array.append(len(likelihood.use_nuisance)+array[-1])
+          index += len(likelihood.use_nuisance)
+
+    # Store the result
+    self.blocks_parameters = array
+
 
   # Redefinition of the 'compare' method for two instances of this data class.
   # It will decide which basic operations to perform when the code asked if two
@@ -278,6 +312,25 @@ class data:
       self.need_cosmo_update = True
     else:
       self.need_cosmo_update = False
+
+    
+    for likelihood in self.lkl.itervalues():
+      # If the cosmology changed, you need to recompute the likelihood anyway
+      if self.need_cosmo_update:
+        likelihood.need_update = True
+        continue
+      # Otherwise, check if the nuisance parameters of this likelihood were
+      # changed
+      need_change = 0
+      for elem in parameter_names:
+        i = parameter_names.index(elem)
+        if elem in likelihood.use_nuisance:
+          if self.mcmc_parameters[elem]['current'] != new_step[i]:
+            need_change += 1
+      if need_change>0:
+        likelihood.need_update = True
+      else:
+        likelihood.need_update = False
 
 
   # Put in cosmo_arguments the current values of mcmc_parameters

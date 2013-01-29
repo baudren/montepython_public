@@ -17,7 +17,6 @@ def compute_lkl(_cosmo,data):
   # If the data needs to change, then do a normal call to the cosmological
   # compute function
   if ((data.need_cosmo_update is True) or (_cosmo.state is False)):
-    #print 'cosmo update'
 
     # Prepare the cosmological module with the new set of parameters
     _cosmo.set(data.cosmo_arguments)
@@ -40,15 +39,19 @@ def compute_lkl(_cosmo,data):
       return data.boundary_loglike
     except (AttributeError,KeyboardInterrupt):
       exit()
-  #else:
-    #print 'cosmo skipped'
 
   # For each desired likelihood, compute its value against the theoretical model
   loglike=0
   flag_wrote_fiducial = 0
 
   for likelihood in data.lkl.itervalues():
-    value = likelihood.loglkl(_cosmo,data)
+    if likelihood.need_update is True:
+      value = likelihood.loglkl(_cosmo,data)
+      # Storing the result
+      likelihood.backup_value = value
+    # Otherwise, take the existing value
+    else:
+      value = likelihood.backup_value
     loglike += value
     # In case the fiducial file was written, store this information
     if value==1:
@@ -64,11 +67,7 @@ def compute_lkl(_cosmo,data):
   for elem in data.get_mcmc_parameters(['derived']):
     data.mcmc_parameters[elem]['current'] /= data.mcmc_parameters[elem]['scale']
 
-  # Create a new backup of the cosmological structure. If at the next step, the
-  # cosmological parameters were not changed, do not run the cosmological
-  # module again (to be used with the new proposal scheme)
-  #backup = _cosmo
-
+  # If fiducial files were created, inform the user, and exit
   if flag_wrote_fiducial > 0:
     if flag_wrote_fiducial == len(data.lkl):
       print('--> Fiducial file(s) was(were) created, please start a new chain')
@@ -284,14 +283,20 @@ def get_new_position(data,eigv,U,k,Cholesky,Inverse_Cholesky,Rotation):
     #  Rotation=get_rotation_matrix(len(vector)-4,4)
     ###############
     # method fast+global
-    fast = 13
-    slow = len(vector)-fast
-    if i < slow:
-      for j in range(slow):
-        sigmas[j]=(math.sqrt(1./slow))*rd.gauss(0,1)*data.jumping_factor
-    else:
-      for j in range(fast):
-        sigmas[j+slow]=(math.sqrt(1./fast))*rd.gauss(0,1)*data.jumping_factor
+    for elem in data.blocks_parameters:
+      if i < elem:
+        index = data.blocks_parameters.index(elem)
+        if index==0:
+          Range = elem
+          Previous = 0
+        else:
+          Range = elem-data.blocks_parameters[index-1]
+          Previous = data.blocks_parameters[index-1]
+        for j in range(Range):
+          sigmas[j+Previous] = (math.sqrt(1./Range))*rd.gauss(0,1)*data.jumping_factor
+        break
+      else:
+        continue
     ####################
     # method fast+sequential
     #sigmas[i] = rd.gauss(0,1)*data.jumping_factor
@@ -303,8 +308,6 @@ def get_new_position(data,eigv,U,k,Cholesky,Inverse_Cholesky,Rotation):
     vector_new = vector + np.dot(U,sigmas)
   else:
     vector_new = vector + np.dot(Cholesky,sigmas)
-  #print vector_new
-  #exit()
 
   # Check for boundaries problems
   flag  = 0

@@ -1009,34 +1009,13 @@ class info:
     #self.tex.write("\documentclass{article}\n")
     #self.tex.write("\\begin{document}\n")
 
-    # horizontal
-    if 0 is 1:
-      self.tex.write("\\begin{tabular}{|")
-      for i in indices:
-        self.tex.write("c")
-        self.tex.write("|}\n \hline")
-        
-        for i in indices:
-          self.tex.write("%s " % self.tex_names[i])
-          if i!=indices[-1]:
-            self.tex.write(" & ")
-          else:
-            self.tex.write(" \\\\ \hline\n")
-            
-            for i in indices:
-              self.tex.write("$%.4g_{%.2g}^{+%.2g}$" % (self.mean[i],self.bounds[i,0,0],self.bounds[i,0,1]))
-              if i!=indices[-1]:
-                self.tex.write(" & ")
-              else:
-                self.tex.write(" \\\\ \hline\n")
-                
-    # vertical
-    if 1 is 1:                  
-      self.tex.write("\\begin{tabular}{|l|c|c|c|c|} \n \\hline \n")
-      self.tex.write("Param & best-fit & mean$\pm\sigma$ & 95\% lower & 95\% upper \\\\ \\hline \n")    
-      for i in indices:
-        self.tex.write("%s &" % self.tex_names[i])
-        self.tex.write("$%.4g$ & $%.4g_{%.2g}^{+%.2g}$ & $%.4g$ & $%.4g$ \\\\ \n" % (self.bestfit[i],self.mean[i],self.bounds[:,0,0][i],self.bounds[:,0,1][i],self.mean[i]+self.bounds[:,1,0][i],self.mean[i]+self.bounds[:,1,1][i]))
+    self.tex.write("\\begin{tabular}{|l|c|c|c|c|} \n \\hline \n")
+    self.tex.write("Param & best-fit & mean$\pm\sigma$ & 95\% lower & 95\% upper \\\\ \\hline \n")    
+
+    for i in indices:
+      self.tex.write("%s &" % self.tex_names[i])
+      self.tex.write("$%.4g$ & $%.4g_{%.2g}^{+%.2g}$ & $%.4g$ & $%.4g$ \\\\ \n" % (self.bestfit[i],self.mean[i],self.bounds[:,0,0][i],self.bounds[:,0,1][i],self.mean[i]+self.bounds[:,1,0][i],self.mean[i]+self.bounds[:,1,1][i]))
+
     self.tex.write("\\hline \n \\end{tabular} \\\\ \n")
     self.tex.write("$-\ln{\cal L}_\mathrm{min} =%.6g$, minimum $\chi^2=%.4g$ \\\\ \n"% (self.max_lkl,self.max_lkl*2.))
     #self.tex.write("\\end{tabular}\n")
