@@ -168,12 +168,21 @@ class data:
     index = 0
     while index < len(nuisance):
       elem = nuisance[index]
+      flag = False
       # For each one, check if they belong to a likelihood
       for likelihood in self.lkl.itervalues():
         if elem in likelihood.use_nuisance:
           # If yes, store the number of nuisance parameters needed for this likelihood.
+          flag = True
           array.append(len(likelihood.use_nuisance)+array[-1])
           index += len(likelihood.use_nuisance)
+          continue
+      if not flag:
+        # If the loop reaches this part, it means this nuisance parameter was
+        # associated with no likelihood: this should not happen
+        print '/!\ nuisance parameter {0} is associated to no likelihood\n'.format(elem)
+        exit()
+
 
     # Store the result
     self.blocks_parameters = array

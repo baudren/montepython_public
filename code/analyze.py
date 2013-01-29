@@ -723,13 +723,17 @@ class info:
 	# plotting
 	if plot_2d:
 	  ax2d.set_xticks(ticks[index])
-	  fontsize2d,ticksize2d = self.get_fontsize( len(self.tex_names) )
+	  #fontsize2d,ticksize2d = self.get_fontsize( len(self.tex_names) )
+	  fontsize2d = command_line.fontsize
+          ticksize2d = command_line.ticksize
 	  ax2d.set_xticklabels(['%.3g' % s for s in ticks[index]],fontsize=ticksize2d)
 	  ax2d.set_title('%s= $%.3g^{+%.3g}_{%.3g}$' % (self.tex_names[index],self.mean[index],bounds[0][1],bounds[0][0]),fontsize=fontsize2d)
 	  ax2d.plot(interp_grid,interp_hist,color='red',linewidth=2,ls='-')
 	  ax2d.axis([x_range[index][0], x_range[index][1],0,1.05])
 
-	fontsize1d,ticksize1d = self.get_fontsize( max(num_columns,num_lines))
+	#fontsize1d,ticksize1d = self.get_fontsize( max(num_columns,num_lines))
+	fontsize1d = command_line.fontsize
+        ticksize1d = command_line.ticksize
 	ax1d.set_title('%s= $%.3g^{+%.3g}_{%.3g}$' % (self.tex_names[index],self.mean[index],bounds[0][1],bounds[0][0]),fontsize=fontsize1d)
 	ax1d.set_xticks(ticks[index])
 	ax1d.set_xticklabels(['%.3g' % s for s in ticks[index]],fontsize=ticksize1d)

@@ -47,6 +47,10 @@ parser.add_argument('-noplot',metavar='ommit the plotting part',dest='plot',acti
 parser.add_argument('-all',metavar='plot every single subplot in a separate pdf file',dest='subplot',action='store_const',const=True,default=False)
 # -- to change the extension used to output files (pdf is the default one, but takes long, valid options are png and eps)
 parser.add_argument('-ext',metavar='change extension for the output file',type=str,dest='extension',default='pdf')
+# -- fontsize of plots (defaulting to 15)
+parser.add_argument('-fontsize', metavar='desired fontsize, default is 15',type=int,dest='fontsize',default=15)
+# -- ticksize of plots (defaulting to 13)
+parser.add_argument('-ticksize', metavar='desired ticksize, default is 13',type=int,dest='ticksize',default=13)
 
 
 def parse():
