@@ -190,10 +190,9 @@ class info:
     self.write_h(self.h_info,indices,'3-sigma > ','%.6e',self.mean+self.bounds[:,2,0])
     self.write_h(self.h_info,indices,'3-sigma < ','%.6e',self.mean+self.bounds[:,2,1])
 
-    self.bestfit=np.zeros(len(self.v_info_names))
-    for i in range(len(self.v_info_names)):
-      index = indices[i]
-      self.bestfit[index]=chain[a[0],:][2+index]
+    self.bestfit=np.zeros(len(self.ref_names))
+    for i in range(len(self.ref_names)):
+      self.bestfit[i]=chain[a[0],:][2+i]
 
     # Write vertical info file
     self.v_info.write('%-15s\t: %-6s %-10s %-10s %-10s %-11s %-10s %-11s %-10s %-10s %-10s %-10s %-10s' % ('param names','R-1','Best fit','mean','sigma','1-sigma -','1-sigma +','2-sigma -','2-sigma +','1-sigma >','1-sigma <','2-sigma >','2-sigma <'))
@@ -1015,7 +1014,6 @@ class info:
 
     self.tex.write("\\begin{tabular}{|l|c|c|c|c|} \n \\hline \n")
     self.tex.write("Param & best-fit & mean$\pm\sigma$ & 95\% lower & 95\% upper \\\\ \\hline \n")    
-
     for i in indices:
       self.tex.write("%s &" % self.tex_names[i])
       self.tex.write("$%.4g$ & $%.4g_{%.2g}^{+%.2g}$ & $%.4g$ & $%.4g$ \\\\ \n" % (self.bestfit[i],self.mean[i],self.bounds[:,0,0][i],self.bounds[:,0,1][i],self.mean[i]+self.bounds[:,1,0][i],self.mean[i]+self.bounds[:,1,1][i]))
