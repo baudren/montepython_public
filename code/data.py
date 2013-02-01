@@ -139,8 +139,9 @@ class data:
       # containing the .data file will be created, for comparison purpose.
       exec "self.lkl['%s'] = %s.%s('%s/%s.data',self,command_line,log_flag,default)"% (elem,elem,elem,folder,elem)
       
-    # Storing parameters by blocks of speed
-    self.group_parameters_in_blocks()
+    # Storing parameters by blocks of speed (only for the true initialization)
+    if default:
+      self.group_parameters_in_blocks()
 
     # Finally, log the cosmo_arguments used. This comes in the end, because
     # it can be modified inside the likelihoods init functions
