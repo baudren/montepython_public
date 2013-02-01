@@ -398,6 +398,9 @@ def chain(_cosmo,data,command_line):
   for i in range(100):
     if get_new_position(data,sigma_eig,U,i,Cholesky,Inverse_Cholesky,Rotation) is True:
       break
+    if i == 99:
+      print '/!\ You should check your prior boundaries... no valid position was found after 100 tries'
+      exit()
 
   # Compute the starting Likelihood
   loglike = compute_lkl(_cosmo,data)
