@@ -219,10 +219,10 @@ def get_covariance_matrix(data,command_line):
 	indices_2[h]=1
     # There, put zeros in the final matrix (the sigmas will be used there)
     for zeros in np.where(indices_2 == 0)[0]:
-      M[zeros,:] = 0
-      M[:,zeros] = 0
+      M[zeros,:] = -2
+      M[:,zeros] = -2
     # super trick, now everything is in place
-    M_temp[M_temp == 1]=M[M!=0]
+    M_temp[M_temp == 1]=M[M!=-2]
     M = np.copy(M_temp)
     # on all other lines, just use sigma^2
     for zeros in np.where(indices_1 == 0)[0]:
