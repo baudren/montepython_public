@@ -159,6 +159,7 @@ Enjoying the difference
       $ ./MontePython.py -info planck/
 
 
-## Details and Examples
------------------------
+Details and Examples
+--------------------
+
   Please refer to the pdf documentation for further details.
