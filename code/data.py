@@ -13,7 +13,7 @@ except:
   from ordereddict import OrderedDict as od
 from datetime    import date              
 
-import io # Needs to talk to io.py file for the logging of parameters
+import io_mp # Needs to talk to io_mp.py file for the logging of parameters
 
 class data:
 
@@ -105,12 +105,12 @@ class data:
       if (os.path.exists(command_line.folder) and not os.path.exists(command_line.folder+'log.param')):
         if command_line.param != None:
           print '/!\   Detecting empty folder, logging the parameter file'
-          io.log_parameters(self,command_line)
+          io_mp.log_parameters(self,command_line)
           log_flag = True
       if not os.path.exists(command_line.folder) :
 	os.mkdir(command_line.folder)
 	# Logging of parameters
-        io.log_parameters(self,command_line)
+        io_mp.log_parameters(self,command_line)
 	log_flag = True
 
     self.lkl=od()
@@ -146,8 +146,8 @@ class data:
     # Finally, log the cosmo_arguments used. This comes in the end, because
     # it can be modified inside the likelihoods init functions
     if log_flag:
-      io.log_cosmo_arguments(self,command_line)
-      io.log_default_configuration(self,command_line)
+      io_mp.log_cosmo_arguments(self,command_line)
+      io_mp.log_default_configuration(self,command_line)
 
 
   # Block mcmc parameters in terms of speed (this will make as many blocks as
@@ -279,7 +279,7 @@ class data:
       self.mcmc_parameters[key]['initial'] = value[0:4]
       self.mcmc_parameters[key]['scale']   = value[4]
       self.mcmc_parameters[key]['role']    = value[-1]
-      self.mcmc_parameters[key]['tex_name']= io.get_tex_name(key)
+      self.mcmc_parameters[key]['tex_name']= io_mp.get_tex_name(key)
       if value[3] == 0:
 	self.mcmc_parameters[key]['status']    = 'fixed'
 	self.mcmc_parameters[key]['current']   = value[0]

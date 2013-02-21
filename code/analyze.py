@@ -2,7 +2,7 @@
 # Plotting routine adapted from Karim Benabed, and the pmc code
 
 import os,sys
-import io
+import io_mp
 import math
 import numpy as np
 
@@ -344,7 +344,7 @@ class info:
             if name in self.new_scales.iterkeys():
               scales[-1] = self.new_scales[name]
 	    number = 1./scales[-1]
-	    tex_names.append(io.get_tex_name(name,number=number))
+	    tex_names.append(io_mp.get_tex_name(name,number=number))
     scales = np.diag(scales)
     param.seek(0)
 

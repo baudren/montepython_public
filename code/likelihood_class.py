@@ -7,7 +7,7 @@ import numpy as np
 import math
 
 import data
-import io
+import io_mp
 
 # Definition of classes for the likelihoods to inherit, for every different
 # types of expected likelihoods. Included so far, models for a Clik, simple
@@ -43,7 +43,7 @@ class likelihood():
     # Append to the log.param the value used (WARNING: so far no comparison is
     # done to ensure that the experiments share the same parameters)
     if log_flag: 
-      io.log_likelihood_parameters(self,command_line)
+      io_mp.log_likelihood_parameters(self,command_line)
 
   # This is a placeholder, to remind that, for a brand new likelihood, you need
   # to define its computation.

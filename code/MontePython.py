@@ -20,7 +20,7 @@ if float(version) < 2.7:
   print '      argparse and OrderedDict (see MontePython.pdf)'
 
 import parser	# parsing the input command line
-import io	# all the input/output mechanisms
+import io_mp	# all the input/output mechanisms
 import mcmc	# the actual Monte Carlo chain procedure, along with the useful functions
 import data	# data handling
 
@@ -104,7 +104,7 @@ def main():
       exit()
 
   # Creating the file that will contain the chain
-  io.create_output_files(command_line,Data)
+  io_mp.create_output_files(command_line,Data)
 
   # Loading up the cosmological backbone. For the moment, only Class has been wrapped.
 

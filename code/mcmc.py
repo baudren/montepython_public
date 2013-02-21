@@ -2,7 +2,7 @@ import os,sys
 import math
 import random as rd
 import numpy as np
-import io
+import io_mp
 import data
 import scipy.linalg as la
 
@@ -85,8 +85,8 @@ def compute_lkl(_cosmo,data):
 # last accepted values as a starting point.
 def read_args_from_chain(data,chain):
   # Chain is defined as a special File (that inherits from File, and has one
-  # new method, tail). The class is defined in code/io.py
-  Chain = io.File(chain,'r')
+  # new method, tail). The class is defined in code/io_mp.py
+  Chain = io_mp.File(chain,'r')
   parameter_names = data.get_mcmc_parameters(['varying'])
 
   # Warning, that feature was not tested since the adding of derived paramaters
@@ -371,7 +371,7 @@ def chain(_cosmo,data,command_line):
     print(' /|\  You are running with no varying parameters...')
     print('/_o_\ Computing model for only one point')
     loglike = compute_lkl(_cosmo,data)
-    io.print_vector([data.out,sys.stdout],1,loglike,data)
+    io_mp.print_vector([data.out,sys.stdout],1,loglike,data)
     return 1,loglike
 
   # In the fast-slow method, one need the Cholesky decomposition of the
@@ -414,7 +414,7 @@ def chain(_cosmo,data,command_line):
   N=1			# number of time the system stayed in the current position
 
   # Print on screen the computed parameters
-  io.print_parameters(sys.stdout,data)
+  io_mp.print_parameters(sys.stdout,data)
 
   k = 1
   # Main loop, that goes on while the maximum number of failure is not reached,
@@ -448,7 +448,7 @@ def chain(_cosmo,data,command_line):
       # Print out the last accepted step (WARNING: this is NOT the one we just
       # computed ('current' flag), but really the previous one.) with its
       # proper multiplicity (number of times the system stayed there).
-      io.print_vector([data.out,sys.stdout],N,loglike,data)
+      io_mp.print_vector([data.out,sys.stdout],N,loglike,data)
 
       # Report the 'current' point to the 'last_accepted'
       accept_step(data)
@@ -465,7 +465,7 @@ def chain(_cosmo,data,command_line):
     # Regularly (option to set in parameter file), close and reopen the buffer
     # to force to write on file.
     if acc % data.write_step ==0:
-      io.refresh_file(data)
+      io_mp.refresh_file(data)
     k += 1 # One iteration done
   # END OF WHILE LOOP
 
@@ -473,7 +473,7 @@ def chain(_cosmo,data,command_line):
   # point is not yet accepted, but it also mean that we did not print out the
   # last_accepted one yet. So we do.
   if N>1:
-    io.print_vector([data.out,sys.stdout],N-1,loglike,data)
+    io_mp.print_vector([data.out,sys.stdout],N-1,loglike,data)
 
   # Print out some information on the finished chain
   rate=acc/(acc+rej)
