@@ -13,17 +13,17 @@ the pdf documentation.
 Prerequisites
 -------------
 
-  * You need the python program **version 2.7** or above, but less than 3.0.
-    Note that lower versions of python will work, down to 2.6 (tested), if you
-    add manually two extra packages (
-    `ordereddict <http://code.activestate.com/recipes/576693/>`_ and 
-    `argparse <https://pypi.python.org/pypi/argparse/1.2.1>`_).
+* You need the python program **version 2.7** or above, but less than 3.0.
+  Note that lower versions of python will work, down to 2.6 (tested), if you
+  add manually two extra packages (
+  `ordereddict <http://code.activestate.com/recipes/576693/>`_ and 
+  `argparse <https://pypi.python.org/pypi/argparse/1.2.1>`_).
 
-  * Your python of choice must have numpy (version >= 1.4.1), and cython. The
-    later is used to wrap CLASS in python.
+* Your python of choice must have numpy (version >= 1.4.1), and cython. The
+  later is used to wrap CLASS in python.
 
-  * *[optional]* If you want to use fully the plotting capabilities of Monte Python,
-    you also need the scipy module, with interpolate.
+* *[optional]* If you want to use fully the plotting capabilities of Monte Python,
+  you also need the scipy module, with interpolate.
 
 
 The MontePython part
