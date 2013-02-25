@@ -1,4 +1,12 @@
 # Files created by vim to backup
 *~
 *swp
+
+# Files created by runs
 chains/*
+
+# Compiled python files
+*.pyc
+
+# Custom configuration files
+*.conf
