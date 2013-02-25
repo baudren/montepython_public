@@ -421,7 +421,7 @@ class data:
                     else:
                         try:
                             size = self.cosmo_arguments['binned_reio_num']
-                    except (KeyError):
+                        except (KeyError):
                             print ' /|\  You need to set reio_binnumber ',
                             print 'to the value corresponding to'
                             print '/_o_\ the one in binned_reio_xe'
