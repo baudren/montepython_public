@@ -6,6 +6,7 @@ import numpy as np
 import io_mp
 import data
 import scipy.linalg as la
+import unittest
 
 
 # Compute the likelihood
@@ -152,17 +153,20 @@ def read_args_from_bf(data, bf):
 # covariance matrices at the beginning of the run, if starting from an existing
 # one. This way, you can control that the paramters are set properly.
 def get_covariance_matrix(data, command_line):
+
     np.set_printoptions(precision=2, linewidth=150)
     parameter_names = data.get_mcmc_parameters(['varying'])
     i = 0
 
-    # if the user wants to use a covmat file
+    # if the user provides a .covmat file
     if command_line.cov is not None:
         cov = open('{0}'.format(command_line.cov), 'r')
         for line in cov:
             if line.find('#') != -1:
+                # Extract the names from the first line
                 covnames = line.strip('#').replace(' ', '').\
                     replace('\n', '').split(',')
+                # Initialize the matrices
                 M = np.zeros((len(covnames), len(covnames)), 'float64')
                 rot = np.zeros((len(covnames), len(covnames)))
             else:
@@ -185,7 +189,14 @@ def get_covariance_matrix(data, command_line):
             else:
                 scales.append(1)
         scales = np.diag(scales)
+        # Compute the inverse matrix, and assert that the computation was
+        # precise enough, by comparing the product to the identity matrix.
         invscales = np.linalg.inv(scales)
+        np.testing.assert_array_almost_equal(
+            np.dot(scales, invscales), np.eye(np.shape(scales)[0]),
+            decimal=5)
+
+        # Apply the newly computed scales to the input matrix
         M = np.dot(invscales.T, np.dot(M, invscales))
 
         # Second print out, after having applied the scale factors
@@ -193,14 +204,18 @@ def get_covariance_matrix(data, command_line):
         print(covnames)
         print(M)
 
-        # Then, rotate M for the parameters to be well ordered, even if some
+        # Rotate M for the parameters to be well ordered, even if some
         # names are missing or some are in extra.
-        temp_names = []
-        for elem in parameter_names:
-            if elem in covnames:
-                temp_names.append(elem)
+        # First, store the parameter names in temp_names that also appear in
+        # the covariance matrix, in the right ordering for the code (might be
+        # different from the input matri)
+        temp_names = [elem for elem in parameter_names if elem in covnames]
 
-        # Trick if parameter_names contains less things than covnames:
+        # If parameter_names contains less things than covnames, we will do a
+        # small trick. Create a second temporary array, temp_names_2, that will
+        # have the same dimension as covnames, and containing:
+        # - the elements of temp_names, in the order of parameter_names (h index)
+        # - an empty string '' for the remaining unused parameters
         temp_names_2 = []
         h = 0
         not_in = [elem for elem in covnames if elem not in temp_names]
@@ -211,6 +226,9 @@ def get_covariance_matrix(data, command_line):
             else:
                 temp_names_2.append('')
 
+        # Create the rotation matrix, that will put the covariance matrix in
+        # the right order, and also assign zeros to the unused parameters from
+        # the input. These empty columns will be removed in the next step.
         for k in range(len(covnames)):
             for h in range(len(covnames)):
                 try:
@@ -219,6 +237,11 @@ def get_covariance_matrix(data, command_line):
                     else:
                         rot[h][k] = 0.
                 except IndexError:
+                    # The IndexError exception means that we are dealing with
+                    # an unused parameter. By enforcing the corresponding
+                    # rotation matrix element to 0, the resulting matrix will
+                    # still have the same size as the original, but with zeros
+                    # on the unused lines.
                     rot[h][k] = 0.
         M = np.dot(rot, np.dot(M, np.transpose(rot)))
 
@@ -227,32 +250,39 @@ def get_covariance_matrix(data, command_line):
         print(temp_names_2)
         print(M)
 
+        # Final step, creating a temporary matrix, filled with 1, that will
+        # eventually contain the result. 
         M_temp = np.ones((len(parameter_names),
                           len(parameter_names)), 'float64')
-        indices_1 = np.zeros(len(parameter_names))
-        indices_2 = np.zeros(len(covnames))
-        #Remove names that are in param_names but not in covnames
+        indices_final = np.zeros(len(parameter_names))
+        indices_initial = np.zeros(len(covnames))
+        # Remove names that are in parameter names but not in covnames, and
+        # set to zero the corresponding columns of the final result.
         for k in range(len(parameter_names)):
             if parameter_names[k] in covnames:
-                indices_1[k] = 1
-        for zeros in np.where(indices_1 == 0)[0]:
+                indices_final[k] = 1
+        for zeros in np.where(indices_final == 0)[0]:
             M_temp[zeros, :] = 0
             M_temp[:, zeros] = 0
         # Remove names that are in covnames but not in param_names
         for h in range(len(covnames)):
             if covnames[h] in parameter_names:
-                indices_2[h] = 1
-        # There, put zeros in the final matrix (the sigmas will be used there)
-        for zeros in np.where(indices_2 == 0)[0]:
-            M[zeros, :] = -2
-            M[:, zeros] = -2
-        # super trick, now everything is in place
-        M_temp[M_temp == 1] = M[M != -2]
+                indices_initial[h] = 1
+        # There, put a place holder number (we are using a pure imaginary
+        # number: i, to avoid any problem) in the initial matrix, so that the
+        # next step only copy the interesting part of the input to the final
+        # matrix.
+        for zeros in np.where(indices_initial == 0)[0]:
+            M[zeros, :] = 1*j
+            M[:, zeros] = 1*j
+        # Now put in the temporary matrix, where the 1 were, the interesting
+        # quantities from the input (the one that are not equal to i).
+        M_temp[M_temp == 1] = M[M != 1*j]
         M = np.copy(M_temp)
-        # on all other lines, just use sigma^2
-        for zeros in np.where(indices_1 == 0)[0]:
+        # on all other lines, that contain 0, just use sigma^2
+        for zeros in np.where(indices_final == 0)[0]:
             M[zeros, zeros] = np.array(
-                data.mcmc_parameters[parameter_names[zeros]]['initial'][3],
+                data.mcmc_parameters[parameter_names[zeros]]['scale'],
                 'float64')**2
 
     # else, take sigmas^2.
@@ -260,7 +290,7 @@ def get_covariance_matrix(data, command_line):
         M = np.identity(len(parameter_names), 'float64')
         for elem in parameter_names:
             M[i][i] = np.array(
-                data.mcmc_parameters[elem]['initial'][3], 'float64')**2
+                data.mcmc_parameters[elem]['scale'], 'float64')**2
             i += 1
 
     # Final print out, the actually used covariance matrix
