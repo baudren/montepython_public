@@ -1,3 +1,10 @@
+"""
+.. module:: data
+   :platform: Unix, Mac Os X
+   :synopsis: Define the data class
+
+.. moduleauthor:: Benjamin Audren <benjamin.audren@epfl.ch>
+"""
 import os
 import sys
 import math
@@ -17,14 +24,35 @@ from datetime import date
 import io_mp  # Needs to talk to io_mp.py file for the logging of parameters
 
 
-class data:
+class data(object):
+    """
+    Store all relevant data to communicate between the different modules.
+
+    The data class holds the cosmological information, the parameters from the
+    MCMC run, the information coming from the likelihoods. It is a wide
+    collections of information, with in particular two main dictionaries:
+    cosmo_arguments and mcmc_parameters
+    """
 
     # - path contains the configuration you inputed in your .conf file,
     # - the default flag is here to distinguish whether it is a genuine
     # initialization of data (default=True), or whether it is a comparison with
     # the log.param of an existing folder (default=False)
     def __init__(self, command_line, path, default=True):
+        """
+        Initialization of a data instance, from a parameter file input
 
+        Depending on the flag default, it will be a genuine initialization
+        (default=True) or a short initialization, simply to compare with an
+        existing folder.
+
+        Args:
+            command_line: titi
+            path: toto
+
+        Kwargs:
+            default: bla
+        """
         # Initialisation of the random seed
         rd.seed()
 
@@ -250,21 +278,24 @@ class data:
             return -1
 
     # Method defined to read the parameter file
-    def read_file(self, _file):
-        for line in _file:
+    def read_file(self, File):
+        """
+        Execute all lines concerning the data class from a parameter file
+        """
+        for line in File:
             if line.find('#') == -1:
                 if line.split('=')[0].find('data.') != -1:
                     exec(line.replace('data.', 'self.'))
-        _file.seek(0)
+        File.seek(0)
 
     # Extract version and subversion from an existing log.param
-    def read_version(self, _file):
+    def read_version(self, File):
         # Read the first line (cosmological code version)
-        first_line = _file.readline()
+        first_line = File.readline()
         self.version = first_line.split()[1]
         self.subversion = first_line.split()[-1].replace(')', '').\
             replace('-', '')
-        _file.seek(0)
+        File.seek(0)
 
     # Initializes the ordered dictionary mcmc_parameters
     def fill_mcmc_parameters(self):
