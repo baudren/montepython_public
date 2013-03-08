@@ -20,16 +20,16 @@ if float(version) < 2.7:
     print '/_o_\ or install manually the following modules for your older'
     print '      distribution: argparse and OrderedDict'
 
-import parser   # parsing the input command line
-import io_mp    # all the input/output mechanisms
-import mcmc     # the actual Monte Carlo chain procedure
-import data     # data handling
+import parser_mp   # parsing the input command line
+import io_mp       # all the input/output mechanisms
+import mcmc        # the actual Monte Carlo chain procedure
+import data        # data handling
 
 
 #------------------MAIN-DEFINITION--------------------------------------
 def main():
     # Parsing line argument
-    command_line = parser.parse()
+    command_line = parser_mp.parse()
 
     # Default configuration
     path = {}
