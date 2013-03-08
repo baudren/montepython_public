@@ -14,4 +14,5 @@ chains/*
 *.conf
 
 # Build files of sphinx-doc
-sphinx-documentation/build/*
+sphinx-documentation/_build/
+sphinx-documentation/_templates/
