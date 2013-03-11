@@ -90,24 +90,11 @@ def main():
         Data = data.data(command_line, path)
 
     # Else, fill in data, starting from  parameter file. If output folder
-    # already exists, first load a data instance with used param, and compare
-    # the two instances. If different, exit: you are not able to run two
-    # different things in one folder.
+    # already exists, the input parameter file was automatically replaced by
+    # the existing log.param. This prevents you to run different things in a
+    # same folder.
     else:
         Data = data.data(command_line, path)
-        if command_line.param.find('log.param') == -1:
-            try:
-                Data_old = data.data(command_line, path, False)
-                print 'here'
-                if Data != Data_old:
-                    print '\n /|\  You are starting a chain in {0}'.format(
-                        command_line.folder),
-                    print 'with different parameters'
-                    print '/_o_\ than used previously.'
-                    print '      Exiting'
-                    exit()
-            except AttributeError:
-                pass
 
     # Overwrite arguments from parameter file with the command line
     if command_line.N is None:
@@ -125,8 +112,8 @@ def main():
     # If there is a conflict between the log.param value and the .conf file,
     # exiting.
     if Data.path != path:
-        print ' /|\  Your log.param files is in contradiction with your .conf'
-        print '/_o_\ file. Exiting now.'
+        print ' /|\  Your log.param file is in contradiction with your .conf'
+        print '/_o_\ file. Please check your path in these two places.'
         exit()
 
     # Loading up the cosmological backbone. For the moment, only Class has been
@@ -160,7 +147,7 @@ def main():
         exit()
 
     # MCMC chain
-    rate, min_LogLike = mcmc.chain(cosmo, Data, command_line)
+    mcmc.chain(cosmo, Data, command_line)
 
     # Closing up the file
     Data.out.close()

@@ -1,3 +1,5 @@
+v1.1.1: - Removed the comparison between input param and log.param:
+	always choose the latest.
 v1.1.0: - Added the following likelihoods: SPT full data (called spt_2500 in
 	the likelihood directory), compilation of BAO scale data (called bao),
 	compilation of quasar time-delay data (called timedelay), timedelay, and

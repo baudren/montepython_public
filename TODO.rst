@@ -2,6 +2,7 @@ Problems to be addressed
 ========================
 
 
+- li 120 in data.py, MUST COMPARE SVN VERSION NOW
 - beam not defined 613 likelihood_class.py
 - 382 of analyze: rewrite !
 - part to read chains from cosmomc does not work

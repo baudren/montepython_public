@@ -25,12 +25,12 @@ import io_mp
 # initialization
 class likelihood():
 
-    def __init__(self, path, data, command_line, log_flag, default):
+    def __init__(self, path, data, command_line, log_flag):
 
         self.name = self.__class__.__name__
         self.folder = os.path.abspath(data.path['MontePython']) +\
             '/../likelihoods/'+self.name+'/'
-        if (not default or not log_flag):
+        if not log_flag:
             path = command_line.folder+'log.param'
         self.read_from_file(path, data)
 
@@ -232,15 +232,12 @@ class likelihood_prior(likelihood):
 ###################################
 class likelihood_newdat(likelihood):
 
-    def __init__(self, path, data, command_line, log_flag, default):
+    def __init__(self, path, data, command_line, log_flag):
 
-        likelihood.__init__(self, path, data, command_line, log_flag, default)
+        likelihood.__init__(self, path, data, command_line, log_flag)
 
         self.need_cosmo_arguments(
             data, {'lensing': 'yes', 'output': 'tCl lCl pCl'})
-
-        if not default:
-            return
 
         # open .newdat file
         newdatfile = open(self.data_directory+self.file, 'r')
@@ -687,14 +684,11 @@ class likelihood_newdat(likelihood):
 ###################################
 class likelihood_clik(likelihood):
 
-    def __init__(self, path, data, command_line, log_flag, default):
+    def __init__(self, path, data, command_line, log_flag):
 
-        likelihood.__init__(self, path, data, command_line, log_flag, default)
+        likelihood.__init__(self, path, data, command_line, log_flag)
         self.need_cosmo_arguments(
             data, {'lensing': 'yes', 'output': 'tCl lCl pCl'})
-
-        if not default:
-            return
 
         try:
             import clik
@@ -783,15 +777,12 @@ class likelihood_clik(likelihood):
 ###################################
 class likelihood_mock_cmb(likelihood):
 
-    def __init__(self, path, data, command_line, log_flag, default):
+    def __init__(self, path, data, command_line, log_flag):
 
-        likelihood.__init__(self, path, data, command_line, log_flag, default)
+        likelihood.__init__(self, path, data, command_line, log_flag)
 
         self.need_cosmo_arguments(
             data, {'lensing': 'yes', 'output': 'tCl lCl pCl'})
-
-        if not default:
-            return
 
         ################
         # Noise spectrum
@@ -920,9 +911,9 @@ class likelihood_mock_cmb(likelihood):
 ###################################
 class likelihood_mpk(likelihood):
 
-    def __init__(self, path, data, command_line, log_flag, default):
+    def __init__(self, path, data, command_line, log_flag):
 
-        likelihood.__init__(self, path, data, command_line, log_flag, default)
+        likelihood.__init__(self, path, data, command_line, log_flag)
 
         # require P(k) from class
         self.need_cosmo_arguments(data, {'output': 'mPk'})
@@ -981,10 +972,6 @@ class likelihood_mpk(likelihood):
         # require k_max and z_max from the cosmological module
         self.need_cosmo_arguments(
             data, {'P_k_max_h/Mpc': khmax, 'z_max_pk': self.redshift})
-
-        # In case of a comparison, stop here
-        if not default:
-            return
 
         # read information on different regions in the sky
         try:

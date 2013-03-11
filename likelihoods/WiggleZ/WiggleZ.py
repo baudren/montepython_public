@@ -19,16 +19,16 @@ class WiggleZ_d(likelihood_mpk):
 
 class WiggleZ(likelihood):
   
-  def __init__(self,path,data,command_line,log_flag,default):
+  def __init__(self,path,data,command_line,log_flag):
 
-    likelihood.__init__(self,path,data,command_line,log_flag,default)
+    likelihood.__init__(self,path,data,command_line,log_flag)
 
     # Initialize one after the other the four independant redshift bins (note:
     # the order in the array self.redshift_bins_files) must be respected !
-    self.wigglez_a = WiggleZ_a(self.data_directory+self.redshift_bins_files[0],data,command_line,log_flag,default)
-    self.wigglez_b = WiggleZ_b(self.data_directory+self.redshift_bins_files[1],data,command_line,log_flag,default)
-    self.wigglez_c = WiggleZ_c(self.data_directory+self.redshift_bins_files[2],data,command_line,log_flag,default)
-    self.wigglez_d = WiggleZ_d(self.data_directory+self.redshift_bins_files[3],data,command_line,log_flag,default)
+    self.wigglez_a = WiggleZ_a(self.data_directory+self.redshift_bins_files[0],data,command_line,log_flag)
+    self.wigglez_b = WiggleZ_b(self.data_directory+self.redshift_bins_files[1],data,command_line,log_flag)
+    self.wigglez_c = WiggleZ_c(self.data_directory+self.redshift_bins_files[2],data,command_line,log_flag)
+    self.wigglez_d = WiggleZ_d(self.data_directory+self.redshift_bins_files[3],data,command_line,log_flag)
 
   def loglkl(self,_cosmo,data):
     # Simply add all the sublikelihoods

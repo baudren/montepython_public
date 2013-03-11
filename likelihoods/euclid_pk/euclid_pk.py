@@ -5,9 +5,9 @@ from math import exp,log,sqrt,pi
 
 class euclid_pk(likelihood):
 
-  def __init__(self,path,data,command_line,log_flag,default):
+  def __init__(self,path,data,command_line,log_flag):
 
-    likelihood.__init__(self,path,data,command_line,log_flag,default)
+    likelihood.__init__(self,path,data,command_line,log_flag)
 
     self.need_cosmo_arguments(data,{'output':'mPk'})
     
@@ -53,10 +53,6 @@ class euclid_pk(likelihood):
     # Force the cosmological module to store Pk for k up to an arbitrary number
     # (since self.r is not yet decided)... TODO
     self.need_cosmo_arguments(data,{'P_k_max_1/Mpc':1.5*self.kmax})
-
-    # In case of a comparison, stop here
-    if not default:
-      return
 
     # Define the k values for the integration (from kmin to kmax), at which the
     # spectrum will be computed (and stored for the fiducial model)

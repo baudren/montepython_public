@@ -6,9 +6,9 @@ import math
 
 class euclid_lensing(likelihood):
 
-  def __init__(self,path,data,command_line,log_flag,default):
+  def __init__(self,path,data,command_line,log_flag):
 
-    likelihood.__init__(self,path,data,command_line,log_flag,default)
+    likelihood.__init__(self,path,data,command_line,log_flag)
 
     self.need_cosmo_arguments(data,{'output':'mPk'})
 
@@ -66,10 +66,6 @@ class euclid_lensing(likelihood):
     # Force the cosmological module to store Pk for k up to an arbitrary number
     # (since self.r is not yet decided)... TODO
     self.need_cosmo_arguments(data,{'P_k_max_1/Mpc':self.k_max})
-
-    # In case of a comparison, stop here
-    if not default:
-      return
 
     # Fill distribution for each bin (convolving with photo_z distribution)
     self.eta_z = np.zeros((self.nzmax,self.nbin),'float64')

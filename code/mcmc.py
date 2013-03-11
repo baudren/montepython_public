@@ -586,4 +586,4 @@ def chain(_cosmo, data, command_line):
         sys.stdout.write('    deleting starting point of the chain {0}\n'.
                          format(command_line.restart))
 
-    return rate, max_loglike
+    return 

@@ -29,14 +29,8 @@ class data(object):
 
     """
 
-    def __init__(self, command_line, path, default=True):
+    def __init__(self, command_line, path):
         """
-        Initialize a data instance, with two different cases, depending on the
-        flag default. It will be a genuine initialization or a short one,
-        depending on the flag :code:`default` (the sort one is simply to
-        load data from an existing folder and compare it with the asked
-        `input.param`)
-
         The data class holds the cosmological information, the parameters from
         the MCMC run, the information coming from the likelihoods. It is a wide
         collections of information, with in particular two main dictionaries:
@@ -76,27 +70,18 @@ class data(object):
               :mod:`parser_mp`. It stores the input parameter file, the
               jumping methods, the output folder, etc...
               Most of the information extracted from the command_file will
-              be transformed into :class:`data` attributes, whenever it is
+              be transformed into :class:`data` attributes, whenever it felt
               meaningful to do so.
 
             - **path** (`dict`) - contains a dictionary of important local paths.
               It is used here to find the cosmological module location.
-
-
-        :Keywords:
-            - **default** (`bool`) - Differentiates between a true initialization
-              (`default=True`)
         """
         
         # Initialisation of the random seed
         rd.seed()
 
-        # Distinguish between the two cases, genuine initialization or
-        # comparison with existing data (in this case, grab the log.param)
-        if default:
-            self.param = command_line.param
-        else:
-            self.param = command_line.folder+'log.param'
+        # Store the parameter file
+        self.param = command_line.param
 
         # Recover jumping method from command_line
         self.jumping = command_line.jumping
@@ -125,16 +110,15 @@ class data(object):
         # Recover the cosmological code version (and subversion if relevant).
         # To implement a new cosmological code, please add another case to the
         # test below.
-        if default:
-            if self.cosmological_module_name == 'Class':
-                svn_file = open(path['cosmo']+'/include/svnversion.h', 'r')
-                self.subversion = svn_file.readline().split()[-1].\
-                    replace('"', '')
-                svn_file.close()
-                for line in open(path['cosmo']+'/include/common.h', 'r'):
-                    if line.find('_VERSION_') != -1:
-                        self.version = line.split()[-1].replace('"', '')
-                        break
+        if self.cosmological_module_name == 'Class':
+            svn_file = open(path['cosmo']+'/include/svnversion.h', 'r')
+            self.subversion = svn_file.readline().split()[-1].\
+                replace('"', '')
+            svn_file.close()
+            for line in open(path['cosmo']+'/include/common.h', 'r'):
+                if line.find('_VERSION_') != -1:
+                    self.version = line.split()[-1].replace('"', '')
+                    break
         else:  # read in the existing parameter file
             self.read_version(self.param_file)
 
@@ -148,30 +132,26 @@ class data(object):
         # Record if the cosmological parameters were changed (slow step)
         self.need_cosmo_update = True
 
-        # For a true initialization, one should then initialize the
-        # likelihoods.  This step is obviously skipped for a comparison
-        if default:
+        sys.stdout.write('Testing likelihoods for:\n -> ')
+        for i in range(len(self.experiments)):
+            sys.stdout.write(self.experiments[i]+', ')
+        sys.stdout.write('\n')
 
-            sys.stdout.write('Testing likelihoods for:\n -> ')
-            for i in range(len(self.experiments)):
-                sys.stdout.write(self.experiments[i]+', ')
-            sys.stdout.write('\n')
-
-            # logging the parameter file (only if folder does not exist !)
-            if command_line.folder[-1] != '/':
-                command_line.folder += '/'
-            if (os.path.exists(command_line.folder) and
-                    not os.path.exists(command_line.folder+'log.param')):
-                if command_line.param is not None:
-                    print '/!\   Detecting empty folder,',
-                    print' logging the parameter file'
-                    io_mp.log_parameters(self, command_line)
-                    log_flag = True
-            if not os.path.exists(command_line.folder):
-                os.mkdir(command_line.folder)
-                # Logging of parameters
+        # logging the parameter file (only if folder does not exist !)
+        if command_line.folder[-1] != '/':
+            command_line.folder += '/'
+        if (os.path.exists(command_line.folder) and
+                not os.path.exists(command_line.folder+'log.param')):
+            if command_line.param is not None:
+                print '/!\   Detecting empty folder,',
+                print '      logging the parameter file'
                 io_mp.log_parameters(self, command_line)
                 log_flag = True
+        if not os.path.exists(command_line.folder):
+            os.mkdir(command_line.folder)
+            # Logging of parameters
+            io_mp.log_parameters(self, command_line)
+            log_flag = True
 
         self.lkl = od()
 
@@ -194,19 +174,14 @@ class data(object):
             # ... import easily the likelihood.py program
             exec "import %s" % elem
             # Initialize the likelihoods. Depending on the values of
-            # command_line, log_flag and default, the routine will call
-            # slightly different things. If log_flag, log.param will be
-            # appended. If default, some precomputation will be made. Finally
-            # if not default, only a dictionary containing the .data file will
-            # be created, for comparison purpose.
+            # command_line, log_flag, the routine will call slightly different
+            # things. If log_flag is True, the log.param will be appended. 
             exec "self.lkl['%s'] = %s.%s('%s/%s.data',\
-                self,command_line,log_flag,default)" % (
+                self,command_line,log_flag)" % (
                 elem, elem, elem, folder, elem)
 
-        # Storing parameters by blocks of speed (only for the true
-        # initialization)
-        if default:
-            self.group_parameters_in_blocks()
+        # Storing parameters by blocks of speed 
+        self.group_parameters_in_blocks()
 
         # Finally, log the cosmo_arguments used. This comes in the end, because
         # it can be modified inside the likelihoods init functions
@@ -214,11 +189,6 @@ class data(object):
             io_mp.log_cosmo_arguments(self, command_line)
             io_mp.log_default_configuration(self, command_line)
 
-    # IMPORTANT NOTE: this routine assumes that the nuisance parameters are
-    # already written sequentially, and grouped together (not necessarilly in
-    # the order described in data.experiments). If you mix up the different
-    # nuisance parameters in the .param file, this routine will not function as
-    # intended.
     def group_parameters_in_blocks(self):
         """
         Regroup mcmc parameters by blocks of same speed
@@ -239,10 +209,11 @@ class data(object):
         .. warning::
 
             It assumes that the nuisance parameters are already written
-            sequentially, and groupe together (not necessarilly in the order
+            sequentially, and grouped together (not necessarilly in the order
             described in :attr:`data.experiments`). If you mix up the different
             nuisance parameters in the .param file, this routine will not
-            method as intended.
+            method as intended. It also assumes that the cosmological
+            parameters are written at the beginning of the file.
 
         """
         array = []

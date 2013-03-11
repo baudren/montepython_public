@@ -6,11 +6,9 @@ class bao(likelihood):
   
   # initialization routine
 
-  def __init__(self,path,data,command_line,log_flag,default):
+  def __init__(self,path,data,command_line,log_flag):
 
-    likelihood.__init__(self,path,data,command_line,log_flag,default)
-    if not default:
-      return
+    likelihood.__init__(self,path,data,command_line,log_flag)
 
     # define array for values of z and data points
     self.z	= np.array([],'float64')
