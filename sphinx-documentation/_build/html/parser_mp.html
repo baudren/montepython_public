@@ -1,0 +1,264 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Parser module &mdash; Monte Python 1.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/pyramid.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Monte Python 1.1.0 documentation" href="index.html" />
+    <link rel="up" title="Documentation" href="documentation.html" />
+    <link rel="next" title="Data module" href="data.html" />
+    <link rel="prev" title="Monte Python Module" href="MontePython.html" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head>
+  <body>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="data.html" title="Data module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="MontePython.html" title="Monte Python Module"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Monte Python 1.1.0 documentation</a> &raquo;</li>
+          <li><a href="documentation.html" accesskey="U">Documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-parser_mp">
+<span id="parser-module"></span><h1>Parser module<a class="headerlink" href="#module-parser_mp" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-parser_np"></span><p>Defines the command line options and their help messages in
+<tt class="xref py py-func docutils literal"><span class="pre">create_parser()</span></tt> and read the input command line in <tt class="xref py py-func docutils literal"><span class="pre">parse()</span></tt>, dealing
+with different possible configurations.</p>
+<dl class="function">
+<dt id="parser_mp.create_parser">
+<tt class="descclassname">parser_mp.</tt><tt class="descname">create_parser</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/parser_mp.html#create_parser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parser_mp.create_parser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Definition of the parser command line options</p>
+<p>All command line arguments are defined below. This will also create an
+automatic help command, available through the call <tt class="code docutils literal"><span class="pre">python</span>
+<span class="pre">code/Montepython</span> <span class="pre">-h</span></tt>, listing the parameters and their function.</p>
+<p>Each flag outputs the following argument to a destination variable,
+specified by the <cite>dest</cite> keyword argument in the source code. Please check
+there to understand the variable names associated with each option.</p>
+<p><strong>Options</strong>:</p>
+<blockquote>
+<div><p><strong>MCMC</strong>:</p>
+<blockquote>
+<div><ul>
+<li><p class="first"><strong>-N</strong> (<cite>int</cite>) - number of steps in the chain (<strong>OBL</strong>). Note
+that when running on a cluster, your run might be stopped before
+reaching this number.</p>
+</li>
+<li><p class="first"><strong>-o</strong> (<cite>str</cite>) - output folder (<strong>OBL</strong>). For instance <tt class="code docutils literal"><span class="pre">-o</span>
+<span class="pre">chains/myexperiments/mymodel</span></tt>. Note that in this example, the
+folder <tt class="code docutils literal"><span class="pre">chains/myexperiments</span></tt> must already exist.</p>
+</li>
+<li><p class="first"><strong>-p</strong> (<cite>str</cite>) - input parameter file (<strong>OBL</strong>). For example
+<tt class="code docutils literal"><span class="pre">-p</span> <span class="pre">input/exoticmodel.param</span></tt>.</p>
+</li>
+<li><p class="first"><strong>-c</strong> (<cite>str</cite>) - input covariance matrix (<em>OPT</em>). A covariance
+matrix is created when analyzing previous runs.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The list of parameters in the input covariance matrix and in
+the run do not necessarily coincide.</p>
+</div>
+</li>
+<li><p class="first"><strong>-j</strong> (<cite>str</cite>) - jumping method (<cite>global</cite> (default),
+<cite>sequential</cite>) (<em>OPT</em>).</p>
+<p>With the <cite>global</cite> method the code generates a new random direction
+at each step, with the <cite>sequential</cite> one it cycles over the
+eigenvectors of the proposal density (= input covariance matrix).</p>
+<p>The <cite>global</cite> method the acceptance rate is usually lower but
+the points in the chains are less correlated. We recommend using
+the sequential method to get started in difficult cases, when the
+proposal density is very bad, in order to accumulate points and
+generate a covariance matrix to be used later with the <cite>default</cite>
+jumping method.</p>
+</li>
+<li><p class="first"><strong>-f</strong> (<cite>float</cite>) - jumping factor (&gt;= 0, default to 2.4)
+(<em>OPT</em>).</p>
+<p>the proposal density is given by the input covariance matrix (or
+a diagonal matrix with elements given by the square of the input
+sigma&#8217;s) multiplied by the square of this factor. In other words,
+a typical jump will have an amplitude given by sigma times this
+factor.</p>
+<p>The default is the famous factor 2.4, found by <strong>TO CHECK</strong>
+Dunkley et al. to be an optimal trade-off between high acceptance
+rate and high correlation of chain elements, at least for
+multivariate gaussian posterior probabilities. It can be a good
+idea to reduce this factor for very non-gaussian posteriors.</p>
+<p>Using <tt class="code docutils literal"><span class="pre">-f</span> <span class="pre">0</span> <span class="pre">-N</span> <span class="pre">1</span></tt> is a convenient way to get the likelihood
+exactly at the starting point passed in input.</p>
+</li>
+<li><p class="first"><strong>-conf</strong> (<cite>str</cite>) - configuration file (default to
+<cite>default.conf</cite>) (<em>OPT</em>). This file contains the path to your
+cosmological module directory.</p>
+</li>
+<li><p class="first"><strong>-chain_number</strong> (<cite>str</cite>) - arbitrary numbering of the output
+chain, to overcome the automatic one (<em>OPT</em>).</p>
+<p>By default, the chains are named <tt class="code docutils literal"><span class="pre">yyyy-mm-dd_N__i.txt</span></tt> with
+year, month and day being extracted, <tt class="code docutils literal"><span class="pre">N</span></tt> being the number
+of steps, and <tt class="code docutils literal"><span class="pre">i</span></tt> an automatically updated index.</p>
+<p>This means that running several times the code with the same
+command will create different chains automatically.</p>
+<p>This option is a way to enforce a particular number <tt class="code docutils literal"><span class="pre">i</span></tt>.
+This can be useful when running on a cluster: for instance you
+may ask your script to use the job number as <tt class="code docutils literal"><span class="pre">i</span></tt>.</p>
+</li>
+<li><p class="first"><strong>-r</strong> (<cite>str</cite>) - start a new chain from the last point of the
+given one, to avoid the burn-in stage (<em>OPT</em>).</p>
+<p>At the beginning of the run, the previous chain will be deleted,
+and its content transfered to the beginning of the new chain.</p>
+</li>
+<li><p class="first"><strong>-bf</strong> (<cite>str</cite>) - start a new chain from the bestfit computed in
+the given file (<em>OPT</em>)</p>
+</li>
+</ul>
+</div></blockquote>
+<p><strong>Information</strong>:</p>
+<blockquote>
+<div><ul>
+<li><p class="first"><strong>-info</strong> (<cite>str</cite>) - compute the information of given file/folder.</p>
+<p>You can specify either single files, or a complete folder, for
+example <tt class="code docutils literal"><span class="pre">-info</span> <span class="pre">chains/my-run/2012-10-26*</span></tt>, or <tt class="code docutils literal"><span class="pre">-info</span>
+<span class="pre">chains/my-run</span></tt></p>
+</li>
+<li><p class="first"><strong>-bins</strong> (<cite>int</cite>) - number of bins in the histograms used to
+derive posterior probabilities and credible intervals (default to
+20). Decrease this number for smoother plots at the expense of
+masking details.</p>
+</li>
+<li><p class="first"><strong>-no_mean</strong> (<cite>None</cite>) - by default, when plotting marginalised 1D
+posteriors, the code also shows the mean likelihood per bin with
+dashed lines; this flag switches off the dashed lines</p>
+</li>
+<li><p class="first"><strong>-comp</strong> (<cite>str</cite>) - pass the name of another folder (or another
+set of chains, same syntax as -info) if you want to compare 1D
+posteriors on the same plot.</p>
+<p>The lists of parameters in the two folders to compare do not need
+to coincide. It is limited so far to two folders to compare in
+total.</p>
+</li>
+<li><p class="first"><strong>-extra</strong> (<cite>str</cite>) - extra file to customize the output plots.</p>
+</li>
+</ul>
+<div class="code highlight-python"><pre>info.to_change={'oldname1':'newname1','oldname2':'newname2',...}
+info.to_plot=['name1','name2','newname3',...]
+info.new_scales={'name1':number1,'name2':number2,...}</pre>
+</div>
+<ul class="simple">
+<li><strong>-noplot</strong> (<cite>None</cite>) - do not produce plot, and compute only the
+covariance matrix (flag)</li>
+<li><strong>-all</strong> (<cite>None</cite>) - output every subplot in a separate file
+(flag)</li>
+<li><strong>-ext</strong> (<cite>str</cite>) - specify the extension of the figures (<cite>pdf</cite>
+(default), <cite>png</cite> (faster))</li>
+<li><strong>-fontsize</strong> (<cite>int</cite>) - adjust fontsize (default to 15)</li>
+<li><strong>-ticksize</strong> (<cite>int</cite>) - adjust ticksize (default to 13)</li>
+</ul>
+</div></blockquote>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="parser_mp.parse">
+<tt class="descclassname">parser_mp.</tt><tt class="descname">parse</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/parser_mp.html#parse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parser_mp.parse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check some basic organization of the folder, and exit the program in case
+something goes wrong.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="MontePython.html"
+                        title="previous chapter">Monte Python Module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="data.html"
+                        title="next chapter">Data module</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="data.html" title="Data module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="MontePython.html" title="Monte Python Module"
+             >previous</a> |</li>
+        <li><a href="index.html">Monte Python 1.1.0 documentation</a> &raquo;</li>
+          <li><a href="documentation.html" >Documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Benjamin Audren.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

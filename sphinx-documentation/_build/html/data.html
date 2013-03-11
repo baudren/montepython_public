@@ -1,0 +1,356 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Data module &mdash; Monte Python 1.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/pyramid.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Monte Python 1.1.0 documentation" href="index.html" />
+    <link rel="up" title="Documentation" href="documentation.html" />
+    <link rel="next" title="Likelihood class module" href="likelihood_class.html" />
+    <link rel="prev" title="Parser module" href="parser_mp.html" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head>
+  <body>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="likelihood_class.html" title="Likelihood class module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="parser_mp.html" title="Parser module"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Monte Python 1.1.0 documentation</a> &raquo;</li>
+          <li><a href="documentation.html" accesskey="U">Documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-data">
+<span id="data-module"></span><h1>Data module<a class="headerlink" href="#module-data" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-data"></span><dl class="class">
+<dt id="data.data">
+<em class="property">class </em><tt class="descclassname">data.</tt><tt class="descname">data</tt><big>(</big><em>command_line</em>, <em>path</em><big>)</big><a class="reference internal" href="_modules/data.html#data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>Store all relevant data to communicate between the different modules.</p>
+<p>The data class holds the cosmological information, the parameters from
+the MCMC run, the information coming from the likelihoods. It is a wide
+collections of information, with in particular two main dictionaries:
+cosmo_arguments and mcmc_parameters.</p>
+<p>It defines several useful methods. The following ones are called just
+once, at initialization:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#data.data.fill_mcmc_parameters" title="data.data.fill_mcmc_parameters"><tt class="xref py py-func docutils literal"><span class="pre">fill_mcmc_parameters()</span></tt></a></li>
+<li><a class="reference internal" href="#data.data.from_input_to_mcmc_parameters" title="data.data.from_input_to_mcmc_parameters"><tt class="xref py py-func docutils literal"><span class="pre">from_input_to_mcmc_parameters()</span></tt></a></li>
+<li><a class="reference internal" href="#data.data.read_file" title="data.data.read_file"><tt class="xref py py-func docutils literal"><span class="pre">read_file()</span></tt></a></li>
+<li><a class="reference internal" href="#data.data.read_version" title="data.data.read_version"><tt class="xref py py-func docutils literal"><span class="pre">read_version()</span></tt></a></li>
+<li><a class="reference internal" href="#data.data.group_parameters_in_blocks" title="data.data.group_parameters_in_blocks"><tt class="xref py py-func docutils literal"><span class="pre">group_parameters_in_blocks()</span></tt></a></li>
+</ul>
+<p>On the other hand, these two following functions are called every step.</p>
+<ul class="simple">
+<li><a class="reference internal" href="#data.data.check_for_slow_step" title="data.data.check_for_slow_step"><tt class="xref py py-func docutils literal"><span class="pre">check_for_slow_step()</span></tt></a></li>
+<li><a class="reference internal" href="#data.data.update_cosmo_arguments" title="data.data.update_cosmo_arguments"><tt class="xref py py-func docutils literal"><span class="pre">update_cosmo_arguments()</span></tt></a></li>
+</ul>
+<p>Finally, the convenient method <a class="reference internal" href="#data.data.get_mcmc_parameters" title="data.data.get_mcmc_parameters"><tt class="xref py py-func docutils literal"><span class="pre">get_mcmc_parameters()</span></tt></a> will be
+called in many places, to return the proper list of desired parameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Attributes :</th><td class="field-body"><ul class="first last simple">
+<li><strong>cosmo_arguments</strong> (<cite>dict</cite>) - simple dictionary that will serve as
+a communication interface with the cosmological code. It contains
+all the parameters for the code that will not be set to their
+default values.
+It is updated from <tt class="xref py py-attr docutils literal"><span class="pre">mcmc_parameters</span></tt>.</li>
+<li><strong>mcmc_parameters</strong> (<cite>dict</cite>) - ordered dictionary of dictionaries, it
+contains everything needed by the <a class="reference internal" href="mcmc.html#module-mcmc" title="mcmc: Monte Carlo procedure"><tt class="xref py py-mod docutils literal"><span class="pre">mcmc</span></tt></a> module for the MCMC
+procedure. 
+Every parameter name will be the key of a dictionary,
+containing the initial configuration, role, status, last accepted
+point and current point.</li>
+<li><strong>experiments</strong> (<cite>list</cite>) - extracted from the parameter file,
+contains the list of the strings naming the experiments to use.</li>
+<li><strong>log_flag</strong> (<cite>str</cite>) - stores the information whether or not the
+likelihood data files need to be written down in the <cite>log.param</cite>
+file.</li>
+<li><strong>need_cosmo_update</strong> (<cite>bool</cite>) - <cite>added in version 1.1.1</cite>. It stores
+the truth value of whether the cosmological block of parameters
+was changed from one step to another. See
+<a class="reference internal" href="#data.data.group_parameters_in_blocks" title="data.data.group_parameters_in_blocks"><tt class="xref py py-meth docutils literal"><span class="pre">group_parameters_in_blocks()</span></tt></a></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>To create an instance of this class, one must feed the following
+parameters and keyword arguments:</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><ul class="first last simple">
+<li><strong>command_line</strong> (<cite>dict</cite>) - dictionary containing the input from the
+<a class="reference internal" href="parser_mp.html#module-parser_mp" title="parser_mp"><tt class="xref py py-mod docutils literal"><span class="pre">parser_mp</span></tt></a>. It stores the input parameter file, the
+jumping methods, the output folder, etc...
+Most of the information extracted from the command_file will
+be transformed into <a class="reference internal" href="#module-data" title="data: Define the data class"><tt class="xref py py-class docutils literal"><span class="pre">data</span></tt></a> attributes, whenever it felt
+meaningful to do so.</li>
+<li><strong>path</strong> (<cite>dict</cite>) - contains a dictionary of important local paths.
+It is used here to find the cosmological module location.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="data.data.fill_mcmc_parameters">
+<tt class="descname">fill_mcmc_parameters</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/data.html#data.fill_mcmc_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.data.fill_mcmc_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializes the ordered dictionary <tt class="xref py py-attr docutils literal"><span class="pre">mcmc_parameters</span></tt> from
+the input parameter file.</p>
+<p>It uses <a class="reference internal" href="#data.data.read_file" title="data.data.read_file"><tt class="xref py py-meth docutils literal"><span class="pre">read_file()</span></tt></a>, and calls
+<a class="reference internal" href="#data.data.from_input_to_mcmc_parameters" title="data.data.from_input_to_mcmc_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">from_input_to_mcmc_parameters()</span></tt></a> to actually fill in
+<tt class="xref py py-attr docutils literal"><span class="pre">mcmc_parameters</span></tt>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="data.data.from_input_to_mcmc_parameters">
+<tt class="descname">from_input_to_mcmc_parameters</tt><big>(</big><em>dictionary</em><big>)</big><a class="reference internal" href="_modules/data.html#data.from_input_to_mcmc_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.data.from_input_to_mcmc_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts dictionary of raw quantities into a meaningful one.</p>
+<p>At the end of this initialization, every field but one is filled for
+every parameter, be it fixed or varying. The missing field is the
+&#8216;last_accepted&#8217; one, that will be filled in the module <a class="reference internal" href="mcmc.html#module-mcmc" title="mcmc: Monte Carlo procedure"><tt class="xref py py-mod docutils literal"><span class="pre">mcmc</span></tt></a>.</p>
+<p>The other fields are</p>
+<dl class="docutils">
+<dt><cite>initial</cite>: </dt>
+<dd>initial array of input values defined in the parameter file.
+Contains (in this order) <cite>mean</cite>, <cite>minimum</cite>, <cite>maximum</cite>, <cite>1-sigma</cite>.
+If the min/max values (<strong>TO CHECK</strong> proposal density boundaries)
+are unimportant/unconstrained, use <cite>None</cite> or <cite>-1</cite> (without a period
+!)</dd>
+<dt><cite>scale</cite>: </dt>
+<dd>5th entry of the initial array in the parameter file.</dd>
+<dt><cite>role</cite>:</dt>
+<dd>6th entry of the initial array, can be <cite>cosmo</cite>, <cite>nuisance</cite> or
+<cite>derived</cite>. A <cite>derived</cite> parameter will not be considered as varying,
+but will be instead recovered from the cosmological code for each
+point in the parameter space.</dd>
+<dt><cite>tex_name</cite>:</dt>
+<dd>A tentative tex version of the name, provided by the function
+<a class="reference internal" href="io_mp.html#io_mp.get_tex_name" title="io_mp.get_tex_name"><tt class="xref py py-func docutils literal"><span class="pre">io_mp.get_tex_name()</span></tt></a>.</dd>
+<dt><cite>status</cite>:</dt>
+<dd>Depending on the <cite>1-sigma</cite> value in the initial array, it will be
+set to <cite>fixed</cite> or <cite>varying</cite> (resp. zero and non-zero)</dd>
+<dt><cite>current</cite>:</dt>
+<dd>Stores the value at the current point in parameter space (<cite>not
+allowed initially</cite>)</dd>
+</dl>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The syntax of the parameter files is defined here - if one
+wants to change it, one should report the changes in there.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><ul class="first last simple">
+<li><strong>dictionary</strong> (<cite>dict</cite>) - raw dictionary containing the input
+from the parameter file. Its content will be transformed and
+processed into the final <tt class="xref py py-attr docutils literal"><span class="pre">mcmc_parameters</span></tt></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="data.data.read_file">
+<tt class="descname">read_file</tt><big>(</big><em>File</em><big>)</big><a class="reference internal" href="_modules/data.html#data.read_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.data.read_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute all lines concerning the data class from a parameter file</p>
+<p>All lines starting with <cite>data.</cite> will be replaced by <cite>self.</cite>, so the
+current instance of the class will contain all the information.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="data.data.group_parameters_in_blocks">
+<tt class="descname">group_parameters_in_blocks</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/data.html#data.group_parameters_in_blocks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.data.group_parameters_in_blocks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Regroup mcmc parameters by blocks of same speed</p>
+<p>This method divides all varying parameters from <tt class="xref py py-attr docutils literal"><span class="pre">mcmc_parameters</span></tt>
+into as many categories as there are likelihoods, plus one (the slow
+block of cosmological parameters).</p>
+<p>It creates the attribute <tt class="xref py py-attr docutils literal"><span class="pre">blocks_parameters</span></tt>, to be used in the
+module <a class="reference internal" href="mcmc.html#module-mcmc" title="mcmc: Monte Carlo procedure"><tt class="xref py py-mod docutils literal"><span class="pre">mcmc</span></tt></a>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">It does not compute by any mean the real speed of each parameter,
+instead, every parameter belonging to the same likelihood will
+be considered as fast as its neighbour.</p>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">It assumes that the nuisance parameters are already written
+sequentially, and grouped together (not necessarilly in the order
+described in <tt class="xref py py-attr docutils literal"><span class="pre">experiments</span></tt>). If you mix up the different
+nuisance parameters in the .param file, this routine will not
+method as intended. It also assumes that the cosmological
+parameters are written at the beginning of the file.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="data.data.read_version">
+<tt class="descname">read_version</tt><big>(</big><em>File</em><big>)</big><a class="reference internal" href="_modules/data.html#data.read_version"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.data.read_version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract version and subversion from an existing log.param</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="data.data.get_mcmc_parameters">
+<tt class="descname">get_mcmc_parameters</tt><big>(</big><em>table_of_strings</em><big>)</big><a class="reference internal" href="_modules/data.html#data.get_mcmc_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.data.get_mcmc_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an ordered array of parameter names filtered by
+<cite>table_of_strings</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><ul class="first last">
+<li><p class="first"><strong>table_of_strings</strong> (<cite>list</cite>) - List of strings whose role and
+status must be matched by a parameter. For instance,</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">get_mcmc_parameters</span><span class="p">([</span><span class="s">&#39;varying&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>will return a list of all the varying parameters, both
+cosmological and nuisance ones (derived parameters being <cite>fixed</cite>,
+they wont be part of this list). Instead,</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">get_mcmc_parameters</span><span class="p">([</span><span class="s">&#39;nuisance&#39;</span><span class="p">,</span> <span class="s">&#39;varying&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>will only return the nuisance parameters that are being varied.</p>
+</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="data.data.check_for_slow_step">
+<tt class="descname">check_for_slow_step</tt><big>(</big><em>new_step</em><big>)</big><a class="reference internal" href="_modules/data.html#data.check_for_slow_step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.data.check_for_slow_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check whether the value of cosmological parameters were
+changed, and if no, skip computation of the cosmology.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="data.data.update_cosmo_arguments">
+<tt class="descname">update_cosmo_arguments</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/data.html#data.update_cosmo_arguments"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.data.update_cosmo_arguments" title="Permalink to this definition">¶</a></dt>
+<dd><p>Put in <tt class="xref py py-attr docutils literal"><span class="pre">cosmo_arguments</span></tt> the current values of
+<tt class="xref py py-attr docutils literal"><span class="pre">mcmc_parameters</span></tt></p>
+<p>This method is called at every step in the Markov chain, to update the
+dictionary. In the Markov chain, the scale is not remembered, so one
+has to apply it before giving it to the cosmological code.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">When you want to define new parameters in the Markov chain that do
+not have a one to one correspondance to a cosmological name, you
+can redefine its behaviour here. You will find in the source
+several such examples.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="parser_mp.html"
+                        title="previous chapter">Parser module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="likelihood_class.html"
+                        title="next chapter">Likelihood class module</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="likelihood_class.html" title="Likelihood class module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="parser_mp.html" title="Parser module"
+             >previous</a> |</li>
+        <li><a href="index.html">Monte Python 1.1.0 documentation</a> &raquo;</li>
+          <li><a href="documentation.html" >Documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Benjamin Audren.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

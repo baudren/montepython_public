@@ -1,0 +1,180 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Mcmc module &mdash; Monte Python 1.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/pyramid.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Monte Python 1.1.0 documentation" href="index.html" />
+    <link rel="up" title="Documentation" href="documentation.html" />
+    <link rel="next" title="Analyze module" href="analyze.html" />
+    <link rel="prev" title="Likelihood class module" href="likelihood_class.html" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head>
+  <body>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="analyze.html" title="Analyze module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="likelihood_class.html" title="Likelihood class module"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Monte Python 1.1.0 documentation</a> &raquo;</li>
+          <li><a href="documentation.html" accesskey="U">Documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-mcmc">
+<span id="mcmc-module"></span><h1>Mcmc module<a class="headerlink" href="#module-mcmc" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-mcmc"></span><p>This module defines one key function, <a class="reference internal" href="#mcmc.chain" title="mcmc.chain"><tt class="xref py py-func docutils literal"><span class="pre">chain()</span></tt></a>, that handles the Markov
+chain. So far, the code uses only one chain, as no parallelization is done.</p>
+<p>This function in turn calls several other routines. These are called just once:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#mcmc.get_covariance_matrix" title="mcmc.get_covariance_matrix"><tt class="xref py py-func docutils literal"><span class="pre">get_covariance_matrix()</span></tt></a></li>
+<li><a class="reference internal" href="#mcmc.read_args_from_chain" title="mcmc.read_args_from_chain"><tt class="xref py py-func docutils literal"><span class="pre">read_args_from_chain()</span></tt></a></li>
+<li><a class="reference internal" href="#mcmc.read_args_from_bestfit" title="mcmc.read_args_from_bestfit"><tt class="xref py py-func docutils literal"><span class="pre">read_args_from_bestfit()</span></tt></a></li>
+</ul>
+<p>Their usage is pretty straightforward, and detailled below anyway. On the
+contrary, these routines are called at every step:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#mcmc.compute_lkl" title="mcmc.compute_lkl"><tt class="xref py py-func docutils literal"><span class="pre">compute_lkl()</span></tt></a> is called at every step in the Markov chain, returning
+the likelihood at the current point in the parameter space.</li>
+<li><a class="reference internal" href="#mcmc.get_new_position" title="mcmc.get_new_position"><tt class="xref py py-func docutils literal"><span class="pre">get_new_position()</span></tt></a> returns a new point in the parameter space,
+depending on the proposal density.</li>
+</ul>
+<dl class="function">
+<dt id="mcmc.accept_step">
+<tt class="descclassname">mcmc.</tt><tt class="descname">accept_step</tt><big>(</big><em>data</em><big>)</big><a class="reference internal" href="_modules/mcmc.html#accept_step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mcmc.accept_step" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mcmc.chain">
+<tt class="descclassname">mcmc.</tt><tt class="descname">chain</tt><big>(</big><em>cosmo</em>, <em>data</em>, <em>command_line</em><big>)</big><a class="reference internal" href="_modules/mcmc.html#chain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mcmc.chain" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mcmc.compute_lkl">
+<tt class="descclassname">mcmc.</tt><tt class="descname">compute_lkl</tt><big>(</big><em>cosmo</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/mcmc.html#compute_lkl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mcmc.compute_lkl" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mcmc.get_covariance_matrix">
+<tt class="descclassname">mcmc.</tt><tt class="descname">get_covariance_matrix</tt><big>(</big><em>data</em>, <em>command_line</em><big>)</big><a class="reference internal" href="_modules/mcmc.html#get_covariance_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mcmc.get_covariance_matrix" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mcmc.get_new_position">
+<tt class="descclassname">mcmc.</tt><tt class="descname">get_new_position</tt><big>(</big><em>data</em>, <em>eigv</em>, <em>U</em>, <em>k</em>, <em>Cholesky</em>, <em>Inverse_Cholesky</em>, <em>Rotation</em><big>)</big><a class="reference internal" href="_modules/mcmc.html#get_new_position"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mcmc.get_new_position" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mcmc.get_rotation_matrix">
+<tt class="descclassname">mcmc.</tt><tt class="descname">get_rotation_matrix</tt><big>(</big><em>m</em>, <em>n</em><big>)</big><a class="reference internal" href="_modules/mcmc.html#get_rotation_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mcmc.get_rotation_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non used</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mcmc.read_args_from_bestfit">
+<tt class="descclassname">mcmc.</tt><tt class="descname">read_args_from_bestfit</tt><big>(</big><em>data</em>, <em>bf</em><big>)</big><a class="reference internal" href="_modules/mcmc.html#read_args_from_bestfit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mcmc.read_args_from_bestfit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mcmc.read_args_from_chain">
+<tt class="descclassname">mcmc.</tt><tt class="descname">read_args_from_chain</tt><big>(</big><em>data</em>, <em>chain</em><big>)</big><a class="reference internal" href="_modules/mcmc.html#read_args_from_chain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mcmc.read_args_from_chain" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="likelihood_class.html"
+                        title="previous chapter">Likelihood class module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="analyze.html"
+                        title="next chapter">Analyze module</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="analyze.html" title="Analyze module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="likelihood_class.html" title="Likelihood class module"
+             >previous</a> |</li>
+        <li><a href="index.html">Monte Python 1.1.0 documentation</a> &raquo;</li>
+          <li><a href="documentation.html" >Documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Benjamin Audren.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
