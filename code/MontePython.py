@@ -27,12 +27,18 @@ def main():
     """
     Main call of the function
 
-    This function recovers the input from the command line arguments, the
-    parameter files, and launch accordingly a Markov chain. 
+    This function recovers the input from the command line arguments, from
+    :mod:`parser_mp`, the parameter files.
     
-    It first extract the path of the used Monte Python code, assuming a
+    It then extracts the path of the used Monte Python code, assuming a
     standard setting (the data folder is in the same directory as the code
     folder).
+
+    It finally proceeds to initialize a :class:`data` instance, a cosmological
+    code instance, and runs the Markov chain.
+
+    .. note::
+        A possible parallelization would take place here.
     """
     # Parsing line argument
     command_line = parser_mp.parse()

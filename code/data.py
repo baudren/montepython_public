@@ -36,6 +36,23 @@ class data(object):
         collections of information, with in particular two main dictionaries:
         cosmo_arguments and mcmc_parameters.
 
+        It defines several useful methods. The following ones are called just
+        once, at initialization:
+
+        * :func:`fill_mcmc_parameters`
+        * :func:`from_input_to_mcmc_parameters`
+        * :func:`read_file`
+        * :func:`read_version`
+        * :func:`group_parameters_in_blocks`
+
+        On the other hand, these two following functions are called every step.
+
+        * :func:`check_for_slow_step`
+        * :func:`update_cosmo_arguments`
+
+        Finally, the convenient method :func:`get_mcmc_parameters` will be
+        called in many places, to return the proper list of desired parameters.
+
         :Attributes:
             - **cosmo_arguments** (`dict`) - simple dictionary that will serve as
               a communication interface with the cosmological code. It contains
@@ -189,6 +206,105 @@ class data(object):
             io_mp.log_cosmo_arguments(self, command_line)
             io_mp.log_default_configuration(self, command_line)
 
+    def fill_mcmc_parameters(self):
+        """
+        Initializes the ordered dictionary :attr:`mcmc_parameters` from
+        the input parameter file.
+
+        It uses :meth:`read_file`, and calls
+        :meth:`from_input_to_mcmc_parameters` to actually fill in
+        :attr:`mcmc_parameters`.
+
+        """
+
+        # Define temporary quantities, only to simplify the input in the
+        # parameter file
+        self.parameters = od()
+
+        # Read from the parameter file everything
+        try:
+            self.param_file = open(self.param, 'r')
+        except IOError:
+            print "\n /|\  Error in initializing the data class,"
+            print "/_o_\ parameter file {0} does not point to a file".format(
+                self.param)
+            exit()
+        self.read_file(self.param_file)
+
+        # Transform from parameters dictionnary to mcmc_parameters dictionary
+        # of dictionaries, method defined just below
+        self.from_input_to_mcmc_parameters(self.parameters)
+
+    def from_input_to_mcmc_parameters(self, dictionary):
+        """ 
+        Converts dictionary of raw quantities into a meaningful one.
+
+        At the end of this initialization, every field but one is filled for
+        every parameter, be it fixed or varying. The missing field is the
+        'last_accepted' one, that will be filled in the module :mod:`mcmc`.
+
+        The other fields are 
+
+        `initial`: 
+            initial array of input values defined in the parameter file.
+            Contains (in this order) `mean`, `minimum`, `maximum`, `1-sigma`.
+            If the min/max values (**TO CHECK** proposal density boundaries)
+            are unimportant/unconstrained, use `None` or `-1` (without a period
+            !)
+        `scale`: 
+            5th entry of the initial array in the parameter file.
+        `role`:
+            6th entry of the initial array, can be `cosmo`, `nuisance` or
+            `derived`. A `derived` parameter will not be considered as varying,
+            but will be instead recovered from the cosmological code for each
+            point in the parameter space.
+        `tex_name`:
+            A tentative tex version of the name, provided by the function
+            :func:`io_mp.get_tex_name`.
+        `status`:
+            Depending on the `1-sigma` value in the initial array, it will be
+            set to `fixed` or `varying` (resp. zero and non-zero)
+        `current`:
+            Stores the value at the current point in parameter space (`not
+            allowed initially`)
+
+        .. note::
+
+            The syntax of the parameter files is defined here - if one
+            wants to change it, one should report the changes in there.
+
+        :Parameters:
+            - **dictionary** (`dict`) - raw dictionary containing the input
+              from the parameter file. Its content will be transformed and
+              processed into the final :attr:`mcmc_parameters`
+
+        """
+        for key, value in dictionary.iteritems():
+            self.mcmc_parameters[key] = od()
+            self.mcmc_parameters[key]['initial'] = value[0:4]
+            self.mcmc_parameters[key]['scale'] = value[4]
+            self.mcmc_parameters[key]['role'] = value[-1]
+            self.mcmc_parameters[key]['tex_name'] = io_mp.get_tex_name(key)
+            if value[3] == 0:
+                self.mcmc_parameters[key]['status'] = 'fixed'
+                self.mcmc_parameters[key]['current'] = value[0]
+            else:
+                self.mcmc_parameters[key]['status'] = 'varying'
+
+    def read_file(self, File):
+        """
+        Execute all lines concerning the data class from a parameter file
+
+        All lines starting with `data.` will be replaced by `self.`, so the
+        current instance of the class will contain all the information.
+
+        """
+        for line in File:
+            if line.find('#') == -1:
+                if line.split('=')[0].find('data.') != -1:
+                    exec(line.replace('data.', 'self.'))
+        File.seek(0)
+
     def group_parameters_in_blocks(self):
         """
         Regroup mcmc parameters by blocks of same speed
@@ -198,7 +314,7 @@ class data(object):
         block of cosmological parameters).
 
         It creates the attribute :attr:`blocks_parameters`, to be used in the
-        :mod:`mcmc`.
+        module :mod:`mcmc`.
 
         .. note::
 
@@ -210,7 +326,7 @@ class data(object):
 
             It assumes that the nuisance parameters are already written
             sequentially, and grouped together (not necessarilly in the order
-            described in :attr:`data.experiments`). If you mix up the different
+            described in :attr:`experiments`). If you mix up the different
             nuisance parameters in the .param file, this routine will not
             method as intended. It also assumes that the cosmological
             parameters are written at the beginning of the file.
@@ -254,61 +370,10 @@ class data(object):
         # Store the result
         self.blocks_parameters = array
 
-    # Redefinition of the 'compare' method for two instances of this data
-    # class.  It will decide which basic operations to perform when the code
-    # asked if two instances are the same (in case you want to launch a new
-    # chain in an existing folder, with your own parameter file)
-    def __cmp__(self, other):
-        # Comparing cosmological code versions (warning only, will not fail the
-        # comparison)
-        if self.version != other.version:
-            print '/!\ Warning, you are running with a different ',
-            print 'version of your cosmological code'
-
-        # Defines unordered version of the dictionaries of parameters
-        self.uo_parameters = {}
-        other.uo_parameters = {}
-
-        # Check if all the experiments are tested again,
-        if len(list(set(other.experiments).symmetric_difference(
-                set(self.experiments)))) == 0:
-            # Check that they have been called with the same .data file, stored
-            # in dictionary when initializing.
-            for experiment in self.experiments:
-                for elem in self.lkl[experiment].dictionary:
-                    if self.lkl[experiment].dictionary[elem] != \
-                            other.lkl[experiment].dictionary[elem]:
-                        print 'in your parameter file: ',
-                        print self.lkl[experiment].dictionary
-                        print 'in log.param:           ',
-                        print other.lkl[experiment].dictionary
-                        return -1
-            # Fill in the unordered version of dictionaries
-            for key, elem in self.mcmc_parameters.iteritems():
-                self.uo_parameters[key] = elem['initial']
-            for key, elem in other.mcmc_parameters.iteritems():
-                other.uo_parameters[key] = elem['initial']
-
-            # And finally compare them (standard comparison between
-            # dictionnaries, will return True if both have the same keys and
-            # values associated to them.
-            return cmp(self.uo_parameters, other.uo_parameters)
-        else:
-            return -1
-
-    # Method defined to read the parameter file
-    def read_file(self, File):
-        """
-        Execute all lines concerning the data class from a parameter file
-        """
-        for line in File:
-            if line.find('#') == -1:
-                if line.split('=')[0].find('data.') != -1:
-                    exec(line.replace('data.', 'self.'))
-        File.seek(0)
-
-    # Extract version and subversion from an existing log.param
     def read_version(self, File):
+        """
+        Extract version and subversion from an existing log.param 
+        """
         # Read the first line (cosmological code version)
         first_line = File.readline()
         self.version = first_line.split()[1]
@@ -316,51 +381,26 @@ class data(object):
             replace('-', '')
         File.seek(0)
 
-    # Initializes the ordered dictionary mcmc_parameters
-    def fill_mcmc_parameters(self):
-
-        # Define temporary quantities, only to simplify the input in the
-        # parameter file
-        self.parameters = od()
-
-        # Read from the parameter file everything
-        try:
-            self.param_file = open(self.param, 'r')
-        except IOError:
-            print "\n /|\  Error in initializing the data class,"
-            print "/_o_\ parameter file {0} does not point to a file".format(
-                self.param)
-            exit()
-        self.read_file(self.param_file)
-
-        # Transform from parameters dictionnary to mcmc_parameters dictionary
-        # of dictionaries, method defined just below
-        self.from_input_to_mcmc_parameters(self.parameters)
-
-    def from_input_to_mcmc_parameters(self, dictionary):
-        # At the end of this initialization, every field but one is filled for
-        # every parameter, be it fixed or varying. The missing field is the
-        # 'last_accepted' one, that will be filled in in the mcmc part.
-        for key, value in dictionary.iteritems():
-            self.mcmc_parameters[key] = od()
-            self.mcmc_parameters[key]['initial'] = value[0:4]
-            self.mcmc_parameters[key]['scale'] = value[4]
-            self.mcmc_parameters[key]['role'] = value[-1]
-            self.mcmc_parameters[key]['tex_name'] = io_mp.get_tex_name(key)
-            if value[3] == 0:
-                self.mcmc_parameters[key]['status'] = 'fixed'
-                self.mcmc_parameters[key]['current'] = value[0]
-            else:
-                self.mcmc_parameters[key]['status'] = 'varying'
-
-    # Method that returns a convenient, ordered array of parameter names that
-    # correspond of the table_of_strings argument.
-
-    # For instance, if table_of_strings=['varying'], this routine will return
-    # all the varying parameters in mcmc_parameters, cosmological or nuisance
-    # parameters indifferently. If asked with ['varying','nuisance'], only the
-    # nuisance parameters of the above will be returned.
     def get_mcmc_parameters(self, table_of_strings):
+        """
+        Returns an ordered array of parameter names filtered by
+        `table_of_strings`.
+
+        :Parameters:
+            - **table_of_strings** (`list`) - List of strings whose role and
+              status must be matched by a parameter. For instance, 
+
+              >>> get_mcmc_parameters(['varying'])
+
+              will return a list of all the varying parameters, both
+              cosmological and nuisance ones (derived parameters being `fixed`,
+              they wont be part of this list). Instead, 
+
+              >>> get_mcmc_parameters(['nuisance', 'varying'])
+
+              will only return the nuisance parameters that are being varied.
+
+        """
         table = []
         for key, value in self.mcmc_parameters.iteritems():
             number = 0
@@ -372,10 +412,12 @@ class data(object):
                 table.append(key)
         return table
 
-    # Routine to determine whether the value of cosmological parameters were
-    # changed, and if no, to skip recomputation.
     def check_for_slow_step(self, new_step):
+        """
+        Check whether the value of cosmological parameters were
+        changed, and if no, skip computation of the cosmology.
 
+        """
         parameter_names = self.get_mcmc_parameters(['varying'])
         cosmo_names = self.get_mcmc_parameters(['cosmo'])
 
@@ -414,8 +456,23 @@ class data(object):
             else:
                 likelihood.need_update = False
 
-    # Put in cosmo_arguments the current values of mcmc_parameters
     def update_cosmo_arguments(self):
+        """
+        Put in :attr:`cosmo_arguments` the current values of
+        :attr:`mcmc_parameters`
+
+        This method is called at every step in the Markov chain, to update the
+        dictionary. In the Markov chain, the scale is not remembered, so one
+        has to apply it before giving it to the cosmological code.
+
+        .. note::
+
+            When you want to define new parameters in the Markov chain that do
+            not have a one to one correspondance to a cosmological name, you
+            can redefine its behaviour here. You will find in the source
+            several such examples.
+
+        """
         # For all elements in any cosmological parameters
         for elem in self.get_mcmc_parameters(['cosmo']):
             # Fill in the dictionnary with the current value of parameters
@@ -483,3 +540,48 @@ class data(object):
                         if i != size:
                             string += ','
                     self.cosmo_arguments['binned_reio_xe'] = string
+
+    def __cmp__(self, other):
+        """ 
+        Redefinition of the 'compare' method for two instances of this class. 
+        
+        It will decide which basic operations to perform when the code asked if
+        two instances are the same (in case you want to launch a new chain in
+        an existing folder, with your own parameter file) Comparing
+        cosmological code versions (warning only, will not fail the comparison)
+
+        """
+        if self.version != other.version:
+            print '/!\ Warning, you are running with a different ',
+            print 'version of your cosmological code'
+
+        # Defines unordered version of the dictionaries of parameters
+        self.uo_parameters = {}
+        other.uo_parameters = {}
+
+        # Check if all the experiments are tested again,
+        if len(list(set(other.experiments).symmetric_difference(
+                set(self.experiments)))) == 0:
+            # Check that they have been called with the same .data file, stored
+            # in dictionary when initializing.
+            for experiment in self.experiments:
+                for elem in self.lkl[experiment].dictionary:
+                    if self.lkl[experiment].dictionary[elem] != \
+                            other.lkl[experiment].dictionary[elem]:
+                        print 'in your parameter file: ',
+                        print self.lkl[experiment].dictionary
+                        print 'in log.param:           ',
+                        print other.lkl[experiment].dictionary
+                        return -1
+            # Fill in the unordered version of dictionaries
+            for key, elem in self.mcmc_parameters.iteritems():
+                self.uo_parameters[key] = elem['initial']
+            for key, elem in other.mcmc_parameters.iteritems():
+                other.uo_parameters[key] = elem['initial']
+
+            # And finally compare them (standard comparison between
+            # dictionnaries, will return True if both have the same keys and
+            # values associated to them.
+            return cmp(self.uo_parameters, other.uo_parameters)
+        else:
+            return -1

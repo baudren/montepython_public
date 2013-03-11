@@ -7,17 +7,18 @@ Prerequisites
 Python
 ^^^^^^
 
-First of all, you need a clean installation of Python_ (version 2.x,
-x<=7, but <3.0), with at least the numpy_ module (version >=1.4.1) and
-the cython_ module. This last one is to convert the C code CLASS_
-into a Python class.
+First of all, you need a clean installation of Python_ (version 2.7 is
+better, though it works also with 2.6 and 2.5 (see below). version 3.0
+is not supported), with at least the numpy_ module (version >= 1.4.1) and
+the cython_ module. This last one is to convert the C code CLASS_ into
+a Python class.
 
 If you also want the output plot to have cubic interpolation for
 analyzing chains, you should also have the scipy_ module (at least
 version 0.9.0). In case this one is badly installed, you will have an
-error message when running the analyze module of |MP|, and
-obtain only linear interpolation. Though not fatal, this problem
-produces ugly plots.
+error message when running the analyze module of |MP|, and obtain only
+linear interpolation. Though not fatal, this problem produces ugly
+plots.
 
 To test for the presence of the modules **numpy**,  **scipy**,
 **cython** on your machine, you can type

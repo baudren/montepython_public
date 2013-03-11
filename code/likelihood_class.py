@@ -8,6 +8,8 @@ Contains the definition of the base likelihood class, with basic functions,
 as well as more specific likelihood classes that may be reused to implement
 new ones.
 
+The most important one is :class:`likelihood`
+
 """
 import os
 import numpy as np
@@ -16,16 +18,29 @@ import math
 import data
 import io_mp
 
-# Definition of classes for the likelihoods to inherit, for every different
-# types of expected likelihoods. Included so far, models for a Clik, simple
-# prior, and newdat likelihoods.
-
-# General class that will only define the store_lkl function, common for every
-# single likelihood. It will copy the content of self.path, copied from
-# initialization
-class likelihood():
+class likelihood(object):
+    """
+    General class that all likelihoods will inherit from.
+    
+    """
 
     def __init__(self, path, data, command_line, log_flag):
+        """
+        It copies the content of self.path from the initialization routine of
+        the :class:`data` class, and defines a handful of useful methods, that
+        every likelihood might need.
+
+        If the nuisance parameters required to compute this likelihood are not
+        defined (either fixed or varying), the code will stop.
+
+        :Parameters:
+            - **data** (`class`) - initialized instance of :class:`data`
+            - **command_line** (`dict`) - dictionary containing the command
+              line arguments
+            - **log_flag** (`bool`) - boolean to indicate whether to write to
+              the log.param or to read configuration from it.
+
+        """
 
         self.name = self.__class__.__name__
         self.folder = os.path.abspath(data.path['MontePython']) +\
@@ -55,13 +70,24 @@ class likelihood():
         if log_flag:
             io_mp.log_likelihood_parameters(self, command_line)
 
-    # This is a placeholder, to remind that, for a brand new likelihood, you
-    # need to define its computation.
     def loglkl(self, cosmo, data):
+        """
+        Placeholder to remind that this function needs to be defined for a
+        new likelihood.
+
+        :Raises:
+            - **NotImplementedError**
+
+        """
         raise NotImplementedError(
             'Must implement method loglkl() in your likelihood')
 
     def read_from_file(self, path, data):
+        """
+        Extract the information from the log.param concerning this likelihood.
+
+        """
+
         self.path = path
         self.dictionary = {}
         if os.path.isfile(path):
@@ -85,7 +111,11 @@ class likelihood():
             pass
 
     def get_cl(self, cosmo):
+        """
+        Return the :math:`C_{\ell}` from the cosmological code in
+        :math:`\mu {\\rm K}^2`
 
+        """
         # get C_l^XX from the cosmological code
         cl = cosmo.lensed_cl()
 
@@ -96,11 +126,23 @@ class likelihood():
 
         return cl
 
-    # Ensure that certain arguments of the cosmological code are defined to the
-    # needed value. WARNING: so far, there is no way to enforce a parameter
-    # where smaller is better. A bigger value will always override any smaller
-    # one (cl_max, etc...) TODO
     def need_cosmo_arguments(self, data, dictionary):
+        """
+        Ensure that the arguments of dictionary are defined to the correct
+        value in the cosmological code
+
+        .. warning::
+
+            So far there is no way to enforce a parameter where `smaller is
+            better`. A bigger value will always overried any smaller one
+            (`cl_max`, etc...)
+
+        :Parameters:
+            - **data**(`dict`) - initialized instance of :class:`data`
+            - **dictionary** (`dict`) - desired precision for some cosmological
+              parameters
+
+        """
         array_flag = False
         for key, value in dictionary.iteritems():
             try:
