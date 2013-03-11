@@ -5,6 +5,13 @@ Handles all the input/output of the code (at least most of it). If something is
 printed that does not satisfy you (number of decimals, for instance, in the
 output files), you only have to find the called function and change a number.
 
+Whenever the arguments of the functions are :code:`command_line` or
+:code:`data`, no mention of them will be done - as it is now clear. On the
+contrary, if there are more arguments, they will be detailled.
+
+This module also defines a new class :class:`File`, that extends
+:py:class:`file`, which provides a tail function. It is used in
+:func:`mcmc.read_args_from_chain`
 """
 
 import os
@@ -17,7 +24,6 @@ try:
 except:
     from ordereddict import OrderedDict as od
 from datetime import date
-from common import lock, LockException
 import fcntl
 
 
@@ -52,12 +58,19 @@ def log_likelihood_parameters(likelihood, command_line):
     log.close()
 
 
-# Third function called when writing log.param, it writes down the
-# cosmo_arguments used (it is understood here that all the other parameters for
-# the cosmological modules are set to their default value directly in the
-# program). It is written as an update for the dictionary cosmo_arguments, in
-# order not to erase previously initialized data.
 def log_cosmo_arguments(data, command_line):
+    """
+    Write down the `cosmo_arguments` used to log.param
+
+    Third function called when writing log.param. It is understood here that
+    all the other parameters for the cosmological modules are set to their
+    default value directly in the program. 
+    
+    It is written as an update for the dictionary cosmo_arguments (i.e. as
+    :code:`dict.update()` and not as :code:`dict =`) in order not to erase
+    previously initialized data.
+
+    """
     if len(data.cosmo_arguments) >= 1:
         log = open(command_line.folder+'/log.param', 'a')
         log.write('\n\n#-----------Cosmological-arguments---------\n')
@@ -66,11 +79,16 @@ def log_cosmo_arguments(data, command_line):
         log.close()
 
 
-# Fourth and last function called when writing log.param, it logs the .conf
-# file used to get the path. Only useful if you have several versions of your
-# cosmological code installed in different locations, or different versions of
-# Clik. But, as you never know what might go wrong, it is logged everytime !
 def log_default_configuration(data, command_line):
+    """
+    Log the .conf file to log.param
+
+    Fourth and last function called when writing log.param. Only useful if you
+    have several versions of your cosmological code installed in different
+    locations, or different versions of Clik. But, as you never know what might
+    go wrong, it is logged everytime !
+
+    """
     log = open(command_line.folder+'/log.param', 'a')
     log.write('\n\n#--------Default-Configuration------\n')
     for key, value in data.path.iteritems():
@@ -78,12 +96,21 @@ def log_default_configuration(data, command_line):
     log.close()
 
 
-# Will print the parameter names. In the code, out is simply the standard
-# output, as this information will not be printed on the output file. Indeed,
-# you will be able to recover these information from the log.param. Please pay
-# attention to the fact that, once launched, the order of the parameters in
-# log.param is crucial, as is it the only place where it is stored.
 def print_parameters(out, data):
+    """
+    Will print the parameter names. In the code, :code:`out` is simply the
+    standard output, as this information will not be printed on the output
+    file.
+
+    Indeed, you will be able to recover these information from the log.param.
+    
+    .. warning:: 
+
+        Please pay attention to the fact that, once launched, the order of the
+        parameters in log.param is crucial, as is it the only place where it is
+        stored.
+
+    """
     param = data.get_mcmc_parameters(['varying'])
     for elem in data.get_mcmc_parameters(['derived']):
         param.append(elem)
@@ -101,10 +128,27 @@ def print_parameters(out, data):
     out.write('\n')
 
 
-# Prints the last accepted values to out, which here is an array containing
-# both standard output and the output file. This way, if you run in interactive
-# mode, you will be able to monitor the progress of the chain.
 def print_vector(out, N, loglkl, data):
+    """
+    Print the last accepted values to :code:`out`
+    
+    :Parameters:
+        - **out** (`list`) - array containing both standard output and the output file.
+          
+          This way, if you run in interactive mode, you will be able to monitor
+          the progress of the chain.
+        - **N** (`int`) - multiplicity of the point, `i.e.` number of times the
+          code stayed at this particular place.
+        - **loglkl** (`float`) - value of the log likelihood at this point
+
+    .. note::
+
+        It is the `last_accepted` point that is printed, and **not** the
+        `current` one (obviously, as one does not know yet the multiplicity of
+        the current one !)
+
+    """
+
     for j in range(len(out)):
         out[j].write('%d  %.6g\t' % (N, -loglkl))
         for elem in data.get_mcmc_parameters(['varying']):
@@ -117,20 +161,29 @@ def print_vector(out, N, loglkl, data):
 
 
 def refresh_file(data):
+    """
+    Closes and reopen the output file to write any buffered quantities
+
+    """
     data.out.close()
     data.out = open(data.out_name, 'a')
 
 
-# This routine takes care of organising the folder for you. It will
-# automatically generate names for the new chains according to the date, number
-# of points chosen.
-###################
-# VERY IMPORTANT
-###################
-# The way these names are generated (with the proper number of _, __, -, and
-# their placement) is exploited in the rest of the code in various places.
-# Please keep that in mind if ever you are in the mood of changing things here.
 def create_output_files(command_line, data):
+    """
+    Automatically create a new name for the chain.
+
+    This routine takes care of organising the folder for you. It will
+    automatically generate names for the new chains according to the date, number
+    of points chosen.
+
+    .. warning::
+
+        The way these names are generated (with the proper number of _, __, -, and
+        their placement) is exploited in the rest of the code in various places.
+        Please keep that in mind if ever you are in the mood of changing things here.
+
+    """
     if command_line.restart is None:
         number = command_line.N
     else:
@@ -172,8 +225,27 @@ def create_output_files(command_line, data):
             data.out.write(line)
 
 
-# Simple tex name transformer.
 def get_tex_name(name, number=1):
+    """
+    Simplistic tex name transformer.
+
+    Essentially tries to add a backslash in front of known possible greek
+    letters, and insert curly brackets { } around statement following an
+    _ or a ^. It will also try to include the scale into the name in a nice
+    way.
+
+    .. note::
+
+        This might easily fail on simple names, like `beta_plus_lambda`. In
+        this case, please use an extra plot file with the command line option
+        :code:`-extra plot_file`, or come up with a better function !
+
+    :Parameters:
+        - **name** (`str`) - input name
+
+    :Keywords:
+        - **number** (`float`) - scale
+    """
     tex_greek = ['omega', 'tau', 'alpha', 'beta', 'delta', 'nu',
                  'Omega', 'Lambda', 'lambda']
     for elem in tex_greek:
@@ -200,10 +272,12 @@ def get_tex_name(name, number=1):
     return name
 
 
-# New class of file, to provide an equivalent of the tail command (on linux).
-# It will be used when starting from an existing chain, and avoids circling
-# through an immense file.
 class File(file):
+    """
+    New class of file, to provide an equivalent of the tail command (on linux).
+    It will be used when starting from an existing chain, and avoids circling
+    through an immense file.
+    """
 
     def tail(self, lines_2find=1):
         self.seek(0, 2)     # go to end of file
@@ -218,3 +292,25 @@ class File(file):
         self.seek(-total_bytes_scanned, 2)
         line_list = list(self.readlines())
         return line_list[-lines_2find:]
+
+
+class LockException(Exception):
+    # Error codes:
+    LOCK_FAILED = 1
+
+
+def lock(file, flags):
+
+    import fcntl
+    try:
+        fcntl.flock(file.fileno(), flags)
+    except IOError, exc_value:
+        # The exception code varies on different systems so we'll catch
+        # every IO error
+        raise LockException(*exc_value)
+
+
+def unlock(file):
+
+    import fcntl
+    fcntl.flock(file.fileno(), fcntl.LOCK_UN)
