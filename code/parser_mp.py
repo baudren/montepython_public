@@ -1,3 +1,12 @@
+"""
+.. module:: parser_np
+    :synopsis: Definition of the command line options
+.. moduleauthor:: Benjamin Audren <benjamin.audren@epfl.ch>
+
+Defines the command line options and their help messages. In the function
+:func:`parser_mp.parse`, it checks some basic organization of the folder, and
+exit the program in case something is wrong.
+"""
 import os
 import argparse  # Python module to handle command line arguments
 

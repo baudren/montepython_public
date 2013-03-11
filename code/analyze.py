@@ -1,6 +1,14 @@
-# Written by Benjamin Audren
-# Plotting routine adapted from Karim Benabed, and the pmc code
+"""
+.. module:: analyze
+   :synopsis: Extract data from chains and produce plots
 
+.. moduleauthor:: Karim Benabed <benabed@iap.fr>
+.. moduleauthor:: Benjamin Audren <benjamin.audren@epfl.ch>
+
+Most of the methods used in this module are directly adapted from the pmc
+code from Benabed et. al TODO.
+"""
+# Plotting routine adapted from Karim Benabed, and the pmc code
 import os
 import io_mp
 import math
@@ -13,7 +21,6 @@ import matplotlib
 
 # Module to handle warnings from matplotlib
 import warnings
-
 
 class info:
 

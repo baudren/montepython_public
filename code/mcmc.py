@@ -1,3 +1,26 @@
+"""
+.. module:: mcmc
+   :synopsis: Monte Carlo procedure
+.. moduleauthor:: Benjamin Audren <benjamin.audren@epfl.ch>
+
+This module defines one key function, :func:`chain`, that handles the Markov
+chain. So far, the code uses only one chain, as no parallelization is done.
+
+This function in turn calls several other routines. These are called just once:
+
+* :func:`get_covariance_matrix`
+* :func:`read_args_from_chain`
+* :func:`read_args_from_bestfit`
+
+Their usage is pretty straightforward, and detailled below anyway. On the
+contrary, these routines are called at every step:
+
+* :func:`compute_lkl` is called at every step in the Markov chain, returning
+  the likelihood at the current point in the parameter space.
+* :func:`get_new_position` returns a new point in the parameter space,
+  depending on the proposal density.
+"""
+
 import os
 import sys
 import math
@@ -116,7 +139,7 @@ def read_args_from_chain(data, chain):
 # Deduce the starting point either from the input file,
 # or from a best fit file.
 # TO DO: bf is a terrible name
-def read_args_from_bf(data, bf):
+def read_args_from_bestfit(data, bf):
     parameter_names = data.get_mcmc_parameters(['varying'])
     bestfit = open(bf, 'r')
     for line in bestfit:
@@ -462,7 +485,7 @@ def chain(_cosmo, data, command_line):
     # If restart from best fit file, read first point (overwrite settings of
     # read_args_from_chain)
     if command_line.bf is not None:
-        read_args_from_bf(data, command_line.bf)
+        read_args_from_bestfit(data, command_line.bf)
 
     # Pick a position (from last accepted point if restart, from the mean value
     # else), with a 100 tries.

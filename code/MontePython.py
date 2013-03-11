@@ -1,19 +1,16 @@
 #!/usr/bin/python
+"""
+.. module:: MontePython
+   :synopsis: Main module
+.. moduleauthor:: Benjamin Audren <benjamin.audren@epfl.ch>
 
-##############################################################
-# MontePython, a Monte Carlo Markov Chain code (with Class!)
-# Version 1.1.0
-# written by Benjamin Audren
-# Additional parts by Julien Lesgourgues, Karim Benabed
-##############################################################
-
-#-------------------IMPORT-PACKAGES-------------------------------
-
-# Python modules
+Monte Python, a Monte Carlo Markov Chain code (with Class!)
+"""
 import os
 import sys
 
-# Checking for python version
+# Checking for python version, comment if you are tired of seeing it when using
+# a version < 2.7
 version = sys.version[:3]
 if float(version) < 2.7:
     print '\n\n /|\  You must have Python >= 2.7,'
@@ -26,8 +23,17 @@ import mcmc        # the actual Monte Carlo chain procedure
 import data        # data handling
 
 
-#------------------MAIN-DEFINITION--------------------------------------
 def main():
+    """
+    Main call of the function
+
+    This function recovers the input from the command line arguments, the
+    parameter files, and launch accordingly a Markov chain. 
+    
+    It first extract the path of the used Monte Python code, assuming a
+    standard setting (the data folder is in the same directory as the code
+    folder).
+    """
     # Parsing line argument
     command_line = parser_mp.parse()
 
@@ -46,13 +52,13 @@ def main():
     # This can be changed with the command line option -conf. All changes will
     # be stored into the log.param of your folder, and hence will be reused for
     # an ulterior run in the same directory
-    conf_file = path['MontePython']+'/../' + command_line.config_file
+    conf_file = path['MontePython'][:-5] + command_line.config_file
     if os.path.isfile(conf_file):
         for line in open(conf_file):
             exec(line)
         for key, value in path.iteritems():
             if not value.endswith('/'):
-                path[key] = value+'/'
+                path[key] = value + '/'
     else:
         print ' /|\  You must provide a .conf file (default.conf by default)'
         print '/_o_\ in your montepython directory that specifies the correct'
@@ -83,7 +89,7 @@ def main():
         sys.stdout.write('Reading {0} file'.format(command_line.restart))
         Data = data.data(command_line, path)
 
-    # Else, fill in data, starting from  parameter file, If output folder
+    # Else, fill in data, starting from  parameter file. If output folder
     # already exists, first load a data instance with used param, and compare
     # the two instances. If different, exit: you are not able to run two
     # different things in one folder.
@@ -92,6 +98,7 @@ def main():
         if command_line.param.find('log.param') == -1:
             try:
                 Data_old = data.data(command_line, path, False)
+                print 'here'
                 if Data != Data_old:
                     print '\n /|\  You are starting a chain in {0}'.format(
                         command_line.folder),
@@ -115,19 +122,18 @@ def main():
     # Creating the file that will contain the chain
     io_mp.create_output_files(command_line, Data)
 
+    # If there is a conflict between the log.param value and the .conf file,
+    # exiting.
+    if Data.path != path:
+        print ' /|\  Your log.param files is in contradiction with your .conf'
+        print '/_o_\ file. Exiting now.'
+        exit()
+
     # Loading up the cosmological backbone. For the moment, only Class has been
     # wrapped.
 
     # Importing the python-wrapped Class from the correct folder, defined in
     # the .conf file, or overwritten at this point by the log.param.
-    # If there is a conflict between the log.param value and the .conf file,
-    # exiting.
-    if Data.path != path:
-        print ' /|\  Your log.param files is in contradiction with your .conf'
-        print '/_o_\ file. This might mean that you are not computing from the'
-        print '      correct Class version. Exiting now.'
-        exit()
-
     # If the cosmological code is Class, do the following to import all
     # relevant quantities
     if Data.cosmological_module_name == 'Class':

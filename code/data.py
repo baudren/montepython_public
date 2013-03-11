@@ -1,6 +1,5 @@
 """
 .. module:: data
-   :platform: Unix, Mac Os X
    :synopsis: Define the data class
 
 .. moduleauthor:: Benjamin Audren <benjamin.audren@epfl.ch>
@@ -28,31 +27,67 @@ class data(object):
     """
     Store all relevant data to communicate between the different modules.
 
-    The data class holds the cosmological information, the parameters from the
-    MCMC run, the information coming from the likelihoods. It is a wide
-    collections of information, with in particular two main dictionaries:
-    cosmo_arguments and mcmc_parameters
     """
 
-    # - path contains the configuration you inputed in your .conf file,
-    # - the default flag is here to distinguish whether it is a genuine
-    # initialization of data (default=True), or whether it is a comparison with
-    # the log.param of an existing folder (default=False)
     def __init__(self, command_line, path, default=True):
         """
-        Initialization of a data instance, from a parameter file input
+        Initialize a data instance, with two different cases, depending on the
+        flag default. It will be a genuine initialization or a short one,
+        depending on the flag :code:`default` (the sort one is simply to
+        load data from an existing folder and compare it with the asked
+        `input.param`)
 
-        Depending on the flag default, it will be a genuine initialization
-        (default=True) or a short initialization, simply to compare with an
-        existing folder.
+        The data class holds the cosmological information, the parameters from
+        the MCMC run, the information coming from the likelihoods. It is a wide
+        collections of information, with in particular two main dictionaries:
+        cosmo_arguments and mcmc_parameters.
 
-        Args:
-            command_line: titi
-            path: toto
+        :Attributes:
+            - **cosmo_arguments** (`dict`) - simple dictionary that will serve as
+              a communication interface with the cosmological code. It contains
+              all the parameters for the code that will not be set to their
+              default values.
+              It is updated from :attr:`mcmc_parameters`.
 
-        Kwargs:
-            default: bla
+            - **mcmc_parameters** (`dict`) - ordered dictionary of dictionaries, it
+              contains everything needed by the :mod:`mcmc` module for the MCMC
+              procedure. 
+              Every parameter name will be the key of a dictionary,
+              containing the initial configuration, role, status, last accepted
+              point and current point.
+
+            - **experiments** (`list`) - extracted from the parameter file,
+              contains the list of the strings naming the experiments to use.
+
+            - **log_flag** (`str`) - stores the information whether or not the
+              likelihood data files need to be written down in the `log.param`
+              file.
+
+            - **need_cosmo_update** (`bool`) - `added in version 1.1.1`. It stores
+              the truth value of whether the cosmological block of parameters
+              was changed from one step to another. See
+              :meth:`group_parameters_in_blocks`
+                 
+        To create an instance of this class, one must feed the following
+        parameters and keyword arguments:
+
+        :Parameters:
+            - **command_line** (`dict`) - dictionary containing the input from the
+              :mod:`parser_mp`. It stores the input parameter file, the
+              jumping methods, the output folder, etc...
+              Most of the information extracted from the command_file will
+              be transformed into :class:`data` attributes, whenever it is
+              meaningful to do so.
+
+            - **path** (`dict`) - contains a dictionary of important local paths.
+              It is used here to find the cosmological module location.
+
+
+        :Keywords:
+            - **default** (`bool`) - Differentiates between a true initialization
+              (`default=True`)
         """
+        
         # Initialisation of the random seed
         rd.seed()
 
@@ -74,15 +109,6 @@ class data(object):
         self.boundary_loglike = -1e30
 
         # Creation of the two main dictionnaries:
-
-        # -- cosmo_arguments, that will contain everything for the cosmological
-        # code (so far, only Class), and will be updated from:
-
-        # -- mcmc_parameters, an ordered dictionary of dictionaries that will
-        # contain everything needed by the Monte-Carlo procedure. Every
-        # parameter name will be the key of a dictionary, containing: -initial
-        # configuration, role, status last_accepted point, and current point
-
         self.cosmo_arguments = {}
         self.mcmc_parameters = od()
 
@@ -188,15 +214,37 @@ class data(object):
             io_mp.log_cosmo_arguments(self, command_line)
             io_mp.log_default_configuration(self, command_line)
 
-    # Block mcmc parameters in terms of speed (this will make as many blocks as
-    # they are likelihoods with nuisance parameters plus one (the slow block of
-    # cosmology))
     # IMPORTANT NOTE: this routine assumes that the nuisance parameters are
     # already written sequentially, and grouped together (not necessarilly in
     # the order described in data.experiments). If you mix up the different
     # nuisance parameters in the .param file, this routine will not function as
     # intended.
     def group_parameters_in_blocks(self):
+        """
+        Regroup mcmc parameters by blocks of same speed
+
+        This method divides all varying parameters from :attr:`mcmc_parameters`
+        into as many categories as there are likelihoods, plus one (the slow
+        block of cosmological parameters).
+
+        It creates the attribute :attr:`blocks_parameters`, to be used in the
+        :mod:`mcmc`.
+
+        .. note::
+
+            It does not compute by any mean the real speed of each parameter,
+            instead, every parameter belonging to the same likelihood will
+            be considered as fast as its neighbour.
+
+        .. warning::
+
+            It assumes that the nuisance parameters are already written
+            sequentially, and groupe together (not necessarilly in the order
+            described in :attr:`data.experiments`). If you mix up the different
+            nuisance parameters in the .param file, this routine will not
+            method as intended.
+
+        """
         array = []
         # First obvious block is all cosmological parameters
         array.append(len(self.get_mcmc_parameters(['varying', 'cosmo'])))

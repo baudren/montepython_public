@@ -1,3 +1,14 @@
+"""
+.. module:: likelihood_class
+   :synopsis: Definition of the major likelihoods
+.. moduleauthor:: Julien Lesgourgues <lesgourg@cern.ch>
+.. moduleauthor:: Benjamin Audren <benjamin.audren@epfl.ch>
+
+Contains the definition of the base likelihood class, with basic functions,
+as well as more specific likelihood classes that may be reused to implement
+new ones.
+
+"""
 import os
 import numpy as np
 import math
@@ -8,7 +19,6 @@ import io_mp
 # Definition of classes for the likelihoods to inherit, for every different
 # types of expected likelihoods. Included so far, models for a Clik, simple
 # prior, and newdat likelihoods.
-
 
 # General class that will only define the store_lkl function, common for every
 # single likelihood. It will copy the content of self.path, copied from
