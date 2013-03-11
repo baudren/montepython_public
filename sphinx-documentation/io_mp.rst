@@ -1,5 +1,5 @@
-io_mp Module
-============
+Io module
+=========
 
 .. automodule:: io_mp
     :members:

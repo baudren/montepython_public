@@ -1,5 +1,5 @@
-MontePython Module
-==================
+Monte Python Module
+===================
 
 .. automodule:: MontePython
     :members:

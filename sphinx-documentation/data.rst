@@ -1,4 +1,4 @@
-data Module
+Data module
 ===========
 
 .. automodule:: data

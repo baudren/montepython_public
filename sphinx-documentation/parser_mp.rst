@@ -1,4 +1,4 @@
-parser_mp Module
+Parser module
 ================
 
 .. automodule:: parser_mp

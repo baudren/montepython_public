@@ -1,4 +1,4 @@
-analyze Module
+Analyze module
 ==============
 
 .. automodule:: analyze

@@ -1,4 +1,4 @@
-mcmc Module
+Mcmc module
 ===========
 
 .. automodule:: mcmc

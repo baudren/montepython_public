@@ -1,4 +1,4 @@
-likelihood_class Module
+Likelihood class module
 =======================
 
 .. automodule:: likelihood_class
