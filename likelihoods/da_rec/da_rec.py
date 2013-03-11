@@ -7,9 +7,9 @@ class da_rec(likelihood):
   # The initialization routine is no different from the parent class one.
 
   # compute likelihood
-  def loglkl(self, _cosmo, data):
+  def loglkl(self, cosmo, data):
 
-    da = _cosmo._angular_distance(self.z_rec)
+    da = cosmo._angular_distance(self.z_rec)
     chi2 = ((da-self.da_rec)/self.da_error)**2
 
     # return ln(L)

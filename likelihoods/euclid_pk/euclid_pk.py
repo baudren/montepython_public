@@ -136,7 +136,7 @@ class euclid_pk(likelihood):
     
     return galaxy_dist
 
-  def loglkl(self,_cosmo,data):
+  def loglkl(self, cosmo, data):
     # First thing, recover the angular distance and Hubble factor for each
     # redshift
     H   = np.zeros(2*self.nbin+1,'float64')
@@ -144,9 +144,9 @@ class euclid_pk(likelihood):
     r   = np.zeros(2*self.nbin+1,'float64')
 
     # H is incidentally also dz/dr
-    r,H = _cosmo.z_of_r(self.z)
+    r,H = cosmo.z_of_r(self.z)
     for i in range(len(D_A)):
-      D_A[i] = _cosmo._angular_distance(self.z[i])
+      D_A[i] = cosmo._angular_distance(self.z[i])
 
     # Compute sigma_r = dr(z)/dz sigma_z with sigma_z = 0.001(1+z)
     sigma_r = np.zeros(self.nbin,'float64')
@@ -175,7 +175,7 @@ class euclid_pk(likelihood):
       fid_file.write('\n')
       for index_k in range(self.k_size):
 	for index_z in range(2*self.nbin+1):
-	  pk[index_k,index_z] = _cosmo._pk(self.k_fid[index_k],self.z[index_z])
+	  pk[index_k,index_z] = cosmo._pk(self.k_fid[index_k],self.z[index_z])
 	  fid_file.write('%.8g\n' % pk[index_k,index_z])
       for index_z in range(2*self.nbin+1):
 	fid_file.write('%.8g %.8g\n' % (H[index_z],D_A[index_z]))
@@ -221,7 +221,7 @@ class euclid_pk(likelihood):
     # the z_boundaries, to compute afterwards beta. This is pk_nl_th from the
     # notes.
     pk_nl_th = np.zeros((self.k_size,2*self.nbin+1,self.mu_size),'float64')
-    pk_nl_th = _cosmo._get_pk(self.k,self.z,self.k_size,2*self.nbin+1,self.mu_size)
+    pk_nl_th = cosmo._get_pk(self.k,self.z,self.k_size,2*self.nbin+1,self.mu_size)
 
     #for index_k in range(self.k_size):
     #  print self.k[index_k,0,0],pk_nl_th[index_k,0,0]
@@ -231,10 +231,10 @@ class euclid_pk(likelihood):
     # affected, set the scale to one, and make sure that the nuisance parameter
     # epsilon is set to zero
     k_sigma = np.zeros(2.*self.nbin+1, 'float64')
-    if (_cosmo.nonlinear_method == 0):
+    if (cosmo.nonlinear_method == 0):
       k_sigma[:]=1.e6
     else :
-      k_sigma = _cosmo.nonlinear_scale(self.z,2*self.nbin+1)
+      k_sigma = cosmo.nonlinear_scale(self.z,2*self.nbin+1)
 
     # Define the alpha function, that will characterize the theoretical
     # uncertainty. 
@@ -244,7 +244,7 @@ class euclid_pk(likelihood):
         self.alpha[:,index_z,index_mu] = np.log(1. + self.k[:,index_z,index_mu]/k_sigma[index_z]) / (1. + np.log(1.+ self.k[:,index_z,index_mu]/k_sigma[index_z]))*self.theoretical_error
 
     # recover the e_th part of the error function
-    e_th = self.coefficient_f_nu*_cosmo.Omega_nu/_cosmo.Omega_m
+    e_th = self.coefficient_f_nu*cosmo.Omega_nu/cosmo.Omega_m
 
     # Compute the Error E_th function
     #E_th = np.zeros((self.k_size,2*self.nbin+1,self.mu_size),'float64')

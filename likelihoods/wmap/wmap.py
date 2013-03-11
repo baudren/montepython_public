@@ -41,12 +41,12 @@ class wmap(likelihood):
 
     pass
   
-  def loglkl(self,_cosmo,data):
+  def loglkl(self, cosmo, data):
 
     nuisance_parameter_names = data.get_mcmc_parameters(['nuisance'])
 
     # get Cl's from the cosmological code
-    cl = self.get_cl(_cosmo)
+    cl = self.get_cl(cosmo)
  
     ## add contamination spectra multiplied by nuisance parameters
     cl = self.add_contamination_spectra(cl,data)

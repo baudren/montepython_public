@@ -6,8 +6,8 @@ class hst(likelihood_prior):
   # initialisation of the class is done within the parent likelihood_prior. For
   # this case, it does not differ, actually, from the __init__ method in
   # likelihood class. 
-  def loglkl(self,_cosmo,data):
+  def loglkl(self, cosmo, data):
 
-    h   = _cosmo._h()
+    h   = cosmo._h()
     loglkl = -0.5*(h-self.h)**2/(self.sigma**2)
     return loglkl

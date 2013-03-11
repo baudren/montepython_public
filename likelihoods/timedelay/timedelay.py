@@ -34,7 +34,7 @@ class timedelay(likelihood):
 
   # compute likelihood
 
-  def loglkl(self,_cosmo,data):
+  def loglkl(self, cosmo, data):
 
     lkl = 0.
 
@@ -42,8 +42,8 @@ class timedelay(likelihood):
     # volume distance dv, sound horizon at baryon drag rs_d, 
     # theoretical prediction and chi2 contribution
     for i in range(self.num_points):
-      Dd = _cosmo._angular_distance(self.zd[i])
-      Ds = _cosmo._angular_distance(self.zs[i])
+      Dd = cosmo._angular_distance(self.zd[i])
+      Ds = cosmo._angular_distance(self.zs[i])
       Dds = ((1.+self.zs[i])*Ds-(1+self.zd[i])*Dd)/(1.+self.zs[i])
       Dt = (1+self.zd[i])*Dd*Ds/Dds
  

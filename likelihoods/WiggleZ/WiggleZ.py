@@ -30,12 +30,12 @@ class WiggleZ(likelihood):
     self.wigglez_c = WiggleZ_c(self.data_directory+self.redshift_bins_files[2],data,command_line,log_flag)
     self.wigglez_d = WiggleZ_d(self.data_directory+self.redshift_bins_files[3],data,command_line,log_flag)
 
-  def loglkl(self,_cosmo,data):
+  def loglkl(self, cosmo, data):
     # Simply add all the sublikelihoods
     loglkl = 0
-    loglkl += self.wigglez_a.loglkl(_cosmo,data)
-    loglkl += self.wigglez_b.loglkl(_cosmo,data)
-    loglkl += self.wigglez_c.loglkl(_cosmo,data)
-    loglkl += self.wigglez_d.loglkl(_cosmo,data)
+    loglkl += self.wigglez_a.loglkl(cosmo, data)
+    loglkl += self.wigglez_b.loglkl(cosmo, data)
+    loglkl += self.wigglez_c.loglkl(cosmo, data)
+    loglkl += self.wigglez_d.loglkl(cosmo, data)
     return loglkl
 

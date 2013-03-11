@@ -33,21 +33,21 @@ import unittest
 
 
 # Compute the likelihood
-def compute_lkl(_cosmo, data):
+def compute_lkl(cosmo, data):
 
     # If the cosmological module has already been called once, and if the
     # cosmological parameters have changed, then clean up, and compute.
-    if (_cosmo.state is True and data.need_cosmo_update is True):
-        _cosmo._struct_cleanup(set(["lensing", "nonlinear", "spectra",
+    if (cosmo.state is True and data.need_cosmo_update is True):
+        cosmo._struct_cleanup(set(["lensing", "nonlinear", "spectra",
                                     "primordial", "transfer", "perturb",
                                     "thermodynamics", "background", "bessel"]))
 
     # If the data needs to change, then do a normal call to the cosmological
     # compute function
-    if ((data.need_cosmo_update is True) or (_cosmo.state is False)):
+    if ((data.need_cosmo_update is True) or (cosmo.state is False)):
 
         # Prepare the cosmological module with the new set of parameters
-        _cosmo.set(data.cosmo_arguments)
+        cosmo.set(data.cosmo_arguments)
 
         # Compute the model, keeping track of the errors
 
@@ -63,7 +63,7 @@ def compute_lkl(_cosmo, data):
         # with minimum likelihood, so will be rejected, resulting in the choice
         # of a new point.
         try:
-            _cosmo._compute(["lensing"])
+            cosmo._compute(["lensing"])
         except NameError:
             return data.boundary_loglike
         except (AttributeError, KeyboardInterrupt):
@@ -76,7 +76,7 @@ def compute_lkl(_cosmo, data):
 
     for likelihood in data.lkl.itervalues():
         if likelihood.need_update is True:
-            value = likelihood.loglkl(_cosmo, data)
+            value = likelihood.loglkl(cosmo, data)
             # Storing the result
             likelihood.backup_value = value
         # Otherwise, take the existing value
@@ -90,7 +90,7 @@ def compute_lkl(_cosmo, data):
     # Compute the derived parameters if relevant
     if data.get_mcmc_parameters(['derived']) != []:
         try:
-            _cosmo.get_current_derived_parameters(data)
+            cosmo.get_current_derived_parameters(data)
         except NameError:
             print('Terminating now')
             exit()
@@ -448,7 +448,7 @@ def accept_step(data):
 ######################
 # MCMC CHAIN
 ######################
-def chain(_cosmo, data, command_line):
+def chain(cosmo, data, command_line):
 
     ## Initialisation
     loglike = 0
@@ -463,7 +463,7 @@ def chain(_cosmo, data, command_line):
     else:
         print(' /|\  You are running with no varying parameters...')
         print('/_o_\ Computing model for only one point')
-        loglike = compute_lkl(_cosmo, data)
+        loglike = compute_lkl(cosmo, data)
         io_mp.print_vector([data.out, sys.stdout], 1, loglike, data)
         return 1, loglike
 
@@ -499,7 +499,7 @@ def chain(_cosmo, data, command_line):
             exit()
 
     # Compute the starting Likelihood
-    loglike = compute_lkl(_cosmo, data)
+    loglike = compute_lkl(cosmo, data)
 
     # Choose this step as the last accepted value
     # (accept_step), and modify accordingly the max_loglike
@@ -524,7 +524,7 @@ def chain(_cosmo, data, command_line):
         if get_new_position(
                 data, sigma_eig, U, k, Cholesky,
                 Inverse_Cholesky, Rotation) is True:
-            newloglike = compute_lkl(_cosmo, data)
+            newloglike = compute_lkl(cosmo, data)
         else:  # reject step
             rej += 1
             N += 1

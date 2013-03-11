@@ -57,7 +57,7 @@ class likelihood():
 
     # This is a placeholder, to remind that, for a brand new likelihood, you
     # need to define its computation.
-    def loglkl(self, _cosmo, data):
+    def loglkl(self, cosmo, data):
         raise NotImplementedError(
             'Must implement method loglkl() in your likelihood')
 
@@ -84,13 +84,13 @@ class likelihood():
         except:
             pass
 
-    def get_cl(self, _cosmo):
+    def get_cl(self, cosmo):
 
         # get C_l^XX from the cosmological code
-        cl = _cosmo.lensed_cl()
+        cl = cosmo.lensed_cl()
 
         # convert dimensionless C_l's to C_l in muK**2
-        T = _cosmo._T_cmb()
+        T = cosmo._T_cmb()
         for key in cl.iterkeys():
             cl[key] *= (T*1.e6)**2
 
@@ -497,22 +497,22 @@ class likelihood_newdat(likelihood):
 
         # end of initialisation
 
-    def loglkl(self, _cosmo, data):
+    def loglkl(self, cosmo, data):
         # get Cl's from the cosmological code
-        cl = self.get_cl(_cosmo)
+        cl = self.get_cl(cosmo)
 
         # add contamination spectra multiplied by nuisance parameters
         cl = self.add_contamination_spectra(cl, data)
 
         # get likelihood
-        lkl = self.compute_lkl(cl, _cosmo, data)
+        lkl = self.compute_lkl(cl, cosmo, data)
 
         # add prior on nuisance parameters
         lkl = self.add_nuisance_prior(lkl, data)
 
         return lkl
 
-    def compute_lkl(self, cl, _cosmo, data):
+    def compute_lkl(self, cl, cosmo, data):
         # checks that Cl's have been computed up to high enough l given window
         # function range. Normally this has been imposed before, so this test
         # could even be supressed.
@@ -714,12 +714,12 @@ class likelihood_clik(likelihood):
 
         self.nuisance.append(self.use_nuisance)
 
-    def loglkl(self, _cosmo, data):
+    def loglkl(self, cosmo, data):
 
         nuisance_parameter_names = data.get_mcmc_parameters(['nuisance'])
 
         # get Cl's from the cosmological code
-        cl = self.get_cl(_cosmo)
+        cl = self.get_cl(cosmo)
 
         # add contamination spectra multiplied by nuisance parameters
         cl = self.add_contamination_spectra(cl, data)
@@ -841,17 +841,17 @@ class likelihood_mock_cmb(likelihood):
         # end of initialisation
         return
 
-    def loglkl(self, _cosmo, data):
+    def loglkl(self, cosmo, data):
 
         # get Cl's from the cosmological code (returned in muK**2 units)
-        cl = self.get_cl(_cosmo)
+        cl = self.get_cl(cosmo)
 
         # get likelihood
-        lkl = self.compute_lkl(cl, _cosmo, data)
+        lkl = self.compute_lkl(cl, cosmo, data)
 
         return lkl
 
-    def compute_lkl(self, cl, _cosmo, data):
+    def compute_lkl(self, cl, cosmo, data):
 
         # Write fiducial model spectra if needed (exit in that case)
         if self.fid_values_exist is False:
@@ -1098,18 +1098,18 @@ class likelihood_mpk(likelihood):
 
     # compute likelihood
 
-    def loglkl(self, _cosmo, data):
+    def loglkl(self, cosmo, data):
 
         # reduced Hubble parameter
-        h = _cosmo._h()
+        h = cosmo._h()
 
         if self.use_scaling:
             # angular diameter distance at this redshift, in Mpc/h
-            d_angular = _cosmo._angular_distance(self.redshift)
+            d_angular = cosmo._angular_distance(self.redshift)
             d_angular *= h
 
             # radial distance at this redshift, in Mpc/h
-            r, Hz = _cosmo.z_of_r([self.redshift])
+            r, Hz = cosmo.z_of_r([self.redshift])
             d_radial = self.redshift*h/Hz[0]
 
             # scaling factor = (d_angular**2 * d_radial)^(1/3) relative
@@ -1132,7 +1132,7 @@ class likelihood_mpk(likelihood):
 
             for i in range(self.k_fid_size):
 
-                P[i] = _cosmo._pk(self.k_fid[i]*h, self.redshift)
+                P[i] = cosmo._pk(self.k_fid[i]*h, self.redshift)
 
                 power = 0
                 for j in range(6):
@@ -1152,7 +1152,7 @@ class likelihood_mpk(likelihood):
             self.k = self.kh*h*scaling
             # get values of P(k) in Mpc**3
             for i in range(self.k_size):
-                P_lin[i] = _cosmo._pk(self.k[i], 0)
+                P_lin[i] = cosmo._pk(self.k[i], 0)
             # get rescaled values of P(k) in (Mpc/h)**3
             P_lin *= (h/scaling)**3
 

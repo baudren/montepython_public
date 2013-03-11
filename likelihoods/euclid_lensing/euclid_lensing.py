@@ -168,14 +168,14 @@ class euclid_lensing(likelihood):
     
     return photo_z_dist
 
-  def loglkl(self,_cosmo,data):
+  def loglkl(self, cosmo, data):
 
     # One wants to obtain here the relation between z and r, this is done by
     # asking the cosmological module with the function z_of_r
     self.r = np.zeros(self.nzmax,'float64')
     self.dzdr= np.zeros(self.nzmax,'float64')
 
-    self.r,self.dzdr =  _cosmo.z_of_r(self.z)
+    self.r,self.dzdr =  cosmo.z_of_r(self.z)
 
     # Compute now the selection function eta(r) = eta(z) dz/dr normalized to one.
     self.eta_r = np.zeros((self.nzmax,self.nbin),'float64')
@@ -199,16 +199,16 @@ class euclid_lensing(likelihood):
         if (self.l[index_l]/self.r[index_z] > self.k_max):
           print 'you should increase euclid_lensing.k_max up to at least',self.l[index_l]/self.r[index_z]
           exit()
-	pk[index_l,index_z] = _cosmo._pk(self.l[index_l]/self.r[index_z],self.z[index_z])
+	pk[index_l,index_z] = cosmo._pk(self.l[index_l]/self.r[index_z],self.z[index_z])
 
     # Recover the non_linear scale computed by halofit. If no scale was
     # affected, set the scale to one, and make sure that the nuisance parameter
     # epsilon is set to zero
     k_sigma = np.zeros(self.nzmax, 'float64')
-    if (_cosmo.nonlinear_method == 0):
+    if (cosmo.nonlinear_method == 0):
       k_sigma[:]=1.e6
     else :
-      k_sigma = _cosmo.nonlinear_scale(self.z,self.nzmax)
+      k_sigma = cosmo.nonlinear_scale(self.z,self.nzmax)
 
     # Define the alpha function, that will characterize the theoretical
     # uncertainty. Chosen to be 0.001 at low k, raise between 0.1 and 0.2 to
@@ -225,7 +225,7 @@ class euclid_lensing(likelihood):
           #print k[index_k-1],alpha[index_l,index_k],math.log(1.+k[index_k-1]/k_sigma[index_k])/(1.+math.log(1.+k[index_k-1]/k_sigma[index_k]))*0.5
 
     # recover the e_th_nu part of the error function
-    e_th_nu = self.coefficient_f_nu*_cosmo.Omega_nu/_cosmo.Omega_m
+    e_th_nu = self.coefficient_f_nu*cosmo.Omega_nu/cosmo.Omega_m
 
     # Compute the Error E_th_nu function
     E_th_nu = np.zeros((self.nlmax,self.nzmax),'float64')
@@ -261,12 +261,12 @@ class euclid_lensing(likelihood):
       for Bin1 in range(self.nbin):
 	for Bin2 in range(self.nbin):
           Cl[nl,Bin1,Bin2] = np.sum(0.5*(Cl_integrand[1:,Bin1,Bin2]+Cl_integrand[:-1,Bin1,Bin2])*(self.r[1:]-self.r[:-1]))
-	  Cl[nl,Bin1,Bin2] *= 9./16.*(_cosmo._Omega0_m())**2 # in units of Mpc**4
-	  Cl[nl,Bin1,Bin2] *= (_cosmo._h()/2997.9)**4 # dimensionless
+	  Cl[nl,Bin1,Bin2] *= 9./16.*(cosmo._Omega0_m())**2 # in units of Mpc**4
+	  Cl[nl,Bin1,Bin2] *= (cosmo._h()/2997.9)**4 # dimensionless
 
           El[nl,Bin1,Bin2] = np.sum(0.5*(El_integrand[1:,Bin1,Bin2]+El_integrand[:-1,Bin1,Bin2])*(self.r[1:]-self.r[:-1]))
-	  El[nl,Bin1,Bin2] *= 9./16.*(_cosmo._Omega0_m())**2 # in units of Mpc**4
-	  El[nl,Bin1,Bin2] *= (_cosmo._h()/2997.9)**4 # dimensionless
+	  El[nl,Bin1,Bin2] *= 9./16.*(cosmo._Omega0_m())**2 # in units of Mpc**4
+	  El[nl,Bin1,Bin2] *= (cosmo._h()/2997.9)**4 # dimensionless
 	  if Bin1 == Bin2:
 	    Cl[nl,Bin1,Bin2] += self.noise
 

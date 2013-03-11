@@ -31,7 +31,7 @@ class bao(likelihood):
 
   # compute likelihood
 
-  def loglkl(self,_cosmo,data):
+  def loglkl(self, cosmo, data):
 
     chi2=0.
 
@@ -40,12 +40,12 @@ class bao(likelihood):
     # theoretical prediction and chi2 contribution
     for i in range(self.num_points):
 
-      da = _cosmo._angular_distance(self.z[i])
-      dr = self.z[i]/_cosmo._Hubble(self.z[i])
+      da = cosmo._angular_distance(self.z[i])
+      dr = self.z[i]/cosmo._Hubble(self.z[i])
       dv = pow(da*da*(1+self.z[i])*(1+self.z[i])*dr,1./3.)
 
       if (self.type[i] == 3):
-        rs = _cosmo._rs_drag()*self.rs_rescale
+        rs = cosmo._rs_drag()*self.rs_rescale
         theo = dv/rs
 
       elif (self.type[i] == 4):  

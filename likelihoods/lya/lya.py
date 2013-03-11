@@ -243,7 +243,7 @@ class lya(likelihood):
   
   # compute likelihood
 
-  def loglkl(self,_cosmo,data):
+  def loglkl(self, cosmo, data):
 
     # noise for each data point
 
@@ -274,11 +274,11 @@ class lya(likelihood):
 
     # displacement for cosmo parameters:
 
-    delta[self.index_H0] = _cosmo._h()*100.  - self.taylor_expansion_point[self.index_H0,0]
-    delta[self.index_ns] = _cosmo._n_s()     - self.taylor_expansion_point[self.index_ns,0]
-    delta[self.index_Om] = _cosmo._Omega_m() - self.taylor_expansion_point[self.index_Om,0]
-    delta[self.index_s8] = _cosmo._sigma8()  - self.taylor_expansion_point[self.index_s8,0]
-#    delta[self.index_zr] = (_cosmo._z_reio() - self.taylor_expansion_point[self.index_zr,0])/7.
+    delta[self.index_H0] = cosmo._h()*100.  - self.taylor_expansion_point[self.index_H0,0]
+    delta[self.index_ns] = cosmo._n_s()     - self.taylor_expansion_point[self.index_ns,0]
+    delta[self.index_Om] = cosmo._Omega_m() - self.taylor_expansion_point[self.index_Om,0]
+    delta[self.index_s8] = cosmo._sigma8()  - self.taylor_expansion_point[self.index_s8,0]
+#    delta[self.index_zr] = (cosmo._z_reio() - self.taylor_expansion_point[self.index_zr,0])/7.
 
     for zz in range(self.num_z):
       
