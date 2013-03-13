@@ -14,6 +14,7 @@ Contents:
    description
    theory
    installation
+   getting_started
    documentation
 
 
