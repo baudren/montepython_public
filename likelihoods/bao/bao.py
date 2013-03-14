@@ -6,23 +6,23 @@ class bao(likelihood):
   
   # initialization routine
 
-  def __init__(self,path,data,command_line,log_flag):
+  def __init__(self, path, data, command_line):
 
-    likelihood.__init__(self,path,data,command_line,log_flag)
+    likelihood.__init__(self, path, data, command_line)
 
     # define array for values of z and data points
-    self.z	= np.array([],'float64')
-    self.data   = np.array([],'float64')
-    self.error  = np.array([],'float64')
-    self.type   = np.array([],'int')
+    self.z	= np.array([], 'float64')
+    self.data   = np.array([], 'float64')
+    self.error  = np.array([], 'float64')
+    self.type   = np.array([], 'int')
 
     # read redshifts and data points
-    for line in open(self.data_directory+self.file,'r'):
+    for line in open(self.data_directory+self.file, 'r'):
       if (line.find('#') == -1):
-        self.z		= np.append(self.z,float(line.split()[0]))
-        self.data 	= np.append(self.data,float(line.split()[1]))
-        self.error 	= np.append(self.error,float(line.split()[2]))
-        self.type 	= np.append(self.type,int(line.split()[3]))
+        self.z = np.append(self.z, float(line.split()[0]))
+        self.data = np.append(self.data, float(line.split()[1]))
+        self.error = np.append(self.error, float(line.split()[2]))
+        self.type = np.append(self.type, int(line.split()[3]))
 
     # number of data points
     self.num_points=np.shape(self.z)[0]

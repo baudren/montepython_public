@@ -5,9 +5,9 @@ from math import exp
 
 class lya(likelihood):
 
-  def __init__(self,path,data,command_line,log_flag):
+  def __init__(self, path, data, command_line):
 
-    likelihood.__init__(self,path,data,command_line,log_flag)
+    likelihood.__init__(self, path, data, command_line)
 
     ############ read data   ###########
 

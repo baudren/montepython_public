@@ -7,9 +7,9 @@ class timedelay(likelihood):
   
   # initialization routine
 
-  def __init__(self,path,data,command_line,log_flag):
+  def __init__(self, path, data, command_line):
 
-    likelihood.__init__(self,path,data,command_line,log_flag)
+    likelihood.__init__(self, path, data, command_line)
 
     # define array for values of z and data points
     self.zd	  = np.array([],'float64')

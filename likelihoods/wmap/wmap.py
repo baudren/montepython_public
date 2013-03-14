@@ -5,13 +5,13 @@ import numpy as np
 
 class wmap(likelihood):
 
-  def __init__(self,path,data,command_line,log_flag):
+  def __init__(self, path, data, command_line):
 
     # Standard initialization, reads the .data
-    likelihood.__init__(self,path,data,command_line,log_flag)
+    likelihood.__init__(self, path, data, command_line)
 
     # Extra needed cosmological paramters
-    self.need_cosmo_arguments(data,{'output':'tCl pCl lCl','lensing':'yes'})
+    self.need_cosmo_arguments(data, {'output':'tCl pCl lCl', 'lensing':'yes'})
 
     try:
       import pywlik

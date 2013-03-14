@@ -6,9 +6,9 @@ import math
 
 class euclid_lensing(likelihood):
 
-  def __init__(self,path,data,command_line,log_flag):
+  def __init__(self, path, data, command_line):
 
-    likelihood.__init__(self,path,data,command_line,log_flag)
+    likelihood.__init__(self, path, data, command_line)
 
     self.need_cosmo_arguments(data,{'output':'mPk'})
 

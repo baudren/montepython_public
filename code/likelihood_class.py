@@ -24,7 +24,7 @@ class likelihood(object):
     
     """
 
-    def __init__(self, path, data, command_line, log_flag):
+    def __init__(self, path, data, command_line):
         """
         It copies the content of self.path from the initialization routine of
         the :class:`data` class, and defines a handful of useful methods, that
@@ -37,15 +37,13 @@ class likelihood(object):
             - **data** (`class`) - initialized instance of :class:`data`
             - **command_line** (`dict`) - dictionary containing the command
               line arguments
-            - **log_flag** (`bool`) - boolean to indicate whether to write to
-              the log.param or to read configuration from it.
 
         """
 
         self.name = self.__class__.__name__
         self.folder = os.path.abspath(data.path['MontePython']) +\
             '/../likelihoods/'+self.name+'/'
-        if not log_flag:
+        if not data.log_flag:
             path = command_line.folder+'log.param'
         self.read_from_file(path, data)
 
@@ -67,7 +65,7 @@ class likelihood(object):
 
         # Append to the log.param the value used (WARNING: so far no comparison
         # is done to ensure that the experiments share the same parameters)
-        if log_flag:
+        if data.log_flag:
             io_mp.log_likelihood_parameters(self, command_line)
 
     def loglkl(self, cosmo, data):
@@ -274,9 +272,9 @@ class likelihood_prior(likelihood):
 ###################################
 class likelihood_newdat(likelihood):
 
-    def __init__(self, path, data, command_line, log_flag):
+    def __init__(self, path, data, command_line):
 
-        likelihood.__init__(self, path, data, command_line, log_flag)
+        likelihood.__init__(self, path, data, command_line)
 
         self.need_cosmo_arguments(
             data, {'lensing': 'yes', 'output': 'tCl lCl pCl'})
@@ -726,9 +724,9 @@ class likelihood_newdat(likelihood):
 ###################################
 class likelihood_clik(likelihood):
 
-    def __init__(self, path, data, command_line, log_flag):
+    def __init__(self, path, data, command_line):
 
-        likelihood.__init__(self, path, data, command_line, log_flag)
+        likelihood.__init__(self, path, data, command_line)
         self.need_cosmo_arguments(
             data, {'lensing': 'yes', 'output': 'tCl lCl pCl'})
 
@@ -819,9 +817,9 @@ class likelihood_clik(likelihood):
 ###################################
 class likelihood_mock_cmb(likelihood):
 
-    def __init__(self, path, data, command_line, log_flag):
+    def __init__(self, path, data, command_line):
 
-        likelihood.__init__(self, path, data, command_line, log_flag)
+        likelihood.__init__(self, path, data, command_line)
 
         self.need_cosmo_arguments(
             data, {'lensing': 'yes', 'output': 'tCl lCl pCl'})
@@ -953,9 +951,9 @@ class likelihood_mock_cmb(likelihood):
 ###################################
 class likelihood_mpk(likelihood):
 
-    def __init__(self, path, data, command_line, log_flag):
+    def __init__(self, path, data, command_line):
 
-        likelihood.__init__(self, path, data, command_line, log_flag)
+        likelihood.__init__(self, path, data, command_line)
 
         # require P(k) from class
         self.need_cosmo_arguments(data, {'output': 'mPk'})
