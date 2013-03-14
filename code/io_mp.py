@@ -295,12 +295,25 @@ class File(file):
 
 
 class LockException(Exception):
+    """
+    .. warning::
+
+        in the process of being tested
+    """
     # Error codes:
     LOCK_FAILED = 1
 
 
 def lock(file, flags):
+    """
+    Lock a given file to prevent other instances of the code to write to the
+    same file.
 
+    .. warning::
+
+        in the process of being tested
+
+    """
     import fcntl
     try:
         fcntl.flock(file.fileno(), flags)
@@ -311,6 +324,13 @@ def lock(file, flags):
 
 
 def unlock(file):
+    """
+    Unlock a previously locked file.
 
+    .. warning::
+
+        in the process of being tested
+
+    """
     import fcntl
     fcntl.flock(file.fileno(), fcntl.LOCK_UN)

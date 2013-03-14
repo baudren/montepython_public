@@ -36,8 +36,8 @@ class data(object):
         collections of information, with in particular two main dictionaries:
         cosmo_arguments and mcmc_parameters.
 
-        It defines several useful methods. The following ones are called just
-        once, at initialization:
+        It defines several useful **methods**. The following ones are called
+        just once, at initialization:
 
         * :func:`fill_mcmc_parameters`
         * :func:`from_input_to_mcmc_parameters`
@@ -53,32 +53,20 @@ class data(object):
         Finally, the convenient method :func:`get_mcmc_parameters` will be
         called in many places, to return the proper list of desired parameters.
 
-        :Attributes:
-            - **cosmo_arguments** (`dict`) - simple dictionary that will serve as
-              a communication interface with the cosmological code. It contains
-              all the parameters for the code that will not be set to their
-              default values.
-              It is updated from :attr:`mcmc_parameters`.
+        It has a number of different **attributes**, and the more important
+        ones are listed here:
 
-            - **mcmc_parameters** (`dict`) - ordered dictionary of dictionaries, it
-              contains everything needed by the :mod:`mcmc` module for the MCMC
-              procedure. 
-              Every parameter name will be the key of a dictionary,
-              containing the initial configuration, role, status, last accepted
-              point and current point.
+        * :attr:`cosmo_arguments` 
+        * :attr:`mcmc_parameters` 
+        * :attr:`need_cosmo_update`  
+        * :attr:`log_flag`
+        * :attr:`boundary_loglike`
 
-            - **experiments** (`list`) - extracted from the parameter file,
-              contains the list of the strings naming the experiments to use.
+        .. note::
 
-            - **log_flag** (`str`) - stores the information whether or not the
-              likelihood data files need to be written down in the `log.param`
-              file.
+            The `experiments` attribute is extracted from the parameter file,
+            and contains the list of likelihoods to use
 
-            - **need_cosmo_update** (`bool`) - `added in version 1.1.1`. It stores
-              the truth value of whether the cosmological block of parameters
-              was changed from one step to another. See
-              :meth:`group_parameters_in_blocks`
-                 
         To create an instance of this class, one must feed the following
         parameters and keyword arguments:
 
@@ -92,6 +80,7 @@ class data(object):
 
             - **path** (`dict`) - contains a dictionary of important local paths.
               It is used here to find the cosmological module location.
+
         """
         
         # Initialisation of the random seed
@@ -105,14 +94,33 @@ class data(object):
         self.jumping_factor = command_line.jumping_factor
         self.path = path
 
-        # Define the boundary loglike, the value used to defined a loglike that
-        # is out of bounds. If a loglike is affected to this value, it will
-        # automatically rejected
         self.boundary_loglike = -1e30
+        """
+        Define the boundary loglike, the value used to defined a loglike that
+        is out of bounds. If a point in the parameter space is affected to this
+        value, it will be automatically rejected, hence increasing the
+        multiplicity of the last accepted point.
+        """
 
         # Creation of the two main dictionnaries:
         self.cosmo_arguments = {}
+        """
+        Simple dictionary that will serve as a communication interface with the
+        cosmological code. It contains all the parameters for the code that
+        will not be set to their default values.  It is updated from
+        :attr:`mcmc_parameters`.
+
+        :rtype:   dict
+        """
         self.mcmc_parameters = od()
+        """
+        Ordered dictionary of dictionaries, it contains everything needed by
+        the :mod:`mcmc` module for the MCMC procedure.  Every parameter name
+        will be the key of a dictionary, containing the initial configuration,
+        role, status, last accepted point and current point.
+
+        :rtype: ordereddict
+        """
 
         # Read from the parameter file to fill properly the mcmc_parameters
         # dictionary.
@@ -142,12 +150,22 @@ class data(object):
         # End of initialisation with the parameter file
         self.param_file.close()
 
-        # log_flag, initially at False, will help determine if the code should
-        # log the parameter file in the folder
-        log_flag = False
+        self.log_flag = False
+        """
+        Stores the information whether or not the likelihood data files need to
+        be written down in the log.param file. Initially at False.
 
-        # Record if the cosmological parameters were changed (slow step)
+        :rtype: bool
+        """
+
         self.need_cosmo_update = True
+        """
+        `added in version 1.1.1`. It stores the truth value of whether the
+        cosmological block of parameters was changed from one step to another.
+        See :meth:`group_parameters_in_blocks`
+
+        :rtype: bool
+        """
 
         sys.stdout.write('Testing likelihoods for:\n -> ')
         for i in range(len(self.experiments)):
@@ -163,12 +181,12 @@ class data(object):
                 print '/!\   Detecting empty folder,',
                 print '      logging the parameter file'
                 io_mp.log_parameters(self, command_line)
-                log_flag = True
+                self.log_flag = True
         if not os.path.exists(command_line.folder):
             os.mkdir(command_line.folder)
             # Logging of parameters
             io_mp.log_parameters(self, command_line)
-            log_flag = True
+            self.log_flag = True
 
         self.lkl = od()
 
@@ -191,10 +209,10 @@ class data(object):
             # ... import easily the likelihood.py program
             exec "import %s" % elem
             # Initialize the likelihoods. Depending on the values of
-            # command_line, log_flag, the routine will call slightly different
+            # command_line and log_flag, the routine will call slightly different
             # things. If log_flag is True, the log.param will be appended. 
             exec "self.lkl['%s'] = %s.%s('%s/%s.data',\
-                self,command_line,log_flag)" % (
+                self,command_line)" % (
                 elem, elem, elem, folder, elem)
 
         # Storing parameters by blocks of speed 
@@ -202,7 +220,7 @@ class data(object):
 
         # Finally, log the cosmo_arguments used. This comes in the end, because
         # it can be modified inside the likelihoods init functions
-        if log_flag:
+        if self.log_flag:
             io_mp.log_cosmo_arguments(self, command_line)
             io_mp.log_default_configuration(self, command_line)
 

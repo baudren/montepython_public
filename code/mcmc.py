@@ -19,6 +19,10 @@ contrary, these routines are called at every step:
   the likelihood at the current point in the parameter space.
 * :func:`get_new_position` returns a new point in the parameter space,
   depending on the proposal density.
+
+The arguments of these functions will often contain **data** and/or **cosmo**.
+They are both initialized instances of respectively :class:`data` and the
+cosmological class. They will thus not be described for every function.
 """
 
 import os
@@ -32,8 +36,29 @@ import scipy.linalg as la
 import unittest
 
 
-# Compute the likelihood
 def compute_lkl(cosmo, data):
+    """
+    Compute the likelihood, given the current point in parameter space.
+
+    This function now performs a test before calling the cosmological model
+    (**new in version 1.2**). If any cosmological parameter changed, the flag
+    :code:`data.need_cosmo_update` will be set to :code:`True`, from the
+    routine :func:`check_for_slow_step <data.data.check_for_slow_step>`.
+
+    :Returns:
+        - **loglike** (`float`) - the log of the likelihood
+          (:math:`\\frac{-\chi^2}2`) computed from the sum of the likelihoods
+          of the experiments specified in the input parameter file.
+
+          This function returns :attr:`data.boundary_loglkie
+          <data.data.boundary_loglike>`, defined in the module :mod:`data` if
+          *i)* the current point in the parameter space has hit a prior edge,
+          or *ii)* the cosmological module failed to compute the model. This
+          value is chosen to be extremly small (large negative value), so that
+          the step will always be rejected.
+
+        
+    """
 
     # If the cosmological module has already been called once, and if the
     # cosmological parameters have changed, then clean up, and compute.
@@ -115,20 +140,31 @@ def compute_lkl(cosmo, data):
     return loglike
 
 
-# Function used only when the restart flag was set. It will simply pick up the
-# last accepted values as a starting point.
 def read_args_from_chain(data, chain):
-    # Chain is defined as a special File (that inherits from File, and has one
-    # new method, tail). The class is defined in code/io_mp.py
+    """
+    Pick up the last accepted values from an input chain as a starting point
+
+    Function used only when the restart flag is set. It will simply read the
+    last line of an input chain, using the tail command from the extended
+    :class:`io_mp.File` class.
+
+    :Parameters:
+        * **chain** (`str`) - name of the input chain provided with the command
+          line.
+
+    .. warning::
+        That method was not tested since the adding of derived parameters. The
+        method :func:`read_args_from_bestfit` is the prefered one.
+
+    .. warning::
+        This method works because of the particular presentation of the chain,
+        and the use of tabbings (not spaces). Please keep this in mind if you
+        are having difficulties
+        
+    """
     Chain = io_mp.File(chain, 'r')
     parameter_names = data.get_mcmc_parameters(['varying'])
 
-    # Warning, that feature was not tested since the adding of derived
-    # paramaters
-
-    # BE CAREFUL: Here it works because of the particular presentation of the
-    # chain, and the use of tabbings (not spaces). Please keep this in mind if
-    # having difficulties
     i = 1
     for elem in parameter_names:
         data.mcmc_parameters[elem]['last_accepted'] = float(
@@ -136,31 +172,36 @@ def read_args_from_chain(data, chain):
         i += 1
 
 
-# Deduce the starting point either from the input file,
-# or from a best fit file.
-# TO DO: bf is a terrible name
-def read_args_from_bestfit(data, bf):
+def read_args_from_bestfit(data, bestfit):
+    """
+    Deduce the starting point either from the input file, or from a best fit
+    file.
+
+    :Parameters:
+        * **bestfit** (`str`) - name of the bestfit file from the command line.
+    """
+
     parameter_names = data.get_mcmc_parameters(['varying'])
-    bestfit = open(bf, 'r')
+    bestfit_file = open(bestfit, 'r')
     for line in bestfit:
         if line.find('#') != -1:
-            bfnames = line.strip('#').replace(' ', '').\
+            bestfit_names = line.strip('#').replace(' ', '').\
                 replace('\n', '').split(',')
-            bfvalues = np.zeros(len(bfnames), 'float64')
+            bestfit_values = np.zeros(len(bestfit_names), 'float64')
         else:
             line = line.split()
             for i in range(len(line)):
-                bfvalues[i] = line[i]
+                bestfit_values[i] = line[i]
 
     print
     print('\nStarting point for rescaled parameters:')
     for elem in parameter_names:
-        if elem in bfnames:
+        if elem in bestfit_names:
             data.mcmc_parameters[elem]['last_accepted'] = \
-                bfvalues[bfnames.index(elem)] / \
+                bestfit_values[bfnames.index(elem)] / \
                 data.mcmc_parameters[elem]['scale']
             print 'from best-fit file : ', elem, ' = ',
-            print bfvalues[bfnames.index(elem)] / \
+            print bestfit_values[bestfit_names.index(elem)] / \
                 data.mcmc_parameters[elem]['scale']
         else:
             data.mcmc_parameters[elem]['last_accepted'] = \
@@ -169,14 +210,30 @@ def read_args_from_bestfit(data, bf):
             print data.mcmc_parameters[elem]['initial'][0]
 
 
-# Will deduce the starting covariance matrix, either from the input file, or
-# from an existing matrix. Reordering of the names and scaling take place here,
-# in a serie of potentially hard to read methods. For the sake of clarity, and
-# to avoid confusions, the code will, by default, print out a succession of 4
-# covariance matrices at the beginning of the run, if starting from an existing
-# one. This way, you can control that the paramters are set properly.
 def get_covariance_matrix(data, command_line):
+    """
+    Compute the covariance matrix, from an input file or from an existing
+    matrix.
 
+    Reordering of the names and scaling take place here, in a serie of
+    potentially hard to read methods. For the sake of clarity, and to avoid
+    confusions, the code will, by default, print out a succession of 4
+    covariance matrices at the beginning of the run, if starting from an
+    existing one. This way, you can control that the paramters are set
+    properly.
+
+    .. note::
+
+        The set of parameters from the run need not to be the exact same
+        set of parameters from the existing covariance matrix (not even the
+        ordering). Missing parameter from the existing covariance matrix will
+        use the sigma given as an input.
+
+    """
+
+    # Setting numpy options in terms of precision (useful when writing to files
+    # or displaying a result, but does not affect the precision of the
+    # computation).
     np.set_printoptions(precision=2, linewidth=150)
     parameter_names = data.get_mcmc_parameters(['varying'])
     i = 0
@@ -326,14 +383,19 @@ def get_covariance_matrix(data, command_line):
     return eigv, eigV, M
 
 
-def get_rotation_matrix(m, n):
-    """Non used"""
-    return np.identity(m+n)
-
-
-# Routine to obtain a new position in the parameter space from the eigen values
-# of the inverse covariance matrix.
 def get_new_position(data, eigv, U, k, Cholesky, Inverse_Cholesky, Rotation):
+    """
+    Obtain a new position in the parameter space from the eigen values of the
+    inverse covariance matrix, or from the Cholesky decomposition.
+
+    .. warning::
+        
+        Do we still need U ? Or removing completely the old scheme ?
+
+    :Parameters:
+        * **eigv** (`numpy array`) - bla
+
+    """
 
     parameter_names = data.get_mcmc_parameters(['varying'])
     vector_new = np.zeros(len(parameter_names), 'float64')
@@ -354,7 +416,6 @@ def get_new_position(data, eigv, U, k, Cholesky, Inverse_Cholesky, Rotation):
     # Initialize random seed
     rd.seed()
 
-    #print Inverse_Cholesky
     # Choice here between sequential and global change of direction
     if data.jumping == 'global':
         for i in range(len(vector)):
@@ -365,9 +426,6 @@ def get_new_position(data, eigv, U, k, Cholesky, Inverse_Cholesky, Rotation):
         sigmas[i] = (math.sqrt(1/eigv[i]))*rd.gauss(0, 1)*data.jumping_factor
     elif data.jumping == 'fast':
         i = k % len(vector)
-        ###############
-        #if i==0:
-        #  Rotation=get_rotation_matrix(len(vector)-4,4)
         ###############
         # method fast+global
         for elem in data.blocks_parameters:
@@ -434,9 +492,12 @@ def get_new_position(data, eigv, U, k, Cholesky, Inverse_Cholesky, Rotation):
     return True
 
 
-# Transfer the 'current' point in the varying parameters to the last accepted
-# one.
 def accept_step(data):
+    """
+    Transfer the 'current' point in the varying parameters to the last accepted
+    one.
+    
+    """
     for elem in data.get_mcmc_parameters(['varying']):
         data.mcmc_parameters[elem]['last_accepted'] = \
             data.mcmc_parameters[elem]['current']
@@ -449,6 +510,24 @@ def accept_step(data):
 # MCMC CHAIN
 ######################
 def chain(cosmo, data, command_line):
+    """
+    Run a Markov chain of fixed length.
+
+    Main function of this module, this is the actual Markov chain procedure.
+    After having selected a starting point in parameter space defining the
+    first **last accepted** one, it will, for a given amount of steps :
+    
+    + choose randomnly a new point following the *proposal density*, 
+    + compute the cosmological *observables* through the cosmological module, 
+    + compute the value of the *likelihoods* of the desired experiments at this point, 
+    + *accept/reject* this point given its likelihood compared to the one of
+      the last accepted one.
+
+    Every time the code accepts :code:`data.write_step` number of points
+    (quantity defined in the input parameter file), it will write the result to
+    disk (flushing the buffer by forcing to exit the output file, and reopen it
+    again.
+    """
 
     ## Initialisation
     loglike = 0

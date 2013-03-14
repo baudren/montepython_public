@@ -33,10 +33,10 @@ organised as follows:
 The first command is rather explicit. You will list there all the
 experiments you want to take into account. Their name should coincide
 with the name of one of the several sub-directories in the
-:code:`likelihood/` directory. Likelihoods will be explained in
-section \ref{likelihoods}
+:code:`likelihood/` directory. Likelihoods will be explained in the
+:doc:`likelihood_class`
 
-In :code:`data.parameters`, you can list all the cosmo and nuisance
+In :attr:`data.parameters`, you can list all the cosmo and nuisance
 parameter that you want to vary in the Markov chains. For each of them
 you must give an array with six elements, in this order: 
 
@@ -50,15 +50,14 @@ you must give an array with six elements, in this order:
       matrix including this parameter passed as an input),
     * **scale** (most of the time, it will be 1, but occasionnaly you
       can use a rescaling factor for convenience, for instance {\tt
-      1.e-9} if you are dealing with :code:`A_s` or :code:`0.01` if
-      you are dealing with :code:`omega_b`) 
-    * **role** ({\tt 'cosmo'} for MCMC parameters used by the
-      Boltzmann code, {\tt 'nuisance'} for MCMC parameters used only
-      by the likelihoods, and {\tt 'derived'} for parameters not
-      directly varied by the MCMC algorithm, but to be kept in the
-      chains for memory).
+      1.e-9} if you are dealing with :math:`A_s` or :code:`0.01` if
+      you are dealing with :math:`\omega_b`) 
+    * **role** (:code:`cosmo` for MCMC parameters used by the Boltzmann
+      code, :code:`nuisance` for MCMC parameters used only by the
+      likelihoods, and :code:`derived` for parameters not directly varied by
+      the MCMC algorithm, but to be kept in the chains for memory).
 
-In  :code:`data.cosmo_arguments`, you can pass to the Boltzmann code
+In  :attr:`data.cosmo_arguments`, you can pass to the Boltzmann code
 any parameter that you want to fix to a non-default value
 (cosmological parameter, precision parameter, flag, name of input file
 needed by the Bolztmann code, etc.). The names and values should be
@@ -73,7 +72,7 @@ or
 
 .. code::
 
-    data.cosmo_arguments['Y_He']           = 'BBN'    
+    data.cosmo_arguments['Y_He']      = 'BBN'    
     data.cosmo_arguments['sBBN file'] = data.path['cosmo']+'/bbn/sBBN.dat'
   
 All elements you input with a :code:`cosmo`, :code:`derived` or
@@ -99,12 +98,13 @@ You may wish occasionally to use in the MCMC runs a new parameter
 that is not a |CLASS|  parameter, but can be mapped to one or
 several |CLASS| parameters (e.g. you may wish to use in your chains
 :math:`\log(10^{10}A_s)` instead of :math:`A_s`). There is a function,
-located in :code:`code/data.py`, that you can edit to define such
-mappings.  It is called  :code:`update_cosmo_arguments`. Before
-calling \CLASS, this function will simply substitute in the list of
-arguments your customized parameters by some |CLASS| parameters.
-Several exemple of such mappings are already implemented, allowing you
-for instance to use :code:`'Omega_Lambda'`, :code:`'ln10^{10}A_s'` or
+in the module :mod:`data`, that you can edit to define such
+mappings: it is called  :func:`update_cosmo_arguments
+<data.data.update_cosmo_arguments>`. Before calling \CLASS, this
+function will simply substitute in the list of arguments your
+customized parameters by some |CLASS| parameters.  Several exemple of
+such mappings are already implemented, allowing you for instance to
+use :code:`'Omega_Lambda'`, :code:`'ln10^{10}A_s'` or
 :code:`'exp_m_2_tau_As'` in your chains. Looking at these examples,
 the user can easily write new ones even without knowing python.
   
@@ -139,9 +139,8 @@ Incidentaly, if you are starting the program in an existing folder,
 already containing a :code:`log.param` file, then you do not even have
 to specify a parameter file: the code will use it automatically. This
 will avoid mixing things up. If you are using one anyway, the code
-will first check whether the two parameter files are in agreement, and
-if not, will stop and say so. In that way, you are sure not to put
-together some chains obtained under different physical assumptions.
+will warn you that it did not read it: it will always only use the
+:code:`log.param` file.
   
 In the folder :code:`montepyhton`, you can create a folder
 :code:`chains` where you will organize your runs e.g. in the
@@ -179,13 +178,13 @@ probability. You can run again |MP| with the :code:`-info` prefix
 followed by the name of a directory or of several chains, e.g.
 :code:`-info chains/myrun/` or :code:`-info chains/myrun/2012-10-26*
 chains/myrun/2012-10-27*`. There is no need to pass an input file
-with parameter names since they have all been stores in the
+with parameter names since they have all been stored in the
 :code:`log.param`.
 
 Information on the acceptance rate and minimum :math:`-\log{\cal
 L}=\chi^2_{\rm eff}/2` is written in :code:`chains/myrun/myrun.log`.
-Information on the convergence (Raferty \& Lewis test for each chain
-paramater), on the best fit, mean and minimum credible interval for
+Information on the convergence (Gelman-Rubin test for each chain
+parameter), on the best fit, mean and minimum credible interval for
 each parameter at the 68.26\%, 95.4\%, 99.7\% level are written in
 horizontal presentation in :code:`chains/myrun/myrun.h_info`, and in
 vertical presentation in :code:`chains/myrun/myrun.v_info` (without
@@ -199,20 +198,18 @@ proposal density in a future run. The first line, containing the
 parameter name, will be read when the covariance matrix will be passed
 in input. This means that the list of parameters in the input
 covariance matrix and in the run don't need to coincide: the code will
-automatically eliminate, add and reorder parameters. Note that the
-rescaling factors passed in the input file are used internally during
-the run and also in the presentation of results in the
-:code:`.h_info`, :code:`.v_info`, :code:`.tex` files, but not in the
-covariance matrix file, which refers to the true parameters.
+automatically eliminate, add and reorder parameters (see
+:func:`mcmc.get_covariance_matrix`). Note that the rescaling factors
+passed in the input file are used internally during the run and also
+in the presentation of results in the :code:`.h_info`,
+:code:`.v_info`, :code:`.tex` files, but not in the covariance matrix
+file, which refers to the true parameters.
 
 The 1D posteriors and 2D posterior contours are plotted in
 :code:`chains/myrun/plots/myrun_1D.pdf` and
-:code:`chains/myrun/plots/myrun_triangle.pdf`. You will find in
-section~\ref{commands} a list of commands to customize the plots.
-Besides, you may wish to change font sizes: for the moment this has to
-be done by editing the very last lines of :code:`code/analyse.py` and
-writing your own values for the :code:`fontsize` and :code:`ticksize`
-variables.
+:code:`chains/myrun/plots/myrun_triangle.pdf`. You will find in the
+:doc:`parser_mp` documentation a list of commands to customize the
+plots. 
 
 When the chains are not very converged and the posterior probability
 has local maxima, the code will fail to compute minimum credible
@@ -233,9 +230,9 @@ several cores, |CLASS| and the WMAP likelihood will parallelize since
 they use OpenMP). They can be run with the same command since chain
 names  are created automatically with different numbers for each
 chain: the chain names are in  the form :code:`yyyy-mm-dd_N__i.txt`
-where `yyyy` is the year, `mm` the month, `dd` the day, `N` the
-requested number of steps and `i` the smallest available integer at
-the time of starting a new run.
+where :code:`yyyy` is the year, :code:`mm` the month, :code:`dd` the
+day, :code:`N` the requested number of steps and :code:`i` the
+smallest available integer at the time of starting a new run.
 
 However the absence of communication between chains implies that the
 proposal density cannot be updated automatically during the initial
