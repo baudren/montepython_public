@@ -745,6 +745,18 @@ class likelihood_clik(likelihood):
 
         self.nuisance = list(self.clik.extra_parameter_names)
 
+        # testing if the nuisance parameters are defined. If there is at least
+        # one non defined, exits.
+        exit_flag = False
+        nuisance_parameter_names = data.get_mcmc_parameters(['nuisance'])
+        for nuisance in self.nuisance:
+            if nuisance not in nuisance_parameter_names:
+                exit_flag = True
+                print '%20s\tmust be a fixed or varying nuisance parameter' % nuisance
+      
+        if exit_flag:
+            exit()
+
         # deal with nuisance parameters
         try:
             self.use_nuisance
