@@ -77,8 +77,8 @@ def main():
     # it will extract information from it (plots to compute, chains to analyse,
     # etc...)
     if command_line.files is not None:
-        import analyze    # analysis module, only invoked when analyzing
-        analyze.info(command_line)
+        from analyze import analyze   # analysis module, only invoked when analyzing
+        analyze(command_line)
         exit()
 
     # If the restart flag was used, load the cosmology directly from the
