@@ -370,7 +370,7 @@ def get_covariance_matrix(data, command_line):
         M = np.identity(len(parameter_names), 'float64')
         for elem in parameter_names:
             M[i][i] = np.array(
-                data.mcmc_parameters[elem]['scale'], 'float64')**2
+                data.mcmc_parameters[elem]['initial'][3], 'float64')**2
             i += 1
 
     # Final print out, the actually used covariance matrix
