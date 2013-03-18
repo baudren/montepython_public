@@ -1,0 +1,3 @@
+# Grab the clik version of CAMSpec
+
+Planck_lensing.path_clik = data.path['clik']+'../lensing_likelihood_v4_ref.clik_lensing'

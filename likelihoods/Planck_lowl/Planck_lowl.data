@@ -1,0 +1,3 @@
+# Grab the clik version of CAMSpec
+
+Planck_lowl.path_clik = data.path['clik']+'../commander_v4.1_lm49.clik'
