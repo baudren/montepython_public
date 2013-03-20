@@ -12,9 +12,10 @@ Contents:
    :maxdepth: 2
 
    description
-   theory
    installation
    getting_started
+   example
+   likelihoods
    documentation
 
 

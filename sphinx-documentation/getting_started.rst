@@ -1,9 +1,6 @@
 Getting Started
 ===============
 
-.. warning::
-
-  check if no redundancy in this file
 
 Input parameter file
 --------------------

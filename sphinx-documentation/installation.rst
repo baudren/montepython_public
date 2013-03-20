@@ -120,12 +120,6 @@ line, filled with the path of your :code:`class/` directory:
 
    path['cosmo']   = 'path/to/your/class/'
  
-For members of the Planck collaboration only: if you have installed Clik, then you should also add:
-
-.. code::
-
-  path['clik']    = 'path/to/your/clik/examples/'
-
 To check that |MP| is ready to work, simply type :code:`python
 code/MontePython.py --help` (or just :code:`code/MontePython.py
 --help`). This will provide you with a short description of the
@@ -135,23 +129,59 @@ available command line arguments, explained in :doc:`parser_mp`.
 Planck likelihood
 ^^^^^^^^^^^^^^^^^
 
-TODO
+With the release of Planck data comes the release of its likelihood.
+It is distributed from this `ESA website
+<http://www.sciops.esa.int/index.php?project=planck&page=Planck_Legacy_Archive>`_,
+along with the data. Download all `tar.gz` files, extract them to the
+place of your convenience.
+
+The Planck Likelihood Code (**plc**) is based on a library called
+`clik`. It will be extracted, alongside several `.clik` folders that
+contain the likelihoods. In your |MP| configuration file, to use this
+code, you should add the following line
+
+.. code:: python
+
+  path['clik'] = 'path/to/your/plc/folder/'
+
+The four likelihoods defined in |MP| for Planck are `Planck_highl`,
+`Planck_lowl`, `Planck_lensing`, `lowlike` (the polarization data from
+WMAP). In each of the respective data files for these likelihood,
+please make sure that the line, for instance,
+
+.. code:: python
+
+  Planck_highl.path_clik = data.path['clik']+'../something.clik'
+
+points to the correct clik file. Once you made sure of this, you can
+then use the planck.param file distributed with MontePython, that
+defines all the needed nuisance parameters, to 
+
 
 WMAP likelihood
 ^^^^^^^^^^^^^^^
 
-To use the likelihood of WMAP, we propose a python wrapper, located in the
-:code:`wrapper_wmap` directory. Just like with the |CLASS| wrapper, you need to
-install it, although the procedure differs. Go to the wrapper directory, and enter:
+.. warning::
+
+  So far, the use of the WMAP wrapper is separated from the Planck
+  wrapper, but it might be merged in the future, as it is based on the
+  same code `clik` developped internally for Planck by Karim Benabed.
+
+To use the likelihood of WMAP, we propose a python wrapper, located in
+the :code:`wrapper_wmap` directory. Just like with the |CLASS|
+wrapper, you need to install it, although the procedure differs. Go to
+the wrapper directory, and enter:
 
 .. code::
 
   wrapper_wmap]$ ./waf configure install_all_deps
 
-This should read the configuration of your distribution, and install the WMAP likelihood code and its
-dependencies (cfitsio) automatically on your machine. For our purpose,
-though, we prefer using the intel mkl libraries, which are much faster. To
-tell the code about your local installation of mkl libraries, please add to the line above some options:
+This should read the configuration of your distribution, and install
+the WMAP likelihood code and its dependencies (cfitsio) automatically
+on your machine. For our purpose, though, we prefer using the intel
+mkl libraries, which are much faster. To tell the code about your
+local installation of mkl libraries, please add to the line above some
+options:
 
 .. code::
 
@@ -163,18 +193,27 @@ Once the configuration is done properly, finalize the installation by typing:
 
   wrapper_wmap]$ ./waf install
 
-The code will generate a configuration file, that you will need to source
-before using the WMAP likelihood with |MP|. The file is :code:`clik_profile.sh`, and is located
-in :code:`wrapper_wmap/bin/`. So if you want to use the likelihood :code:`'wmap'`, before any call to |MP| (or inside your
-scripts), you should execute
+The code will generate a configuration file, that you will need to
+source before using the WMAP likelihood with |MP|. The file is
+:code:`clik_profile.sh`, and is located in :code:`wrapper_wmap/bin/`.
+So if you want to use the likelihood :code:`'wmap'`, before any call
+to |MP| (or inside your scripts), you should execute
 
 .. code::
 
   ~]$ source /path/to/MontePython/wrapper_wmap/bin/clik_profile.sh
 
-The wrapper will use the original version of the WMAP likelihood codes downloaded and placed in the folder :code:`wrapper_wmap/src/likelihood_v4p1/` during the installation process. This likelihood will be compiled later, when you will call it for the first time from the |MP| code. Before calling it for the first time, you could eventually download the WMAP patch from Wayne Hu's web site, for a faster likelihood.
+The wrapper will use the original version of the WMAP likelihood codes
+downloaded and placed in the folder
+:code:`wrapper_wmap/src/likelihood_v4p1/` during the installation
+process. This likelihood will be compiled later, when you will call it
+for the first time from the |MP| code. Before calling it for the first
+time, you could eventually download the WMAP patch from Wayne Hu's web
+site, for a faster likelihood.
 
-You should finally download the WMAP data files by yourself, place them anywhere on your system, and specify the path to these data files in the file :code:`likelihoods/wmap/wmap.data`.
+You should finally download the WMAP data files by yourself, place
+them anywhere on your system, and specify the path to these data files
+in the file :code:`likelihoods/wmap/wmap.data`.
 
 
 .. _Python: http://www.python.org/
