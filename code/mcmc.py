@@ -390,13 +390,20 @@ def get_new_position(data, eigv, U, k, Cholesky, Inverse_Cholesky, Rotation):
     idea by Anthony Lewis, in a yet unpublished paper, Efficient sampling of
     fast and slow cosmological parameters).
 
-    .. warning::
+    .. note::
         
-        Do we still need U ? Or removing completely the old scheme ?
+        U, eigv are not used anymore in v1.2.0, but might come back in v1.2.1.
 
     :Parameters:
-        * **eigv** (`numpy array`) - eigenvalues previously computed
-        * **U** (`numpy_array`) - bla
+        * **eigv** (`numpy array`) - eigenvalues previously computed *obsolete
+                in v1.2.0*
+        * **U** (`numpy_array`) - *obsolete in v1.2.0*, was the covariance
+                matrix.
+        * **k** (`int`) - Number of points so far in the chain, is used to
+                rotate through parameters
+        * **Cholesky** (`numpy_array`) - Cholesky decomposition of the
+                covariance matrix, and its inverse
+        * **Rotation** (`numpy_array`) - Not used yet
 
     """
 
