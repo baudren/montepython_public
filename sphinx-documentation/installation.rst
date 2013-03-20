@@ -153,9 +153,28 @@ please make sure that the line, for instance,
 
   Planck_highl.path_clik = data.path['clik']+'../something.clik'
 
-points to the correct clik file. Once you made sure of this, you can
-then use the planck.param file distributed with MontePython, that
-defines all the needed nuisance parameters, to 
+points to the correct clik file. Now, before trying to run this
+likelihood, you will need to source the code to your system, by
+typing:
+
+.. code::
+
+   ~]$ source /path/to/your/plc/folder/bin/clik_profile.sh
+    
+Once you made sure of this, you can then use the base.param file
+distributed with MontePython, that defines all the needed nuisance
+parameters, the covariance matrix as well as the bestfit file, in this
+command:
+
+.. code::
+
+  python code/MontePython.py -o planck/ -p base.param -c covmat/base.covmat \
+  -bf bestfit/base.bestfit -conf default.conf -f 1.5
+
+.. note::
+
+  The use of the factor 1.5 is to increase the acceptance rate, due to
+  the non gaussianity of the nuisance parameters posterior.
 
 
 WMAP likelihood
