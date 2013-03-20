@@ -1,15 +1,28 @@
-v1.1.1: - Removed the comparison between input param and log.param:
-	always choose the latest.
-	- Transfered the log_flag from being an indendent quantity
-	being exchanged between data and likelihoods to a proper
-	attribute of the data class. Since no comparison is done
-	any-more, there was no reason to keep it this way anymore.
+v1.2.0: - Added the Planck likelihoods (highl, lowl, lensing and
+	lowlike)
+	- Transfered the documentation to a sphinx-documentation. Most
+	comments in the code have been replaced by docstrings,
+	automatically extracted to create a web-site. You can now
+	navigate the different functions, see the dependencies, see
+	the source code in one convenient place.
 	- Renamed both io.py and parser.py into io_mp.py and
 	parser_mp.py (mp for Monte Python). It was conflicting with
 	some installed packages of python, both being some very often
 	used names.
+	- Removed the comparison between input param and log.param:
+	always choose the latest.
+	- Changed the architecture of analyze.py file. The whole thing
+	is no longer a class, but instead a collection of functions.
+	To exchange information between these functions, a new class
+	called `information` has been created.
 	- Removed the common.py file, merging its content (lockfile
 	system) with io_mp.py
+	- Transfered the log_flag from being an indendent quantity
+	being exchanged between data and likelihoods to a proper
+	attribute of the data class. Since no comparison is done
+	any-more, there was no reason to keep it this way anymore.
+
+-----------------------------------------------------------------------
 v1.1.0: - Added the following likelihoods: SPT full data (called spt_2500 in
 	the likelihood directory), compilation of BAO scale data (called bao),
 	compilation of quasar time-delay data (called timedelay), timedelay, and
