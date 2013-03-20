@@ -183,7 +183,7 @@ def read_args_from_bestfit(data, bestfit):
 
     parameter_names = data.get_mcmc_parameters(['varying'])
     bestfit_file = open(bestfit, 'r')
-    for line in bestfit:
+    for line in bestfit_file:
         if line.find('#') != -1:
             bestfit_names = line.strip('#').replace(' ', '').\
                 replace('\n', '').split(',')
@@ -198,7 +198,7 @@ def read_args_from_bestfit(data, bestfit):
     for elem in parameter_names:
         if elem in bestfit_names:
             data.mcmc_parameters[elem]['last_accepted'] = \
-                bestfit_values[bfnames.index(elem)] / \
+                bestfit_values[bestfit_names.index(elem)] / \
                 data.mcmc_parameters[elem]['scale']
             print 'from best-fit file : ', elem, ' = ',
             print bestfit_values[bestfit_names.index(elem)] / \
