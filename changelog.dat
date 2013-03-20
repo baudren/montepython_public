@@ -1,5 +1,9 @@
-v1.2.0: - Added the Planck likelihoods (highl, lowl, lensing and
-	lowlike)
+v1.2.0: - Added the Planck likelihoods (called Planck_highl,
+	Planck_lowl, Planck_lensing and	lowlike)
+	- Added a Cholesky decomposition method to speed up sampling
+	for likelihoods with a large number of nuisance parameters (A.
+	Lewis in Preparation, based on ?), which groups parameters by
+	blocks of same speed.
 	- Transfered the documentation to a sphinx-documentation. Most
 	comments in the code have been replaced by docstrings,
 	automatically extracted to create a web-site. You can now
@@ -16,7 +20,8 @@ v1.2.0: - Added the Planck likelihoods (highl, lowl, lensing and
 	To exchange information between these functions, a new class
 	called `information` has been created.
 	- Removed the common.py file, merging its content (lockfile
-	system) with io_mp.py
+	system) with io_mp.py. Note that the lockfile is still being
+	tested (works on our machine)
 	- Transfered the log_flag from being an indendent quantity
 	being exchanged between data and likelihoods to a proper
 	attribute of the data class. Since no comparison is done
