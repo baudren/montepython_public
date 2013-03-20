@@ -9,7 +9,7 @@ Python
 
 First of all, you need a clean installation of Python_ (version 2.7 is
 better, though it works also with 2.6 and 2.5 (see below). version 3.0
-is not supported), with at least the numpy_ module (version |geq| 1.4.1) and
+is not supported), with at least the numpy_ module (version :math:`\geq 1.4.1`) and
 the cython_ module. This last one is to convert the C code CLASS_ into
 a Python class.
 
@@ -46,7 +46,7 @@ Class
 ^^^^^
 
 Next in line, you must compile the python wrapper of CLASS_. Download
-the latest version (|geq| 1.5.0), and follow the basic instruction.
+the latest version (:math:`\geq 1.5.0`), and follow the basic instruction.
 Instead of  :code:`make class`, type :code:`make`. This will also
 create an archiv `.ar` of the code, useful in the next step. After
 this, do:
@@ -225,6 +225,3 @@ in the file :code:`likelihoods/wmap/wmap.data`.
 .. _CLASS: http://www.class-code.net/
 .. |CLASS| replace:: *Class*
 .. |MP| replace:: *Monte Python*
-
-.. |geq| unicode:: U+2265
-.. |leq| unicode:: U+2264
