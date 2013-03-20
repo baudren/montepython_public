@@ -386,14 +386,17 @@ def get_covariance_matrix(data, command_line):
 def get_new_position(data, eigv, U, k, Cholesky, Inverse_Cholesky, Rotation):
     """
     Obtain a new position in the parameter space from the eigen values of the
-    inverse covariance matrix, or from the Cholesky decomposition.
+    inverse covariance matrix, or from the Cholesky decomposition (original
+    idea by Anthony Lewis, in a yet unpublished paper, Efficient sampling of
+    fast and slow cosmological parameters).
 
     .. warning::
         
         Do we still need U ? Or removing completely the old scheme ?
 
     :Parameters:
-        * **eigv** (`numpy array`) - bla
+        * **eigv** (`numpy array`) - eigenvalues previously computed
+        * **U** (`numpy_array`) - bla
 
     """
 
