@@ -738,7 +738,12 @@ class likelihood_clik(likelihood):
             print "/_o_\ please run : source /path/to/clik/bin/clik_profile.sh"
             print "      and try again."
             exit()
-        self.clik = clik.clik(self.path_clik)
+        # for lensing, the initialization is different
+        if self.name == 'Planck_lensing':
+            self.clik = clik.clik_lensing(self.path_clik)
+        else:
+            self.clik = clik.clik(self.path_clik)
+
         self.l_max = max(self.clik.get_lmax())
         self.need_cosmo_arguments(
             data, {'l_max_scalars': self.l_max})
@@ -776,9 +781,12 @@ class likelihood_clik(likelihood):
         # add contamination spectra multiplied by nuisance parameters
         cl = self.add_contamination_spectra(cl, data)
 
+        # testing for lensing
+        length = len(self.clik.get_has_cl())
+
         # allocate array of Cl's and nuisance parameters
         tot = np.zeros(
-            np.sum(self.clik.get_lmax())+6 +
+            np.sum(self.clik.get_lmax())+length+
             len(self.clik.get_extra_parameter_names()))
 
         # fill with Cl's
@@ -787,9 +795,15 @@ class likelihood_clik(likelihood):
             if (self.clik.get_lmax()[i] > -1):
                 for j in range(self.clik.get_lmax()[i]+1):
                     if (i == 0):
-                        tot[index+j] = cl['tt'][j]
+                        if length == 6:
+                            tot[index+j] = cl['tt'][j]
+                        elif length == 2:
+                            tot[index+j] = cl['pp'][j]
                     if (i == 1):
-                        tot[index+j] = cl['ee'][j]
+                        if length == 6:
+                            tot[index+j] = cl['ee'][j]
+                        elif length == 2:
+                            tot[index+j] = cl['pt'][j]
                     if (i == 2):
                         tot[index+j] = cl['bb'][j]
                     if (i == 3):
