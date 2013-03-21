@@ -1,0 +1,2 @@
+To make the latexpdf documentation, one should comment the lines
+defining the verbatim environnement (and end verbatim).
