@@ -316,11 +316,17 @@ class data(object):
         All lines starting with `data.` will be replaced by `self.`, so the
         current instance of the class will contain all the information.
 
+        .. note::
+
+            A rstrip() was added at the end, because of an uncomprehensible bug
+            on some systems that imagined some unexistant characters at the end
+            of the line... Now should work
+
         """
         for line in File:
             if line.find('#') == -1:
                 if line.split('=')[0].find('data.') != -1:
-                    exec(line.replace('data.', 'self.'))
+                    exec(line.replace('data.', 'self.').rstrip())
         File.seek(0)
 
     def group_parameters_in_blocks(self):
