@@ -738,17 +738,25 @@ class likelihood_clik(likelihood):
             print "/_o_\ please run : source /path/to/clik/bin/clik_profile.sh"
             print "      and try again."
             exit()
-        # for lensing, the initialization is different
+        # for lensing, some routines change. Intializing a flag for easier
+        # testing of this condition
         if self.name == 'Planck_lensing':
+            self.lensing = True
+        else:
+            self.lensing = False
+
+        if self.lensing:
             self.clik = clik.clik_lensing(self.path_clik)
+            self.l_max = self.clik.get_lmax()
         else:
             self.clik = clik.clik(self.path_clik)
+            self.l_max = max(self.clik.get_lmax())
 
-        self.l_max = max(self.clik.get_lmax())
         self.need_cosmo_arguments(
             data, {'l_max_scalars': self.l_max})
 
         self.nuisance = list(self.clik.extra_parameter_names)
+        print self.clik.extra_parameter_names
 
         # testing if the nuisance parameters are defined. If there is at least
         # one non defined, exits.
@@ -782,38 +790,48 @@ class likelihood_clik(likelihood):
         cl = self.add_contamination_spectra(cl, data)
 
         # testing for lensing
-        length = len(self.clik.get_has_cl())
+        if self.lensing:
+            length = 2
+        else:
+            length = len(self.clik.get_has_cl())
 
         # allocate array of Cl's and nuisance parameters
-        tot = np.zeros(
-            np.sum(self.clik.get_lmax())+length+
-            len(self.clik.get_extra_parameter_names()))
+        if self.lensing:
+            tot = np.zeros(2*self.l_max+length)
+        else:
+            tot = np.zeros(
+                np.sum(self.clik.get_lmax())+length+
+                len(self.clik.get_extra_parameter_names()))
 
         # fill with Cl's
         index = 0
-        for i in range(np.shape(self.clik.get_lmax())[0]):
-            if (self.clik.get_lmax()[i] > -1):
-                for j in range(self.clik.get_lmax()[i]+1):
-                    if (i == 0):
-                        if length == 6:
+        if not self.lensing:
+            for i in range(length):
+                if (self.clik.get_lmax()[i] > -1):
+                    for j in range(self.clik.get_lmax()[i]+1):
+                        if (i == 0):
                             tot[index+j] = cl['tt'][j]
-                        elif length == 2:
-                            tot[index+j] = cl['pp'][j]
-                    if (i == 1):
-                        if length == 6:
+                        if (i == 1):
                             tot[index+j] = cl['ee'][j]
-                        elif length == 2:
-                            tot[index+j] = cl['pt'][j]
-                    if (i == 2):
-                        tot[index+j] = cl['bb'][j]
-                    if (i == 3):
-                        tot[index+j] = cl['te'][j]
-                    if (i == 4):
-                        tot[index+j] = cl['tb'][j]
-                    if (i == 5):
-                        tot[index+j] = cl['eb'][j]
+                        if (i == 2):
+                            tot[index+j] = cl['bb'][j]
+                        if (i == 3):
+                            tot[index+j] = cl['te'][j]
+                        if (i == 4):
+                            tot[index+j] = cl['tb'][j]
+                        if (i == 5):
+                            tot[index+j] = cl['eb'][j]
 
-                index += self.clik.get_lmax()[i]+1
+                    index += self.clik.get_lmax()[i]+1
+
+        else:
+            for i in range(length):
+                for j in range(self.l_max):
+                    if (i == 0):
+                        tot[index+j] = cl['pp'][j]
+                    if (i == 1):
+                        tot[index+j] = cl['tt'][j]
+                index += self.l_max+1
 
         # fill with nuisance parameters
         for nuisance in self.clik.get_extra_parameter_names():
