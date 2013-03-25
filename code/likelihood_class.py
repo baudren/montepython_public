@@ -120,7 +120,10 @@ class likelihood(object):
         # convert dimensionless C_l's to C_l in muK**2
         T = cosmo._T_cmb()
         for key in cl.iterkeys():
-            cl[key] *= (T*1.e6)**2
+            # All quantities need to be multiplied by this factor, except the
+            # phi-phi term, that is already dimensionless
+            if key != 'pp':
+                cl[key] *= (T*1.e6)**2
 
         return cl
 
@@ -756,7 +759,6 @@ class likelihood_clik(likelihood):
             data, {'l_max_scalars': self.l_max})
 
         self.nuisance = list(self.clik.extra_parameter_names)
-        print self.clik.extra_parameter_names
 
         # testing if the nuisance parameters are defined. If there is at least
         # one non defined, exits.
