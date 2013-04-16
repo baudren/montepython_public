@@ -481,7 +481,23 @@ def convergence(info, is_main_chain=True, Files=None, param=None):
             cheese = (np.array([[float(elem) for elem in line.split()]
                                 for line in open(File, 'r')]))
 
-        max_lkl.append(min(cheese[:, 1]))
+        # If the file contains a line with a different number of elements, the
+        # previous array generation will fail, and will not have the correct
+        # shape. Hence the following command will fail. To avoid that, the
+        # error is catched.
+        try:
+            max_lkl.append(min(cheese[:, 1]))
+        except IndexError:
+            index = 1
+            print '/!\ Error while scanning ', File
+            print '    This file most probably contains an incomplete line'
+            print '    the analysis is impossible (please clean this file)'
+            print '    I think the following line(s) is(are) wrong:'
+            for line in open(File, 'r'):
+                if len(line.split()) != len(backup_names)+2:
+                    print '    -> line ', index
+                index += 1
+            exit()
         # beware, it is the min because we are talking about
         # '- log likelihood'
 
