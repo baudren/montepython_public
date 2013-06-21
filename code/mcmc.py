@@ -362,7 +362,7 @@ def get_covariance_matrix(data, command_line):
         # on all other lines, that contain 0, just use sigma^2
         for zeros in np.where(indices_final == 0)[0]:
             M[zeros, zeros] = np.array(
-                data.mcmc_parameters[parameter_names[zeros]]['scale'],
+                data.mcmc_parameters[parameter_names[zeros]]['initial'][3],
                 'float64')**2
 
     # else, take sigmas^2.
