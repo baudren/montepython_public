@@ -552,6 +552,7 @@ def chain(cosmo, data, command_line):
     else:
         print(' /|\  You are running with no varying parameters...')
         print('/_o_\ Computing model for only one point')
+        data.update_cosmo_arguments() # this fills in the fixed parameters
         loglike = compute_lkl(cosmo, data)
         io_mp.print_vector([data.out, sys.stdout], 1, loglike, data)
         return 1, loglike
