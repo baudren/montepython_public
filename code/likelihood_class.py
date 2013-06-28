@@ -45,7 +45,7 @@ class likelihood(object):
             '/../likelihoods/'+self.name+'/'
         if not data.log_flag:
             path = command_line.folder+'log.param'
-        self.read_from_file(path, data)
+        self.read_from_file(path, data, command_line)
 
         # Default state
         self.need_update = True
@@ -80,11 +80,29 @@ class likelihood(object):
         raise NotImplementedError(
             'Must implement method loglkl() in your likelihood')
 
-    def read_from_file(self, path, data):
+    def read_from_file(self, path, data, command_line):
         """
         Extract the information from the log.param concerning this likelihood.
 
+        If the log.param is used, check that at least one item for each
+        likelihood is recovered. Otherwise, it means the log.param does not
+        contain information on the likelihood. This happens when the first run
+        fails early, before calling the likelihoods, and the program did not
+        log the information. This check might not be completely secure, but it
+        is better than nothing.
+
+        .. warning::
+
+            This checks relies on the fact that a likelihood should always have
+            at least **one** line of code written in the likelihood.data file.
+            This should be always true, but in case a run fails with the error
+            message described below, think about it.
+
+
         """
+
+        # Counting how many lines are read. 
+        counter = 0
 
         self.path = path
         self.dictionary = {}
@@ -94,6 +112,7 @@ class likelihood(object):
                 if line.find('#') == -1:
                     if line.find(self.name+'.') != -1:
                         exec(line.replace(self.name+'.', 'self.'))
+                        counter += 1
                         # This part serves only to compare
                         key = line.split('=')[0].strip(' ').\
                             strip('\t').strip('\n').split('.')[1]
@@ -102,6 +121,16 @@ class likelihood(object):
                         self.dictionary[key] = value
             data_file.seek(0)
             data_file.close()
+
+        # Checking that at least one line was read, exiting otherwise
+        if counter == 0:
+            print " /|\  No information on %s likelihood was found" % self.name
+            print "/_o_\ in the %s file." % path
+            print "      This can result from a failed initialization"
+            print "      of a previous run. To solve it, you can do a"
+            print "      $ rm -rf %s" % command_line.folder
+            print "      Be sure there is nothing in it before doing this!"
+            exit()
         try:
             if (self.data_directory[-1] != '/'):
                 self.data_directory[-1] += '/'

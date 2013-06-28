@@ -252,8 +252,8 @@ def parse():
                     old_param = args.param
                     args.param = args.folder+'log.param'
                     if args.param is not None:
-                        print ' /!\ Appending to an existing folder: '
-                        print '     using the log.param instead of %s' % (
+                        print ' /|\  Appending to an existing folder: '
+                        print '/_o_\ using the log.param instead of %s' % (
                             old_param)
                 else:
                     if args.param is None:

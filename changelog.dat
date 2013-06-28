@@ -1,3 +1,8 @@
+v1.2.3: - Tentative error message to catch a typical error appearing
+	when running with a badly initialized log.param file. It now
+	states that you should probably remove the folder entirely. It
+	is not sure that this catches all types of situation, but it
+	does catch some of them.
 v1.2.2: - Several bug fixes. One with analyze module, that failed when
 	a file was not complete (wrong number of columns) - fixed. The
 	two other were more serious, and detailed below:
