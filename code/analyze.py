@@ -1029,7 +1029,8 @@ def plot_triangle(
                                #origin='lower', cmap=matplotlib.cm.Reds)
 
                 # plotting contours, using the ctr_level method (from Karim
-                # Benabed)
+                # Benabed). Note that only the 1 and 2 sigma contours are
+                # displayed (due to the line with lvls[:2])
                 try:
                     cs = ax2dsub.contourf(
                         y_centers, x_centers, n,
@@ -1082,6 +1083,9 @@ def plot_triangle(
                             info.ref_names[index],
                             info.ref_names[second_index], info.extension))
 
+                    # TEST
+                    print cs.collections
+                    print dir(cs.collections)
                     # store the coordinates of the points for further
                     # plotting.
                     plot_file = open(
@@ -1091,7 +1095,7 @@ def plot_triangle(
                             info.ref_names[second_index]), 'w')
                     plot_file.write(
                         '# contour for confidence level {0}\n'.format(
-                            levels[2]))
+                            levels[1]))
                     for elem in cs.collections[0].get_paths():
                         points = elem.vertices
                         for k in range(np.shape(points)[0]):
@@ -1101,7 +1105,7 @@ def plot_triangle(
 
                     plot_file.write(
                         '# contour for confidence level {0}\n'.format(
-                            levels[1]))
+                            levels[0]))
                     for elem in cs.collections[1].get_paths():
                         points = elem.vertices
                         for k in range(np.shape(points)[0]):
@@ -1109,14 +1113,6 @@ def plot_triangle(
                                 points[k, 0], points[k, 1]))
                     plot_file.write("\n\n")
 
-                    plot_file.write(
-                        '# contour for confidence level {0}\n'.format(
-                            levels[0]))
-                    for elem in cs.collections[2].get_paths():
-                        points = elem.vertices
-                        for k in range(np.shape(points)[0]):
-                            plot_file.write("%.8g\t %.8g\n" % (
-                                points[k, 0], points[k, 1]))
                     plot_file.close()
 
     # Plot the remaining 1d diagram for the parameters only in the comp
