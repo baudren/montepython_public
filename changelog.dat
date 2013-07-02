@@ -1,3 +1,4 @@
+v1.2.4: - Fixed behaviour for the -all option when analyzing folders.
 v1.2.3: - Tentative error message to catch a typical error appearing
 	when running with a badly initialized log.param file. It now
 	states that you should probably remove the folder entirely. It
