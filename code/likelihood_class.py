@@ -1242,22 +1242,14 @@ class likelihood_mpk(likelihood):
         P_lin = np.zeros((self.k_size), 'float64')
 
         if self.Use_giggleZ:
-
             P = np.zeros((self.k_fid_size), 'float64')
-
             for i in range(self.k_fid_size):
-
                 P[i] = cosmo._pk(self.k_fid[i]*h, self.redshift)
-
                 power = 0
                 for j in range(6):
                     power += self.giggleZ_fidpoly[j]*self.k_fid[i]**j
-
                 # rescale P by fiducial model and get it in (Mpc/h)**3
                 P[i] *= pow(10, power)/self.P_fid[i]*(h/scaling)**3
-
-            # get rescaled values of k in 1/Mpc
-            #self.k=self.kh *h*scaling
 
             # get P_lin by interpolation. It is still in (Mpc/h)**3
             P_lin = np.interp(self.kh, self.k_fid, P)
@@ -1267,7 +1259,7 @@ class likelihood_mpk(likelihood):
             self.k = self.kh*h*scaling
             # get values of P(k) in Mpc**3
             for i in range(self.k_size):
-                P_lin[i] = cosmo._pk(self.k[i], 0)
+                P_lin[i] = cosmo._pk(self.k[i], self.redshift)
             # get rescaled values of P(k) in (Mpc/h)**3
             P_lin *= (h/scaling)**3
 
