@@ -20,10 +20,12 @@ import io_mp
 import math
 import numpy as np
 
-# Module for handling display
-import matplotlib.pyplot as plt
 # The root plotting module, to change options like font sizes, etc...
 import matplotlib
+# The following line suppresses the need for an X server
+matplotlib.use("Agg")
+# Module for handling display
+import matplotlib.pyplot as plt
 
 # Module to handle warnings from matplotlib
 import warnings
