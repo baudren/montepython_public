@@ -1,4 +1,4 @@
-sdss_lrgDR4.data_directory    = data.path['data']
+sdss_lrgDR4.data_directory = data.path['data']
 
 # number of points and kbands in the input files
 sdss_lrgDR4.num_mpk_points_full = 20
@@ -10,24 +10,24 @@ sdss_lrgDR4.max_mpk_points_use = 20
 # as in the Tegmark papers therefore use non linear corrections
 
 # decide which kbands to use N.B. P(k) is set to zero outside
-# these limits. 
-# Since the windows file starts at k/h=1e-4 then truncate 
+# these limits.
+# Since the windows file starts at k/h=1e-4 then truncate
 # to matter_power_minkh in cmbtypes.
 # This time the windows file goes to k/h=1.
-sdss_lrgDR4.Q_marge = True
+sdss_lrgDR4.Q_marge     = True
 #flat prior on b^2*Q, marginalized analytically
-sdss_lrgDR4.Q_flat = True
-sdss_lrgDR4.Ag = 1.4
+sdss_lrgDR4.Q_flat      = True
+sdss_lrgDR4.Ag          = 1.4
 
 # parameter for the rescaling with respect to a fiducial model
-sdss_lrgDR4.use_scaling = True
-sdss_lrgDR4.redshift	= 0.35		
-sdss_lrgDR4.d_angular_fid = 722.4134
-sdss_lrgDR4.d_radial_fid = 897.9993
+sdss_lrgDR4.use_scaling         = True
+sdss_lrgDR4.redshift            = 0.35
+sdss_lrgDR4.d_angular_fid       = 722.4134
+sdss_lrgDR4.d_radial_fid        = 897.9993
 
 sdss_lrgDR4.min_mpk_kbands_use = 1
 sdss_lrgDR4.max_mpk_kbands_use = 65
 
-sdss_lrgDR4.windows_file = 'sdss_lrgDR4_windows.txt'
-sdss_lrgDR4.kbands_file = 'sdss_lrgDR4_kbands.txt'
-sdss_lrgDR4.measurements_file = 'sdss_lrgDR4_measurements.txt'
+sdss_lrgDR4.windows_file        = 'sdss_lrgDR4_windows.txt'
+sdss_lrgDR4.kbands_file         = 'sdss_lrgDR4_kbands.txt'
+sdss_lrgDR4.measurements_file   = 'sdss_lrgDR4_measurements.txt'

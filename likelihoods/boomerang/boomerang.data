@@ -1,4 +1,4 @@
 # BOOMERANG likelihood requires a .newdat file, describing all relevant
-# properties of the experiment. 
+# properties of the experiment.
 boomerang.data_directory   = data.path['data']
 boomerang.file             = 'B03_NA_21July05.newdat'

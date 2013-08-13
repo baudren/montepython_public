@@ -1,4 +1,4 @@
-wigglez_c.data_directory    = data.path['data']
+wigglez_c.data_directory = data.path['data']
 
 # number of points and kbands in the input files
 wigglez_c.num_mpk_points_full = 50
@@ -23,11 +23,12 @@ wigglez_c.sigmav = 325
 wigglez_c.use_halofit = True
 
 wigglez_c.Use_giggleZ = True
-wigglez_c.giggleZ_fidpoly=[4.69659, -12.7287, 42.5681, -89.5578, 96.664, -41.2564]
+wigglez_c.giggleZ_fidpoly = [
+    4.69659, -12.7287, 42.5681, -89.5578, 96.664, -41.2564]
 wigglez_c.giggleZ_fidpk_file = 'gigglezfiducialmodel_matterpower_c.dat'
 wigglez_c.giggleZ_fidpk_size = 500
 
-wigglez_c.redshift=0.60
+wigglez_c.redshift = 0.60
 
 wigglez_c.has_regions = True
 # regions ordered like in wigglez data files:

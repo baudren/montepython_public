@@ -64,8 +64,8 @@ def log_cosmo_arguments(data, command_line):
 
     Third function called when writing log.param. It is understood here that
     all the other parameters for the cosmological modules are set to their
-    default value directly in the program. 
-    
+    default value directly in the program.
+
     It is written as an update for the dictionary cosmo_arguments (i.e. as
     :code:`dict.update()` and not as :code:`dict =`) in order not to erase
     previously initialized data.
@@ -103,8 +103,8 @@ def print_parameters(out, data):
     file.
 
     Indeed, you will be able to recover these information from the log.param.
-    
-    .. warning:: 
+
+    .. warning::
 
         Please pay attention to the fact that, once launched, the order of the
         parameters in log.param is crucial, as is it the only place where it is
@@ -131,10 +131,10 @@ def print_parameters(out, data):
 def print_vector(out, N, loglkl, data):
     """
     Print the last accepted values to :code:`out`
-    
+
     :Parameters:
         - **out** (`list`) - array containing both standard output and the output file.
-          
+
           This way, if you run in interactive mode, you will be able to monitor
           the progress of the chain.
         - **N** (`int`) - multiplicity of the point, `i.e.` number of times the

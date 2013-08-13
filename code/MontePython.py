@@ -29,7 +29,7 @@ def main():
 
     This function recovers the input from the command line arguments, from
     :mod:`parser_mp`, the parameter files.
-    
+
     It then extracts the path of the used Monte Python code, assuming a
     standard setting (the data folder is in the same directory as the code
     folder).

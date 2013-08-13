@@ -286,7 +286,7 @@ def prepare(info, Files, is_main_chain=True):
 
     Since you can decide to analyze some file(s), or a complete folder, this
     function first needs to separate between the two cases.
-    
+
     .. warning::
         If someday you change the way the chains are named, remember to change
         here too, because this routine assumes the chains have a double
@@ -693,8 +693,8 @@ def plot_triangle(
         comp_plotted_parameters=None, comp_folder=None,
         comp_boundaries=None, comp_mean=None):
     """
-    Plotting routine, also computes the sigma errors. 
-    
+    Plotting routine, also computes the sigma errors.
+
     Partly imported from Karim Benabed in CosmoPmc.
 
     """
@@ -1036,7 +1036,7 @@ def plot_triangle(
                 try:
                     cs = ax2dsub.contourf(
                         y_centers, x_centers, n,
-                        extent=extent, levels=ctr_level(n, lvls[:2]), #colors="k", 
+                        extent=extent, levels=ctr_level(n, lvls[:2]), #colors="k",
                         zorder=5, cmap=plt.cm.autumn_r)
                 except Warning:
                     print '/!\  The routine could not find the contour of',

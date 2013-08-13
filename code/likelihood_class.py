@@ -21,7 +21,7 @@ import io_mp
 class likelihood(object):
     """
     General class that all likelihoods will inherit from.
-    
+
     """
 
     def __init__(self, path, data, command_line):
@@ -101,7 +101,7 @@ class likelihood(object):
 
         """
 
-        # Counting how many lines are read. 
+        # Counting how many lines are read.
         counter = 0
 
         self.path = path
@@ -797,7 +797,7 @@ class likelihood_clik(likelihood):
             if nuisance not in nuisance_parameter_names:
                 exit_flag = True
                 print '%20s\tmust be a fixed or varying nuisance parameter' % nuisance
-      
+
         if exit_flag:
             exit()
 
@@ -831,7 +831,7 @@ class likelihood_clik(likelihood):
             tot = np.zeros(2*self.l_max+length)
         else:
             tot = np.zeros(
-                np.sum(self.clik.get_lmax())+length+
+                np.sum(self.clik.get_lmax()) + length +
                 len(self.clik.get_extra_parameter_names()))
 
         # fill with Cl's

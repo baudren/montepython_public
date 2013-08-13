@@ -1,3 +1,4 @@
-WiggleZ.data_directory          = data.path['data']
+WiggleZ.data_directory = data.path['data']
 
-WiggleZ.redshift_bins_files     = ['wigglez_a.data','wigglez_b.data','wigglez_c.data','wigglez_d.data']
+WiggleZ.redshift_bins_files = [
+    'wigglez_a.data', 'wigglez_b.data', 'wigglez_c.data', 'wigglez_d.data']

@@ -11,10 +11,11 @@ with different possible configurations.
 import os
 import argparse  # Python module to handle command line arguments
 
+
 def create_parser():
     """
     Definition of the parser command line options
-    
+
     All command line arguments are defined below. This will also create an
     automatic help command, available through the call :code:`python
     code/Montepython -h`, listing the parameters and their function.
@@ -56,8 +57,8 @@ def create_parser():
               generate a covariance matrix to be used later with the `default`
               jumping method.
             - **-f** (`float`) - jumping factor (>= 0, default to 2.4)
-              (*OPT*). 
-              
+              (*OPT*).
+
               the proposal density is given by the input covariance matrix (or
               a diagonal matrix with elements given by the square of the input
               sigma's) multiplied by the square of this factor. In other words,
@@ -68,19 +69,19 @@ def create_parser():
               Dunkley et al. to be an optimal trade-off between high acceptance
               rate and high correlation of chain elements, at least for
               multivariate gaussian posterior probabilities. It can be a good
-              idea to reduce this factor for very non-gaussian posteriors. 
-              
+              idea to reduce this factor for very non-gaussian posteriors.
+
               Using :code:`-f 0 -N 1` is a convenient way to get the likelihood
               exactly at the starting point passed in input.
             - **-conf** (`str`) - configuration file (default to
               `default.conf`) (*OPT*). This file contains the path to your
               cosmological module directory.
             - **-chain_number** (`str`) - arbitrary numbering of the output
-              chain, to overcome the automatic one (*OPT*). 
-              
+              chain, to overcome the automatic one (*OPT*).
+
               By default, the chains are named :code:`yyyy-mm-dd_N__i.txt` with
               year, month and day being extracted, :code:`N` being the number
-              of steps, and :code:`i` an automatically updated index. 
+              of steps, and :code:`i` an automatically updated index.
 
               This means that running several times the code with the same
               command will create different chains automatically.
@@ -116,7 +117,7 @@ def create_parser():
 
               The lists of parameters in the two folders to compare do not need
               to coincide. It is limited so far to two folders to compare in
-              total. 
+              total.
             - **-extra** (`str`) - extra file to customize the output plots.
 
             .. code::
@@ -124,7 +125,7 @@ def create_parser():
                 info.to_change={'oldname1':'newname1','oldname2':'newname2',...}
                 info.to_plot=['name1','name2','newname3',...]
                 info.new_scales={'name1':number1,'name2':number2,...}
- 
+
             - **-noplot** (`None`) - do not produce plot, and compute only the
               covariance matrix (flag)
             - **-all** (`None`) - output every subplot in a separate file

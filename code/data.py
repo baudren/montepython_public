@@ -56,9 +56,9 @@ class data(object):
         It has a number of different **attributes**, and the more important
         ones are listed here:
 
-        * :attr:`cosmo_arguments` 
-        * :attr:`mcmc_parameters` 
-        * :attr:`need_cosmo_update`  
+        * :attr:`cosmo_arguments`
+        * :attr:`mcmc_parameters`
+        * :attr:`need_cosmo_update`
         * :attr:`log_flag`
         * :attr:`boundary_loglike`
 
@@ -82,7 +82,7 @@ class data(object):
               It is used here to find the cosmological module location.
 
         """
-        
+
         # Initialisation of the random seed
         rd.seed()
 
@@ -210,12 +210,12 @@ class data(object):
             exec "import %s" % elem
             # Initialize the likelihoods. Depending on the values of
             # command_line and log_flag, the routine will call slightly different
-            # things. If log_flag is True, the log.param will be appended. 
+            # things. If log_flag is True, the log.param will be appended.
             exec "self.lkl['%s'] = %s.%s('%s/%s.data',\
                 self,command_line)" % (
                 elem, elem, elem, folder, elem)
 
-        # Storing parameters by blocks of speed 
+        # Storing parameters by blocks of speed
         self.group_parameters_in_blocks()
 
         # Finally, log the cosmo_arguments used. This comes in the end, because
@@ -254,22 +254,22 @@ class data(object):
         self.from_input_to_mcmc_parameters(self.parameters)
 
     def from_input_to_mcmc_parameters(self, dictionary):
-        """ 
+        """
         Converts dictionary of raw quantities into a meaningful one.
 
         At the end of this initialization, every field but one is filled for
         every parameter, be it fixed or varying. The missing field is the
         'last_accepted' one, that will be filled in the module :mod:`mcmc`.
 
-        The other fields are 
+        The other fields are
 
-        `initial`: 
+        `initial`:
             initial array of input values defined in the parameter file.
             Contains (in this order) `mean`, `minimum`, `maximum`, `1-sigma`.
             If the min/max values (**TO CHECK** proposal density boundaries)
             are unimportant/unconstrained, use `None` or `-1` (without a period
             !)
-        `scale`: 
+        `scale`:
             5th entry of the initial array in the parameter file.
         `role`:
             6th entry of the initial array, can be `cosmo`, `nuisance` or
@@ -396,7 +396,7 @@ class data(object):
 
     def read_version(self, File):
         """
-        Extract version and subversion from an existing log.param 
+        Extract version and subversion from an existing log.param
         """
         # Read the first line (cosmological code version)
         first_line = File.readline()
@@ -412,13 +412,13 @@ class data(object):
 
         :Parameters:
             - **table_of_strings** (`list`) - List of strings whose role and
-              status must be matched by a parameter. For instance, 
+              status must be matched by a parameter. For instance,
 
               >>> get_mcmc_parameters(['varying'])
 
               will return a list of all the varying parameters, both
               cosmological and nuisance ones (derived parameters being `fixed`,
-              they wont be part of this list). Instead, 
+              they wont be part of this list). Instead,
 
               >>> get_mcmc_parameters(['nuisance', 'varying'])
 
@@ -566,9 +566,9 @@ class data(object):
                     self.cosmo_arguments['binned_reio_xe'] = string
 
     def __cmp__(self, other):
-        """ 
-        Redefinition of the 'compare' method for two instances of this class. 
-        
+        """
+        Redefinition of the 'compare' method for two instances of this class.
+
         It will decide which basic operations to perform when the code asked if
         two instances are the same (in case you want to launch a new chain in
         an existing folder, with your own parameter file) Comparing

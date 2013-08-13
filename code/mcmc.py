@@ -57,7 +57,7 @@ def compute_lkl(cosmo, data):
           value is chosen to be extremly small (large negative value), so that
           the step will always be rejected.
 
-        
+
     """
 
     # If the cosmological module has already been called once, and if the
@@ -72,8 +72,8 @@ def compute_lkl(cosmo, data):
     # function must be called if the jumping factor is set to zero. Indeed,
     # this means the code is called for only one point, to set the fiducial
     # model.
-    if ((data.need_cosmo_update) or \
-            (not cosmo.state) or \
+    if ((data.need_cosmo_update) or
+            (not cosmo.state) or
             (data.jumping_factor == 0)):
 
         # Prepare the cosmological module with the new set of parameters
@@ -165,7 +165,7 @@ def read_args_from_chain(data, chain):
         This method works because of the particular presentation of the chain,
         and the use of tabbings (not spaces). Please keep this in mind if you
         are having difficulties
-        
+
     """
     Chain = io_mp.File(chain, 'r')
     parameter_names = data.get_mcmc_parameters(['varying'])
@@ -336,7 +336,7 @@ def get_covariance_matrix(data, command_line):
         print(M)
 
         # Final step, creating a temporary matrix, filled with 1, that will
-        # eventually contain the result. 
+        # eventually contain the result.
         M_temp = np.ones((len(parameter_names),
                           len(parameter_names)), 'float64')
         indices_final = np.zeros(len(parameter_names))
@@ -396,7 +396,7 @@ def get_new_position(data, eigv, U, k, Cholesky, Inverse_Cholesky, Rotation):
     fast and slow cosmological parameters).
 
     .. note::
-        
+
         U, eigv are not used anymore in v1.2.0, but might come back in v1.2.1.
 
     :Parameters:
@@ -511,7 +511,7 @@ def accept_step(data):
     """
     Transfer the 'current' point in the varying parameters to the last accepted
     one.
-    
+
     """
     for elem in data.get_mcmc_parameters(['varying']):
         data.mcmc_parameters[elem]['last_accepted'] = \
@@ -531,10 +531,10 @@ def chain(cosmo, data, command_line):
     Main function of this module, this is the actual Markov chain procedure.
     After having selected a starting point in parameter space defining the
     first **last accepted** one, it will, for a given amount of steps :
-    
-    + choose randomnly a new point following the *proposal density*, 
-    + compute the cosmological *observables* through the cosmological module, 
-    + compute the value of the *likelihoods* of the desired experiments at this point, 
+
+    + choose randomnly a new point following the *proposal density*,
+    + compute the cosmological *observables* through the cosmological module,
+    + compute the value of the *likelihoods* of the desired experiments at this point,
     + *accept/reject* this point given its likelihood compared to the one of
       the last accepted one.
 
@@ -571,7 +571,7 @@ def chain(cosmo, data, command_line):
     else:
         print(' /|\  You are running with no varying parameters...')
         print('/_o_\ Computing model for only one point')
-        data.update_cosmo_arguments() # this fills in the fixed parameters
+        data.update_cosmo_arguments()  # this fills in the fixed parameters
         loglike = compute_lkl(cosmo, data)
         io_mp.print_vector([data.out, sys.stdout], 1, loglike, data)
         return 1, loglike
@@ -701,4 +701,4 @@ def chain(cosmo, data, command_line):
         sys.stdout.write('    deleting starting point of the chain {0}\n'.
                          format(command_line.restart))
 
-    return 
+    return

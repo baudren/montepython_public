@@ -8,25 +8,25 @@
 
 # where to read/write fiducial model:
 
-fake_planck_bluebook.data_directory = data.path['data']
-fake_planck_bluebook.fiducial_file  = 'fake_planck_bluebook_fiducial.dat'
+fake_planck_bluebook.data_directory     = data.path['data']
+fake_planck_bluebook.fiducial_file      = 'fake_planck_bluebook_fiducial.dat'
 
 # experimental sensitivity:
 
-fake_planck_bluebook.l_min=2
-fake_planck_bluebook.l_max=2500
-fake_planck_bluebook.f_sky=0.65
-fake_planck_bluebook.num_channels=3
+fake_planck_bluebook.l_min              = 2
+fake_planck_bluebook.l_max              = 2500
+fake_planck_bluebook.f_sky              = 0.65
+fake_planck_bluebook.num_channels       = 3
 
 # angular resolution
 # theta_fwhm must be in in arcmin
 
-fake_planck_bluebook.theta_fwhm=[10.,7.1,5.0]
+fake_planck_bluebook.theta_fwhm = [10., 7.1, 5.0]
 
 # resolution for Temperature and Polarisation
-# sigma's must be in muK.arcmin 
-# (with respect to Table 1.1 in bluebook, obtained by mutiplying 
-# angular resolution * DT/T * 2.726 ) 
+# sigma's must be in muK.arcmin
+# (with respect to Table 1.1 in bluebook, obtained by mutiplying
+# angular resolution * DT/T * 2.726 )
 
-fake_planck_bluebook.sigma_T=[68.1,42.6,65.4]
-fake_planck_bluebook.sigma_P=[109.4,81.3,133.6]
+fake_planck_bluebook.sigma_T = [68.1, 42.6, 65.4]
+fake_planck_bluebook.sigma_P = [109.4, 81.3, 133.6]

@@ -3,88 +3,91 @@ from likelihood_class import likelihood
 import inspect
 import numpy as np
 
+
 class wmap_9yr(likelihood):
 
-  def __init__(self, path, data, command_line):
+    def __init__(self, path, data, command_line):
 
-    # Standard initialization, reads the .data
-    likelihood.__init__(self, path, data, command_line)
+        # Standard initialization, reads the .data
+        likelihood.__init__(self, path, data, command_line)
 
-    # Extra needed cosmological paramters
-    self.need_cosmo_arguments(data,{'output':'tCl pCl lCl','lensing':'yes'})
+        # Extra needed cosmological paramters
+        self.need_cosmo_arguments(
+            data, {'output': 'tCl pCl lCl', 'lensing': 'yes'})
 
-    try:
-      import pywlik
-    except ImportError:
-      print " /|\  You must first activate the binaries from the wmap wrapper code,"
-      print "/_o_\ please run : source /path/to/montepython/wrapper_wmap/bin/clik_profile.sh"
-      print "      and try again."
-      exit()
+        try:
+            import pywlik
+        except ImportError:
+            print " /|\  You must first activate the binaries from the wmap wrapper code,"
+            print "/_o_\ please run : source /path/to/montepython/wrapper_wmap/bin/clik_profile.sh"
+            print "      and try again."
+            exit()
 
-    # try importing the wrapper_wmap
-    self.wmaplike = pywlik.wlik(self.large_data_directory,self.ttmin,self.ttmax,self.temin,self.temax,self.use_gibbs,self.use_lowlpol)
+        # try importing the wrapper_wmap
+        self.wmaplike = pywlik.wlik(self.large_data_directory, self.ttmin,
+                                    self.ttmax, self.temin, self.temax, self.use_gibbs, self.use_lowlpol)
 
-    #self.cls = np.loadtxt(self.cl_test_file)
-    
-    #loglike = self.wmaplike(self.cls)
-    #print "got %g expected %g"%(loglike,-845.483)
+        # self.cls = np.loadtxt(self.cl_test_file)
 
-    self.l_max = max(self.ttmax,self.temax)
-    self.need_cosmo_arguments(data,{'l_max_scalars':self.l_max})
+        # loglike = self.wmaplike(self.cls)
+        # print "got %g expected %g"%(loglike,-845.483)
 
-    # deal with nuisance parameters
-    try:
-      self.use_nuisance
-    except:
-      self.use_nuisance = []
-    self.read_contamination_spectra(data)
+        self.l_max = max(self.ttmax, self.temax)
+        self.need_cosmo_arguments(data, {'l_max_scalars': self.l_max})
 
-    pass
-  
-  def loglkl(self, cosmo, data):
+        # deal with nuisance parameters
+        try:
+            self.use_nuisance
+        except:
+            self.use_nuisance = []
+        self.read_contamination_spectra(data)
 
-    nuisance_parameter_names = data.get_mcmc_parameters(['nuisance'])
+        pass
 
-    # get Cl's from the cosmological code
-    cl = self.get_cl(cosmo)
- 
-    ## add contamination spectra multiplied by nuisance parameters
-    cl = self.add_contamination_spectra(cl,data)
+    def loglkl(self, cosmo, data):
 
-    # allocate array of Cl's and nuisance parameters
-    tot=np.zeros(np.sum(self.wmaplike.get_lmax())+6)
+        nuisance_parameter_names = data.get_mcmc_parameters(['nuisance'])
 
-    # fill with Cl's
-    index=0
-    for i in range(np.shape(self.wmaplike.get_lmax())[0]):
-      if (self.wmaplike.get_lmax()[i] >-1):
-        for j in range(self.wmaplike.get_lmax()[i]+1):
-          if (i==0):
-            tot[index+j]=cl['tt'][j]        
-          if (i==1):
-            tot[index+j]=cl['ee'][j]
-          if (i==2):
-            tot[index+j]=cl['bb'][j]
-          if (i==3):
-            tot[index+j]=cl['te'][j]
-          if (i==4):
-            tot[index+j]=cl['tb'][j]
-          if (i==5):
-            tot[index+j]=cl['eb'][j]
+        # get Cl's from the cosmological code
+        cl = self.get_cl(cosmo)
 
-        index += self.wmaplike.get_lmax()[i]+1
+        # add contamination spectra multiplied by nuisance parameters
+        cl = self.add_contamination_spectra(cl, data)
 
-    # fill with nuisance parameters
-    #for nuisance in nuisance_parameter_names:
-      #if nuisance == 'A_SZ':
-        #nuisance_value = data.mcmc_parameters[nuisance]['current']*data.mcmc_parameters[nuisance]['scale']
-        #tot[index]=nuisance_value
-        #index += 1
+        # allocate array of Cl's and nuisance parameters
+        tot = np.zeros(np.sum(self.wmaplike.get_lmax()) + 6)
 
-    # compute likelihood
-    lkl=self.wmaplike(tot)[0]
+        # fill with Cl's
+        index = 0
+        for i in range(np.shape(self.wmaplike.get_lmax())[0]):
+            if (self.wmaplike.get_lmax()[i] > -1):
+                for j in range(self.wmaplike.get_lmax()[i] + 1):
+                    if (i == 0):
+                        tot[index + j] = cl['tt'][j]
+                    if (i == 1):
+                        tot[index + j] = cl['ee'][j]
+                    if (i == 2):
+                        tot[index + j] = cl['bb'][j]
+                    if (i == 3):
+                        tot[index + j] = cl['te'][j]
+                    if (i == 4):
+                        tot[index + j] = cl['tb'][j]
+                    if (i == 5):
+                        tot[index + j] = cl['eb'][j]
 
-    # add prior on nuisance parameters
-    lkl = self.add_nuisance_prior(lkl,data)
+                index += self.wmaplike.get_lmax()[i] + 1
 
-    return lkl
+        # fill with nuisance parameters
+        # for nuisance in nuisance_parameter_names:
+            # if nuisance == 'A_SZ':
+                # nuisance_value = data.mcmc_parameters[nuisance]['current']*data.mcmc_parameters[nuisance]['scale']
+                # tot[index]=nuisance_value
+                # index += 1
+
+        # compute likelihood
+        lkl = self.wmaplike(tot)[0]
+
+        # add prior on nuisance parameters
+        lkl = self.add_nuisance_prior(lkl, data)
+
+        return lkl
