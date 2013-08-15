@@ -1,4 +1,29 @@
 WiggleZ.data_directory = data.path['data']
 
-WiggleZ.redshift_bins_files = [
-    'wigglez_a.data', 'wigglez_b.data', 'wigglez_c.data', 'wigglez_d.data']
+WiggleZ.redshift_bins_files = ['wigglez_a.data', 'wigglez_b.data', 'wigglez_c.data', 'wigglez_d.data']
+
+# Dictionary to hold common definition for all redshift bins
+WiggleZ.common = {}
+WiggleZ.common['data_directory'] = data.path['data']
+
+# number of points and kbands in the input files
+WiggleZ.common['num_mpk_points_full'] = 50
+WiggleZ.common['num_mpk_kbands_full'] = 100
+
+# use scaling by dv/dv(fid) for Pk
+WiggleZ.common['use_scaling'] = False
+
+# decide which bandpowers to use, min to max
+WiggleZ.common['min_mpk_points_use'] = 3
+WiggleZ.common['max_mpk_points_use'] = 25
+WiggleZ.common['min_mpk_kbands_use'] = 100
+WiggleZ.common['max_mpk_kbands_use'] = 100
+
+WiggleZ.common['use_halofit']    = True
+
+#giggleZPP0 requires Use_giggleZ = True
+WiggleZ.common['use_giggleZ']    = True
+WiggleZ.common['use_giggleZPP0'] = False
+
+# If you set use_giggleZPP0, you need the following line
+#WiggleZ.use_nuisance = ['P0']
