@@ -2,7 +2,7 @@ from likelihood_class import likelihood
 import os
 import numpy as np
 import math
-# Adapted from JL
+# Adapted from Julien Lesgourgues
 
 class euclid_lensing(likelihood):
 

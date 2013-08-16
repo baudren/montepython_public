@@ -10,6 +10,7 @@ with different possible configurations.
 """
 import os
 import argparse  # Python module to handle command line arguments
+import io_mp
 
 
 def create_parser():
@@ -232,10 +233,10 @@ def parse():
         # Else, the user should provide an output folder
         else:
             if args.folder is None:
-                print ' /|\   You must provide an output folder,'
-                print '/_o_\  because you do not want your main folder '
-                print '       to look dirty, do you?'
-                exit()
+                io_mp.message(
+                    "You must provide an output folder, because you do not \
+                    want your main folder to look dirty, do you ?",
+                    "error")
 
             # If he did so,
             else:
@@ -253,20 +254,23 @@ def parse():
                     old_param = args.param
                     args.param = args.folder+'log.param'
                     if args.param is not None:
-                        print ' /|\  Appending to an existing folder: '
-                        print '/_o_\ using the log.param instead of %s' % (
-                            old_param)
+                        io_mp.message(
+                            "Appending to an existing folder: using the \
+                            log.param instead of %s" % old_param,
+                            "info")
                 else:
                     if args.param is None:
-                        print ' /|\  The requested output folder appears to be'
-                        print '/_o_\ empty. You must then provide a parameter '
-                        print '      file (command line option -p any.param)'
-                        exit()
+                        io_mp.message(
+                            "The requested output folder appears to be empty. \
+                            You must then provide a parameter file (command \
+                            line option -p any.param)",
+                            "error")
             else:
                 if args.param is None:
-                    print ' /|\  The requested output folder appears to be '
-                    print '/_o_\ non-existent, you must then provide a param'
-                    print '      file (command line option -p any.param)'
-                    exit()
+                    io_mp.message(
+                        "The requested output folder appears to be non \
+                        existent. You must then provide a parameter file \
+                        (command line option -p any.param)",
+                        "error")
 
     return args

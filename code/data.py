@@ -178,8 +178,9 @@ class data(object):
         if (os.path.exists(command_line.folder) and
                 not os.path.exists(command_line.folder+'log.param')):
             if command_line.param is not None:
-                print '/!\   Detecting empty folder,',
-                print '      logging the parameter file'
+                io_mp.message(
+                    "Detecting empty folder, logging the parameter file",
+                    "warning")
                 io_mp.log_parameters(self, command_line)
                 self.log_flag = True
         if not os.path.exists(command_line.folder):
@@ -243,10 +244,10 @@ class data(object):
         try:
             self.param_file = open(self.param, 'r')
         except IOError:
-            print "\n /|\  Error in initializing the data class,"
-            print "/_o_\ parameter file {0} does not point to a file".format(
-                self.param)
-            exit()
+            io_mp.message(
+                "Error in initializing the data class, the parameter file \
+                {0} does not point to a proper file".format(self.param),
+                "error")
         self.read_file(self.param_file)
 
         # Transform from parameters dictionnary to mcmc_parameters dictionary
@@ -544,19 +545,19 @@ class data(object):
                 # reio_parametrization to reio_bins_tanh
                     if (self.cosmo_arguments['reio_parametrization'] !=
                             'reio_bins_tanh'):
-                        print ' /|\  Warning, you set binned_reio_xe to ',
-                        print 'some values'
-                        print '/_o_\ without setting reio_parametrization ',
-                        print 'to reio_bins_tanh'
-                        exit()
+                        io_mp.message(
+                            "You set binned_reio_xe to some values \
+                            without setting reio_parametrization to \
+                            reio_bins_tanh",
+                            "error")
                     else:
                         try:
                             size = self.cosmo_arguments['binned_reio_num']
                         except (KeyError):
-                            print ' /|\  You need to set reio_binnumber ',
-                            print 'to the value corresponding to'
-                            print '/_o_\ the one in binned_reio_xe'
-                            exit()
+                            io_mp.message(
+                                "You need to set reio_binnumber to the value \
+                                corresponding to the one in binned_reio_xe",
+                                "error")
                     string = ''
                     for i in range(1, size+1):
                         string += '%.4g' % self.cosmo_arguments['xe_%d' % i]
@@ -576,8 +577,10 @@ class data(object):
 
         """
         if self.version != other.version:
-            print '/!\ Warning, you are running with a different ',
-            print 'version of your cosmological code'
+            io_mp.message(
+                "You are running with a different version of your \
+                cosmological code",
+                "warning")
 
         # Defines unordered version of the dictionaries of parameters
         self.uo_parameters = {}

@@ -561,16 +561,20 @@ def chain(cosmo, data, command_line):
     if (data.get_mcmc_parameters(['varying']) != []):
         sigma_eig, U, C = get_covariance_matrix(data, command_line)
         if data.jumping_factor == 0:
-            print '/!\ The jumping factor has been set to 0'
-            print '    This covariance matrix will not be used'
+            io_mp.message(
+                "The jumping factor has been set to 0. The above covariance \
+                matrix will not be used.",
+                "info")
 
     # In case of a fiducial run (all parameters fixed), simply run once and
     # print out the likelihood. This should not be used any more (one has to
     # modify the log.param, which is never a good idea. Instead, force the code
     # to use a jumping factor of 0 with the option "-f 0".
     else:
-        print(' /|\  You are running with no varying parameters...')
-        print('/_o_\ Computing model for only one point')
+        io_mp.message(
+            "You are running with no varying parameters... I will compute \
+            only one point and exit",
+            "info")
         data.update_cosmo_arguments()  # this fills in the fixed parameters
         loglike = compute_lkl(cosmo, data)
         io_mp.print_vector([data.out, sys.stdout], 1, loglike, data)
@@ -603,9 +607,10 @@ def chain(cosmo, data, command_line):
                             Cholesky, Inverse_Cholesky, Rotation) is True:
             break
         if i == 99:
-            print '/!\ You should check your prior boundaries... '
-            print '    no valid position was found after 100 tries'
-            exit()
+            io_mp.message(
+                "You should probably check your prior boundaries... because \
+                no valid starting position was found after 100 tries",
+                "error")
 
     # Compute the starting Likelihood
     loglike = compute_lkl(cosmo, data)

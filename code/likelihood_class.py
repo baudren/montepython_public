@@ -124,13 +124,14 @@ class likelihood(object):
 
         # Checking that at least one line was read, exiting otherwise
         if counter == 0:
-            print " /|\  No information on %s likelihood was found" % self.name
-            print "/_o_\ in the %s file." % path
-            print "      This can result from a failed initialization"
-            print "      of a previous run. To solve it, you can do a"
-            print "      $ rm -rf %s" % command_line.folder
-            print "      Be sure there is nothing in it before doing this!"
-            exit()
+            io_mp.message(
+                "No information on %s likelihood was found in the %s file.\n \
+                This can result from a failed initialization of a previous \
+                run. To solve this, you can do a \n \
+                ]$ rm -rf %s \n \
+                Be sure there is noting in it before doing this !" % (
+                self.name, path, command_line.folder),
+                "error")
         try:
             if (self.data_directory[-1] != '/'):
                 self.data_directory[-1] += '/'
@@ -765,11 +766,12 @@ class likelihood_clik(likelihood):
         try:
             import clik
         except ImportError:
-            print " /|\  You must first activate the binaries from the Clik ",
-            print "distribution,"
-            print "/_o_\ please run : source /path/to/clik/bin/clik_profile.sh"
-            print "      and try again."
-            exit()
+            io_mp.message(
+                "You must first activate the binaries from the Clik \
+                distribution. Please run : \n \
+                ]$ source /path/to/clik/bin/clik_profile.sh \n \
+                and try again.",
+                "error")
         # for lensing, some routines change. Intializing a flag for easier
         # testing of this condition
         if self.name == 'Planck_lensing':
@@ -983,9 +985,11 @@ class likelihood_mock_cmb(likelihood):
                 fid_file.write("%.8g  " % (cl['ee'][l]+self.noise_P[l]))
                 fid_file.write("%.8g  " % cl['te'][l])
                 fid_file.write("\n")
-            print '\n\n /|\  Writting fiducial model in {0}'.\
-                format(self.data_directory+self.fiducial_file)
-            print '/_o_\ for {0} likelihood'.format(self.name)
+            print '\n\n'
+            io_mp.message(
+                "Writting fiducial model in %s, for %s likelihood" % \
+                (self.data_directory+self.difucial_file, self.name),
+                "info")
             return 1
 
         # compute likelihood
@@ -1233,18 +1237,19 @@ class likelihood_mpk(likelihood):
         will be transfered to wigglez_a, b, c and d
 
         """
-        for k, v in common_dictionary.iteritems():
+        for key, value in common_dictionary.iteritems():
             # First, check if the parameter exists already 
             try:
-                exec("self.%s" % k)
-                print ' /!\ parameter %s from likelihood %s will be replaced'%\
-                (k, self.name)
-                print '     by common knowledge'
+                exec("self.%s" % key)
+                io_mp.message(
+                    "parameter %s from likelihood %s will be replaced by \
+                    the common knowledge routine" % (key, self.name),
+                    "warning")
             except:
-                if type(v) != type('foo'):
-                    exec("self.%s = %s" % (k, v))
+                if type(value) != type('foo'):
+                    exec("self.%s = %s" % (key, value))
                 else:
-                    exec("self.%s = '%s'" % (k, v))
+                    exec("self.%s = '%s'" % (key, value))
 
     # compute likelihood
     def loglkl(self, cosmo, data):

@@ -491,25 +491,25 @@ def convergence(info, is_main_chain=True, Files=None, param=None):
             max_lkl.append(min(cheese[:, 1]))
         except IndexError:
             index = 1
-            print '/!\ Error while scanning ', File
-            print '    This file most probably contains an incomplete line'
-            print '    the analysis is impossible (please clean this file)'
-            print '    I think the following line(s) is(are) wrong:'
-            for line in open(File, 'r'):
-                if len(line.split()) != len(backup_names)+2:
-                    print '    -> line ', index
-                index += 1
-            exit()
-        # beware, it is the min because we are talking about
-        # '- log likelihood'
+            io_mp.message(
+                "Error while scanning %s. This file most probably contains \
+                an incomplete line, rendering the analysis impossible. \
+                I think that the following line(s) is(are) wrong:\n %s" % \
+                (File, '\n '.join(['-> %s' % line for line in \
+                open(File, 'r') if len(line.split()) != len(backup_names)+2])),
+                "error")
 
+    # beware, it is the min because we are talking about
+    # '- log likelihood'
     # Selecting only the true maximum.
     try:
         max_lkl = min(max_lkl)
     except ValueError:
-        print('No decently sized chain was found. ')
-        print('Please wait a bit to analyze this folder')
-        exit()
+        io_mp.message(
+            "No decently sized chain was found in the desired folder. \
+            Please wait to have more accepted point before trying \
+            to analyze it.",
+            "error")
 
     info.max_lkl = max_lkl
 
@@ -563,7 +563,9 @@ def convergence(info, is_main_chain=True, Files=None, param=None):
 
             # Deal with single file case
             if len(Files) == 1:
-                print('  Beware, convergence computed for a single file')
+                io_mp.message(
+                    "Convergence computed for a single file",
+                    "warning")
                 bacon = np.copy(cheese[::3, :])
                 egg = np.copy(cheese[1::3, :])
                 sausage = np.copy(cheese[2::3, :])
@@ -1039,10 +1041,12 @@ def plot_triangle(
                         extent=extent, levels=ctr_level(n, lvls[:2]), #colors="k",
                         zorder=5, cmap=plt.cm.autumn_r)
                 except Warning:
-                    print '/!\  The routine could not find the contour of',
-                    print '     the "%s-%s" 2d-plot' % (
+                    io_mp.message(
+                        "The routine could not find the contour of the \
+                        '%s-%s' 2d-plot" % (
                         info.plotted_parameters[i],
-                        info.plotted_parameters[j])
+                        info.plotted_parameters[j]),
+                        "warning")
                     pass
 
                 if command_line.subplot is True:
@@ -1073,10 +1077,12 @@ def plot_triangle(
                             levels=ctr_level(n, lvls[:2]), #colors="k",
                             zorder=5, cmap=plt.cm.autumn_r)
                     except Warning:
-                        print '     /!\  The routine could not find the ',
-                        print 'contour of the "%s-%s" 2d-plot' % (
+                        io_mp.message(
+                            "The routine could not find the contour of the \
+                            '%s-%s' 2d-plot" % (
                             info.plotted_parameters[i],
-                            info.plotted_parameters[j])
+                            info.plotted_parameters[j]),
+                            "warning")
                         pass
 
                     fig_temp.savefig(
@@ -1230,8 +1236,10 @@ def minimum_credible_intervals(histogram, bincenters, levels):
                        if histogram[i] > water_level]
             # check for multimodal posteriors
             if ((indices[-1]-indices[0]+1) != len(indices)):
-                print '    /!\ Warning: could not derive minimum ',
-                print 'credible intervals (multimodal posterior)'
+                io_mp.message(
+                    "could not derive minimum credible intervals \
+                    for this multimodal posterio",
+                    "warning")
                 failed = True
                 break
             top = (sum(histogram[indices])-0.5*(histogram[indices[0]]+histogram[indices[-1]]))*(delta)
@@ -1261,8 +1269,10 @@ def minimum_credible_intervals(histogram, bincenters, levels):
             # safeguard, just in case
             ii += 1
             if (ii > 1000):
-                print '    /!\ Warning: the loop to check for ',
-                print 'sigma deviations was too long to converge'
+                io_mp.message(
+                    "the loop to check for sigma deviations was \
+                    taking too long to converge",
+                    "warning")
                 break
 
         #print top,norm,abs(top/norm)
