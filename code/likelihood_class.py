@@ -1081,14 +1081,15 @@ class likelihood_mpk(likelihood):
         else:
             self.use_giggleZPP0 = False
 
-        # If the flag use_giggleZPP0 is set to True, the nuisance parameter P0
-        # is expected.
+        # If the flag use_giggleZPP0 is set to True, the nuisance parameters
+        # P0_a, P0_b, P0_c and P0_d are expected.
         if self.use_giggleZPP0:
-            if 'P0' not in data.get_mcmc_parameters(['nuisance']):
-                print ' /|\  P0 not defined in .param file, whereas this'
-                print '/_o_\ nuisance parameter is required when the flag'
-                print '      use_giggleZPP0 is set to true for WiggleZ'
-                exit()
+            if 'P0_a' not in data.get_mcmc_parameters(['nuisance']):
+                io_mp.message(
+                    "P0_a is not defined in the .param file, whereas this \
+                    nuisance parameter is required when the flag \
+                    'use_giggleZPP0 is set to true for WiggleZ",
+                    "error")
 
         if self.use_giggleZ:
             datafile = open(self.data_directory+self.giggleZ_fidpk_file, 'r')
@@ -1291,9 +1292,12 @@ class likelihood_mpk(likelihood):
                 P[i] *= pow(10, power)/self.P_fid[i]*(h/scaling)**3
 
             if self.use_giggleZPP0:
-                #Shot noise parameter addition to GiggleZ model WIP
-                P0_value = data.mcmc_parameters['P0']['current'] *\
-                        data.mcmc_parameters['P0']['scale']
+                # Shot noise parameter addition to GiggleZ model. It should
+                # recover the proper nuisance parameter, depending on the name.
+                # I.e., Wigglez_A should recover P0_a, etc...
+                tag = self.name[-2:]
+                P0_value = data.mcmc_parameters['P0'+tag]['current'] *\
+                        data.mcmc_parameters['P0'+tag]['scale']
                 P_lin = np.interp(self.kh,self.k_fid,P+P0_value)
             else:
                 # get P_lin by interpolation. It is still in (Mpc/h)**3
@@ -1312,118 +1316,131 @@ class likelihood_mpk(likelihood):
 
         W_P_th = np.zeros((self.n_size), 'float64')
 
-        if do_marge and self.Q_flat:
+        #print self.Q_flat
+        #if do_marge and self.Q_flat:
 
+            #P_th = np.zeros((self.k_size), 'float64')
+            #for i in range(self.k_size):
+                #P_th[i] = P_lin[i]/(1.+self.Ag*self.kh[i])
+
+            #k2 = np.zeros((self.k_size), 'float64')
+            #for i in range(self.k_size):
+                #k2[i] = P_th[i] * self.kh[i]**2
+
+            #W_P_th_k2 = np.zeros((self.n_size), 'float64')
+            #covdat = np.zeros((self.n_size), 'float64')
+            #covth = np.zeros((self.n_size), 'float64')
+            #covth_k2 = np.zeros((self.n_size), 'float64')
+
+            #chi2 = 0
+            #for i_region in range(self.num_regions):
+                #if self.used_region[i_region]:
+                    #W_P_th = np.dot(self.window[i_region, :], P_th)
+                    #W_P_th_k2 = np.dot(self.window[i_region, :], k2)
+
+                    #covdat = np.dot(
+                        #self.invcov[i_region, :, :], self.P_obs[i_region, :])
+                    #covth = np.dot(self.invcov[i_region, :, :], W_P_th)
+                    #covth_k2 = np.dot(self.invcov[i_region, :, :], W_P_th_k2)
+
+                    #offdiag = sum(covth*W_P_th_k2)
+
+                    #Mat = np.zeros((2, 2), 'float64')
+                    #Mat = [
+                        #[sum(covth*W_P_th), offdiag],
+                        #[offdiag, sum(covth_k2*W_P_th_k2)]]
+
+                    #Vec = np.zeros((2), 'float64')
+                    #Vec = [sum(covdat*W_P_th), sum(covdat*W_P_th_k2)]
+
+                    #chi2 += -sum(self.P_obs[i_region, :]*covdat) +\
+                        #np.dot(Vec, np.dot(np.linalg.inv(Mat), Vec)) -\
+                        #math.log(np.linalg.det(Mat))
+
+            #return -chi2/2
+
+        #else:
+
+        if (self.Q_sigma == 0):
+            do_marge = False
+
+        #starting analytic marginalisation over bias
+
+        P_data_large = np.zeros(
+            (self.n_size*self.num_regions_used), 'float64')
+        W_P_th_large = np.zeros(
+            (self.n_size*self.num_regions_used), 'float64')
+        cov_dat_large = np.zeros(
+            (self.n_size*self.num_regions_used), 'float64')
+        cov_th_large = np.zeros(
+            (self.n_size*self.num_regions_used), 'float64')
+
+        normV = 0
+
+        if do_marge:
+            nQ = 6
+            dQ = 0.4
+        else:
+            nQ = 0
+            dQ = 0
+
+        chisq = np.zeros((nQ*2+1), 'float64')
+        calweights = np.zeros((nQ*2+1), 'float64')
+
+        print nQ
+        for iQ in range(-nQ, nQ+1):
+            print iQ
+            # infer P_th from P_lin. It is still in (Mpc/h)**3
             P_th = np.zeros((self.k_size), 'float64')
             for i in range(self.k_size):
-                P_th[i] = P_lin[i]/(1.+self.Ag*self.kh[i])
+                if self.Q_marge:
+                    Q = self.Q_mid + iQ*self.Q_sigma*dQ
+                    P_th[i] = P_lin[i]*(1+Q*self.kh[i]**2) / \
+                        (1.+self.Ag*self.kh[i])
+                else:
+                    P_th[i] = P_lin[i]
+            print P_th
 
-            k2 = np.zeros((self.k_size), 'float64')
-            for i in range(self.k_size):
-                k2[i] = P_th[i] * self.kh[i]**2
-
-            W_P_th_k2 = np.zeros((self.n_size), 'float64')
-            covdat = np.zeros((self.n_size), 'float64')
-            covth = np.zeros((self.n_size), 'float64')
-            covth_k2 = np.zeros((self.n_size), 'float64')
-
-            chi2 = 0
             for i_region in range(self.num_regions):
                 if self.used_region[i_region]:
+                    imin = i_region*self.n_size
+                    imax = (i_region+1)*self.n_size-1
+
                     W_P_th = np.dot(self.window[i_region, :], P_th)
-                    W_P_th_k2 = np.dot(self.window[i_region, :], k2)
-
-                    covdat = np.dot(
-                        self.invcov[i_region, :, :], self.P_obs[i_region, :])
-                    covth = np.dot(self.invcov[i_region, :, :], W_P_th)
-                    covth_k2 = np.dot(self.invcov[i_region, :, :], W_P_th_k2)
-
-                    offdiag = sum(covth*W_P_th_k2)
-
-                    Mat = np.zeros((2, 2), 'float64')
-                    Mat = [
-                        [sum(covth*W_P_th), offdiag],
-                        [offdiag, sum(covth_k2*W_P_th_k2)]]
-
-                    Vec = np.zeros((2), 'float64')
-                    Vec = [sum(covdat*W_P_th), sum(covdat*W_P_th_k2)]
-
-                    chi2 += -sum(self.P_obs[i_region, :]*covdat) +\
-                        np.dot(Vec, np.dot(np.linalg.inv(Mat), Vec)) -\
-                        math.log(np.linalg.det(Mat))
-
-            return -chi2/2
-
-        else:
-
-            if (self.Q_sigma == 0):
-                do_marge = False
-
-            #starting analytic marginalisation over bias
-
-            P_data_large = np.zeros(
-                (self.n_size*self.num_regions_used), 'float64')
-            W_P_th_large = np.zeros(
-                (self.n_size*self.num_regions_used), 'float64')
-            cov_dat_large = np.zeros(
-                (self.n_size*self.num_regions_used), 'float64')
-            cov_th_large = np.zeros(
-                (self.n_size*self.num_regions_used), 'float64')
-
-            normV = 0
+                    for i in range(self.n_size):
+                        P_data_large[imin+i] = self.P_obs[i_region, i]
+                        W_P_th_large[imin+i] = W_P_th[i]
+                        cov_dat_large[imin+i] = np.sum(
+                            self.invcov[i_region, i, :] *
+                            self.P_obs[i_region, :])
+                        cov_th_large[imin+i] = np.sum(
+                            self.invcov[i_region, i, :] *
+                            W_P_th[:])
+            normV += np.sum(W_P_th_large*cov_th_large)
+            b_out = np.sum(W_P_th_large*cov_dat_large) / \
+                np.sum(W_P_th_large*cov_th_large)
+            #print "bias value",b_out
+            print '1st term',np.sum(P_data_large*cov_dat_large)
+            print '2nd term',np.sum(W_P_th_large*cov_dat_large)**2/normV
+            print 'alt 2nd',np.sum(W_P_th_large*cov_th_large)**2/normV**2
+            print 'diff',(np.sum(P_data_large*cov_dat_large) - \
+                    np.sum(W_P_th_large*cov_th_large)/normV)**2
+            chisq[iQ+nQ] = (np.sum(P_data_large*cov_dat_large) - \
+                np.sum(W_P_th_large*cov_th_large))**2/normV
+            print chisq[iQ+nQ]
 
             if do_marge:
-                nQ = 6
-                dQ = 0.4
-            else:
-                nQ = 0
-                dQ = 0
+                calweights[iQ+nQ] = math.exp(-(iQ*dQ)**2/2)
 
-            chisq = np.zeros((nQ*2+1), 'float64')
-            calweights = np.zeros((nQ*2+1), 'float64')
+            print -chisq[iQ+nQ]/2
+        #exit()
 
-            for iQ in range(-nQ, nQ+1):
-                # infer P_th from P_lin. It is still in (Mpc/h)**3
-                P_th = np.zeros((self.k_size), 'float64')
-                for i in range(self.k_size):
-                    if self.Q_marge:
-                        Q = self.Q_mid + iQ*self.Q_sigma*dQ
-                        P_th[i] = P_lin[i]*(1+Q*self.kh[i]**2) / \
-                            (1.+self.Ag*self.kh[i])
-                    else:
-                        P_th[i] = P_lin[i]
+        return -chisq[iQ+nQ]/2
 
-                for i_region in range(self.num_regions):
-                    if self.used_region[i_region]:
-                        imin = i_region*self.n_size
-                        imax = (i_region+1)*self.n_size-1
-
-                        W_P_th = np.dot(self.window[i_region, :], P_th)
-                        for i in range(self.n_size):
-                            P_data_large[imin+i] = self.P_obs[i_region, i]
-                            W_P_th_large[imin+i] = W_P_th[i]
-                            cov_dat_large[imin+i] = np.sum(
-                                self.invcov[i_region, i, :] *
-                                self.P_obs[i_region, :])
-                            cov_th_large[imin+i] = np.sum(
-                                self.invcov[i_region, i, :] *
-                                W_P_th[:])
-                normV += np.sum(W_P_th_large*cov_th_large)
-                b_out = np.sum(W_P_th_large*cov_dat_large) / \
-                    np.sum(W_P_th_large*cov_th_large)
-                #print "bias value",b_out
-                chisq[iQ+nQ] = np.sum(P_data_large*cov_dat_large) - \
-                    np.sum(W_P_th_large*cov_dat_large)**2/normV
-
-                if do_marge:
-                    calweights[iQ+nQ] = math.exp(-(iQ*dQ)**2/2)
-                else:
-                    return -chisq[iQ+nQ]/2
-
-            if do_marge:
-                minchisq = np.min(chisq)
-                lnlike = np.sum(
-                    math.exp(-(chisq[:]-minchisq)/2)*calweights[:]) / \
-                    np.sum(calweights[:])
-                if (lnlike == 0):
-                    return data.boundary_loglike
+        if do_marge:
+            minchisq = np.min(chisq)
+            lnlike = np.sum(
+                math.exp(-(chisq[:]-minchisq)/2)*calweights[:]) / \
+                np.sum(calweights[:])
+            if (lnlike == 0):
+                return data.boundary_loglike

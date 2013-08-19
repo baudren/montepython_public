@@ -15,6 +15,9 @@ WiggleZ_a.Q_sigma       = 1.5
 WiggleZ_a.Ag            = 1.4
 WiggleZ_a.sigmav        = 360
 
+WiggleZ_a.d_angular_fid = 0.209747
+WiggleZ_a.d_radial_fid = 1.10466
+
 WiggleZ_a.giggleZ_fidpoly = [4.61900,-13.7787,58.9410,-175.240,284.321,-187.284]
 WiggleZ_a.giggleZ_fidpk_file = 'gigglezfiducialmodel_matterpower_a.dat'
 WiggleZ_a.giggleZ_fidpk_size = 500
