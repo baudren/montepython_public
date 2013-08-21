@@ -1426,7 +1426,7 @@ class likelihood_mpk(likelihood):
             print 'diff',(np.sum(P_data_large*cov_dat_large) - \
                     np.sum(W_P_th_large*cov_th_large)/normV)**2
             chisq[iQ+nQ] = (np.sum(P_data_large*cov_dat_large) - \
-                np.sum(W_P_th_large*cov_th_large))**2/normV
+                np.sum(W_P_th_large*cov_dat_large))**2/normV
             print chisq[iQ+nQ]
 
             if do_marge:
