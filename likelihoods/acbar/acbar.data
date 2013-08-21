@@ -1,10 +1,10 @@
 # ACBAR likelihood requires a .newdat file, describing all relevant properties
-# of the experiment. 
-acbar.data_directory 	= data.path['data']
+# of the experiment.
+acbar.data_directory    = data.path['data']
 acbar.file              = 'acbar2007_v3_corr.newdat'
-acbar.use_nuisance	= ['A_SZ']
+acbar.use_nuisance      = ['A_SZ']
 
 # For its nuisance parameter, specify the file describing it, as well as all
 # relevant quantities.
-acbar.A_SZ_file        = 'WMAP_SZ_VBand.dat'
-acbar.A_SZ_scale       = 0.28
+acbar.A_SZ_file         = 'WMAP_SZ_VBand.dat'
+acbar.A_SZ_scale        = 0.28

@@ -1,5 +1,4 @@
 # measurement of angular diameter distance to recombination
-da_rec.da_rec	= 12.82
+da_rec.da_rec   = 12.82
 da_rec.da_error = 0.16
 da_rec.z_rec    = 1089.1
-

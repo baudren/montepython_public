@@ -11,12 +11,15 @@ contrary, if there are more arguments, they will be detailled.
 
 This module also defines a new class :class:`File`, that extends
 :py:class:`file`, which provides a tail function. It is used in
-:func:`mcmc.read_args_from_chain`
+:func:`mcmc.read_args_from_chain`.
+
+Finally, the way the error messages are displayed is set there, along with
+ascii-art for the exclamation mark sign.
 """
 
 import os
 import sys
-import re     # Module to handle regular expressions
+import re  # Module to handle regular expressions
 import random as rd
 import numpy as np
 try:
@@ -25,7 +28,19 @@ except:
     from ordereddict import OrderedDict as od
 from datetime import date
 import fcntl
+import textwrap  # used to format the error messages
 
+# Ascii art for error display
+start_line = {}
+start_line['error'] = [' /|\   ',
+                       '/_o_\  ',
+                       '       ']
+start_line['warning'] = [' /!\ ',
+                         '     ']
+start_line['info'] = [' /!\ ',
+                      '     ']
+
+standard_length = 80  # standard, increase if you have a big screen
 
 def log_parameters(data, command_line):
     """
@@ -64,8 +79,8 @@ def log_cosmo_arguments(data, command_line):
 
     Third function called when writing log.param. It is understood here that
     all the other parameters for the cosmological modules are set to their
-    default value directly in the program. 
-    
+    default value directly in the program.
+
     It is written as an update for the dictionary cosmo_arguments (i.e. as
     :code:`dict.update()` and not as :code:`dict =`) in order not to erase
     previously initialized data.
@@ -103,8 +118,8 @@ def print_parameters(out, data):
     file.
 
     Indeed, you will be able to recover these information from the log.param.
-    
-    .. warning:: 
+
+    .. warning::
 
         Please pay attention to the fact that, once launched, the order of the
         parameters in log.param is crucial, as is it the only place where it is
@@ -131,10 +146,10 @@ def print_parameters(out, data):
 def print_vector(out, N, loglkl, data):
     """
     Print the last accepted values to :code:`out`
-    
+
     :Parameters:
         - **out** (`list`) - array containing both standard output and the output file.
-          
+
           This way, if you run in interactive mode, you will be able to monitor
           the progress of the chain.
         - **N** (`int`) - multiplicity of the point, `i.e.` number of times the
@@ -270,6 +285,47 @@ def get_tex_name(name, number=1):
             sign = '-'
         name = '$10^{'+sign+m.groups()[0]+'}'+m.groups()[1]
     return name
+
+def message(string, status):
+    """
+    Outputs the string formatted according to its status
+
+    The input is a potentially long message, describing the problem.
+    According to the severity of its status (so far, 'error' will exit the
+    program, whereas 'warning' and 'info' will go through anyway).
+
+    Standard length has been defined globally, as well as the ascii-art
+    dictionary of arrays start_line.
+
+    """
+
+    length = standard_length-len(start_line[status][0])
+    # Remove unwanted spaces (coming from carriage returns in the input string)
+    # and handle voluntary carriage returns specified with \n
+    first_cleanup = [' '.join(elem.lstrip(' ').split()) for elem in string.split('\n')]
+    splitted = []
+    # Recover the lines splitted at correct length
+    for elem in first_cleanup:
+        splitted.extend(textwrap.wrap(elem, length))
+    
+    if status == 'error':
+        # Add a blank line so that the error displays better
+        print
+
+    # Add in front the appropriate fancy display
+    index = 0
+    for line in splitted:
+        # If the number of needed lines is bigger than the ascii-art, the last
+        # line of it (empty) will be used.
+        if index < len(start_line[status]): 
+            start_index = index
+        else: 
+            start_index = len(start_line[status])-1
+        print start_line[status][start_index]+line 
+        index += 1
+    if status == 'error':
+        # In case of a severe error, the program should stop the execution
+        exit()
 
 
 class File(file):

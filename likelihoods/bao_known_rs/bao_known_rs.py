@@ -3,68 +3,70 @@ import numpy as np
 from math import sqrt
 from likelihood_class import likelihood
 
+
 class bao_known_rs(likelihood):
-  
-  # initialization routine
 
-  def __init__(self, path, data, command_line):
+    # initialization routine
 
-    likelihood.__init__(self, path, data, command_line)
+    def __init__(self, path, data, command_line):
 
-    # define array for values of z and data points
-    self.z = np.array([], 'float64')
-    self.data = np.array([], 'float64')
-    self.error = np.array([], 'float64')
-    self.type = np.array([], 'int')
+        likelihood.__init__(self, path, data, command_line)
 
-    # read redshifts and data points
-    for line in open(self.data_directory+self.file, 'r'):
-      if (line.find('#') == -1):
-        self.z = np.append(self.z, float(line.split()[0]))
-        self.data = np.append(self.data, float(line.split()[1]))
-        self.error = np.append(self.error, float(line.split()[2]))
-        self.type = np.append(self.type, int(line.split()[3]))
+        # define array for values of z and data points
+        self.z = np.array([], 'float64')
+        self.data = np.array([], 'float64')
+        self.error = np.array([], 'float64')
+        self.type = np.array([], 'int')
 
-    # number of data points
-    self.num_points=np.shape(self.z)[0]
+        # read redshifts and data points
+        for line in open(self.data_directory + self.file, 'r'):
+            if (line.find('#') == -1):
+                self.z = np.append(self.z, float(line.split()[0]))
+                self.data = np.append(self.data, float(line.split()[1]))
+                self.error = np.append(self.error, float(line.split()[2]))
+                self.type = np.append(self.type, int(line.split()[3]))
 
-    for i in range(self.num_points):
-      if self.type[i] == 3:
-        self.data[i] = self.data[i] * self.known_rs 
-        self.error[i] = self.data[i] * sqrt((self.error[i]/self.data[i])**2 + (self.rs_error/self.known_rs)**2) 
-        self.type[i] = 4
+        # number of data points
+        self.num_points = np.shape(self.z)[0]
 
-    # end of initialization
+        for i in range(self.num_points):
+            if self.type[i] == 3:
+                self.data[i] = self.data[i] * self.known_rs
+                self.error[i] = self.data[i] * sqrt(
+                    (self.error[i] / self.data[i]) ** 2 + (self.rs_error / self.known_rs) ** 2)
+                self.type[i] = 4
 
-  # compute likelihood
+        # end of initialization
 
-  def loglkl(self, cosmo, data):
+    # compute likelihood
 
-    chi2=0.
+    def loglkl(self, cosmo, data):
 
-    # for each point, compute angular distance da, radial distance dr,
-    # volume distance dv, sound horizon at baryon drag rs_d, 
-    # theoretical prediction and chi2 contribution
-    for i in range(self.num_points):
+        chi2 = 0.
 
-      da = cosmo._angular_distance(self.z[i])
-      dr = self.z[i]/cosmo._Hubble(self.z[i])
-      dv = pow(da*da*(1+self.z[i])*(1+self.z[i])*dr,1./3.)
+        # for each point, compute angular distance da, radial distance dr,
+        # volume distance dv, sound horizon at baryon drag rs_d,
+        # theoretical prediction and chi2 contribution
+        for i in range(self.num_points):
 
-      if (self.type[i] == 3):
-        rs = cosmo._rs_drag()*self.rs_rescale
-        theo = dv/rs
+            da = cosmo._angular_distance(self.z[i])
+            dr = self.z[i] / cosmo._Hubble(self.z[i])
+            dv = pow(da * da * (1 + self.z[i]) * (1 + self.z[i]) * dr, 1. / 3.)
 
-      elif (self.type[i] == 4):  
-        theo = dv 
+            if (self.type[i] == 3):
+                rs = cosmo._rs_drag() * self.rs_rescale
+                theo = dv / rs
 
-      else:
-        print 'BAO data type',self.type[i],' in ',i,'th line not understood'
-        exit()
+            elif (self.type[i] == 4):
+                theo = dv
 
-      chi2 += ((theo-self.data[i])/self.error[i])**2
+            else:
+                print 'BAO data type', self.type[i], ' in ', i, 'th line not understood'
+                exit()
 
-    # return ln(L)
-    lkl = - 0.5 * chi2 
+            chi2 += ((theo - self.data[i]) / self.error[i]) ** 2
 
-    return lkl
+        # return ln(L)
+        lkl = - 0.5 * chi2
+
+        return lkl

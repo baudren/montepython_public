@@ -1,3 +1,19 @@
+v1.2.4: - Fixed behaviour for the -all option when analyzing folders.
+v1.2.3: - Tentative error message to catch a typical error appearing
+	when running with a badly initialized log.param file. It now
+	states that you should probably remove the folder entirely. It
+	is not sure that this catches all types of situation, but it
+	does catch some of them.
+v1.2.2: - Several bug fixes. One with analyze module, that failed when
+	a file was not complete (wrong number of columns) - fixed. The
+	two other were more serious, and detailed below:
+	- When using as an input a covariance matrix containing less
+	parameters than the current run, wrong numbers were used for
+	the remaining proposal distribution - fixed 
+	- When running with *no* varying parameters, instead of using
+	the values specified in the parameter file, the code would
+	instead run with default Class values - fixed 
+v1.2.1: - Planck lensing is now working
 v1.2.0: - Added the Planck likelihoods (called Planck_highl,
 	Planck_lowl, Planck_lensing and	lowlike)
 	- Added a Cholesky decomposition method to speed up sampling

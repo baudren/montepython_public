@@ -1,33 +1,28 @@
-WiggleZ_a.data_directory      = data.path['data']
-
-# number of points and kbands in the input files
-WiggleZ_a.num_mpk_points_full = 50
-WiggleZ_a.num_mpk_kbands_full = 100
-
+# The following quantities are defined globally for one WiggleZ
+# analysis inside likelihoods/WiggleZ/WiggleZ.data file:
+# number of points and kbands in the input files:
+# >> num_mpk_points_full, num_mpk_kbands_full
 # use scaling by dv/dv(fid) for Pk
-WiggleZ_a.use_scaling = False
-
+# >> use_scaling
 # decide which bandpowers to use, min to max
-WiggleZ_a.min_mpk_points_use = 3
-WiggleZ_a.max_mpk_points_use = 20
-WiggleZ_a.min_mpk_kbands_use = 1
-WiggleZ_a.max_mpk_kbands_use = 100
+# >> min/max_mpk_points_use
+# >> min/max_mpk_kbands_use
+# Use halofit, GiggleZ, GiggleZPP0
+# >> use_halofit, use_giggleZ, use_giggleZPP0
+WiggleZ_a.Q_marge       = False
+WiggleZ_a.Q_mid         = 4.0
+WiggleZ_a.Q_sigma       = 1.5
+WiggleZ_a.Ag            = 1.4
+WiggleZ_a.sigmav        = 360
 
-WiggleZ_a.Q_marge = False
-WiggleZ_a.Q_mid = 4.0
-WiggleZ_a.Q_sigma = 1.5
-WiggleZ_a.Ag = 1.4
-WiggleZ_a.Use_jennings = False
-WiggleZ_a.Use_simpledamp = False
-WiggleZ_a.sigmav = 360
-WiggleZ_a.use_halofit = True
+WiggleZ_a.d_angular_fid = 0.209747
+WiggleZ_a.d_radial_fid = 1.10466
 
-WiggleZ_a.Use_giggleZ = True
-WiggleZ_a.giggleZ_fidpoly=[4.61900,-13.7787,58.9410,-175.240,284.321,-187.284]
+WiggleZ_a.giggleZ_fidpoly = [4.61900,-13.7787,58.9410,-175.240,284.321,-187.284]
 WiggleZ_a.giggleZ_fidpk_file = 'gigglezfiducialmodel_matterpower_a.dat'
 WiggleZ_a.giggleZ_fidpk_size = 500
 
-WiggleZ_a.redshift=0.22
+WiggleZ_a.redshift = 0.22
 
 WiggleZ_a.has_regions = True
 # regions ordered like in WiggleZ data files:

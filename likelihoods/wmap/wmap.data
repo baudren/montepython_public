@@ -4,22 +4,22 @@
 # We had to separate it from the usual data_directory, which traditionnaly in
 # the rest of the code points toward the place where nuisance, windows and
 # fiducial informations are stored.
-wmap.large_data_directory  = data.path['data']+'wmap_likelihood_v5/'
+wmap.large_data_directory = data.path['data'] + 'wmap_likelihood_v5/'
 
-wmap.data_directory      = data.path['data']
+wmap.data_directory = data.path['data']
 
-wmap.use_nuisance	= ['A_SZ']
+wmap.use_nuisance       = ['A_SZ']
 wmap.A_SZ_file          = 'WMAP_SZ_VBand.dat'
 wmap.A_SZ_scale         = 1.
 
 # This other unusual quantity points to the wrapper of wmap. As it is
 # distributed alongside Monte Python, this option should never change, but in
 # case, you can set it to another location.
-wmap.wrapper_directory  = data.path['MontePython']+'/wmap_wrapper/'
+wmap.wrapper_directory = data.path['MontePython'] + '/wmap_wrapper/'
 
-wmap.ttmin              = 2
-wmap.ttmax              = 1200
-wmap.temin              = 2
-wmap.temax              = 1200
-wmap.use_gibbs          = 1
-wmap.use_lowlpol        = 1
+wmap.ttmin = 2
+wmap.ttmax = 1200
+wmap.temin = 2
+wmap.temax = 1200
+wmap.use_gibbs   = 1
+wmap.use_lowlpol = 1

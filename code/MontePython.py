@@ -29,7 +29,7 @@ def main():
 
     This function recovers the input from the command line arguments, from
     :mod:`parser_mp`, the parameter files.
-    
+
     It then extracts the path of the used Monte Python code, assuming a
     standard setting (the data folder is in the same directory as the code
     folder).
@@ -66,9 +66,11 @@ def main():
             if not value.endswith('/'):
                 path[key] = value + '/'
     else:
-        print ' /|\  You must provide a .conf file (default.conf by default)'
-        print '/_o_\ in your montepython directory that specifies the correct'
-        print '      locations for your data folder, Class (, Clik), etc...'
+        io_mp.message(
+        "You must provide a .conf file (default.conf by default in your \
+        montepython directory that specifies the correct locations for your \
+        data folder, Class (, Clik), etc...",
+        "error")
 
     sys.stdout.write('Running MontePython version 1.2\n')
 
@@ -107,10 +109,10 @@ def main():
         try:
             command_line.N = Data.N
         except AttributeError:
-            print '\n /|\  You did not provide a number of steps,'
-            print '/_o_\  neither via command line, neither in ',
-            print command_line.param
-            exit()
+            io_mp.message(
+                "You did not provide a number of steps, neither via \
+                command line, nor in %s" % command_line.param,
+                "error")
 
     # Creating the file that will contain the chain
     io_mp.create_output_files(command_line, Data)
@@ -118,9 +120,10 @@ def main():
     # If there is a conflict between the log.param value and the .conf file,
     # exiting.
     if Data.path != path:
-        print ' /|\  Your log.param file is in contradiction with your .conf'
-        print '/_o_\ file. Please check your path in these two places.'
-        exit()
+        io_mp.message(
+            "Your log.param file is in contradiction with your .conf file, \
+            please check your path in these two places.",
+            "error")
 
     # Loading up the cosmological backbone. For the moment, only Class has been
     # wrapped.
@@ -130,9 +133,16 @@ def main():
     # If the cosmological code is Class, do the following to import all
     # relevant quantities
     if Data.cosmological_module_name == 'Class':
-        for elem in os.listdir(Data.path['cosmo']+"python/build"):
-            if elem.find("lib.") != -1:
-                classy_path = path['cosmo']+"python/build/"+elem
+        try:
+            for elem in os.listdir(Data.path['cosmo']+"python/build"):
+                if elem.find("lib.") != -1:
+                    classy_path = path['cosmo']+"python/build/"+elem
+        except OSError:
+            io_mp.message(
+                "You probably did not compile the python wrapper of Class. \
+                Please go to /path/to/class/python/ and do\n\
+                ..]$ python setup.py build",
+                "error")
 
         # Inserting the previously found path into the list of folders to
         # search for python modules.
@@ -140,17 +150,19 @@ def main():
         try:
             from classy import Class
         except ImportError:
-            print(" /|\  You must have compiled the classy.pyx")
-            print("/_o_\ please go to /path/to/class/python and run")
-            print("      python setup.py build")
-            exit()
+            io_mp.message(
+                "You must have compiled the classy.pyx file. Please go to \
+                /path/to/class/python and run the command\n\
+                python setup.py build",
+                "error")
 
         cosmo = Class()
     else:
-        print(" /|\  Error: unrecognised cosmological module")
-        print("/_o_\ Be sure to define the correct behaviour")
-        print("      in MontePython.py, and data.py")
-        exit()
+        io_mp.message(
+            "Unrecognised cosmological module. \
+            Be sure to define the correct behaviour in MontePython.py \
+            and data.py, to support a new one",
+            "error")
 
     # MCMC chain
     mcmc.chain(cosmo, Data, command_line)

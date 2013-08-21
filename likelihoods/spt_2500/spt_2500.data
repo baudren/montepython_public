@@ -1,14 +1,15 @@
-# this files give the path to the .newdat file where the experiment is entirely described.
-spt_2500.data_directory 	   = data.path['data']
+# this files give the path to the .newdat file where the experiment is
+# entirely described.
+spt_2500.data_directory         = data.path['data']
 spt_2500.file                   = 'Spectrum_spt2500deg2_lps12.newdat'
-spt_2500.use_nuisance	   = ['SPT_SZ','SPT_PS','SPT_CL']
+spt_2500.use_nuisance           = ['SPT_SZ', 'SPT_PS', 'SPT_CL']
 
-spt_2500.SPT_SZ_file = 'dl_sz_2500.txt'
-spt_2500.SPT_SZ_prior_center = 5.5
-spt_2500.SPT_SZ_prior_variance = 3.
-spt_2500.SPT_PS_file = 'dl_poisson_point_source_2500.txt'
-spt_2500.SPT_PS_prior_center = 19.3
-spt_2500.SPT_PS_prior_variance = 3.5
-spt_2500.SPT_CL_file = 'dl_clustered_point_source_2500.txt'
-spt_2500.SPT_CL_prior_center = 5.0
-spt_2500.SPT_CL_prior_variance = 2.5
+spt_2500.SPT_SZ_file            = 'dl_sz_2500.txt'
+spt_2500.SPT_SZ_prior_center    = 5.5
+spt_2500.SPT_SZ_prior_variance  = 3.
+spt_2500.SPT_PS_file            = 'dl_poisson_point_source_2500.txt'
+spt_2500.SPT_PS_prior_center    = 19.3
+spt_2500.SPT_PS_prior_variance  = 3.5
+spt_2500.SPT_CL_file            = 'dl_clustered_point_source_2500.txt'
+spt_2500.SPT_CL_prior_center    = 5.0
+spt_2500.SPT_CL_prior_variance  = 2.5

@@ -1,3 +1,4 @@
-# this files give the path to the .newdat file where the experiment is entirely described.
-quad.data_directory 	= data.path['data']
-quad.file             = 'QUAD_pipeline1_2009.newdat'
+# this files give the path to the .newdat file where the experiment is
+# entirely described.
+quad.data_directory     = data.path['data']
+quad.file               = 'QUAD_pipeline1_2009.newdat'

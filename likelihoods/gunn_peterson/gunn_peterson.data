@@ -1,5 +1,5 @@
 # Gunn-Peterson constraints, numbers taken from astro-ph/0602375
-gunn_peterson.z_reio = 5.5
-gunn_peterson.z_noreio = 6
-gunn_peterson.xHI_max = 1.e-4
-gunn_peterson.xHI_min = 1.e-3  
+gunn_peterson.z_reio    = 5.5
+gunn_peterson.z_noreio  = 6
+gunn_peterson.xHI_max   = 1.e-4
+gunn_peterson.xHI_min   = 1.e-3

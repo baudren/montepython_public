@@ -21,7 +21,7 @@ import io_mp
 class likelihood(object):
     """
     General class that all likelihoods will inherit from.
-    
+
     """
 
     def __init__(self, path, data, command_line):
@@ -45,7 +45,7 @@ class likelihood(object):
             '/../likelihoods/'+self.name+'/'
         if not data.log_flag:
             path = command_line.folder+'log.param'
-        self.read_from_file(path, data)
+        self.read_from_file(path, data, command_line)
 
         # Default state
         self.need_update = True
@@ -80,11 +80,29 @@ class likelihood(object):
         raise NotImplementedError(
             'Must implement method loglkl() in your likelihood')
 
-    def read_from_file(self, path, data):
+    def read_from_file(self, path, data, command_line):
         """
         Extract the information from the log.param concerning this likelihood.
 
+        If the log.param is used, check that at least one item for each
+        likelihood is recovered. Otherwise, it means the log.param does not
+        contain information on the likelihood. This happens when the first run
+        fails early, before calling the likelihoods, and the program did not
+        log the information. This check might not be completely secure, but it
+        is better than nothing.
+
+        .. warning::
+
+            This checks relies on the fact that a likelihood should always have
+            at least **one** line of code written in the likelihood.data file.
+            This should be always true, but in case a run fails with the error
+            message described below, think about it.
+
+
         """
+
+        # Counting how many lines are read.
+        counter = 0
 
         self.path = path
         self.dictionary = {}
@@ -94,6 +112,7 @@ class likelihood(object):
                 if line.find('#') == -1:
                     if line.find(self.name+'.') != -1:
                         exec(line.replace(self.name+'.', 'self.'))
+                        counter += 1
                         # This part serves only to compare
                         key = line.split('=')[0].strip(' ').\
                             strip('\t').strip('\n').split('.')[1]
@@ -102,6 +121,17 @@ class likelihood(object):
                         self.dictionary[key] = value
             data_file.seek(0)
             data_file.close()
+
+        # Checking that at least one line was read, exiting otherwise
+        if counter == 0:
+            io_mp.message(
+                "No information on %s likelihood was found in the %s file.\n \
+                This can result from a failed initialization of a previous \
+                run. To solve this, you can do a \n \
+                ]$ rm -rf %s \n \
+                Be sure there is noting in it before doing this !" % (
+                self.name, path, command_line.folder),
+                "error")
         try:
             if (self.data_directory[-1] != '/'):
                 self.data_directory[-1] += '/'
@@ -736,11 +766,12 @@ class likelihood_clik(likelihood):
         try:
             import clik
         except ImportError:
-            print " /|\  You must first activate the binaries from the Clik ",
-            print "distribution,"
-            print "/_o_\ please run : source /path/to/clik/bin/clik_profile.sh"
-            print "      and try again."
-            exit()
+            io_mp.message(
+                "You must first activate the binaries from the Clik \
+                distribution. Please run : \n \
+                ]$ source /path/to/clik/bin/clik_profile.sh \n \
+                and try again.",
+                "error")
         # for lensing, some routines change. Intializing a flag for easier
         # testing of this condition
         if self.name == 'Planck_lensing':
@@ -768,7 +799,7 @@ class likelihood_clik(likelihood):
             if nuisance not in nuisance_parameter_names:
                 exit_flag = True
                 print '%20s\tmust be a fixed or varying nuisance parameter' % nuisance
-      
+
         if exit_flag:
             exit()
 
@@ -802,7 +833,7 @@ class likelihood_clik(likelihood):
             tot = np.zeros(2*self.l_max+length)
         else:
             tot = np.zeros(
-                np.sum(self.clik.get_lmax())+length+
+                np.sum(self.clik.get_lmax()) + length +
                 len(self.clik.get_extra_parameter_names()))
 
         # fill with Cl's
@@ -954,9 +985,11 @@ class likelihood_mock_cmb(likelihood):
                 fid_file.write("%.8g  " % (cl['ee'][l]+self.noise_P[l]))
                 fid_file.write("%.8g  " % cl['te'][l])
                 fid_file.write("\n")
-            print '\n\n /|\  Writting fiducial model in {0}'.\
-                format(self.data_directory+self.fiducial_file)
-            print '/_o_\ for {0} likelihood'.format(self.name)
+            print '\n\n'
+            io_mp.message(
+                "Writting fiducial model in %s, for %s likelihood" % \
+                (self.data_directory+self.difucial_file, self.name),
+                "info")
             return 1
 
         # compute likelihood
@@ -997,12 +1030,15 @@ class likelihood_mock_cmb(likelihood):
 ###################################
 class likelihood_mpk(likelihood):
 
-    def __init__(self, path, data, command_line):
+    def __init__(self, path, data, command_line, common=False, common_dict={}):
 
         likelihood.__init__(self, path, data, command_line)
 
         # require P(k) from class
         self.need_cosmo_arguments(data, {'output': 'mPk'})
+
+        if common:
+            self.add_common_knowledge(common_dict)
 
         try:
             self.use_halofit
@@ -1029,11 +1065,33 @@ class likelihood_mpk(likelihood):
 
         # check if need hight value of k for giggleZ
         try:
-            self.Use_giggleZ
+            self.use_giggleZ
         except:
-            self.Use_giggleZ = False
+            self.use_giggleZ = False
 
-        if self.Use_giggleZ:
+        # Try a new model, with an additional nuisance parameter. Note
+        # that the flag use_giggleZPP0 being True requires use_giggleZ
+        # to be True as well. Note also that it is defined globally,
+        # and not for every redshift bin.
+        if self.use_giggleZ:
+            try:
+                self.use_giggleZPP0
+            except:
+                self.use_giggleZPP0 = False
+        else:
+            self.use_giggleZPP0 = False
+
+        # If the flag use_giggleZPP0 is set to True, the nuisance parameters
+        # P0_a, P0_b, P0_c and P0_d are expected.
+        if self.use_giggleZPP0:
+            if 'P0_a' not in data.get_mcmc_parameters(['nuisance']):
+                io_mp.message(
+                    "P0_a is not defined in the .param file, whereas this \
+                    nuisance parameter is required when the flag \
+                    'use_giggleZPP0 is set to true for WiggleZ",
+                    "error")
+
+        if self.use_giggleZ:
             datafile = open(self.data_directory+self.giggleZ_fidpk_file, 'r')
 
             line = datafile.readline()
@@ -1156,7 +1214,7 @@ class likelihood_mpk(likelihood):
                         1./(self.P_err[i_region, j]**2)
 
         # read fiducial model
-        if self.Use_giggleZ:
+        if self.use_giggleZ:
             self.P_fid = np.zeros((self.k_fid_size), 'float64')
             self.k_fid = np.zeros((self.k_fid_size), 'float64')
             datafile = open(self.data_directory+self.giggleZ_fidpk_file, 'r')
@@ -1168,22 +1226,33 @@ class likelihood_mpk(likelihood):
                 self.P_fid[i] = float(line.split()[1])
             datafile.close()
 
-        # assign defaut value to optional parameters not being in the .data
-        # TODO: except ill defined
-        try:
-            self.Use_jennings
-        except:
-            self.Use_jennings = False
-
-        try:
-            self.Use_simpledamp
-        except:
-            self.Use_simpledamp = False
-
         return
 
-    # compute likelihood
+    def add_common_knowledge(self, common_dictionary):
+        """
+        Add to a class the content of a shared dictionary of attributes
 
+        The purpose of this method is to set some attributes globally for a Pk
+        likelihood, that are shared amongst all the redshift bins (in
+        WiggleZ.data for instance, a few flags and numbers are defined that
+        will be transfered to wigglez_a, b, c and d
+
+        """
+        for key, value in common_dictionary.iteritems():
+            # First, check if the parameter exists already 
+            try:
+                exec("self.%s" % key)
+                io_mp.message(
+                    "parameter %s from likelihood %s will be replaced by \
+                    the common knowledge routine" % (key, self.name),
+                    "warning")
+            except:
+                if type(value) != type('foo'):
+                    exec("self.%s = %s" % (key, value))
+                else:
+                    exec("self.%s = '%s'" % (key, value))
+
+    # compute likelihood
     def loglkl(self, cosmo, data):
 
         # reduced Hubble parameter
@@ -1212,33 +1281,34 @@ class likelihood_mpk(likelihood):
         # get P(k) at right values of k, convert it to (Mpc/h)^3 and rescale it
         P_lin = np.zeros((self.k_size), 'float64')
 
-        if self.Use_giggleZ:
-
+        if self.use_giggleZ:
             P = np.zeros((self.k_fid_size), 'float64')
-
             for i in range(self.k_fid_size):
-
                 P[i] = cosmo._pk(self.k_fid[i]*h, self.redshift)
-
                 power = 0
                 for j in range(6):
                     power += self.giggleZ_fidpoly[j]*self.k_fid[i]**j
-
                 # rescale P by fiducial model and get it in (Mpc/h)**3
                 P[i] *= pow(10, power)/self.P_fid[i]*(h/scaling)**3
 
-            # get rescaled values of k in 1/Mpc
-            #self.k=self.kh *h*scaling
-
-            # get P_lin by interpolation. It is still in (Mpc/h)**3
-            P_lin = np.interp(self.kh, self.k_fid, P)
+            if self.use_giggleZPP0:
+                # Shot noise parameter addition to GiggleZ model. It should
+                # recover the proper nuisance parameter, depending on the name.
+                # I.e., Wigglez_A should recover P0_a, etc...
+                tag = self.name[-2:]
+                P0_value = data.mcmc_parameters['P0'+tag]['current'] *\
+                        data.mcmc_parameters['P0'+tag]['scale']
+                P_lin = np.interp(self.kh,self.k_fid,P+P0_value)
+            else:
+                # get P_lin by interpolation. It is still in (Mpc/h)**3
+                P_lin = np.interp(self.kh, self.k_fid, P)
 
         else:
             # get rescaled values of k in 1/Mpc
             self.k = self.kh*h*scaling
             # get values of P(k) in Mpc**3
             for i in range(self.k_size):
-                P_lin[i] = cosmo._pk(self.k[i], 0)
+                P_lin[i] = cosmo._pk(self.k[i], self.redshift)
             # get rescaled values of P(k) in (Mpc/h)**3
             P_lin *= (h/scaling)**3
 
@@ -1246,126 +1316,131 @@ class likelihood_mpk(likelihood):
 
         W_P_th = np.zeros((self.n_size), 'float64')
 
-        if do_marge and self.Q_flat:
+        #print self.Q_flat
+        #if do_marge and self.Q_flat:
 
+            #P_th = np.zeros((self.k_size), 'float64')
+            #for i in range(self.k_size):
+                #P_th[i] = P_lin[i]/(1.+self.Ag*self.kh[i])
+
+            #k2 = np.zeros((self.k_size), 'float64')
+            #for i in range(self.k_size):
+                #k2[i] = P_th[i] * self.kh[i]**2
+
+            #W_P_th_k2 = np.zeros((self.n_size), 'float64')
+            #covdat = np.zeros((self.n_size), 'float64')
+            #covth = np.zeros((self.n_size), 'float64')
+            #covth_k2 = np.zeros((self.n_size), 'float64')
+
+            #chi2 = 0
+            #for i_region in range(self.num_regions):
+                #if self.used_region[i_region]:
+                    #W_P_th = np.dot(self.window[i_region, :], P_th)
+                    #W_P_th_k2 = np.dot(self.window[i_region, :], k2)
+
+                    #covdat = np.dot(
+                        #self.invcov[i_region, :, :], self.P_obs[i_region, :])
+                    #covth = np.dot(self.invcov[i_region, :, :], W_P_th)
+                    #covth_k2 = np.dot(self.invcov[i_region, :, :], W_P_th_k2)
+
+                    #offdiag = sum(covth*W_P_th_k2)
+
+                    #Mat = np.zeros((2, 2), 'float64')
+                    #Mat = [
+                        #[sum(covth*W_P_th), offdiag],
+                        #[offdiag, sum(covth_k2*W_P_th_k2)]]
+
+                    #Vec = np.zeros((2), 'float64')
+                    #Vec = [sum(covdat*W_P_th), sum(covdat*W_P_th_k2)]
+
+                    #chi2 += -sum(self.P_obs[i_region, :]*covdat) +\
+                        #np.dot(Vec, np.dot(np.linalg.inv(Mat), Vec)) -\
+                        #math.log(np.linalg.det(Mat))
+
+            #return -chi2/2
+
+        #else:
+
+        if (self.Q_sigma == 0):
+            do_marge = False
+
+        #starting analytic marginalisation over bias
+
+        P_data_large = np.zeros(
+            (self.n_size*self.num_regions_used), 'float64')
+        W_P_th_large = np.zeros(
+            (self.n_size*self.num_regions_used), 'float64')
+        cov_dat_large = np.zeros(
+            (self.n_size*self.num_regions_used), 'float64')
+        cov_th_large = np.zeros(
+            (self.n_size*self.num_regions_used), 'float64')
+
+        normV = 0
+
+        if do_marge:
+            nQ = 6
+            dQ = 0.4
+        else:
+            nQ = 0
+            dQ = 0
+
+        chisq = np.zeros((nQ*2+1), 'float64')
+        calweights = np.zeros((nQ*2+1), 'float64')
+
+        print nQ
+        for iQ in range(-nQ, nQ+1):
+            print iQ
+            # infer P_th from P_lin. It is still in (Mpc/h)**3
             P_th = np.zeros((self.k_size), 'float64')
             for i in range(self.k_size):
-                P_th[i] = P_lin[i]/(1.+self.Ag*self.kh[i])
+                if self.Q_marge:
+                    Q = self.Q_mid + iQ*self.Q_sigma*dQ
+                    P_th[i] = P_lin[i]*(1+Q*self.kh[i]**2) / \
+                        (1.+self.Ag*self.kh[i])
+                else:
+                    P_th[i] = P_lin[i]
+            print P_th
 
-            k2 = np.zeros((self.k_size), 'float64')
-            for i in range(self.k_size):
-                k2[i] = P_th[i] * self.kh[i]**2
-
-            W_P_th_k2 = np.zeros((self.n_size), 'float64')
-            covdat = np.zeros((self.n_size), 'float64')
-            covth = np.zeros((self.n_size), 'float64')
-            covth_k2 = np.zeros((self.n_size), 'float64')
-
-            chi2 = 0
             for i_region in range(self.num_regions):
                 if self.used_region[i_region]:
+                    imin = i_region*self.n_size
+                    imax = (i_region+1)*self.n_size-1
+
                     W_P_th = np.dot(self.window[i_region, :], P_th)
-                    W_P_th_k2 = np.dot(self.window[i_region, :], k2)
-
-                    covdat = np.dot(
-                        self.invcov[i_region, :, :], self.P_obs[i_region, :])
-                    covth = np.dot(self.invcov[i_region, :, :], W_P_th)
-                    covth_k2 = np.dot(self.invcov[i_region, :, :], W_P_th_k2)
-
-                    offdiag = sum(covth*W_P_th_k2)
-
-                    Mat = np.zeros((2, 2), 'float64')
-                    Mat = [
-                        [sum(covth*W_P_th), offdiag],
-                        [offdiag, sum(covth_k2*W_P_th_k2)]]
-
-                    Vec = np.zeros((2), 'float64')
-                    Vec = [sum(covdat*W_P_th), sum(covdat*W_P_th_k2)]
-
-                    chi2 += -sum(self.P_obs[i_region, :]*covdat) +\
-                        np.dot(Vec, np.dot(np.linalg.inv(Mat), Vec)) -\
-                        math.log(np.linalg.det(Mat))
-
-            return -chi2/2
-
-        else:
-
-            if (self.Q_sigma == 0):
-                do_marge = False
-
-            if (self.Use_jennings or self.Use_simpledamp):
-                print "case with Use_jennings or Use_simpledamp not coded"
-                exit()
-            else:
-                #starting analytic marginalisation over bias
-
-                P_data_large = np.zeros(
-                    (self.n_size*self.num_regions_used), 'float64')
-                W_P_th_large = np.zeros(
-                    (self.n_size*self.num_regions_used), 'float64')
-                cov_dat_large = np.zeros(
-                    (self.n_size*self.num_regions_used), 'float64')
-                cov_th_large = np.zeros(
-                    (self.n_size*self.num_regions_used), 'float64')
-
-                normV = 0
-
-                if do_marge:
-                    nQ = 6
-                    dQ = 0.4
-                else:
-                    nQ = 0
-                    dQ = 0
-
-                chisq = np.zeros((nQ*2+1), 'float64')
-                calweights = np.zeros((nQ*2+1), 'float64')
-
-                for iQ in range(-nQ, nQ+1):
-                    # infer P_th from P_lin. It is still in (Mpc/h)**3
-                    P_th = np.zeros((self.k_size), 'float64')
-                    for i in range(self.k_size):
-                        if self.Q_marge:
-                            Q = self.Q_mid + iQ*self.Q_sigma*dQ
-                            P_th[i] = P_lin[i]*(1+Q*self.kh[i]**2) / \
-                                (1.+self.Ag*self.kh[i])
-                        else:
-                            P_th[i] = P_lin[i]
-
-                    for i_region in range(self.num_regions):
-                        if self.used_region[i_region]:
-                            imin = i_region*self.n_size
-                            imax = (i_region+1)*self.n_size-1
-
-                            W_P_th = np.dot(self.window[i_region, :], P_th)
-                            for i in range(self.n_size):
-                                P_data_large[imin+i] = self.P_obs[i_region, i]
-                                W_P_th_large[imin+i] = W_P_th[i]
-                                cov_dat_large[imin+i] = np.sum(
-                                    self.invcov[i_region, i, :] *
-                                    self.P_obs[i_region, :])
-                                cov_th_large[imin+i] = np.sum(
-                                    self.invcov[i_region, i, :] *
-                                    W_P_th[:])
-                    normV += np.sum(W_P_th_large*cov_th_large)
-                    b_out = np.sum(W_P_th_large*cov_dat_large) / \
-                        np.sum(W_P_th_large*cov_th_large)
-                    #print "bias value",b_out
-                    chisq[iQ+nQ] = np.sum(P_data_large*cov_dat_large) - \
-                        np.sum(W_P_th_large*cov_dat_large)**2/normV
-
-                    if do_marge:
-                        calweights[iQ+nQ] = math.exp(-(iQ*dQ)**2/2)
-                    else:
-                        return -chisq[iQ+nQ]/2
+                    for i in range(self.n_size):
+                        P_data_large[imin+i] = self.P_obs[i_region, i]
+                        W_P_th_large[imin+i] = W_P_th[i]
+                        cov_dat_large[imin+i] = np.sum(
+                            self.invcov[i_region, i, :] *
+                            self.P_obs[i_region, :])
+                        cov_th_large[imin+i] = np.sum(
+                            self.invcov[i_region, i, :] *
+                            W_P_th[:])
+            normV += np.sum(W_P_th_large*cov_th_large)
+            b_out = np.sum(W_P_th_large*cov_dat_large) / \
+                np.sum(W_P_th_large*cov_th_large)
+            #print "bias value",b_out
+            print '1st term',np.sum(P_data_large*cov_dat_large)
+            print '2nd term',np.sum(W_P_th_large*cov_dat_large)**2/normV
+            print 'alt 2nd',np.sum(W_P_th_large*cov_th_large)**2/normV**2
+            print 'diff',(np.sum(P_data_large*cov_dat_large) - \
+                    np.sum(W_P_th_large*cov_th_large)/normV)**2
+            chisq[iQ+nQ] = (np.sum(P_data_large*cov_dat_large) - \
+                np.sum(W_P_th_large*cov_dat_large))**2/normV
+            print chisq[iQ+nQ]
 
             if do_marge:
-                if not self.Use_jennings:
-                    minchisq = np.min(chisq)
-                    lnlike = np.sum(
-                        math.exp(-(chisq[:]-minchisq)/2)*calweights[:]) / \
-                        np.sum(calweights[:])
-                    if (lnlike == 0):
-                        return data.boundary_loglike
-                    else:
-                        print "case with Use_jennings not coded"
-                        exit()
+                calweights[iQ+nQ] = math.exp(-(iQ*dQ)**2/2)
+
+            print -chisq[iQ+nQ]/2
+        #exit()
+
+        return -chisq[iQ+nQ]/2
+
+        if do_marge:
+            minchisq = np.min(chisq)
+            lnlike = np.sum(
+                math.exp(-(chisq[:]-minchisq)/2)*calweights[:]) / \
+                np.sum(calweights[:])
+            if (lnlike == 0):
+                return data.boundary_loglike

@@ -20,10 +20,12 @@ import io_mp
 import math
 import numpy as np
 
-# Module for handling display
-import matplotlib.pyplot as plt
 # The root plotting module, to change options like font sizes, etc...
 import matplotlib
+# The following line suppresses the need for an X server
+matplotlib.use("Agg")
+# Module for handling display
+import matplotlib.pyplot as plt
 
 # Module to handle warnings from matplotlib
 import warnings
@@ -284,7 +286,7 @@ def prepare(info, Files, is_main_chain=True):
 
     Since you can decide to analyze some file(s), or a complete folder, this
     function first needs to separate between the two cases.
-    
+
     .. warning::
         If someday you change the way the chains are named, remember to change
         here too, because this routine assumes the chains have a double
@@ -481,17 +483,33 @@ def convergence(info, is_main_chain=True, Files=None, param=None):
             cheese = (np.array([[float(elem) for elem in line.split()]
                                 for line in open(File, 'r')]))
 
-        max_lkl.append(min(cheese[:, 1]))
-        # beware, it is the min because we are talking about
-        # '- log likelihood'
+        # If the file contains a line with a different number of elements, the
+        # previous array generation will fail, and will not have the correct
+        # shape. Hence the following command will fail. To avoid that, the
+        # error is catched.
+        try:
+            max_lkl.append(min(cheese[:, 1]))
+        except IndexError:
+            index = 1
+            io_mp.message(
+                "Error while scanning %s. This file most probably contains \
+                an incomplete line, rendering the analysis impossible. \
+                I think that the following line(s) is(are) wrong:\n %s" % \
+                (File, '\n '.join(['-> %s' % line for line in \
+                open(File, 'r') if len(line.split()) != len(backup_names)+2])),
+                "error")
 
+    # beware, it is the min because we are talking about
+    # '- log likelihood'
     # Selecting only the true maximum.
     try:
         max_lkl = min(max_lkl)
     except ValueError:
-        print('No decently sized chain was found. ')
-        print('Please wait a bit to analyze this folder')
-        exit()
+        io_mp.message(
+            "No decently sized chain was found in the desired folder. \
+            Please wait to have more accepted point before trying \
+            to analyze it.",
+            "error")
 
     info.max_lkl = max_lkl
 
@@ -545,7 +563,9 @@ def convergence(info, is_main_chain=True, Files=None, param=None):
 
             # Deal with single file case
             if len(Files) == 1:
-                print('  Beware, convergence computed for a single file')
+                io_mp.message(
+                    "Convergence computed for a single file",
+                    "warning")
                 bacon = np.copy(cheese[::3, :])
                 egg = np.copy(cheese[1::3, :])
                 sausage = np.copy(cheese[2::3, :])
@@ -675,8 +695,8 @@ def plot_triangle(
         comp_plotted_parameters=None, comp_folder=None,
         comp_boundaries=None, comp_mean=None):
     """
-    Plotting routine, also computes the sigma errors. 
-    
+    Plotting routine, also computes the sigma errors.
+
     Partly imported from Karim Benabed in CosmoPmc.
 
     """
@@ -1013,17 +1033,20 @@ def plot_triangle(
                                #origin='lower', cmap=matplotlib.cm.Reds)
 
                 # plotting contours, using the ctr_level method (from Karim
-                # Benabed)
+                # Benabed). Note that only the 1 and 2 sigma contours are
+                # displayed (due to the line with lvls[:2])
                 try:
                     cs = ax2dsub.contourf(
                         y_centers, x_centers, n,
-                        extent=extent, levels=ctr_level(n, lvls[:2]), #colors="k", 
+                        extent=extent, levels=ctr_level(n, lvls[:2]), #colors="k",
                         zorder=5, cmap=plt.cm.autumn_r)
                 except Warning:
-                    print '/!\  The routine could not find the contour of',
-                    print '     the "%s-%s" 2d-plot' % (
+                    io_mp.message(
+                        "The routine could not find the contour of the \
+                        '%s-%s' 2d-plot" % (
                         info.plotted_parameters[i],
-                        info.plotted_parameters[j])
+                        info.plotted_parameters[j]),
+                        "warning")
                     pass
 
                 if command_line.subplot is True:
@@ -1054,10 +1077,12 @@ def plot_triangle(
                             levels=ctr_level(n, lvls[:2]), #colors="k",
                             zorder=5, cmap=plt.cm.autumn_r)
                     except Warning:
-                        print '     /!\  The routine could not find the ',
-                        print 'contour of the "%s-%s" 2d-plot' % (
+                        io_mp.message(
+                            "The routine could not find the contour of the \
+                            '%s-%s' 2d-plot" % (
                             info.plotted_parameters[i],
-                            info.plotted_parameters[j])
+                            info.plotted_parameters[j]),
+                            "warning")
                         pass
 
                     fig_temp.savefig(
@@ -1066,6 +1091,9 @@ def plot_triangle(
                             info.ref_names[index],
                             info.ref_names[second_index], info.extension))
 
+                    # TEST
+                    print cs.collections
+                    print dir(cs.collections)
                     # store the coordinates of the points for further
                     # plotting.
                     plot_file = open(
@@ -1075,7 +1103,7 @@ def plot_triangle(
                             info.ref_names[second_index]), 'w')
                     plot_file.write(
                         '# contour for confidence level {0}\n'.format(
-                            levels[2]))
+                            levels[1]))
                     for elem in cs.collections[0].get_paths():
                         points = elem.vertices
                         for k in range(np.shape(points)[0]):
@@ -1085,7 +1113,7 @@ def plot_triangle(
 
                     plot_file.write(
                         '# contour for confidence level {0}\n'.format(
-                            levels[1]))
+                            levels[0]))
                     for elem in cs.collections[1].get_paths():
                         points = elem.vertices
                         for k in range(np.shape(points)[0]):
@@ -1093,14 +1121,6 @@ def plot_triangle(
                                 points[k, 0], points[k, 1]))
                     plot_file.write("\n\n")
 
-                    plot_file.write(
-                        '# contour for confidence level {0}\n'.format(
-                            levels[0]))
-                    for elem in cs.collections[2].get_paths():
-                        points = elem.vertices
-                        for k in range(np.shape(points)[0]):
-                            plot_file.write("%.8g\t %.8g\n" % (
-                                points[k, 0], points[k, 1]))
                     plot_file.close()
 
     # Plot the remaining 1d diagram for the parameters only in the comp
@@ -1216,8 +1236,10 @@ def minimum_credible_intervals(histogram, bincenters, levels):
                        if histogram[i] > water_level]
             # check for multimodal posteriors
             if ((indices[-1]-indices[0]+1) != len(indices)):
-                print '    /!\ Warning: could not derive minimum ',
-                print 'credible intervals (multimodal posterior)'
+                io_mp.message(
+                    "could not derive minimum credible intervals \
+                    for this multimodal posterio",
+                    "warning")
                 failed = True
                 break
             top = (sum(histogram[indices])-0.5*(histogram[indices[0]]+histogram[indices[-1]]))*(delta)
@@ -1247,8 +1269,10 @@ def minimum_credible_intervals(histogram, bincenters, levels):
             # safeguard, just in case
             ii += 1
             if (ii > 1000):
-                print '    /!\ Warning: the loop to check for ',
-                print 'sigma deviations was too long to converge'
+                io_mp.message(
+                    "the loop to check for sigma deviations was \
+                    taking too long to converge",
+                    "warning")
                 break
 
         #print top,norm,abs(top/norm)

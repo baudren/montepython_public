@@ -1,5 +1,3 @@
 # timedelay data
 timedelay.data_directory = data.path['data']
-timedelay.file 		 = 'quasar_timedelay_2012.txt'
-
-
+timedelay.file           = 'quasar_timedelay_2012.txt'

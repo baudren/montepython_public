@@ -57,7 +57,7 @@ def compute_lkl(cosmo, data):
           value is chosen to be extremly small (large negative value), so that
           the step will always be rejected.
 
-        
+
     """
 
     # If the cosmological module has already been called once, and if the
@@ -68,8 +68,13 @@ def compute_lkl(cosmo, data):
                                     "thermodynamics", "background", "bessel"]))
 
     # If the data needs to change, then do a normal call to the cosmological
-    # compute function
-    if ((data.need_cosmo_update is True) or (cosmo.state is False)):
+    # compute function. Note that, even if need_cosmo update is True, this
+    # function must be called if the jumping factor is set to zero. Indeed,
+    # this means the code is called for only one point, to set the fiducial
+    # model.
+    if ((data.need_cosmo_update) or
+            (not cosmo.state) or
+            (data.jumping_factor == 0)):
 
         # Prepare the cosmological module with the new set of parameters
         cosmo.set(data.cosmo_arguments)
@@ -160,7 +165,7 @@ def read_args_from_chain(data, chain):
         This method works because of the particular presentation of the chain,
         and the use of tabbings (not spaces). Please keep this in mind if you
         are having difficulties
-        
+
     """
     Chain = io_mp.File(chain, 'r')
     parameter_names = data.get_mcmc_parameters(['varying'])
@@ -331,7 +336,7 @@ def get_covariance_matrix(data, command_line):
         print(M)
 
         # Final step, creating a temporary matrix, filled with 1, that will
-        # eventually contain the result. 
+        # eventually contain the result.
         M_temp = np.ones((len(parameter_names),
                           len(parameter_names)), 'float64')
         indices_final = np.zeros(len(parameter_names))
@@ -362,7 +367,7 @@ def get_covariance_matrix(data, command_line):
         # on all other lines, that contain 0, just use sigma^2
         for zeros in np.where(indices_final == 0)[0]:
             M[zeros, zeros] = np.array(
-                data.mcmc_parameters[parameter_names[zeros]]['scale'],
+                data.mcmc_parameters[parameter_names[zeros]]['initial'][3],
                 'float64')**2
 
     # else, take sigmas^2.
@@ -391,7 +396,7 @@ def get_new_position(data, eigv, U, k, Cholesky, Inverse_Cholesky, Rotation):
     fast and slow cosmological parameters).
 
     .. note::
-        
+
         U, eigv are not used anymore in v1.2.0, but might come back in v1.2.1.
 
     :Parameters:
@@ -506,7 +511,7 @@ def accept_step(data):
     """
     Transfer the 'current' point in the varying parameters to the last accepted
     one.
-    
+
     """
     for elem in data.get_mcmc_parameters(['varying']):
         data.mcmc_parameters[elem]['last_accepted'] = \
@@ -526,10 +531,10 @@ def chain(cosmo, data, command_line):
     Main function of this module, this is the actual Markov chain procedure.
     After having selected a starting point in parameter space defining the
     first **last accepted** one, it will, for a given amount of steps :
-    
-    + choose randomnly a new point following the *proposal density*, 
-    + compute the cosmological *observables* through the cosmological module, 
-    + compute the value of the *likelihoods* of the desired experiments at this point, 
+
+    + choose randomnly a new point following the *proposal density*,
+    + compute the cosmological *observables* through the cosmological module,
+    + compute the value of the *likelihoods* of the desired experiments at this point,
     + *accept/reject* this point given its likelihood compared to the one of
       the last accepted one.
 
@@ -537,6 +542,15 @@ def chain(cosmo, data, command_line):
     (quantity defined in the input parameter file), it will write the result to
     disk (flushing the buffer by forcing to exit the output file, and reopen it
     again.
+
+    .. note::
+
+        to use the code to set a fiducial file for certain fixed parameters,
+        you can use two solutions. The first one is to put all input 1-sigma
+        proposal density to zero (this method still works, but is not
+        recommended anymore). The second one consist in using the flag "-f 0",
+        to force a step of zero amplitude.
+
     """
 
     ## Initialisation
@@ -544,14 +558,24 @@ def chain(cosmo, data, command_line):
 
     # Recover the covariance matrix according to the input, if the varying set
     # of parameters is non-zero
-    if data.get_mcmc_parameters(['varying']) != []:
+    if (data.get_mcmc_parameters(['varying']) != []):
         sigma_eig, U, C = get_covariance_matrix(data, command_line)
+        if data.jumping_factor == 0:
+            io_mp.message(
+                "The jumping factor has been set to 0. The above covariance \
+                matrix will not be used.",
+                "info")
 
     # In case of a fiducial run (all parameters fixed), simply run once and
-    # print out the likelihood
+    # print out the likelihood. This should not be used any more (one has to
+    # modify the log.param, which is never a good idea. Instead, force the code
+    # to use a jumping factor of 0 with the option "-f 0".
     else:
-        print(' /|\  You are running with no varying parameters...')
-        print('/_o_\ Computing model for only one point')
+        io_mp.message(
+            "You are running with no varying parameters... I will compute \
+            only one point and exit",
+            "info")
+        data.update_cosmo_arguments()  # this fills in the fixed parameters
         loglike = compute_lkl(cosmo, data)
         io_mp.print_vector([data.out, sys.stdout], 1, loglike, data)
         return 1, loglike
@@ -583,9 +607,10 @@ def chain(cosmo, data, command_line):
                             Cholesky, Inverse_Cholesky, Rotation) is True:
             break
         if i == 99:
-            print '/!\ You should check your prior boundaries... '
-            print '    no valid position was found after 100 tries'
-            exit()
+            io_mp.message(
+                "You should probably check your prior boundaries... because \
+                no valid starting position was found after 100 tries",
+                "error")
 
     # Compute the starting Likelihood
     loglike = compute_lkl(cosmo, data)
@@ -594,6 +619,12 @@ def chain(cosmo, data, command_line):
     # (accept_step), and modify accordingly the max_loglike
     accept_step(data)
     max_loglike = loglike
+
+    # If the jumping factor is 0, the likelihood associated with this point is
+    # displayed, and the code exits.
+    if data.jumping_factor == 0:
+        io_mp.print_vector([data.out, sys.stdout], 1, loglike, data)
+        return 1, loglike
 
     acc, rej = 0.0, 0.0  # acceptance and rejection number count
     N = 1   # number of time the system stayed in the current position
@@ -675,4 +706,4 @@ def chain(cosmo, data, command_line):
         sys.stdout.write('    deleting starting point of the chain {0}\n'.
                          format(command_line.restart))
 
-    return 
+    return
