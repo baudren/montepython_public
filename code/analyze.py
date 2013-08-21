@@ -1091,9 +1091,6 @@ def plot_triangle(
                             info.ref_names[index],
                             info.ref_names[second_index], info.extension))
 
-                    # TEST
-                    print cs.collections
-                    print dir(cs.collections)
                     # store the coordinates of the points for further
                     # plotting.
                     plot_file = open(
