@@ -1055,6 +1055,7 @@ class likelihood_mpk(likelihood):
         self.kh = np.zeros((self.k_size), 'float64')
 
         datafile = open(self.data_directory+self.kbands_file, 'r')
+
         for i in range(self.num_mpk_kbands_full):
             line = datafile.readline()
             if i+2 > self.min_mpk_kbands_use and i < self.max_mpk_kbands_use:
@@ -1258,14 +1259,28 @@ class likelihood_mpk(likelihood):
         # reduced Hubble parameter
         h = cosmo._h()
 
+        # TEST
+        self.use_scaling = False
         if self.use_scaling:
-            # angular diameter distance at this redshift, in Mpc/h
+            # angular diameter distance at this redshift, in Mpc
             d_angular = cosmo._angular_distance(self.redshift)
-            d_angular *= h
+            #d_angular *= h
 
-            # radial distance at this redshift, in Mpc/h
+            # Beware, the angular definition in Class is actually different
+            # from Camb, by a factor of a_em, the scale factor at emmission.
+            # The following line is needed to ensure we are comparing the right
+            # quantities
+            #print d_angular
+            #print self.d_angular_fid
+            d_angular *= (1+self.redshift)
+            #print d_angular
+
+            # radial distance at this redshift, in Mpc
             r, Hz = cosmo.z_of_r([self.redshift])
+            #print Hz[0]
             d_radial = self.redshift*h/Hz[0]
+            #print d_radial, self.d_radial_fid
+            #exit()
 
             # scaling factor = (d_angular**2 * d_radial)^(1/3) relative
             # to a fiducial model
@@ -1288,8 +1303,13 @@ class likelihood_mpk(likelihood):
                 power = 0
                 for j in range(6):
                     power += self.giggleZ_fidpoly[j]*self.k_fid[i]**j
+                print power
                 # rescale P by fiducial model and get it in (Mpc/h)**3
-                P[i] *= pow(10, power)/self.P_fid[i]*(h/scaling)**3
+                print self.P_fid[i], P[i]
+                P[i] *= pow(10, power)*(h/scaling)**3/self.P_fid[i]
+                print h, scaling
+                print P[i]
+                #exit()
 
             if self.use_giggleZPP0:
                 # Shot noise parameter addition to GiggleZ model. It should
@@ -1312,57 +1332,10 @@ class likelihood_mpk(likelihood):
             # get rescaled values of P(k) in (Mpc/h)**3
             P_lin *= (h/scaling)**3
 
-        do_marge = self.Q_marge
-
+        print P_lin
+        print P
+        #exit()
         W_P_th = np.zeros((self.n_size), 'float64')
-
-        #print self.Q_flat
-        #if do_marge and self.Q_flat:
-
-            #P_th = np.zeros((self.k_size), 'float64')
-            #for i in range(self.k_size):
-                #P_th[i] = P_lin[i]/(1.+self.Ag*self.kh[i])
-
-            #k2 = np.zeros((self.k_size), 'float64')
-            #for i in range(self.k_size):
-                #k2[i] = P_th[i] * self.kh[i]**2
-
-            #W_P_th_k2 = np.zeros((self.n_size), 'float64')
-            #covdat = np.zeros((self.n_size), 'float64')
-            #covth = np.zeros((self.n_size), 'float64')
-            #covth_k2 = np.zeros((self.n_size), 'float64')
-
-            #chi2 = 0
-            #for i_region in range(self.num_regions):
-                #if self.used_region[i_region]:
-                    #W_P_th = np.dot(self.window[i_region, :], P_th)
-                    #W_P_th_k2 = np.dot(self.window[i_region, :], k2)
-
-                    #covdat = np.dot(
-                        #self.invcov[i_region, :, :], self.P_obs[i_region, :])
-                    #covth = np.dot(self.invcov[i_region, :, :], W_P_th)
-                    #covth_k2 = np.dot(self.invcov[i_region, :, :], W_P_th_k2)
-
-                    #offdiag = sum(covth*W_P_th_k2)
-
-                    #Mat = np.zeros((2, 2), 'float64')
-                    #Mat = [
-                        #[sum(covth*W_P_th), offdiag],
-                        #[offdiag, sum(covth_k2*W_P_th_k2)]]
-
-                    #Vec = np.zeros((2), 'float64')
-                    #Vec = [sum(covdat*W_P_th), sum(covdat*W_P_th_k2)]
-
-                    #chi2 += -sum(self.P_obs[i_region, :]*covdat) +\
-                        #np.dot(Vec, np.dot(np.linalg.inv(Mat), Vec)) -\
-                        #math.log(np.linalg.det(Mat))
-
-            #return -chi2/2
-
-        #else:
-
-        if (self.Q_sigma == 0):
-            do_marge = False
 
         #starting analytic marginalisation over bias
 
@@ -1377,70 +1350,43 @@ class likelihood_mpk(likelihood):
 
         normV = 0
 
-        if do_marge:
-            nQ = 6
-            dQ = 0.4
-        else:
-            nQ = 0
-            dQ = 0
+        # infer P_th from P_lin. It is still in (Mpc/h)**3
+        P_th = P_lin
 
-        chisq = np.zeros((nQ*2+1), 'float64')
-        calweights = np.zeros((nQ*2+1), 'float64')
+        for i_region in range(self.num_regions):
+            if self.used_region[i_region]:
+                imin = i_region*self.n_size
+                imax = (i_region+1)*self.n_size-1
 
-        print nQ
-        for iQ in range(-nQ, nQ+1):
-            print iQ
-            # infer P_th from P_lin. It is still in (Mpc/h)**3
-            P_th = np.zeros((self.k_size), 'float64')
-            for i in range(self.k_size):
-                if self.Q_marge:
-                    Q = self.Q_mid + iQ*self.Q_sigma*dQ
-                    P_th[i] = P_lin[i]*(1+Q*self.kh[i]**2) / \
-                        (1.+self.Ag*self.kh[i])
-                else:
-                    P_th[i] = P_lin[i]
-            print P_th
+                W_P_th = np.dot(self.window[i_region, :], P_th)
+                for i in range(self.n_size):
+                    P_data_large[imin+i] = self.P_obs[i_region, i]
+                    W_P_th_large[imin+i] = W_P_th[i]
+                    cov_dat_large[imin+i] = np.dot(
+                        self.invcov[i_region, i, :],
+                        self.P_obs[i_region, :])
+                    cov_th_large[imin+i] = np.dot(
+                        self.invcov[i_region, i, :],
+                        W_P_th[:])
+        #print np.sum(cov_th_large)
+        normV += np.dot(W_P_th_large, cov_th_large)
+        #b_out = np.sum(W_P_th_large*cov_dat_large) / \
+            #np.sum(W_P_th_large*cov_th_large)
+        #print "bias value",b_out
+        #print self.P_obs
+        #print P_th
+        #for elem in self.window:
+            #for k in elem:
+                #print "%.2g" % k
+        #print self.window
+        #print W_P_th_large
+        #print P_data_large
+        #print '1st term',np.dot(P_data_large, cov_dat_large)
+        #print '2nd term',np.dot(W_P_th_large, cov_dat_large)**2/normV
+        #print 'alt 2nd',np.dot(W_P_th_large, cov_th_large)**2/normV**2
+        #print 'diff',(np.dot(P_data_large, cov_dat_large) - \
+                #np.dot(W_P_th_large, cov_th_large)/normV)**2
+        chisq = np.dot(P_data_large, cov_dat_large) - \
+            np.dot(W_P_th_large, cov_dat_large)**2/normV
 
-            for i_region in range(self.num_regions):
-                if self.used_region[i_region]:
-                    imin = i_region*self.n_size
-                    imax = (i_region+1)*self.n_size-1
-
-                    W_P_th = np.dot(self.window[i_region, :], P_th)
-                    for i in range(self.n_size):
-                        P_data_large[imin+i] = self.P_obs[i_region, i]
-                        W_P_th_large[imin+i] = W_P_th[i]
-                        cov_dat_large[imin+i] = np.sum(
-                            self.invcov[i_region, i, :] *
-                            self.P_obs[i_region, :])
-                        cov_th_large[imin+i] = np.sum(
-                            self.invcov[i_region, i, :] *
-                            W_P_th[:])
-            normV += np.sum(W_P_th_large*cov_th_large)
-            b_out = np.sum(W_P_th_large*cov_dat_large) / \
-                np.sum(W_P_th_large*cov_th_large)
-            #print "bias value",b_out
-            print '1st term',np.sum(P_data_large*cov_dat_large)
-            print '2nd term',np.sum(W_P_th_large*cov_dat_large)**2/normV
-            print 'alt 2nd',np.sum(W_P_th_large*cov_th_large)**2/normV**2
-            print 'diff',(np.sum(P_data_large*cov_dat_large) - \
-                    np.sum(W_P_th_large*cov_th_large)/normV)**2
-            chisq[iQ+nQ] = (np.sum(P_data_large*cov_dat_large) - \
-                np.sum(W_P_th_large*cov_dat_large))**2/normV
-            print chisq[iQ+nQ]
-
-            if do_marge:
-                calweights[iQ+nQ] = math.exp(-(iQ*dQ)**2/2)
-
-            print -chisq[iQ+nQ]/2
-        #exit()
-
-        return -chisq[iQ+nQ]/2
-
-        if do_marge:
-            minchisq = np.min(chisq)
-            lnlike = np.sum(
-                math.exp(-(chisq[:]-minchisq)/2)*calweights[:]) / \
-                np.sum(calweights[:])
-            if (lnlike == 0):
-                return data.boundary_loglike
+        return -chisq/2

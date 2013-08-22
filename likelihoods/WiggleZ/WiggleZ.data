@@ -15,8 +15,8 @@ WiggleZ.common['use_scaling'] = True
 
 # decide which bandpowers to use, min to max
 WiggleZ.common['min_mpk_points_use'] = 3
-WiggleZ.common['max_mpk_points_use'] = 25
-WiggleZ.common['min_mpk_kbands_use'] = 100
+WiggleZ.common['max_mpk_points_use'] = 30
+WiggleZ.common['min_mpk_kbands_use'] = 1
 WiggleZ.common['max_mpk_kbands_use'] = 100
 
 WiggleZ.common['use_halofit']    = True
