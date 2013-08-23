@@ -1259,31 +1259,20 @@ class likelihood_mpk(likelihood):
         # reduced Hubble parameter
         h = cosmo._h()
 
-        # TEST
-        self.use_scaling = False
+        # WiggleZ specific
         if self.use_scaling:
             # angular diameter distance at this redshift, in Mpc
             d_angular = cosmo._angular_distance(self.redshift)
-            #d_angular *= h
 
-            # Beware, the angular definition in Class is actually different
-            # from Camb, by a factor of a_em, the scale factor at emmission.
-            # The following line is needed to ensure we are comparing the right
-            # quantities
-            #print d_angular
-            #print self.d_angular_fid
-            d_angular *= (1+self.redshift)
-            #print d_angular
-
-            # radial distance at this redshift, in Mpc
+            # radial distance at this redshift, in Mpc, is simply 1/H (itself
+            # in Mpc^-1). Hz is an array, with only one element.
             r, Hz = cosmo.z_of_r([self.redshift])
-            #print Hz[0]
-            d_radial = self.redshift*h/Hz[0]
-            #print d_radial, self.d_radial_fid
-            #exit()
+            d_radial = 1/Hz[0]
 
             # scaling factor = (d_angular**2 * d_radial)^(1/3) relative
-            # to a fiducial model
+            # to a fiducial model. The values are stored in the .data files for
+            # each experiment, and are truly in Mpc. Beware for a potential
+            # difference with CAMB conventions here.
             scaling = pow(
                 (d_angular/self.d_angular_fid)**2 *
                 (d_radial/self.d_radial_fid), 1./3.)
@@ -1296,20 +1285,20 @@ class likelihood_mpk(likelihood):
         # get P(k) at right values of k, convert it to (Mpc/h)^3 and rescale it
         P_lin = np.zeros((self.k_size), 'float64')
 
+        # If the flag use_giggleZ is set to True, the power spectrum retrieved
+        # from Class will get rescaled by the fiducial power spectrum given by
+        # the GiggleZ N-body simulations CITE
         if self.use_giggleZ:
             P = np.zeros((self.k_fid_size), 'float64')
             for i in range(self.k_fid_size):
                 P[i] = cosmo._pk(self.k_fid[i]*h, self.redshift)
                 power = 0
+                # The following create a polynome in k, which coefficients are
+                # stored in the .data files of the experiments.
                 for j in range(6):
                     power += self.giggleZ_fidpoly[j]*self.k_fid[i]**j
-                print power
                 # rescale P by fiducial model and get it in (Mpc/h)**3
-                print self.P_fid[i], P[i]
                 P[i] *= pow(10, power)*(h/scaling)**3/self.P_fid[i]
-                print h, scaling
-                print P[i]
-                #exit()
 
             if self.use_giggleZPP0:
                 # Shot noise parameter addition to GiggleZ model. It should
@@ -1332,13 +1321,13 @@ class likelihood_mpk(likelihood):
             # get rescaled values of P(k) in (Mpc/h)**3
             P_lin *= (h/scaling)**3
 
-        print P_lin
-        print P
-        #exit()
         W_P_th = np.zeros((self.n_size), 'float64')
 
-        #starting analytic marginalisation over bias
+        # starting analytic marginalisation over bias
 
+        # Define quantities living in all the regions possible. If only a few
+        # regions are selected in the .data file, many elements from these
+        # arrays will stay at 0.
         P_data_large = np.zeros(
             (self.n_size*self.num_regions_used), 'float64')
         W_P_th_large = np.zeros(
@@ -1350,10 +1339,18 @@ class likelihood_mpk(likelihood):
 
         normV = 0
 
-        # infer P_th from P_lin. It is still in (Mpc/h)**3
+        # infer P_th from P_lin. It is still in (Mpc/h)**3. TODO why was it
+        # called P_lin in the first place ? Couldn't we use now P_th all the
+        # way ?
         P_th = P_lin
 
+        # Loop over all the available regions
         for i_region in range(self.num_regions):
+            # In each region that was selected with the array of flags
+            # self.used_region, define boundaries indices, and fill in the
+            # corresponding windowed power spectrum. All the unused regions
+            # will still be set to zero as from the initialization, which will
+            # not contribute anything in the final sum.
             if self.used_region[i_region]:
                 imin = i_region*self.n_size
                 imax = (i_region+1)*self.n_size-1
@@ -1368,24 +1365,14 @@ class likelihood_mpk(likelihood):
                     cov_th_large[imin+i] = np.dot(
                         self.invcov[i_region, i, :],
                         W_P_th[:])
-        #print np.sum(cov_th_large)
+
+        # Explain what it is TODO
         normV += np.dot(W_P_th_large, cov_th_large)
-        #b_out = np.sum(W_P_th_large*cov_dat_large) / \
-            #np.sum(W_P_th_large*cov_th_large)
-        #print "bias value",b_out
-        #print self.P_obs
-        #print P_th
-        #for elem in self.window:
-            #for k in elem:
-                #print "%.2g" % k
-        #print self.window
-        #print W_P_th_large
-        #print P_data_large
-        #print '1st term',np.dot(P_data_large, cov_dat_large)
-        #print '2nd term',np.dot(W_P_th_large, cov_dat_large)**2/normV
-        #print 'alt 2nd',np.dot(W_P_th_large, cov_th_large)**2/normV**2
-        #print 'diff',(np.dot(P_data_large, cov_dat_large) - \
-                #np.dot(W_P_th_large, cov_th_large)/normV)**2
+        # Sort of bias TODO ?
+        b_out = np.sum(W_P_th_large*cov_dat_large) / \
+            np.sum(W_P_th_large*cov_th_large)
+
+        # Explain this formula better, link to article ?
         chisq = np.dot(P_data_large, cov_dat_large) - \
             np.dot(W_P_th_large, cov_dat_large)**2/normV
 
