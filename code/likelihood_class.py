@@ -1304,9 +1304,9 @@ class likelihood_mpk(likelihood):
                 # Shot noise parameter addition to GiggleZ model. It should
                 # recover the proper nuisance parameter, depending on the name.
                 # I.e., Wigglez_A should recover P0_a, etc...
-                tag = self.name[-2:]
+                tag = self.name[-2:]  # circle over "_a", "_b", etc...
                 P0_value = data.mcmc_parameters['P0'+tag]['current'] *\
-                        data.mcmc_parameters['P0'+tag]['scale']
+                    data.mcmc_parameters['P0'+tag]['scale']
                 P_lin = np.interp(self.kh,self.k_fid,P+P0_value)
             else:
                 # get P_lin by interpolation. It is still in (Mpc/h)**3
