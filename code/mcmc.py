@@ -97,7 +97,7 @@ def compute_lkl(cosmo, data):
         except NameError:
             return data.boundary_loglike
         except (AttributeError, KeyboardInterrupt):
-            exit()
+            io_mp.message("Something went terribly wrong with CLASS", "error")
 
     # For each desired likelihood, compute its value against the theoretical
     # model
