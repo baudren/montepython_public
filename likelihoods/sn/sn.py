@@ -59,7 +59,7 @@ class sn(likelihood):
         # for each point, compute luminosity distance d_L=(1+z)**2d_A and infer
         # theoretical prediction and difference with observation
         for i in range(self.num_points):
-            d = cosmo._angular_distance(self.z[i])
+            d = cosmo.angular_distance(self.z[i])
             difference[i] = 5 * np.log((1 + self.z[i]) ** 2 * d) / np.log(
                 10) + 25 - self.moduli[i]
 

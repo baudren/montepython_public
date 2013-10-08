@@ -245,11 +245,11 @@ class boss(likelihood):
 
     # displacement for cosmo parameters:
 
-    delta[self.index_H0] = cosmo._h()*100.  - self.taylor_expansion_point[self.index_H0,0]
-    delta[self.index_ns] = cosmo._n_s()     - self.taylor_expansion_point[self.index_ns,0]
-    delta[self.index_Om] = cosmo._Omega_m() - self.taylor_expansion_point[self.index_Om,0]
-    delta[self.index_s8] = cosmo._sigma8()  - self.taylor_expansion_point[self.index_s8,0]
-#    delta[self.index_zr] = (cosmo._z_reio() - self.taylor_expansion_point[self.index_zr,0])/7.
+    delta[self.index_H0] = cosmo.h()*100.  - self.taylor_expansion_point[self.index_H0,0]
+    delta[self.index_ns] = cosmo.n_s()     - self.taylor_expansion_point[self.index_ns,0]
+    delta[self.index_Om] = cosmo.Omega_m() - self.taylor_expansion_point[self.index_Om,0]
+    delta[self.index_s8] = cosmo.sigma8()  - self.taylor_expansion_point[self.index_s8,0]
+#    delta[self.index_zr] = (cosmo.z_reio() - self.taylor_expansion_point[self.index_zr,0])/7.
 
     for zz in range(self.num_z):
       

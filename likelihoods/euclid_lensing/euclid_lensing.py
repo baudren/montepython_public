@@ -199,7 +199,7 @@ class euclid_lensing(likelihood):
         if (self.l[index_l]/self.r[index_z] > self.k_max):
           print 'you should increase euclid_lensing.k_max up to at least',self.l[index_l]/self.r[index_z]
           exit()
-	pk[index_l,index_z] = cosmo._pk(self.l[index_l]/self.r[index_z],self.z[index_z])
+	pk[index_l,index_z] = cosmo.pk(self.l[index_l]/self.r[index_z],self.z[index_z])
 
     # Recover the non_linear scale computed by halofit. If no scale was
     # affected, set the scale to one, and make sure that the nuisance parameter
@@ -261,12 +261,12 @@ class euclid_lensing(likelihood):
       for Bin1 in range(self.nbin):
 	for Bin2 in range(self.nbin):
           Cl[nl,Bin1,Bin2] = np.sum(0.5*(Cl_integrand[1:,Bin1,Bin2]+Cl_integrand[:-1,Bin1,Bin2])*(self.r[1:]-self.r[:-1]))
-	  Cl[nl,Bin1,Bin2] *= 9./16.*(cosmo._Omega0_m())**2 # in units of Mpc**4
-	  Cl[nl,Bin1,Bin2] *= (cosmo._h()/2997.9)**4 # dimensionless
+	  Cl[nl,Bin1,Bin2] *= 9./16.*(cosmo.Omega0_m())**2 # in units of Mpc**4
+	  Cl[nl,Bin1,Bin2] *= (cosmo.h()/2997.9)**4 # dimensionless
 
           El[nl,Bin1,Bin2] = np.sum(0.5*(El_integrand[1:,Bin1,Bin2]+El_integrand[:-1,Bin1,Bin2])*(self.r[1:]-self.r[:-1]))
-	  El[nl,Bin1,Bin2] *= 9./16.*(cosmo._Omega0_m())**2 # in units of Mpc**4
-	  El[nl,Bin1,Bin2] *= (cosmo._h()/2997.9)**4 # dimensionless
+	  El[nl,Bin1,Bin2] *= 9./16.*(cosmo.Omega0_m())**2 # in units of Mpc**4
+	  El[nl,Bin1,Bin2] *= (cosmo.h()/2997.9)**4 # dimensionless
 	  if Bin1 == Bin2:
 	    Cl[nl,Bin1,Bin2] += self.noise
 

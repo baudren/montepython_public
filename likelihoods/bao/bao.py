@@ -41,12 +41,12 @@ class bao(likelihood):
         # theoretical prediction and chi2 contribution
         for i in range(self.num_points):
 
-            da = cosmo._angular_distance(self.z[i])
-            dr = self.z[i] / cosmo._Hubble(self.z[i])
+            da = cosmo.angular_distance(self.z[i])
+            dr = self.z[i] / cosmo.Hubble(self.z[i])
             dv = pow(da * da * (1 + self.z[i]) * (1 + self.z[i]) * dr, 1. / 3.)
 
             if (self.type[i] == 3):
-                rs = cosmo._rs_drag() * self.rs_rescale
+                rs = cosmo.rs_drag() * self.rs_rescale
                 theo = dv / rs
 
             elif (self.type[i] == 4):

@@ -7,8 +7,8 @@ class gunn_peterson(likelihood_prior):
 
     def loglkl(self, cosmo, data):
 
-        xHI_reio = 1. - cosmo._ionization_fraction(self.z_reio)
-        xHI_noreio = 1. - cosmo._ionization_fraction(self.z_noreio)
+        xHI_reio = 1. - cosmo.ionization_fraction(self.z_reio)
+        xHI_noreio = 1. - cosmo.ionization_fraction(self.z_noreio)
 
         lkl = 0
 

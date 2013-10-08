@@ -10,7 +10,7 @@ class da_rec(likelihood):
     # compute likelihood
     def loglkl(self, cosmo, data):
 
-        da = cosmo._angular_distance(self.z_rec)
+        da = cosmo.angular_distance(self.z_rec)
         chi2 = ((da - self.da_rec) / self.da_error) ** 2
 
         # return ln(L)
