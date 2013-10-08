@@ -146,7 +146,7 @@ class euclid_pk(likelihood):
     # H is incidentally also dz/dr
     r,H = cosmo.z_of_r(self.z)
     for i in range(len(D_A)):
-      D_A[i] = cosmo._angular_distance(self.z[i])
+      D_A[i] = cosmo.angular_distance(self.z[i])
 
     # Compute sigma_r = dr(z)/dz sigma_z with sigma_z = 0.001(1+z)
     sigma_r = np.zeros(self.nbin,'float64')
@@ -175,7 +175,7 @@ class euclid_pk(likelihood):
       fid_file.write('\n')
       for index_k in range(self.k_size):
 	for index_z in range(2*self.nbin+1):
-	  pk[index_k,index_z] = cosmo._pk(self.k_fid[index_k],self.z[index_z])
+	  pk[index_k,index_z] = cosmo.pk(self.k_fid[index_k],self.z[index_z])
 	  fid_file.write('%.8g\n' % pk[index_k,index_z])
       for index_z in range(2*self.nbin+1):
 	fid_file.write('%.8g %.8g\n' % (H[index_z],D_A[index_z]))
@@ -221,7 +221,7 @@ class euclid_pk(likelihood):
     # the z_boundaries, to compute afterwards beta. This is pk_nl_th from the
     # notes.
     pk_nl_th = np.zeros((self.k_size,2*self.nbin+1,self.mu_size),'float64')
-    pk_nl_th = cosmo._get_pk(self.k,self.z,self.k_size,2*self.nbin+1,self.mu_size)
+    pk_nl_th = cosmo.get_pk(self.k,self.z,self.k_size,2*self.nbin+1,self.mu_size)
 
     #for index_k in range(self.k_size):
     #  print self.k[index_k,0,0],pk_nl_th[index_k,0,0]

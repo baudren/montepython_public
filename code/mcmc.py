@@ -93,7 +93,7 @@ def compute_lkl(cosmo, data):
         # with minimum likelihood, so will be rejected, resulting in the choice
         # of a new point.
         try:
-            cosmo._compute(["lensing"])
+            cosmo.compute(["lensing"])
         except NameError:
             return data.boundary_loglike
         except (AttributeError, KeyboardInterrupt):

@@ -148,7 +148,7 @@ class likelihood(object):
         cl = cosmo.lensed_cl()
 
         # convert dimensionless C_l's to C_l in muK**2
-        T = cosmo._T_cmb()
+        T = cosmo.T_cmb()
         for key in cl.iterkeys():
             # All quantities need to be multiplied by this factor, except the
             # phi-phi term, that is already dimensionless
@@ -1257,12 +1257,12 @@ class likelihood_mpk(likelihood):
     def loglkl(self, cosmo, data):
 
         # reduced Hubble parameter
-        h = cosmo._h()
+        h = cosmo.h()
 
         # WiggleZ specific
         if self.use_scaling:
             # angular diameter distance at this redshift, in Mpc
-            d_angular = cosmo._angular_distance(self.redshift)
+            d_angular = cosmo.angular_distance(self.redshift)
 
             # radial distance at this redshift, in Mpc, is simply 1/H (itself
             # in Mpc^-1). Hz is an array, with only one element.
@@ -1291,7 +1291,7 @@ class likelihood_mpk(likelihood):
         if self.use_giggleZ:
             P = np.zeros((self.k_fid_size), 'float64')
             for i in range(self.k_fid_size):
-                P[i] = cosmo._pk(self.k_fid[i]*h, self.redshift)
+                P[i] = cosmo.pk(self.k_fid[i]*h, self.redshift)
                 power = 0
                 # The following create a polynome in k, which coefficients are
                 # stored in the .data files of the experiments.
@@ -1317,7 +1317,7 @@ class likelihood_mpk(likelihood):
             self.k = self.kh*h*scaling
             # get values of P(k) in Mpc**3
             for i in range(self.k_size):
-                P_lin[i] = cosmo._pk(self.k[i], self.redshift)
+                P_lin[i] = cosmo.pk(self.k[i], self.redshift)
             # get rescaled values of P(k) in (Mpc/h)**3
             P_lin *= (h/scaling)**3
 

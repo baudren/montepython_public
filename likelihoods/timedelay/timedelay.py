@@ -44,8 +44,8 @@ class timedelay(likelihood):
         # volume distance dv, sound horizon at baryon drag rs_d,
         # theoretical prediction and chi2 contribution
         for i in range(self.num_points):
-            Dd = cosmo._angular_distance(self.zd[i])
-            Ds = cosmo._angular_distance(self.zs[i])
+            Dd = cosmo.angular_distance(self.zd[i])
+            Ds = cosmo.angular_distance(self.zs[i])
             Dds = ((1. + self.zs[i]) * Ds - (1 + self.zd[i]) * Dd) / (
                 1. + self.zs[i])
             Dt = (1 + self.zd[i]) * Dd * Ds / Dds

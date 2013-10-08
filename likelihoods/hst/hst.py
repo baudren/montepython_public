@@ -9,6 +9,6 @@ class hst(likelihood_prior):
     # likelihood class.
     def loglkl(self, cosmo, data):
 
-        h = cosmo._h()
+        h = cosmo.h()
         loglkl = -0.5 * (h - self.h) ** 2 / (self.sigma ** 2)
         return loglkl
