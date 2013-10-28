@@ -9,9 +9,6 @@ import numpy as np
 import io_mp 
 from copy import deepcopy
 
-# debug
-from pprint import pprint
-
 class prior(object):
     """
     Store the type of prior associated to a parameter
@@ -61,8 +58,6 @@ class prior(object):
             if str(value) == str(-1):
                 value = None
 
-        # debug
-        pprint(self)
 
     def draw_from_prior(self):
         """

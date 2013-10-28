@@ -21,6 +21,7 @@ except:
 from datetime import date
 
 import io_mp  # Needs to talk to io_mp.py file for the logging of parameters
+import prior
 
 
 class data(object):
@@ -40,7 +41,6 @@ class data(object):
         just once, at initialization:
 
         * :func:`fill_mcmc_parameters`
-        * :func:`from_input_to_mcmc_parameters`
         * :func:`read_file`
         * :func:`read_version`
         * :func:`group_parameters_in_blocks`
@@ -230,9 +230,8 @@ class data(object):
         Initializes the ordered dictionary :attr:`mcmc_parameters` from
         the input parameter file.
 
-        It uses :meth:`read_file`, and calls
-        :meth:`from_input_to_mcmc_parameters` to actually fill in
-        :attr:`mcmc_parameters`.
+        It uses :meth:`read_file`, and initializes instances of
+        :class:`parameter` to actually fill in :attr:`mcmc_parameters`.
 
         """
 
@@ -250,65 +249,10 @@ class data(object):
                 "error")
         self.read_file(self.param_file)
 
-        # Transform from parameters dictionnary to mcmc_parameters dictionary
-        # of dictionaries, method defined just below
-        self.from_input_to_mcmc_parameters(self.parameters)
-
-    def from_input_to_mcmc_parameters(self, dictionary):
-        """
-        Converts dictionary of raw quantities into a meaningful one.
-
-        At the end of this initialization, every field but one is filled for
-        every parameter, be it fixed or varying. The missing field is the
-        'last_accepted' one, that will be filled in the module :mod:`mcmc`.
-
-        The other fields are
-
-        `initial`:
-            initial array of input values defined in the parameter file.
-            Contains (in this order) `mean`, `minimum`, `maximum`, `1-sigma`.
-            If the min/max values (**TO CHECK** proposal density boundaries)
-            are unimportant/unconstrained, use `None` or `-1` (without a period
-            !)
-        `scale`:
-            5th entry of the initial array in the parameter file.
-        `role`:
-            6th entry of the initial array, can be `cosmo`, `nuisance` or
-            `derived`. A `derived` parameter will not be considered as varying,
-            but will be instead recovered from the cosmological code for each
-            point in the parameter space.
-        `tex_name`:
-            A tentative tex version of the name, provided by the function
-            :func:`io_mp.get_tex_name`.
-        `status`:
-            Depending on the `1-sigma` value in the initial array, it will be
-            set to `fixed` or `varying` (resp. zero and non-zero)
-        `current`:
-            Stores the value at the current point in parameter space (`not
-            allowed initially`)
-
-        .. note::
-
-            The syntax of the parameter files is defined here - if one
-            wants to change it, one should report the changes in there.
-
-        :Parameters:
-            - **dictionary** (`dict`) - raw dictionary containing the input
-              from the parameter file. Its content will be transformed and
-              processed into the final :attr:`mcmc_parameters`
-
-        """
-        for key, value in dictionary.iteritems():
-            self.mcmc_parameters[key] = od()
-            self.mcmc_parameters[key]['initial'] = value[0:4]
-            self.mcmc_parameters[key]['scale'] = value[4]
-            self.mcmc_parameters[key]['role'] = value[-1]
-            self.mcmc_parameters[key]['tex_name'] = io_mp.get_tex_name(key)
-            if value[3] == 0:
-                self.mcmc_parameters[key]['status'] = 'fixed'
-                self.mcmc_parameters[key]['current'] = value[0]
-            else:
-                self.mcmc_parameters[key]['status'] = 'varying'
+        for key, value in self.parameters.iteritems():
+            self.mcmc_parameters[key] = parameter(value, key)
+        """Transform from parameters dictionnary to mcmc_parameters dictionary
+        of instances from the class :class:`parameter` (inheriting from dict)"""
 
     def read_file(self, File):
         """
@@ -322,6 +266,10 @@ class data(object):
             A rstrip() was added at the end, because of an uncomprehensible bug
             on some systems that imagined some unexistant characters at the end
             of the line... Now should work
+
+        .. note::
+
+            A security should be added to protect from obvious attacks.
 
         """
         for line in File:
@@ -612,3 +560,82 @@ class data(object):
             return cmp(self.uo_parameters, other.uo_parameters)
         else:
             return -1
+
+
+class parameter(dict):
+    """
+    Store all important fields, and define a few convenience methods
+
+    """
+    def __init__(self, array, key):
+        """
+        This class replaces the old function defined in the data class, called
+        `from_input_to_mcmc_parameters`. The traduction is now done inside the
+        parameter class, which interprets the array given as an input inside
+        the parameter file, and returns a dictionary having all relevant fields
+        initialized.
+
+        .. warning::
+
+            This used to be an ordered dictionary, for no evident reason. It is
+            now reverted back to an ordinary dictionary. If this broke
+            anything, it will be reverted back
+
+        At the end of this initialization, every field but one is filled for
+        the specified parameter, be it fixed or varying. The missing field is the
+        'last_accepted' one, that will be filled in the module :mod:`mcmc`.
+
+        The other fields are
+
+        `initial`:
+            initial array of input values defined in the parameter file.
+            Contains (in this order) `mean`, `minimum`, `maximum`, `1-sigma`.
+            If the min/max values (**TO CHECK** proposal density boundaries)
+            are unimportant/unconstrained, use `None` or `-1` (without a period
+            !)
+        `scale`:
+            5th entry of the initial array in the parameter file.
+        `role`:
+            6th entry of the initial array, can be `cosmo`, `nuisance` or
+            `derived`. A `derived` parameter will not be considered as varying,
+            but will be instead recovered from the cosmological code for each
+            point in the parameter space.
+        `prior`:
+            defined through the optional 7th entry of the initial array, can be
+            ommited or set to `flat` (same), or set to `gaussian`. An instance
+            of the :class:`prior` defined in :mod:`prior` will be initialized
+            and set to this value.
+        `tex_name`:
+            A tentative tex version of the name, provided by the function
+            :func:`io_mp.get_tex_name`.
+        `status`:
+            Depending on the `1-sigma` value in the initial array, it will be
+            set to `fixed` or `varying` (resp. zero and non-zero)
+        `current`:
+            Stores the value at the current point in parameter space (`not
+            allowed initially`)
+
+        .. note::
+
+            The syntax of the parameter files is defined here - if one
+            wants to change it, one should report the changes in there.
+
+        :Parameters:
+            - **value** (`list`) - array read from the parameter file
+            - **key** (`str`) - name of the parameter
+
+
+        """
+        # calling the parent method initialization
+        dict.__init__(self)
+
+        self['initial'] = array[0:4]
+        self['scale'] = array[4]
+        self['role'] = array[-1]
+        self['tex_name'] = io_mp.get_tex_name(key)
+        if array[3] == 0:
+            self['status'] = 'fixed'
+            self['current'] = array[0]
+        else:
+            self['status'] = 'varying'
+        self['prior'] = prior.prior(array)
