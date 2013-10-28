@@ -328,9 +328,17 @@ def message(string, status):
         exit()
 
 
+def safe_exec(string):
+    """
+    Attempt at executing a string from file in a secure way
+    
+    """
+    exec(string, {'__builtins__':{}})
+
 class File(file):
     """
     New class of file, to provide an equivalent of the tail command (on linux).
+
     It will be used when starting from an existing chain, and avoids circling
     through an immense file.
     """
