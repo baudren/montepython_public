@@ -52,12 +52,9 @@ class prior(object):
                         "error")
 
         # Store boundaries for convenient access later
-        self.prior_range = deepcopy(array[1:3])
         # Put all fields that are -1 to None to avoid confusion later on.
-        for index, value in enumerate(self.prior_range):
-            if str(value) == str(-1):
-                value = None
-
+        self.prior_range = [a if not((a is -1) or (a is None)) else None
+                            for a in deepcopy(array[1:3])]
 
     def draw_from_prior(self):
         """
@@ -96,7 +93,22 @@ class prior(object):
             return False
         else:
             return True
-        
 
+    def is_bound(self):
+        """
+        Checks whether the allowed parameter range is finite
 
+        """
+        return (self.prior_range[0] is not None and
+                self.prior_range[1] is not None)
 
+    def map_from_unit_interval(self, value):
+        """
+        Linearly maps a value of the interval [0,1] to the parameter range.
+
+        For the sake of speed, assumes the parameter to be bound to a finite range, \
+        which should have been previously checked with :func:`is_bound`
+
+        """
+        return (self.prior_range[0] + 
+                value * (self.prior_range[1] - self.prior_range[0]))
