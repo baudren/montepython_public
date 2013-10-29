@@ -19,7 +19,7 @@ if float(version) < 2.7:
 
 import parser_mp   # parsing the input command line
 import io_mp       # all the input/output mechanisms
-import mcmc        # the actual Monte Carlo chain procedure
+import sampler     # generic sampler that calls different sampling algorithms
 import data        # data handling
 
 
@@ -164,8 +164,8 @@ def main():
             and data.py, to support a new one",
             "error")
 
-    # MCMC chain
-    mcmc.chain(cosmo, Data, command_line)
+    # Generic sampler call
+    sampler.run(cosmo, Data, command_line)
 
     # Closing up the file
     Data.out.close()

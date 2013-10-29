@@ -57,6 +57,9 @@ def create_parser():
               proposal density is very bad, in order to accumulate points and
               generate a covariance matrix to be used later with the `default`
               jumping method.
+            - **-m** (`string`) - sampling method used, by default 'MH' for
+              Metropolis-Hastings, can be set to 'NS' for Nested Sampling
+              (using Multinest wrapper PyMultiNest)
             - **-f** (`float`) - jumping factor (>= 0, default to 2.4)
               (*OPT*).
 
@@ -151,6 +154,9 @@ def create_parser():
     # -- jumping method	(OPTIONAL)
     parser.add_argument('-j', metavar='jumping method', type=str,
                         dest='jumping', default='global')
+    # -- sampling method (OPTIONAL)
+    parser.add_argument('-m', metavar='sampling method', type=str,
+                        dest='method', default='MH')
     # -- jumping factor	(OPTIONAL)
     parser.add_argument('-f', metavar='jumping factor', type=float,
                         dest='jumping_factor', default=2.4)
