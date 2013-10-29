@@ -72,7 +72,11 @@ def main():
         data folder, Class (, Clik), etc...",
         "error")
 
-    sys.stdout.write('Running MontePython version 1.2\n')
+    # Recover the version number
+    with open(path['MontePython'][:-5] + 'VERSION', 'r') as version_file:
+        version = version_file.readline()
+
+    sys.stdout.write('Running MontePython version %s\n' % version)
 
     # If the info flag was used, read a potential chain (or set of chains) to
     # be analysed with default procedure. If the argument is a .info file, then
