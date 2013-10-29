@@ -182,6 +182,13 @@ WMAP likelihood
 
 .. warning::
 
+  As of version 1.2.5, with Planck data being available, installing
+  this likelihood might not be so important anymore. You might prefer
+  to skip this, at it is an **optional** part of the installation
+  process.
+
+.. warning::
+
   So far, the use of the WMAP wrapper is separated from the Planck
   wrapper, but it might be merged in the future, as it is based on the
   same code `clik` developped internally for Planck by Karim Benabed.

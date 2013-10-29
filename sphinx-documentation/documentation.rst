@@ -14,7 +14,9 @@ Contents:
    MontePython
    parser_mp
    data
+   prior
    likelihood_class
+   sampler
    mcmc
    analyze
    io_mp
