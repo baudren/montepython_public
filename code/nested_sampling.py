@@ -43,5 +43,8 @@ def run(cosmo, data, command_line):
             
     # Launch MultiNest
     pymultinest.run(loglik, prior, n_dims = len(varying_param_names),
-                    outputfiles_basename = command_line.folder)
+                    outputfiles_basename = command_line.folder,
+                    evidence_tolerance = 0.1,
+                    n_live_points=800,
+                    verbose = True)
 
