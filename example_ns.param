@@ -5,7 +5,7 @@
 # euclid_pk, euclid_lensing
 # and clik_fake_planck (for Planck members)
 
-data.experiments=['fake_planck_bluebook']
+data.experiments=['hst']
 #data.experiments=['wmap','spt']
 
 #------ Parameter list -------
@@ -17,23 +17,10 @@ data.experiments=['fake_planck_bluebook']
 
 
 # Cosmological parameters list
-data.parameters['omega_b'] 	= [2.249,    2,    2.5, 0.016, 0.01,'cosmo']
 data.parameters['omega_cdm'] 	= [0.1120, 0.1,   0.2, 0.0016,1,   'cosmo']
-data.parameters['n_s']       	= [0.963,  0.8,     1, 0.004, 1,   'cosmo']
-data.parameters['A_s']       	= [2.42,     2,     3, 0.038, 1e-9,'cosmo']
 data.parameters['h']         	= [0.703,  0.6,   0.8, 0.0065,1,   'cosmo']
-data.parameters['tau_reio']    	= [0.085, 0.07, 0.095, 0.0044,1,   'cosmo']
-
-# Nuisance parameter list, same call, except the name does not have to be a class name
-# For wmap:
-#data.parameters['A_SZ']         = [1,    0, 2,   1, 1,  'nuisance']
-# For SPT
-#data.parameters['SPT_SZ']       = [5.6,  0,-1, 2.5, 1,  'nuisance']
-#data.parameters['SPT_PS']       = [20.4,-1,-1, 2.7, 1, 'nuisance']
-#data.parameters['SPT_CL']       = [5.3, -1,-1, 2.3, 1, 'nuisance']
 
 # Derived parameter list
-data.parameters['z_reio']       = [0,       -1, -1, 0,1,  'derived']
 data.parameters['Omega_Lambda'] = [0,       -1, -1, 0,1,  'derived']
 
 # Other class parameters (fixed parameters, precision parameters, etc.)
