@@ -154,7 +154,7 @@ def print_vector(out, N, loglkl, data):
           the progress of the chain.
         - **N** (`int`) - multiplicity of the point, `i.e.` number of times the
           code stayed at this particular place.
-        - **loglkl** (`float`) - value of the log likelihood at this point
+        - **loglkl** (`float`) - value of the (- log likelihood) at this point
 
     .. note::
 
