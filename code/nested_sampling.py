@@ -42,9 +42,9 @@ def run(cosmo, data, command_line):
         return compute_lkl(cosmo, data)
             
     # Launch MultiNest
-    pymultinest.run(loglik, prior, n_dims = len(varying_param_names),
-                    outputfiles_basename = command_line.folder,
-                    evidence_tolerance = 0.1,
+    pymultinest.run(loglik, prior, n_dims=len(varying_param_names),
+                    outputfiles_basename=command_line.folder,
+                    evidence_tolerance=0.5,
                     n_live_points=800,
-                    verbose = True)
+                    verbose=True)
 
