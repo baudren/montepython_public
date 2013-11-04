@@ -99,12 +99,12 @@ def run(cosmo, data, command_line):
     basename = os.path.join(NS_subfolder,
         command_line.folder.split(os.path.sep)[-2]+'-')
     # Launch MultiNest
-    #pymultinest.run(loglik, prior, n_dims=len(varying_param_names),
-                    #n_params=len(varying_param_names)+len(derived_param_names),
-                    #outputfiles_basename=basename,
-                    #evidence_tolerance=0.5,
-                    #n_live_points=100,
-                    #verbose=True)
+    pymultinest.run(loglik, prior, n_dims=len(varying_param_names),
+                    n_params=len(varying_param_names)+len(derived_param_names),
+                    outputfiles_basename=basename,
+                    evidence_tolerance=0.5,
+                    n_live_points=100,
+                    verbose=True)
     
     # Assuming this worked, translate the output ev.txt into the same format as
     # standard Monte Python chains for further analysis.
