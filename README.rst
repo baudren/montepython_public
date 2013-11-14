@@ -3,7 +3,7 @@ Monte Python, a Monte Carlo Markov Chain code (with Class!)
 ===========================================================
 
 :Author: Benjamin Audren <benjamin.audren@epfl.ch>
-:Version: Version 1.1
+:Version: Version 1.2.5
 
 
 If you are searching for specific examples of a work session, please refer to
