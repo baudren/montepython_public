@@ -6,13 +6,14 @@
 This module defines one key function, :func:`run`, that distributes the work to
 the desired actual sampler (Metropolis Hastings, or Nested Sampling so far).
 
-It also defines a serie of helper function, that aim to be generically used by
+It also defines a serie of helper functions, that aim to be generically used by
 all different sampler methods:
 
 * :func:`get_covariance_matrix`
 * :func:`read_args_from_chain`
 * :func:`read_args_from_bestfit`
 * :func:`accept_step`
+* :func:`compute_lkl`
 
 
 
@@ -302,4 +303,114 @@ def accept_step(data):
     for elem in data.get_mcmc_parameters(['derived']):
         data.mcmc_parameters[elem]['last_accepted'] = \
             data.mcmc_parameters[elem]['current']
+
+
+def compute_lkl(cosmo, data):
+    """
+    Compute the likelihood, given the current point in parameter space.
+
+    This function now performs a test before calling the cosmological model
+    (**new in version 1.2**). If any cosmological parameter changed, the flag
+    :code:`data.need_cosmo_update` will be set to :code:`True`, from the
+    routine :func:`check_for_slow_step <data.data.check_for_slow_step>`.
+
+    :Returns:
+        - **loglike** (`float`) - the log of the likelihood
+          (:math:`\\frac{-\chi^2}2`) computed from the sum of the likelihoods
+          of the experiments specified in the input parameter file.
+
+          This function returns :attr:`data.boundary_loglkie
+          <data.data.boundary_loglike>`, defined in the module :mod:`data` if
+          *i)* the current point in the parameter space has hit a prior edge,
+          or *ii)* the cosmological module failed to compute the model. This
+          value is chosen to be extremly small (large negative value), so that
+          the step will always be rejected.
+
+
+    """
+
+    # If the cosmological module has already been called once, and if the
+    # cosmological parameters have changed, then clean up, and compute.
+    if (cosmo.state is True and data.need_cosmo_update is True):
+        cosmo._struct_cleanup(set(["lensing", "nonlinear", "spectra",
+                                    "primordial", "transfer", "perturb",
+                                    "thermodynamics", "background", "bessel"]))
+
+    # If the data needs to change, then do a normal call to the cosmological
+    # compute function. Note that, even if need_cosmo update is True, this
+    # function must be called if the jumping factor is set to zero. Indeed,
+    # this means the code is called for only one point, to set the fiducial
+    # model.
+    if ((data.need_cosmo_update) or
+            (not cosmo.state) or
+            (data.jumping_factor == 0)):
+
+        # Prepare the cosmological module with the new set of parameters
+        cosmo.set(data.cosmo_arguments)
+
+        # Compute the model, keeping track of the errors
+
+        # In classy.pyx, we made use of two type of python errors, to handle
+        # two different situations.
+        # - AttributeError is returned if a parameter was not properly set
+        # during the initialisation (for instance, you entered Ommega_cdm
+        # instead of Omega_cdm).  Then, the code exits, to prevent running with
+        # imaginary parameters. This behaviour is also used in case you want to
+        # kill the process.
+        # - NameError is returned if Class fails to compute the output given
+        # the parameter values. This will be considered as a valid point, but
+        # with minimum likelihood, so will be rejected, resulting in the choice
+        # of a new point.
+        try:
+            cosmo.compute(["lensing"])
+        except NameError:
+            return data.boundary_loglike
+        except (AttributeError, KeyboardInterrupt):
+            io_mp.message("Something went terribly wrong with CLASS", "error")
+
+    # For each desired likelihood, compute its value against the theoretical
+    # model
+    loglike = 0
+    flag_wrote_fiducial = 0
+
+    for likelihood in data.lkl.itervalues():
+        if likelihood.need_update is True:
+            value = likelihood.loglkl(cosmo, data)
+            # Storing the result
+            likelihood.backup_value = value
+        # Otherwise, take the existing value
+        else:
+            value = likelihood.backup_value
+        loglike += value
+        # In case the fiducial file was written, store this information
+        if value == 1:
+            flag_wrote_fiducial += 1
+
+    # Compute the derived parameters if relevant
+    if data.get_mcmc_parameters(['derived']) != []:
+        try:
+            cosmo.get_current_derived_parameters(data)
+        except NameError:
+            print('Terminating now')
+            exit()
+    for elem in data.get_mcmc_parameters(['derived']):
+        data.mcmc_parameters[elem]['current'] /= \
+            data.mcmc_parameters[elem]['scale']
+
+    # If fiducial files were created, inform the user, and exit
+    if flag_wrote_fiducial > 0:
+        if flag_wrote_fiducial == len(data.lkl):
+            print '--> Fiducial file(s) was(were) created,',
+            print 'please start a new chain'
+            exit()
+        else:
+            print '--> Some previously non-existing fiducial files ',
+            print 'were created, but potentially not all of them'
+            print '--> Please check now manually on the headers ',
+            print 'of the corresponding that all'
+            print '--> parameters are coherent for your tested models'
+            exit()
+
+    return loglike
+
 

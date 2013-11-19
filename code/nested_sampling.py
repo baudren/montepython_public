@@ -2,7 +2,7 @@ import pymultinest
 import numpy as np
 import os
 import io_mp
-from pprint import pprint
+import sampler
 
 def prior(parameter_vector):
     return [data.mcmc_parameters[name]["prior"].map_from_unit_interval(value)
@@ -22,8 +22,6 @@ def from_NS_output_to_chains(command_line, basename):
         output_array = np.ones((np.shape(array)[0], np.shape(array)[1]+1))
         output_array[:, 1] = -array[:, -1]
         output_array[:, 2:] = array[:, :-1]
-        pprint(array)
-        pprint(output_array)
         np.savetxt(output, output_array, fmt='%i '+' '.join(['%.6e' for i in
             range(np.shape(array)[1])]))
         output.close()
@@ -46,8 +44,6 @@ def from_NS_output_to_chains(command_line, basename):
         output_array[:, 0] *= np.sum(output_array[:, 0])*np.shape(array)[0]
         output_array[:, 1] = -array[:, -3]
         output_array[:, 2:] = array[:, :-3]
-        pprint(array)
-        pprint(output_array)
         np.savetxt(output, output_array, fmt=' '.join(['%.6e' for i in
             range(np.shape(output_array)[1])]))
         output.close()
@@ -79,14 +75,13 @@ def run(cosmo, data, command_line):
                       .map_from_unit_interval(cube[i])
 
     # Generate the Likelihood function for MultiNest
-    from mcmc import compute_lkl
     def loglik(cube, ndim, nparams):
         # Updates values: cube --> data
         for i, name in zip(range(ndim), varying_param_names):
             data.mcmc_parameters[name]['current'] = cube[i]
         # Propagate the information towards the cosmo arguments
         data.update_cosmo_arguments()
-        lkl = compute_lkl(cosmo, data)
+        lkl = sampler.compute_lkl(cosmo, data)
         for i, name in enumerate(derived_param_names):
             cube[ndim+i] = data.mcmc_parameters[name]["current"]
         return lkl
