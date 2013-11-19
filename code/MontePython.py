@@ -11,8 +11,8 @@ import sys
 
 # Checking for python version, comment if you are tired of seeing it when using
 # a version < 2.7
-version = sys.version[:3]
-if float(version) < 2.7:
+VERSION = sys.version[:3]
+if float(VERSION) < 2.7:
     print '\n\n /|\  You must have Python >= 2.7,'
     print '/_o_\ or install manually the following modules for your older'
     print '      distribution: argparse and OrderedDict'
@@ -67,10 +67,10 @@ def main():
                 path[key] = value + '/'
     else:
         io_mp.message(
-        "You must provide a .conf file (default.conf by default in your \
-        montepython directory that specifies the correct locations for your \
-        data folder, Class (, Clik), etc...",
-        "error")
+            "You must provide a .conf file (default.conf by default in your \
+            montepython directory that specifies the correct locations for \
+            your data folder, Class (, Clik), etc...",
+            "error")
 
     # Recover the version number
     with open(path['MontePython'][:-5] + 'VERSION', 'r') as version_file:
@@ -83,7 +83,7 @@ def main():
     # it will extract information from it (plots to compute, chains to analyse,
     # etc...)
     if command_line.files is not None:
-        from analyze import analyze   # analysis module, only invoked when analyzing
+        from analyze import analyze  # only invoked when analyzing
         analyze(command_line)
         exit()
 
