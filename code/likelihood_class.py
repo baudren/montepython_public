@@ -988,7 +988,7 @@ class likelihood_mock_cmb(likelihood):
             print '\n\n'
             io_mp.message(
                 "Writting fiducial model in %s, for %s likelihood" % \
-                (self.data_directory+self.difucial_file, self.name),
+                (self.data_directory+self.fiducial_file, self.name),
                 "info")
             return 1
 
