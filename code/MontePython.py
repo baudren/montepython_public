@@ -118,8 +118,10 @@ def main():
                 command line, nor in %s" % command_line.param,
                 "error")
 
-    # Creating the file that will contain the chain
-    io_mp.create_output_files(command_line, Data)
+    # Creating the file that will contain the chain, only with Metropolis
+    # Hastings
+    if command_line.method == 'MH':
+        io_mp.create_output_files(command_line, Data)
 
     # If there is a conflict between the log.param value and the .conf file,
     # exiting.
@@ -172,7 +174,8 @@ def main():
     sampler.run(cosmo, Data, command_line)
 
     # Closing up the file
-    Data.out.close()
+    if command_line.method == 'MH':
+        Data.out.close()
 
 
 #-----------------MAIN-CALL---------------------------------------------
