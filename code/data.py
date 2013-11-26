@@ -561,6 +561,33 @@ class data(object):
         else:
             return -1
 
+    def __call__(self, ctx):
+        """
+        Interface layer with CosmoHammer
+
+        Store quantities to a the context, to be accessed by the Cosmo Module
+        and each of the likelihoods.
+
+        Parameters
+        ----------
+        ctx : context
+                Contains several dictionaries storing data and cosmological
+                information
+
+        """
+        # Recover the cosmological parameter value from the context
+        parameters = ctx.getParams()
+
+        # Storing them as current points
+        for index, elem in enumerate(self.get_mcmc_parameters(["varying"])):
+            self.mcmc_parameters[elem]['current'] = parameters[index]
+
+        # Propagating this to the cosmo_arguments dictionary
+        self.update_cosmo_arguments()
+
+        # Store itself into the context
+        ctx.add('data', self)
+
 
 class parameter(dict):
     """

@@ -280,6 +280,23 @@ class likelihood(object):
 
         return lkl
 
+    def computeLikelihood(self, ctx):
+        """
+        Interface with CosmoHammer
+
+        Parameters
+        ----------
+        ctx : Context
+                Contains several dictionaries storing data and cosmological
+                information
+
+        """
+        # Recover both instances from the context
+        cosmo = ctx.get("cosmo")
+        data = ctx.get("data")
+
+        self.loglkl(cosmo, data)
+
 
 ###################################
 #
