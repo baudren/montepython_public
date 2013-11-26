@@ -23,6 +23,7 @@ import io_mp
 import numpy as np
 import sys
 
+
 def run(cosmo, data, command_line):
     """
     First rudimentary implementation
@@ -42,9 +43,8 @@ def run(cosmo, data, command_line):
         import nested_sampling as ns
         ns.run(cosmo, data, command_line)
     else:
-        io_mp.message(
-            "Sampling method %s not understood" % command_line.method,
-            "error")
+        raise io_mp.ConfigurationError(
+            "Sampling method %s not understood" % command_line.method)
 
 
 def read_args_from_chain(data, chain):
@@ -115,7 +115,6 @@ def read_args_from_bestfit(data, bestfit):
                 data.mcmc_parameters[elem]['initial'][0]
             print 'from input file    : ', elem, ' = ',
             print data.mcmc_parameters[elem]['initial'][0]
-
 
 
 def get_covariance_matrix(data, command_line):
@@ -202,7 +201,8 @@ def get_covariance_matrix(data, command_line):
         # If parameter_names contains less things than covnames, we will do a
         # small trick. Create a second temporary array, temp_names_2, that will
         # have the same dimension as covnames, and containing:
-        # - the elements of temp_names, in the order of parameter_names (h index)
+        # - the elements of temp_names, in the order of parameter_names (h
+        # index)
         # - an empty string '' for the remaining unused parameters
         temp_names_2 = []
         h = 0
@@ -333,8 +333,8 @@ def compute_lkl(cosmo, data):
     # cosmological parameters have changed, then clean up, and compute.
     if (cosmo.state is True and data.need_cosmo_update is True):
         cosmo._struct_cleanup(set(["lensing", "nonlinear", "spectra",
-                                    "primordial", "transfer", "perturb",
-                                    "thermodynamics", "background", "bessel"]))
+                                   "primordial", "transfer", "perturb",
+                                   "thermodynamics", "background", "bessel"]))
 
     # If the data needs to change, then do a normal call to the cosmological
     # compute function. Note that, even if need_cosmo update is True, this
@@ -366,7 +366,8 @@ def compute_lkl(cosmo, data):
         except NameError:
             return data.boundary_loglike
         except (AttributeError, KeyboardInterrupt):
-            io_mp.message("Something went terribly wrong with CLASS", "error")
+            raise io_mp.CosmoModuleError(
+                "Something went terribly wrong with CLASS")
 
     # For each desired likelihood, compute its value against the theoretical
     # model
@@ -412,5 +413,3 @@ def compute_lkl(cosmo, data):
             exit()
 
     return loglike
-
-

@@ -50,23 +50,22 @@ def from_NS_output_to_chains(command_line, basename):
 
 
 def run(cosmo, data, command_line):
-    
+
     varying_param_names = data.get_mcmc_parameters(['varying'])
     derived_param_names = data.get_mcmc_parameters(['derived'])
 
     # Check that all the priors are flat and that all the parameters are bound
     if not(all(data.mcmc_parameters[name]["prior"].prior_type == 'flat'
                for name in varying_param_names)):
-        io_mp.message(
-            "Nested Sampling with MultiNest is only possible with flat priors. \
-             Sorry!",
-            "error")
+        raise io_mp.ConfigurationError(
+            "Nested Sampling with MultiNest is only possible with flat " +
+            "priors. Sorry!")
     if not(all(data.mcmc_parameters[name]["prior"].is_bound()
                for name in varying_param_names)):
-        io_mp.message(
-            "Nested Sampling with MultiNest is only possible for bound parameters. \
-             Set reasonable bounds for them in the '.param' file.",
-            "error")
+        raise io_mp.ConfigurationError(
+            "Nested Sampling with MultiNest is only possible for bound " +
+            "parameters. Set reasonable bounds for them in the '.param'" +
+            "file.")
 
     # Generate the prior function for MultiNest
     def prior(cube, ndim, nparams):

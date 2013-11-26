@@ -35,10 +35,11 @@ import sys
 import math
 import random as rd
 import numpy as np
-import io_mp
-import data
-import sampler
+import warnings
 import scipy.linalg as la
+
+import io_mp
+import sampler
 
 
 def get_new_position(data, eigv, U, k, Cholesky, Inverse_Cholesky, Rotation):
@@ -201,20 +202,18 @@ def chain(cosmo, data, command_line):
     if (data.get_mcmc_parameters(['varying']) != []):
         sigma_eig, U, C = sampler.get_covariance_matrix(data, command_line)
         if data.jumping_factor == 0:
-            io_mp.message(
-                "The jumping factor has been set to 0. The above covariance \
-                matrix will not be used.",
-                "info")
+            warnings.warn(
+                "The jumping factor has been set to 0. The above covariance " +
+                "matrix will not be used.")
 
     # In case of a fiducial run (all parameters fixed), simply run once and
     # print out the likelihood. This should not be used any more (one has to
     # modify the log.param, which is never a good idea. Instead, force the code
     # to use a jumping factor of 0 with the option "-f 0".
     else:
-        io_mp.message(
-            "You are running with no varying parameters... I will compute \
-            only one point and exit",
-            "info")
+        warnings.warn(
+            "You are running with no varying parameters... I will compute " +
+            "only one point and exit")
         data.update_cosmo_arguments()  # this fills in the fixed parameters
         loglike = sampler.compute_lkl(cosmo, data)
         io_mp.print_vector([data.out, sys.stdout], 1, loglike, data)
@@ -247,10 +246,9 @@ def chain(cosmo, data, command_line):
                             Cholesky, Inverse_Cholesky, Rotation) is True:
             break
         if i == 99:
-            io_mp.message(
-                "You should probably check your prior boundaries... because \
-                no valid starting position was found after 100 tries",
-                "error")
+            raise io_mp.ConfigurationError(
+                "You should probably check your prior boundaries... because " +
+                "no valid starting position was found after 100 tries")
 
     # Compute the starting Likelihood
     loglike = sampler.compute_lkl(cosmo, data)
