@@ -8,6 +8,7 @@ Monte Python, a Monte Carlo Markov Chain code (with Class!)
 """
 import os
 import sys
+import warnings
 
 # Checking for python version, comment if you are tired of seeing it when using
 # a version < 2.7
@@ -20,7 +21,7 @@ if float(VERSION) < 2.7:
 import parser_mp   # parsing the input command line
 import io_mp       # all the input/output mechanisms
 import sampler     # generic sampler that calls different sampling algorithms
-import data        # data handling
+from data import Data  # data handling
 
 
 def main():
@@ -66,11 +67,10 @@ def main():
             if not value.endswith('/'):
                 path[key] = value + '/'
     else:
-        io_mp.message(
-            "You must provide a .conf file (default.conf by default in your \
-            montepython directory that specifies the correct locations for \
-            your data folder, Class (, Clik), etc...",
-            "error")
+        raise io_mp.ConfigurationError(
+            "You must provide a .conf file (default.conf by default in your" +
+            " montepython directory that specifies the correct locations for" +
+            " your data folder, Class (, Clik), etc...")
 
     # Recover the version number
     with open(path['MontePython'][:-5] + 'VERSION', 'r') as version_file:
@@ -99,37 +99,35 @@ def main():
         command_line.param = folder+'log.param'
         command_line.folder = folder
         sys.stdout.write('Reading {0} file'.format(command_line.restart))
-        Data = data.data(command_line, path)
+        data = Data(command_line, path)
 
     # Else, fill in data, starting from  parameter file. If output folder
     # already exists, the input parameter file was automatically replaced by
     # the existing log.param. This prevents you to run different things in a
     # same folder.
     else:
-        Data = data.data(command_line, path)
+        data = Data(command_line, path)
 
     # Overwrite arguments from parameter file with the command line
     if command_line.N is None:
         try:
-            command_line.N = Data.N
+            command_line.N = data.N
         except AttributeError:
-            io_mp.message(
-                "You did not provide a number of steps, neither via \
-                command line, nor in %s" % command_line.param,
-                "error")
+            raise io_mp.ConfigurationError(
+                "You did not provide a number of steps, neither via " +
+                "command line, nor in %s" % command_line.param)
 
     # Creating the file that will contain the chain, only with Metropolis
     # Hastings
     if command_line.method == 'MH':
-        io_mp.create_output_files(command_line, Data)
+        io_mp.create_output_files(command_line, data)
 
     # If there is a conflict between the log.param value and the .conf file,
     # exiting.
-    if Data.path != path:
-        io_mp.message(
-            "Your log.param file is in contradiction with your .conf file, \
-            please check your path in these two places.",
-            "error")
+    if data.path != path:
+        raise io_mp.ConfigurationError(
+            "Your log.param file is in contradiction with your .conf file, " +
+            "please check your path in these two places.")
 
     # Loading up the cosmological backbone. For the moment, only Class has been
     # wrapped.
@@ -138,17 +136,16 @@ def main():
     # the .conf file, or overwritten at this point by the log.param.
     # If the cosmological code is Class, do the following to import all
     # relevant quantities
-    if Data.cosmological_module_name == 'Class':
+    if data.cosmological_module_name == 'Class':
         try:
-            for elem in os.listdir(Data.path['cosmo']+"python/build"):
+            for elem in os.listdir(data.path['cosmo']+"python/build"):
                 if elem.find("lib.") != -1:
                     classy_path = path['cosmo']+"python/build/"+elem
         except OSError:
-            io_mp.message(
-                "You probably did not compile the python wrapper of Class. \
-                Please go to /path/to/class/python/ and do\n\
-                ..]$ python setup.py build",
-                "error")
+            raise io_mp.ConfigurationError(
+                "You probably did not compile the python wrapper of Class. " +
+                "Please go to /path/to/class/python/ and do\n" +
+                "..]$ python setup.py build")
 
         # Inserting the previously found path into the list of folders to
         # search for python modules.
@@ -156,28 +153,28 @@ def main():
         try:
             from classy import Class
         except ImportError:
-            io_mp.message(
-                "You must have compiled the classy.pyx file. Please go to \
-                /path/to/class/python and run the command\n\
-                python setup.py build",
-                "error")
+            raise io_mp.LibraryError(
+                "You must have compiled the classy.pyx file. Please go to " +
+                "/path/to/class/python and run the command\n " +
+                "python setup.py build")
 
         cosmo = Class()
     else:
-        io_mp.message(
-            "Unrecognised cosmological module. \
-            Be sure to define the correct behaviour in MontePython.py \
-            and data.py, to support a new one",
-            "error")
+        raise io_mp.ConfigurationError(
+            "Unrecognised cosmological module. " +
+            "Be sure to define the correct behaviour in MontePython.py " +
+            "and data.py, to support a new one.")
 
     # Generic sampler call
-    sampler.run(cosmo, Data, command_line)
+    sampler.run(cosmo, data, command_line)
 
     # Closing up the file
     if command_line.method == 'MH':
-        Data.out.close()
+        data.out.close()
 
 
 #-----------------MAIN-CALL---------------------------------------------
 if __name__ == '__main__':
+    # Default action when facing a warning is being remapped to a custom one
+    warnings.showwarning = io_mp.warning_message
     main()

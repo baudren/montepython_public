@@ -1,15 +1,15 @@
 """
 .. module:: prior
-    :synopsis: Define the prior class
+    :synopsis: Define the Prior class
 
 .. moduleauthor:: Benjamin Audren <benjamin.audren@epfl.ch>
 """
 import random as rd
-import numpy as np
-import io_mp 
+import io_mp
 from copy import deepcopy
 
-class prior(object):
+
+class Prior(object):
     """
     Store the type of prior associated to a parameter
 
@@ -19,7 +19,7 @@ class prior(object):
         """
         It takes as an optional input argument the array of the input
         :data:`parameters` defined in the parameter file.
-        
+
         The current implemented types are 'flat' (default), and 'gaussian',
         which expect also a mean and sigma. Possible extension would take a
         'external', needing to read an external file to read for the
@@ -46,10 +46,10 @@ class prior(object):
                     self.mu = array[7]
                     self.sigma = array[8]
                 except IndexError:
-                    io_mp.message(
-                        "You asked for a gaussian prior, but provided no \
-                        mean nor sigma. Please add them in the parameter file",
-                        "error")
+                    raise io_mp.ConfigurationError(
+                        "You asked for a gaussian prior, but provided no " +
+                        "mean nor sigma. Please add them in the parameter " +
+                        "file.")
 
         # Store boundaries for convenient access later
         # Put all fields that are -1 to None to avoid confusion later on.
@@ -73,7 +73,7 @@ class prior(object):
 
             while not within_bounds:
                 value = rd.gauss(self.mu, self.sigma)
-                # Check for boundaries problem 
+                # Check for boundaries problem
                 within_bounds = calue_within_prior_range(value)
 
             return value
