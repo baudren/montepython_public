@@ -10,6 +10,7 @@ with different possible configurations.
 """
 import os
 import argparse  # Python module to handle command line arguments
+import warnings
 import io_mp
 
 
@@ -239,10 +240,9 @@ def parse():
         # Else, the user should provide an output folder
         else:
             if args.folder is None:
-                io_mp.message(
-                    "You must provide an output folder, because you do not \
-                    want your main folder to look dirty, do you ?",
-                    "error")
+                raise io_mp.ConfigurationError(
+                    "You must provide an output folder, because you do not " +
+                    "want your main folder to look dirty, do you ?")
 
             # If he did so,
             else:
@@ -260,23 +260,20 @@ def parse():
                     old_param = args.param
                     args.param = args.folder+'log.param'
                     if args.param is not None:
-                        io_mp.message(
-                            "Appending to an existing folder: using the \
-                            log.param instead of %s" % old_param,
-                            "info")
+                        warnings.warn(
+                            "Appending to an existing folder: using the " +
+                            "log.param instead of %s" % old_param)
                 else:
                     if args.param is None:
-                        io_mp.message(
-                            "The requested output folder appears to be empty. \
-                            You must then provide a parameter file (command \
-                            line option -p any.param)",
-                            "error")
+                        raise io_mp.ConfigurationError(
+                            "The requested output folder seems empty. " +
+                            "You must then provide a parameter file (command" +
+                            " line option -p any.param)")
             else:
                 if args.param is None:
-                    io_mp.message(
-                        "The requested output folder appears to be non \
-                        existent. You must then provide a parameter file \
-                        (command line option -p any.param)",
-                        "error")
+                    raise io_mp.ConfigurationError(
+                        "The requested output folder appears to be non " +
+                        "existent. You must then provide a parameter file " +
+                        "(command line option -p any.param)")
 
     return args

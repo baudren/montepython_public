@@ -1,6 +1,6 @@
 """
 .. module:: data
-   :synopsis: Define the data class
+   :synopsis: Define the Data and Parameter classes
 
 .. moduleauthor:: Benjamin Audren <benjamin.audren@epfl.ch>
 """
@@ -8,7 +8,6 @@ import os
 import sys
 import math
 import random as rd
-import numpy as np             # Numerical Python module
 
 # A modified version of Python dictionary in order to keep track of the order
 # in it (much the same as in an array). In case an older version of Python is
@@ -18,13 +17,12 @@ try:
     from collections import OrderedDict as od
 except:
     from ordereddict import OrderedDict as od
-from datetime import date
 
 import io_mp  # Needs to talk to io_mp.py file for the logging of parameters
 import prior
 
 
-class data(object):
+class Data(object):
     """
     Store all relevant data to communicate between the different modules.
 
@@ -32,7 +30,7 @@ class data(object):
 
     def __init__(self, command_line, path):
         """
-        The data class holds the cosmological information, the parameters from
+        The Data class holds the cosmological information, the parameters from
         the MCMC run, the information coming from the likelihoods. It is a wide
         collections of information, with in particular two main dictionaries:
         cosmo_arguments and mcmc_parameters.
@@ -75,11 +73,11 @@ class data(object):
               :mod:`parser_mp`. It stores the input parameter file, the
               jumping methods, the output folder, etc...
               Most of the information extracted from the command_file will
-              be transformed into :class:`data` attributes, whenever it felt
+              be transformed into :class:`Data` attributes, whenever it felt
               meaningful to do so.
 
-            - **path** (`dict`) - contains a dictionary of important local paths.
-              It is used here to find the cosmological module location.
+            - **path** (`dict`) - contains a dictionary of important local
+              paths. It is used here to find the cosmological module location.
 
         """
 
@@ -210,8 +208,9 @@ class data(object):
             # ... import easily the likelihood.py program
             exec "import %s" % elem
             # Initialize the likelihoods. Depending on the values of
-            # command_line and log_flag, the routine will call slightly different
-            # things. If log_flag is True, the log.param will be appended.
+            # command_line and log_flag, the routine will call slightly
+            # different things. If log_flag is True, the log.param will be
+            # appended.
             exec "self.lkl['%s'] = %s.%s('%s/%s.data',\
                 self,command_line)" % (
                 elem, elem, elem, folder, elem)
@@ -244,19 +243,20 @@ class data(object):
             self.param_file = open(self.param, 'r')
         except IOError:
             io_mp.message(
-                "Error in initializing the data class, the parameter file \
+                "Error in initializing the Data class, the parameter file \
                 {0} does not point to a proper file".format(self.param),
                 "error")
         self.read_file(self.param_file)
 
         for key, value in self.parameters.iteritems():
-            self.mcmc_parameters[key] = parameter(value, key)
+            self.mcmc_parameters[key] = Parameter(value, key)
         """Transform from parameters dictionnary to mcmc_parameters dictionary
-        of instances from the class :class:`parameter` (inheriting from dict)"""
+        of instances from the class :class:`parameter` (inheriting from
+        dict)"""
 
     def read_file(self, File):
         """
-        Execute all lines concerning the data class from a parameter file
+        Execute all lines concerning the Data class from a parameter file
 
         All lines starting with `data.` will be replaced by `self.`, so the
         current instance of the class will contain all the information.
@@ -377,7 +377,7 @@ class data(object):
         table = []
         for key, value in self.mcmc_parameters.iteritems():
             number = 0
-            for subkey, subvalue in value.iteritems():
+            for subvalue in value.itervalues():
                 for string in table_of_strings:
                     if subvalue == string:
                         number += 1
@@ -493,19 +493,17 @@ class data(object):
                 # reio_parametrization to reio_bins_tanh
                     if (self.cosmo_arguments['reio_parametrization'] !=
                             'reio_bins_tanh'):
-                        io_mp.message(
-                            "You set binned_reio_xe to some values \
-                            without setting reio_parametrization to \
-                            reio_bins_tanh",
-                            "error")
+                        raise io_mp.CosmoModuleError(
+                            "You set binned_reio_xe to some values " +
+                            "without setting reio_parametrization to " +
+                            "reio_bins_tanh")
                     else:
                         try:
                             size = self.cosmo_arguments['binned_reio_num']
                         except (KeyError):
-                            io_mp.message(
-                                "You need to set reio_binnumber to the value \
-                                corresponding to the one in binned_reio_xe",
-                                "error")
+                            raise io_mp.CosmoModuleError(
+                                "You need to set reio_binnumber to the value" +
+                                " corresponding to the one in binned_reio_xe")
                     string = ''
                     for i in range(1, size+1):
                         string += '%.4g' % self.cosmo_arguments['xe_%d' % i]
@@ -562,16 +560,16 @@ class data(object):
             return -1
 
 
-class parameter(dict):
+class Parameter(dict):
     """
     Store all important fields, and define a few convenience methods
 
     """
     def __init__(self, array, key):
         """
-        This class replaces the old function defined in the data class, called
+        This class replaces the old function defined in the Data class, called
         `from_input_to_mcmc_parameters`. The traduction is now done inside the
-        parameter class, which interprets the array given as an input inside
+        Parameter class, which interprets the array given as an input inside
         the parameter file, and returns a dictionary having all relevant fields
         initialized.
 
@@ -582,8 +580,8 @@ class parameter(dict):
             anything, it will be reverted back
 
         At the end of this initialization, every field but one is filled for
-        the specified parameter, be it fixed or varying. The missing field is the
-        'last_accepted' one, that will be filled in the module :mod:`mcmc`.
+        the specified parameter, be it fixed or varying. The missing field is
+        the 'last_accepted' one, that will be filled in the module :mod:`mcmc`.
 
         The other fields are
 

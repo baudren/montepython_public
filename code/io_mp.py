@@ -20,27 +20,22 @@ ascii-art for the exclamation mark sign.
 import os
 import sys
 import re  # Module to handle regular expressions
-import random as rd
-import numpy as np
-try:
-    from collections import OrderedDict as od
-except:
-    from ordereddict import OrderedDict as od
 from datetime import date
 import fcntl
 import textwrap  # used to format the error messages
 
 # Ascii art for error display
-start_line = {}
-start_line['error'] = [' /|\   ',
+START_LINE = {}
+START_LINE['error'] = [' /|\   ',
                        '/_o_\  ',
                        '       ']
-start_line['warning'] = [' /!\ ',
+START_LINE['warning'] = [' /!\ ',
                          '     ']
-start_line['info'] = [' /!\ ',
+START_LINE['info'] = [' /!\ ',
                       '     ']
 
-standard_length = 80  # standard, increase if you have a big screen
+STANDARD_LENGTH = 80  # standard, increase if you have a big screen
+
 
 def log_parameters(data, command_line):
     """
@@ -221,7 +216,7 @@ def create_output_files(command_line, data):
             try:
                 lock(data.out, fcntl.LOCK_EX | fcntl.LOCK_NB)
                 Try = False
-            except LockException:
+            except LockError:
                 suffix += 1
         sys.stdout.write('Creating {0}{1}{2}.txt\n'.format(
             command_line.folder, outname_base, suffix))
@@ -286,54 +281,66 @@ def get_tex_name(name, number=1):
         name = '$10^{'+sign+m.groups()[0]+'}'+m.groups()[1]
     return name
 
-def message(string, status):
+
+def pretty_print(string, status, return_string=False):
     """
-    Outputs the string formatted according to its status
+    Return the string formatted according to its status
 
     The input is a potentially long message, describing the problem.
     According to the severity of its status (so far, 'error' will exit the
     program, whereas 'warning' and 'info' will go through anyway).
 
     Standard length has been defined globally, as well as the ascii-art
-    dictionary of arrays start_line.
+    dictionary of arrays START_LINE.
 
     """
 
-    length = standard_length-len(start_line[status][0])
+    if return_string:
+        output = ''
+    length = STANDARD_LENGTH-len(START_LINE[status][0])
     # Remove unwanted spaces (coming from carriage returns in the input string)
     # and handle voluntary carriage returns specified with \n
-    first_cleanup = [' '.join(elem.lstrip(' ').split()) for elem in string.split('\n')]
+    first_cleanup = [' '.join(elem.lstrip(' ').split())
+                     for elem in string.split('\n')]
     splitted = []
     # Recover the lines splitted at correct length
     for elem in first_cleanup:
         splitted.extend(textwrap.wrap(elem, length))
-    
+
     if status == 'error':
         # Add a blank line so that the error displays better
-        print
+        if return_string:
+            output += '\n'
+        else:
+            print
 
     # Add in front the appropriate fancy display
     index = 0
     for line in splitted:
         # If the number of needed lines is bigger than the ascii-art, the last
         # line of it (empty) will be used.
-        if index < len(start_line[status]): 
+        if index < len(START_LINE[status]):
             start_index = index
-        else: 
-            start_index = len(start_line[status])-1
-        print start_line[status][start_index]+line 
+        else:
+            start_index = len(START_LINE[status])-1
+        if return_string:
+            output += START_LINE[status][start_index]+line+'\n'
+        else:
+            print START_LINE[status][start_index]+line
         index += 1
-    if status == 'error':
-        # In case of a severe error, the program should stop the execution
-        exit()
+    if return_string:
+        return output
+    else:
+        return
 
 
 def safe_exec(string):
     """
     Attempt at executing a string from file in a secure way
-    
+
     """
-    exec(string, {'__builtins__':{}})
+    exec(string, {'__builtins__': {}})
+
 
 class File(file):
     """
@@ -358,7 +365,7 @@ class File(file):
         return line_list[-lines_2find:]
 
 
-class LockException(Exception):
+class LockError(Exception):
     """
     .. warning::
 
@@ -384,7 +391,7 @@ def lock(file, flags):
     except IOError, exc_value:
         # The exception code varies on different systems so we'll catch
         # every IO error
-        raise LockException(*exc_value)
+        raise LockError(*exc_value)
 
 
 def unlock(file):
@@ -398,3 +405,47 @@ def unlock(file):
     """
     import fcntl
     fcntl.flock(file.fileno(), fcntl.LOCK_UN)
+
+
+def warning_message(message, *args):
+    """
+    Custom implementation of `showwarning` from :mod:`warnings`
+
+    """
+    pretty_print(message.args[0], "warning")
+
+
+class MyError(Exception):
+    """
+    Base class defining the general presentation
+
+    """
+    def __str__(self):
+        return pretty_print(self.args[0], "error", True)
+
+
+class CosmoModuleError(MyError):
+    """
+    For all problems linked to the cosmological module
+
+    """
+    def __str__(self):
+        return '\n\nCosmological Module Error:' + MyError.__str__(self)
+
+
+class ConfigurationError(MyError):
+    """
+    Missing files, libraries, etc...
+
+    """
+    def __str__(self):
+        return '\n\nConfiguration Error:' + MyError.__str__(self)
+
+
+class LibraryError(MyError):
+    """
+    Missing Cosmo module, Planck, ...
+
+    """
+    def __str__(self):
+        return '\n\nMissing Library Error:' + MyError.__str__(self)

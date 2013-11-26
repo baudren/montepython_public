@@ -15,7 +15,6 @@ import os
 import numpy as np
 import math
 
-import data
 import io_mp
 
 class likelihood(object):
