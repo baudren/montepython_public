@@ -18,7 +18,6 @@ all different sampler methods:
 
 
 """
-
 import io_mp
 import numpy as np
 import sys
@@ -42,6 +41,8 @@ def run(cosmo, data, command_line):
     elif command_line.method == 'NS':
         import nested_sampling as ns
         ns.run(cosmo, data, command_line)
+    elif command_line.method == 'CosmoHammer':
+        pass
     else:
         raise io_mp.ConfigurationError(
             "Sampling method %s not understood" % command_line.method)
@@ -69,13 +70,13 @@ def read_args_from_chain(data, chain):
         are having difficulties
 
     """
-    Chain = io_mp.File(chain, 'r')
+    chain_file = io_mp.File(chain, 'r')
     parameter_names = data.get_mcmc_parameters(['varying'])
 
     i = 1
     for elem in parameter_names:
         data.mcmc_parameters[elem]['last_accepted'] = float(
-            Chain.tail(1)[0].split('\t')[i])
+            chain_file.tail(1)[0].split('\t')[i])
         i += 1
 
 
