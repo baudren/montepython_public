@@ -14,8 +14,10 @@ The most important one is :class:`likelihood`
 import os
 import numpy as np
 import math
+import warnings
 
 import io_mp
+
 
 class likelihood(object):
     """
@@ -123,14 +125,13 @@ class likelihood(object):
 
         # Checking that at least one line was read, exiting otherwise
         if counter == 0:
-            io_mp.message(
-                "No information on %s likelihood was found in the %s file.\n \
-                This can result from a failed initialization of a previous \
-                run. To solve this, you can do a \n \
-                ]$ rm -rf %s \n \
-                Be sure there is noting in it before doing this !" % (
-                self.name, path, command_line.folder),
-                "error")
+            raise io_mp.ConfigurationError(
+                "No information on %s likelihood " % self.name +
+                "was found in the %s file.\n" % path +
+                "This can result from a failed initialization of a previous " +
+                "run. To solve this, you can do a \n " +
+                "]$ rm -rf %s \n " % command_line.folder +
+                "Be sure there is noting in it before doing this !")
         try:
             if (self.data_directory[-1] != '/'):
                 self.data_directory[-1] += '/'
@@ -765,12 +766,11 @@ class likelihood_clik(likelihood):
         try:
             import clik
         except ImportError:
-            io_mp.message(
-                "You must first activate the binaries from the Clik \
-                distribution. Please run : \n \
-                ]$ source /path/to/clik/bin/clik_profile.sh \n \
-                and try again.",
-                "error")
+            raise io_mp.LibraryError(
+                "You must first activate the binaries from the Clik " +
+                "distribution. Please run : \n " +
+                "]$ source /path/to/clik/bin/clik_profile.sh \n " +
+                "and try again.")
         # for lensing, some routines change. Intializing a flag for easier
         # testing of this condition
         if self.name == 'Planck_lensing':
@@ -985,10 +985,9 @@ class likelihood_mock_cmb(likelihood):
                 fid_file.write("%.8g  " % cl['te'][l])
                 fid_file.write("\n")
             print '\n\n'
-            io_mp.message(
-                "Writting fiducial model in %s, for %s likelihood" % \
-                (self.data_directory+self.fiducial_file, self.name),
-                "info")
+            warnings.warn(
+                "Writting fiducial model in %s, for %s likelihood" % (
+                self.data_directory+self.fiducial_file, self.name))
             return 1
 
         # compute likelihood
@@ -1085,11 +1084,10 @@ class likelihood_mpk(likelihood):
         # P0_a, P0_b, P0_c and P0_d are expected.
         if self.use_giggleZPP0:
             if 'P0_a' not in data.get_mcmc_parameters(['nuisance']):
-                io_mp.message(
-                    "P0_a is not defined in the .param file, whereas this \
-                    nuisance parameter is required when the flag \
-                    'use_giggleZPP0 is set to true for WiggleZ",
-                    "error")
+                raise io_mp.LikelihoodError(
+                    "P0_a is not defined in the .param file, whereas this " +
+                    "nuisance parameter is required when the flag " +
+                    "'use_giggleZPP0' is set to true for WiggleZ")
 
         if self.use_giggleZ:
             datafile = open(self.data_directory+self.giggleZ_fidpk_file, 'r')
@@ -1239,13 +1237,12 @@ class likelihood_mpk(likelihood):
 
         """
         for key, value in common_dictionary.iteritems():
-            # First, check if the parameter exists already 
+            # First, check if the parameter exists already
             try:
                 exec("self.%s" % key)
-                io_mp.message(
-                    "parameter %s from likelihood %s will be replaced by \
-                    the common knowledge routine" % (key, self.name),
-                    "warning")
+                warnings.warn(
+                    "parameter %s from likelihood %s will be replaced by " +
+                    "the common knowledge routine" % (key, self.name))
             except:
                 if type(value) != type('foo'):
                     exec("self.%s = %s" % (key, value))

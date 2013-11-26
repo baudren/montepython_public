@@ -8,6 +8,7 @@ import os
 import sys
 import math
 import random as rd
+import warnings
 
 # A modified version of Python dictionary in order to keep track of the order
 # in it (much the same as in an array). In case an older version of Python is
@@ -176,9 +177,8 @@ class Data(object):
         if (os.path.exists(command_line.folder) and
                 not os.path.exists(command_line.folder+'log.param')):
             if command_line.param is not None:
-                io_mp.message(
-                    "Detecting empty folder, logging the parameter file",
-                    "warning")
+                warnings.warn(
+                    "Detecting empty folder, logging the parameter file")
                 io_mp.log_parameters(self, command_line)
                 self.log_flag = True
         if not os.path.exists(command_line.folder):
@@ -242,10 +242,9 @@ class Data(object):
         try:
             self.param_file = open(self.param, 'r')
         except IOError:
-            io_mp.message(
-                "Error in initializing the Data class, the parameter file \
-                {0} does not point to a proper file".format(self.param),
-                "error")
+            raise io_mp.ConfigurationError(
+                "Error in initializing the Data class, the parameter file " +
+                "{0} does not point to a proper file".format(self.param))
         self.read_file(self.param_file)
 
         for key, value in self.parameters.iteritems():
@@ -523,10 +522,9 @@ class Data(object):
 
         """
         if self.version != other.version:
-            io_mp.message(
-                "You are running with a different version of your \
-                cosmological code",
-                "warning")
+            warnings.warn(
+                "You are running with a different version of your " +
+                "cosmological code")
 
         # Defines unordered version of the dictionaries of parameters
         self.uo_parameters = {}

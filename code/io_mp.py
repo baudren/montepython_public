@@ -449,3 +449,12 @@ class LibraryError(MyError):
     """
     def __str__(self):
         return '\n\nMissing Library Error:' + MyError.__str__(self)
+
+
+class LikelihoodError(MyError):
+    """
+    Problems when computing likelihood, missing nuisance, etc...
+
+    """
+    def __str__(self):
+        return '\n\nLikelihood Error:' + MyError.__str__(self)
