@@ -661,4 +661,4 @@ class Parameter(dict):
             self['current'] = array[0]
         else:
             self['status'] = 'varying'
-        self['prior'] = prior.prior(array)
+        self['prior'] = prior.Prior(array)

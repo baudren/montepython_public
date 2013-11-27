@@ -42,7 +42,8 @@ def run(cosmo, data, command_line):
         import nested_sampling as ns
         ns.run(cosmo, data, command_line)
     elif command_line.method == 'CosmoHammer':
-        pass
+        import cosmo_hammer as hammer
+        hammer.run(cosmo, data, command_line)
     else:
         raise io_mp.ConfigurationError(
             "Sampling method %s not understood" % command_line.method)
