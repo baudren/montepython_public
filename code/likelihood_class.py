@@ -55,10 +55,9 @@ class likelihood(object):
         try:
             for nuisance in self.use_nuisance:
                 if nuisance not in data.get_mcmc_parameters(['nuisance']):
-                    print nuisance,
-                    print ' must be defined, either fixed or varying, '
-                    print 'for {0} likelihood'.format(self.name)
-                    exit()
+                    raise io_mp.LikelihoodError(
+                        nuisance + " must be defined, either fixed or " +
+                        "varying, for %s likelihood" % self.name)
             self.nuisance = self.use_nuisance
         except AttributeError:
             self.use_nuisance = []
@@ -783,7 +782,7 @@ class likelihood_clik(likelihood):
         try:
             import clik
         except ImportError:
-            raise io_mp.LibraryError(
+            raise io_mp.MissingLibraryError(
                 "You must first activate the binaries from the Clik " +
                 "distribution. Please run : \n " +
                 "]$ source /path/to/clik/bin/clik_profile.sh \n " +
@@ -808,7 +807,7 @@ class likelihood_clik(likelihood):
         self.nuisance = list(self.clik.extra_parameter_names)
 
         # testing if the nuisance parameters are defined. If there is at least
-        # one non defined, exits.
+        # one non defined, raise an exception.
         exit_flag = False
         nuisance_parameter_names = data.get_mcmc_parameters(['nuisance'])
         for nuisance in self.nuisance:
@@ -817,7 +816,9 @@ class likelihood_clik(likelihood):
                 print '%20s\tmust be a fixed or varying nuisance parameter' % nuisance
 
         if exit_flag:
-            exit()
+            raise io_mp.LikelihoodError(
+                "The likelihood %s " % self.name +
+                "expected some nuisance parameters that were not provided")
 
         # deal with nuisance parameters
         try:

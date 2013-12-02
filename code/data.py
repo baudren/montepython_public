@@ -336,9 +336,9 @@ class Data(object):
                 # If the loop reaches this part, it means this nuisance
                 # parameter was associated with no likelihood: this should not
                 # happen
-                print '/!\ nuisance parameter {0}'.format(elem),
-                print 'is associated to no likelihood'
-                exit()
+                raise io_mp.ConfigurationError(
+                    "nuisance parameter %s " % elem +
+                    "is associated to no likelihood")
         # Store the result
         self.blocks_parameters = array
 
@@ -492,7 +492,7 @@ class Data(object):
                 # reio_parametrization to reio_bins_tanh
                     if (self.cosmo_arguments['reio_parametrization'] !=
                             'reio_bins_tanh'):
-                        raise io_mp.CosmoModuleError(
+                        raise io_mp.CosmologicalModuleError(
                             "You set binned_reio_xe to some values " +
                             "without setting reio_parametrization to " +
                             "reio_bins_tanh")
@@ -500,7 +500,7 @@ class Data(object):
                         try:
                             size = self.cosmo_arguments['binned_reio_num']
                         except (KeyError):
-                            raise io_mp.CosmoModuleError(
+                            raise io_mp.CosmologicalModuleError(
                                 "You need to set reio_binnumber to the value" +
                                 " corresponding to the one in binned_reio_xe")
                     string = ''

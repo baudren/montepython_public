@@ -85,7 +85,7 @@ def main():
     if command_line.files is not None:
         from analyze import analyze  # only invoked when analyzing
         analyze(command_line)
-        exit()
+        return
 
     # If the restart flag was used, load the cosmology directly from the
     # log.param file, and append to the existing chain.
@@ -153,7 +153,7 @@ def main():
         try:
             from classy import Class
         except ImportError:
-            raise io_mp.LibraryError(
+            raise io_mp.MissingLibraryError(
                 "You must have compiled the classy.pyx file. Please go to " +
                 "/path/to/class/python and run the command\n " +
                 "python setup.py build")
@@ -172,9 +172,8 @@ def main():
     if command_line.method == 'MH':
         data.out.close()
 
-
 #-----------------MAIN-CALL---------------------------------------------
 if __name__ == '__main__':
     # Default action when facing a warning is being remapped to a custom one
     warnings.showwarning = io_mp.warning_message
-    main()
+    sys.exit(main())

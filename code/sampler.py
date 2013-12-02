@@ -368,7 +368,7 @@ def compute_lkl(cosmo, data):
         except NameError:
             return data.boundary_loglike
         except (AttributeError, KeyboardInterrupt):
-            raise io_mp.CosmoModuleError(
+            raise io_mp.CosmologicalModuleError(
                 "Something went terribly wrong with CLASS")
 
     # For each desired likelihood, compute its value against the theoretical
@@ -394,8 +394,8 @@ def compute_lkl(cosmo, data):
         try:
             cosmo.get_current_derived_parameters(data)
         except NameError:
-            print('Terminating now')
-            exit()
+            raise io_mp.CosmologicalModuleError(
+                "Could not write the current derived parameters")
     for elem in data.get_mcmc_parameters(['derived']):
         data.mcmc_parameters[elem]['current'] /= \
             data.mcmc_parameters[elem]['scale']
@@ -403,15 +403,13 @@ def compute_lkl(cosmo, data):
     # If fiducial files were created, inform the user, and exit
     if flag_wrote_fiducial > 0:
         if flag_wrote_fiducial == len(data.lkl):
-            print '--> Fiducial file(s) was(were) created,',
-            print 'please start a new chain'
-            exit()
+            raise io_mp.FiducialModelWritten(
+                "Fiducial file(s) was(were) created, please start a new chain")
         else:
-            print '--> Some previously non-existing fiducial files ',
-            print 'were created, but potentially not all of them'
-            print '--> Please check now manually on the headers ',
-            print 'of the corresponding that all'
-            print '--> parameters are coherent for your tested models'
-            exit()
+            raise io_mp.FiducialModelWritten(
+                "Some previously non-existing fiducial files were created, " +
+                "but potentially not all of them. Please check now manually" +
+                " on the headers, of the corresponding that all parameters " +
+                "are coherent for your tested models")
 
     return loglike

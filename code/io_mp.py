@@ -420,17 +420,32 @@ class MyError(Exception):
     Base class defining the general presentation
 
     """
+    def __init__(self, message):
+        #Exception.__init__(self)
+        self.message = message
+        name = self.__class__.__name__
+        self.name = ''
+        # Extract the name, and add spaces between the capital letters
+        for index, letter in enumerate(name):
+            if letter.isupper():
+                if index > 0:
+                    self.name += ' ' + letter
+                else:
+                    self.name += letter
+            else:
+                self.name += letter
+
     def __str__(self):
-        return pretty_print(self.args[0], "error", True)
+        return '\n\n' + self.name + ':' + pretty_print(
+            self.message, "error", True)
 
 
-class CosmoModuleError(MyError):
+class CosmologicalModuleError(MyError):
     """
     For all problems linked to the cosmological module
 
     """
-    def __str__(self):
-        return '\n\nCosmological Module Error:' + MyError.__str__(self)
+    pass
 
 
 class ConfigurationError(MyError):
@@ -438,17 +453,15 @@ class ConfigurationError(MyError):
     Missing files, libraries, etc...
 
     """
-    def __str__(self):
-        return '\n\nConfiguration Error:' + MyError.__str__(self)
+    pass
 
 
-class LibraryError(MyError):
+class MissingLibraryError(MyError):
     """
     Missing Cosmo module, Planck, ...
 
     """
-    def __str__(self):
-        return '\n\nMissing Library Error:' + MyError.__str__(self)
+    pass
 
 
 class LikelihoodError(MyError):
@@ -456,5 +469,12 @@ class LikelihoodError(MyError):
     Problems when computing likelihood, missing nuisance, etc...
 
     """
-    def __str__(self):
-        return '\n\nLikelihood Error:' + MyError.__str__(self)
+    pass
+
+
+class FiducialModelWritten(MyError):
+    """
+    Used to exit the code in case of writing a fiducial file
+
+    """
+    pass
