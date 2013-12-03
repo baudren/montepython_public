@@ -334,13 +334,13 @@ def prepare(info, Files, is_main_chain=True):
         if os.path.getsize(folder+'log.param') > 0:
             param = open(folder+'log.param', 'r')
         else:
-            print('\n\n  The log param file {0} seems empty'.format(
-                folder+'log.param'))
-            exit()
+            raise io_mp.AnalyzeError(
+                "The log param file %s" % os.path.join(folder, 'log.param') +
+                "seems empty")
     else:
-        print('\n\n  The log param file {0} is absent ?'.format(
-            folder+'log.param'))
-        exit()
+        raise io_mp.AnalyzeError(
+            "The log param file %s" % os.path.join(folder, 'log.param') +
+            "is missing in the analyzed folder?")
 
     # If the folder has no subdirectory, then go for a simple infoname,
     # otherwise, call it with the last name
@@ -587,9 +587,9 @@ def convergence(info, is_main_chain=True, Files=None, param=None):
 
     # Test the length of the list
     if len(spam) == 0:
-        print('No decently sized chain was found.')
-        print('Please wait a bit to analyze this folder')
-        exit()
+        raise io_mp.AnalyzeError(
+            "No decently sized chain was found. " +
+            "Please wait a bit to analyze this folder")
 
     # 2D arrays for mean and var, one column will contain the total (over
     # all chains) mean (resp. variance), and each other column the

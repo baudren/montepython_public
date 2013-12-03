@@ -52,16 +52,24 @@ class likelihood(object):
         self.need_update = True
 
         # Check if the nuisance parameters are defined
+        error_flag = False
         try:
             for nuisance in self.use_nuisance:
                 if nuisance not in data.get_mcmc_parameters(['nuisance']):
-                    raise io_mp.LikelihoodError(
+                    error_flag = True
+                    warnings.warn(
                         nuisance + " must be defined, either fixed or " +
                         "varying, for %s likelihood" % self.name)
             self.nuisance = self.use_nuisance
         except AttributeError:
             self.use_nuisance = []
             self.nuisance = []
+
+        # If at least one is missing, raise an exception.
+        if error_flag:
+            raise io_mp.LikelihoodError(
+                "Check your nuisance parameter list for your set of" +
+                "experiments")
 
         # Append to the log.param the value used (WARNING: so far no comparison
         # is done to ensure that the experiments share the same parameters)
@@ -525,11 +533,11 @@ class likelihood_newdat(likelihood):
             if (num_col == 5):
                 self.has_pol = True
             else:
-                print 'window function files are understood of they contain ',
-                print '2 columns (l TT)'
-                print 'or 5 columns (l TT TE EE BB)'
-                print 'in this case the number of columns is ', num_col
-                exit()
+                raise io_mp.LikelihoodError(
+                    "In likelihood %s. " % self.name +
+                    "Window function files are understood if they contain " +
+                    "2 columns (l TT), or 5 columns (l TT TE EE BB)." +
+                    "In this case the number of columns is %d" % num_col)
 
         # define array of window functions
         self.window = np.zeros(
@@ -546,10 +554,11 @@ class likelihood_newdat(likelihood):
                 if (((self.has_pol is False) and (len(line.split()) != 2))
                         or ((self.has_pol is True) and
                             (len(line.split()) != 5))):
-                    print 'for given experiment, all window functions should '
-                    print 'have the same number of columns, 2 or 5.'
-                    print 'This is not the case here.'
-                    exit()
+                    raise io_mp.LikelihoodError(
+                        "In likelihood %s. " % self.name +
+                        "for a given experiment, all window functions should" +
+                        " have the same number of columns, 2 or 5. " +
+                        "This is not the case here.")
                 if ((l >= self.win_min[point]) and (l <= self.win_max[point])):
                     self.window[point, l, :] = [
                         float(line.split()[i])
@@ -606,11 +615,10 @@ class likelihood_newdat(likelihood):
         # function range. Normally this has been imposed before, so this test
         # could even be supressed.
         if (np.shape(cl['tt'])[0]-1 < self.l_max):
-            print '%s computed Cls till l=' % \
-                data.cosmological_module_name,
-            print np.shape(cl['tt'])[0]-1, ' while window functions need ',
-            print self.l_max
-            exit()
+            raise io_mp.LikelihoodError(
+                "%s computed Cls till l=" % data.cosmological_module_name +
+                "%d " % (np.shape(cl['tt'])[0]-1) +
+                "while window functions need %d." % self.l_max)
 
         # compute theoretical bandpowers, store them in theo[points]
         theo = np.zeros(self.num_points, 'float64')
@@ -889,10 +897,10 @@ class likelihood_clik(likelihood):
                 nuisance_value = data.mcmc_parameters[nuisance]['current'] *\
                     data.mcmc_parameters[nuisance]['scale']
             else:
-                print 'the likelihood needs a parameter '+nuisance
-                print 'you must pass it through the input file '
-                print '(as a free nuisance parameter or a fixed parameter)'
-                exit()
+                raise io_mp.LikelihoodError(
+                    "the likelihood needs a parameter %s. " % nuisance +
+                    "You must pass it through the input file " +
+                    "(as a free nuisance parameter or a fixed parameter)")
             tot[index] = nuisance_value
             index += 1
 
@@ -1103,6 +1111,7 @@ class likelihood_mpk(likelihood):
         if self.use_giggleZPP0:
             if 'P0_a' not in data.get_mcmc_parameters(['nuisance']):
                 raise io_mp.LikelihoodError(
+                    "In likelihood %s. " % self.name +
                     "P0_a is not defined in the .param file, whereas this " +
                     "nuisance parameter is required when the flag " +
                     "'use_giggleZPP0' is set to true for WiggleZ")
@@ -1146,8 +1155,9 @@ class likelihood_mpk(likelihood):
                 if (self.used_region[i]):
                     self.num_regions_used += 1
             if (self.num_regions_used == 0):
-                print 'mpk: no regions begin used in this data set'
-                exit()
+                raise io_mp.LikelihoodError(
+                    "In likelihood %s. " % self.name +
+                    "Mpk: no regions begin used in this data set")
         else:
             self.num_regions = 1
             self.num_regions_used = 1

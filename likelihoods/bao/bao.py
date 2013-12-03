@@ -53,8 +53,10 @@ class bao(likelihood):
                 theo = dv
 
             else:
-                print 'BAO data type', self.type[i], ' in ', i, 'th line not understood'
-                exit()
+                raise io_mp.LikelihoodError(
+                    "In likelihood %s. " % self.name +
+                    "BAO data type %s " % self.type[i] +
+                    "in %d-th line not understood" % i)
 
             chi2 += ((theo - self.data[i]) / self.error[i]) ** 2
 

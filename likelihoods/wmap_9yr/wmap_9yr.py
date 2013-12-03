@@ -1,6 +1,5 @@
-import sys
+import io_mp
 from likelihood_class import likelihood
-import inspect
 import numpy as np
 
 
@@ -18,10 +17,11 @@ class wmap_9yr(likelihood):
         try:
             import pywlik
         except ImportError:
-            print " /|\  You must first activate the binaries from the wmap wrapper code,"
-            print "/_o_\ please run : source /path/to/montepython/wrapper_wmap/bin/clik_profile.sh"
-            print "      and try again."
-            exit()
+            raise io_mp.MissingLibraryError(
+                "You must first activate the binaries from the wmap wrapper." +
+                " Please run : \n " +
+                "]$ source /path/to/wrapper_wmap/bin/clik_profile.sh\n " +
+                "and try again.")
 
         # try importing the wrapper_wmap
         self.wmaplike = pywlik.wlik(self.large_data_directory, self.ttmin,

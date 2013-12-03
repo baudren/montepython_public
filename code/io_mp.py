@@ -417,11 +417,11 @@ def warning_message(message, *args):
 
 class MyError(Exception):
     """
-    Base class defining the general presentation
+    Base class defining the general presentation of error messages
 
     """
     def __init__(self, message):
-        #Exception.__init__(self)
+        Exception.__init__(self)
         self.message = message
         name = self.__class__.__name__
         self.name = ''
@@ -441,40 +441,30 @@ class MyError(Exception):
 
 
 class CosmologicalModuleError(MyError):
-    """
-    For all problems linked to the cosmological module
-
-    """
+    """For all problems linked to the cosmological module"""
     pass
 
 
 class ConfigurationError(MyError):
-    """
-    Missing files, libraries, etc...
-
-    """
+    """Missing files, libraries, etc..."""
     pass
 
 
 class MissingLibraryError(MyError):
-    """
-    Missing Cosmo module, Planck, ...
-
-    """
+    """Missing Cosmo module, Planck, ..."""
     pass
 
 
 class LikelihoodError(MyError):
-    """
-    Problems when computing likelihood, missing nuisance, etc...
-
-    """
+    """Problems when computing likelihood, missing nuisance, etc..."""
     pass
 
 
 class FiducialModelWritten(MyError):
-    """
-    Used to exit the code in case of writing a fiducial file
+    """Used to exit the code in case of writing a fiducial file"""
+    pass
 
-    """
+
+class AnalyzeError(MyError):
+    """Used when encountering a fatal mistake in analyzing chains"""
     pass
