@@ -31,7 +31,7 @@ class bao_known_rs(likelihood):
 
         for i in range(self.num_points):
             if self.type[i] == 3:
-                self.data[i] = self.data[i] * self.known_rs
+                self.data[i] = self.data[i] * self.known_rs * self.rs_rescale
                 self.error[i] = self.data[i] * sqrt(
                     (self.error[i] / self.data[i]) ** 2 + (self.rs_error / self.known_rs) ** 2)
                 self.type[i] = 4
