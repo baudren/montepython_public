@@ -40,9 +40,6 @@ def analyze(command_line):
     appended by the other routines.
 
     """
-    # Catches error from maplotlib to exit gracefully
-    warnings.filterwarnings("error")
-
     # Create an instance of the information class, that will hold all relevant
     # information, and be used as a compact way of exchanging information
     # between functions
