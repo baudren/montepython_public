@@ -34,7 +34,9 @@ To test for the presence of the modules **numpy**,  **scipy**,
 If one of these steps fails, go to the corresponding websites, and
 follow the instructions (if you have the privilege to have the root
 password on your machine, an `apt-get install python-numpy`,
-`python-scipy` and `cython` will do the trick.).
+`python-scipy` and `cython` will do the trick. Otherwise, all these
+packages can also be downloaded and installed locally, with the
+command :code:`python setup.py install --user`).
 
 Note that you can use the code with Python 2.6 also, even though you
 need to download two packages separately ordereddict_ and argparse_.
