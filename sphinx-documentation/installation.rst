@@ -137,7 +137,18 @@ place of your convenience.
 
 The Planck Likelihood Code (**plc**) is based on a library called
 `clik`. It will be extracted, alongside several `.clik` folders that
-contain the likelihoods. In your |MP| configuration file, to use this
+contain the likelihoods. The installation of the code is described in
+the archive, and it uses an auto installer device, called `waf`.
+
+.. warning::
+
+  Note that you **are strongly advised** to configure `clik` with the
+  Intel mkl library, and not with lapack. There is a massive gain in
+  execution time: without it, the code is dominated by the execution
+  of the low-l polarisation data from WMAP.
+
+
+In your |MP| configuration file, to use this
 code, you should add the following line
 
 .. code:: python

@@ -3,7 +3,7 @@ Prior module
 
 .. automodule:: prior
 
-.. autoclass:: prior
+.. autoclass:: Prior
     :members:
     :undoc-members:
     :show-inheritance:
