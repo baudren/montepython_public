@@ -59,7 +59,7 @@ def main():
     # This can be changed with the command line option -conf. All changes will
     # be stored into the log.param of your folder, and hence will be reused for
     # an ulterior run in the same directory
-    conf_file = path['MontePython'][:-5] + command_line.config_file
+    conf_file = os.path.abspath(command_line.config_file)
     if os.path.isfile(conf_file):
         for line in open(conf_file):
             exec(line)
