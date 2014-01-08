@@ -176,7 +176,7 @@ class likelihood(object):
             (`cl_max`, etc...)
 
         :Parameters:
-            - **data**(`dict`) - initialized instance of :class:`data`
+            - **data** (`dict`) - initialized instance of :class:`data`
             - **dictionary** (`dict`) - desired precision for some cosmological
               parameters
 

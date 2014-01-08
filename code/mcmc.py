@@ -6,21 +6,21 @@
 This module defines one key function, :func:`chain`, that handles the Markov
 chain. So far, the code uses only one chain, as no parallelization is done.
 
-The following two routines are also defined in this module, that are called at
+The following routine is also defined in this module, which is called at
 every step:
 
-* :func:`compute_lkl` is called at every step in the Markov chain, returning
-  the likelihood at the current point in the parameter space.
 * :func:`get_new_position` returns a new point in the parameter space,
   depending on the proposal density.
 
 The :func:`chain` in turn calls several helper routines, defined in
 :mod:`sampler`. These are called just once:
 
-* :func:`get_covariance_matrix`
-* :func:`read_args_from_chain`
-* :func:`read_args_from_bestfit`
-* :func:`accept_step`
+* :func:`compute_lkl() <sampler.compute_lkl>` is called at every step in the Markov chain, returning
+  the likelihood at the current point in the parameter space.
+* :func:`get_covariance_matrix() <sampler.get_covariance_matrix>`
+* :func:`read_args_from_chain() <sampler.read_args_from_chain>`
+* :func:`read_args_from_bestfit() <sampler.read_args_from_bestfit>`
+* :func:`accept_step() <sampler.accept_step>`
 
 Their usage is described in :mod:`sampler`. On the contrary, the following
 routines are called at every step:

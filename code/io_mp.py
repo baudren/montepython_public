@@ -11,7 +11,7 @@ contrary, if there are more arguments, they will be detailled.
 
 This module also defines a new class :class:`File`, that extends
 :py:class:`file`, which provides a tail function. It is used in
-:func:`mcmc.read_args_from_chain`.
+:func:`sampler.read_args_from_chain`.
 
 Finally, the way the error messages are displayed is set there, along with
 ascii-art for the exclamation mark sign.

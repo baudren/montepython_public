@@ -1,5 +1,5 @@
 """
-.. module:: parser_np
+.. module:: parser_mp
     :synopsis: Definition of the command line options
 .. moduleauthor:: Benjamin Audren <benjamin.audren@epfl.ch>
 

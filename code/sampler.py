@@ -28,7 +28,7 @@ def run(cosmo, data, command_line):
     First rudimentary implementation
 
     The old mcmc module is used as previously, except the call is now within
-    this function, instead of from within :mod:MontePython.
+    this function, instead of from within :mod:`MontePython`.
 
     In the long term, this function should contain any potential hybrid scheme,
     and any chain communication (defining different roles, etc)
@@ -314,7 +314,7 @@ def compute_lkl(cosmo, data):
     This function now performs a test before calling the cosmological model
     (**new in version 1.2**). If any cosmological parameter changed, the flag
     :code:`data.need_cosmo_update` will be set to :code:`True`, from the
-    routine :func:`check_for_slow_step <data.data.check_for_slow_step>`.
+    routine :func:`check_for_slow_step <data.Data.check_for_slow_step>`.
 
     :Returns:
         - **loglike** (`float`) - the log of the likelihood
