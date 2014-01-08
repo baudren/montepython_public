@@ -28,14 +28,15 @@ class likelihood(object):
     def __init__(self, path, data, command_line):
         """
         It copies the content of self.path from the initialization routine of
-        the :class:`data` class, and defines a handful of useful methods, that
+        the :class:`Data <data.Data>` class, and defines a handful of useful methods, that
         every likelihood might need.
 
         If the nuisance parameters required to compute this likelihood are not
         defined (either fixed or varying), the code will stop.
 
         :Parameters:
-            - **data** (`class`) - initialized instance of :class:`data`
+            - **data** (`class`) - initialized instance of :class:`Data
+              <data.Data>`
             - **command_line** (`dict`) - dictionary containing the command
               line arguments
 
@@ -995,9 +996,10 @@ class likelihood_mock_cmb(likelihood):
 
     def compute_lkl(self, cl, cosmo, data):
 
-        # Write fiducial model spectra if needed (exit in that case)
+        # Write fiducial model spectra if needed (return an imaginary number in
+        # that case)
         if self.fid_values_exist is False:
-            # Store the values now, and exit.
+            # Store the values now.
             fid_file = open(self.data_directory+'/'+self.fiducial_file, 'w')
             fid_file.write('# Fiducial parameters')
             for key, value in data.mcmc_parameters.iteritems():
@@ -1013,8 +1015,8 @@ class likelihood_mock_cmb(likelihood):
             print '\n\n'
             warnings.warn(
                 "Writting fiducial model in %s, for %s likelihood" % (
-                self.data_directory+self.fiducial_file, self.name))
-            return 1
+                    self.data_directory+self.fiducial_file, self.name))
+            return 1j
 
         # compute likelihood
 

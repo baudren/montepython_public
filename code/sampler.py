@@ -377,6 +377,9 @@ def compute_lkl(cosmo, data):
     # For each desired likelihood, compute its value against the theoretical
     # model
     loglike = 0
+    # This flag holds the information whether a fiducial model was written. In
+    # this case, the log likelihood returned will be '1j', meaning the
+    # imaginary number i.
     flag_wrote_fiducial = 0
 
     for likelihood in data.lkl.itervalues():
@@ -389,7 +392,7 @@ def compute_lkl(cosmo, data):
             value = likelihood.backup_value
         loglike += value
         # In case the fiducial file was written, store this information
-        if value == 1:
+        if value == 1j:
             flag_wrote_fiducial += 1
 
     # Compute the derived parameters if relevant
