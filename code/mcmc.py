@@ -49,15 +49,34 @@ def get_new_position(data, eigv, U, k, Cholesky, Inverse_Cholesky, Rotation):
     idea by Anthony Lewis, in `Efficient sampling of fast and slow
     cosmological parameters <http://arxiv.org/abs/1304.4473>`_ )
 
-    .. note::
+    The three different jumping options, decided when starting a run with the
+    flag **-j**  are **global** (by default), **sequential** and **fast** (see
+    :mod:`parser_mp` for reference).
 
-        U, eigv are not used anymore in v1.2.0, but might come back in v1.2.1.
+    .. warning::
+
+        For running Planck data, the option **fast** is highly recommended, as
+        it speeds up the convergence. Note that when using this option, the
+        list of your likelihoods in your parameter file **must match** the
+        ordering of your nuisance parameters (as always, they must come after
+        the cosmological parameters, but they also must be ordered between
+        likelihood, with, preferentially, the slowest likelihood to compute
+        coming first).
+
+
+    - **global**: varies all the parameters at the same time. Depending on the
+      input covariance matrix, some degeneracy direction will be followed,
+      otherwise every parameter will jump independently of each other.
+    - **sequential**: varies every parameter sequentially. Works best when
+      having no clue about the covariance matrix, or to understand which
+      estimated sigma is wrong and slowing down the whole process.
+    - **fast**: privileged method when running the Planck likelihood. Described
+      in the aforementioned article, it separates slow (cosmological) and fast
+      (nuisance) parameters.
 
     :Parameters:
-        * **eigv** (`numpy array`) - eigenvalues previously computed *obsolete
-                in v1.2.0*
-        * **U** (`numpy_array`) - *obsolete in v1.2.0*, was the covariance
-                matrix.
+        * **eigv** (`numpy array`) - eigenvalues previously computed
+        * **U** (`numpy_array`) - covariance matrix.
         * **k** (`int`) - Number of points so far in the chain, is used to
                 rotate through parameters
         * **Cholesky** (`numpy_array`) - Cholesky decomposition of the
@@ -97,15 +116,20 @@ def get_new_position(data, eigv, U, k, Cholesky, Inverse_Cholesky, Rotation):
         i = k % len(vector)
         ###############
         # method fast+global
-        for elem in data.blocks_parameters:
+        for index, elem in enumerate(data.blocks_parameters):
+            # When the running index is below the maximum index of a block of
+            # parameters, this block is varied, and **only this one** (note the
+            # break at the end of the if clause, it is not a continue)
             if i < elem:
-                index = data.blocks_parameters.index(elem)
                 if index == 0:
                     Range = elem
                     Previous = 0
                 else:
                     Range = elem-data.blocks_parameters[index-1]
                     Previous = data.blocks_parameters[index-1]
+                # All the varied parameters are given a random variation with a
+                # sigma of 1. This will translate in a jump for all the
+                # parameters (as long as the Cholesky matrix is non diagonal)
                 for j in range(Range):
                     sigmas[j+Previous] = (math.sqrt(1./Range)) * \
                         rd.gauss(0, 1)*data.jumping_factor
