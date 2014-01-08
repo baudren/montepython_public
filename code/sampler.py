@@ -367,9 +367,12 @@ def compute_lkl(cosmo, data):
             cosmo.compute(["lensing"])
         except NameError:
             return data.boundary_loglike
-        except (AttributeError, KeyboardInterrupt):
+        except AttributeError:
             raise io_mp.CosmologicalModuleError(
                 "Something went terribly wrong with CLASS")
+        except KeyboardInterrupt:
+            raise io_mp.CosmologicalModuleError(
+                "You interrupted execution")
 
     # For each desired likelihood, compute its value against the theoretical
     # model
