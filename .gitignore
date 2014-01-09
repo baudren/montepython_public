@@ -19,3 +19,6 @@ sphinx-documentation/_templates/
 
 # Build files of wrapper wmap
 wrapper_wmap/build/
+
+# File created by git big-picture for branch visualisation
+montepython.png
