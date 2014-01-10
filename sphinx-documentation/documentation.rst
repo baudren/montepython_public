@@ -18,5 +18,6 @@ Contents:
    likelihood_class
    sampler
    mcmc
+   nested_sampling
    analyze
    io_mp
