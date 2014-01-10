@@ -162,27 +162,27 @@ Now the code is installed. Go anywhere, and just call
 To see a list of all commands. There are two essential ones, without which
 the program will not start. At minimum, you should precise an output folder
 ('-o') and a parameter file ('-p'). An example of parameter file is found in
-the main directory of MontePython (planck.param, for instance).
+the main directory of MontePython (test.param, for instance).
 
 A typical call would then be:
 
 .. code::
 
-    $ python code/MontePython.py -o planck -p planck.param
+    $ python code/MontePython.py -o test -p example.param
 
-If non existant, the `planck/` folder will be created, and a run with the
-number of steps described in `planck.param` will be started. To run a chain with
-less steps, one can type:
+If non existant, the `test/` folder will be created, and a run with the
+number of steps described in `example.param` will be started. To run a chain with
+more steps, one can type:
 
 .. code::
 
-    $ python code/MontePython.py -o planck -p planck.param -N 100
+    $ python code/MontePython.py -o test -p example.param -N 100
 
 If you want to analyse the run, then just type
 
 .. code::
 
-    $ python code/MontePython.py -info planck/
+    $ python code/MontePython.py -info test/
 
 
 Details and Examples
