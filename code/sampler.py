@@ -27,7 +27,8 @@ def run(cosmo, data, command_line):
     """
     First rudimentary implementation
 
-    The old mcmc module is used as previously, except the call is now within
+    The :mod:`mcmc` module is used as previously, except the call to
+    :func:`mcmc.chain`, or :func:`nested_sampling.run` is now within
     this function, instead of from within :mod:`MontePython`.
 
     In the long term, this function should contain any potential hybrid scheme,
@@ -57,10 +58,6 @@ def read_args_from_chain(data, chain):
     last line of an input chain, using the tail command from the extended
     :class:`io_mp.File` class.
 
-    :Parameters:
-        * **chain** (`str`) - name of the input chain provided with the command
-          line.
-
     .. warning::
         That method was not tested since the adding of derived parameters. The
         method :func:`read_args_from_bestfit` is the prefered one.
@@ -69,6 +66,11 @@ def read_args_from_chain(data, chain):
         This method works because of the particular presentation of the chain,
         and the use of tabbings (not spaces). Please keep this in mind if you
         are having difficulties
+
+    Parameters
+    ----------
+    chain : str
+        Name of the input chain provided with the command line.
 
     """
     chain_file = io_mp.File(chain, 'r')
@@ -86,8 +88,11 @@ def read_args_from_bestfit(data, bestfit):
     Deduce the starting point either from the input file, or from a best fit
     file.
 
-    :Parameters:
-        * **bestfit** (`str`) - name of the bestfit file from the command line.
+    Parameters
+    ----------
+    bestfit : str
+        Name of the bestfit file from the command line.
+
     """
 
     parameter_names = data.get_mcmc_parameters(['varying'])
@@ -316,17 +321,19 @@ def compute_lkl(cosmo, data):
     :code:`data.need_cosmo_update` will be set to :code:`True`, from the
     routine :func:`check_for_slow_step <data.Data.check_for_slow_step>`.
 
-    :Returns:
-        - **loglike** (`float`) - the log of the likelihood
-          (:math:`\\frac{-\chi^2}2`) computed from the sum of the likelihoods
-          of the experiments specified in the input parameter file.
+    Returns
+    -------
+    loglike : float
+        The log of the likelihood (:math:`\\frac{-\chi^2}2`) computed from the
+        sum of the likelihoods of the experiments specified in the input
+        parameter file.
 
-          This function returns :attr:`data.boundary_loglkie
-          <data.data.boundary_loglike>`, defined in the module :mod:`data` if
-          *i)* the current point in the parameter space has hit a prior edge,
-          or *ii)* the cosmological module failed to compute the model. This
-          value is chosen to be extremly small (large negative value), so that
-          the step will always be rejected.
+        This function returns :attr:`data.boundary_loglkie
+        <data.data.boundary_loglike>`, defined in the module :mod:`data` if
+        *i)* the current point in the parameter space has hit a prior edge, or
+        *ii)* the cosmological module failed to compute the model. This value
+        is chosen to be extremly small (large negative value), so that the step
+        will always be rejected.
 
 
     """

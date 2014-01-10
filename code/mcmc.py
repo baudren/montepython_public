@@ -74,14 +74,19 @@ def get_new_position(data, eigv, U, k, Cholesky, Inverse_Cholesky, Rotation):
       in the aforementioned article, it separates slow (cosmological) and fast
       (nuisance) parameters.
 
-    :Parameters:
-        * **eigv** (`numpy array`) - eigenvalues previously computed
-        * **U** (`numpy_array`) - covariance matrix.
-        * **k** (`int`) - Number of points so far in the chain, is used to
-                rotate through parameters
-        * **Cholesky** (`numpy_array`) - Cholesky decomposition of the
-                covariance matrix, and its inverse
-        * **Rotation** (`numpy_array`) - Not used yet
+    Parameters
+    ----------
+    eigv : numpy array
+        Eigenvalues previously computed
+    U : numpy_array
+        Covariance matrix.
+    k : int
+        Number of points so far in the chain, is used to rotate through
+        parameters
+    Cholesky : numpy array
+        Cholesky decomposition of the covariance matrix, and its inverse
+    Rotation : numpy_array
+        Not used yet
 
     """
 

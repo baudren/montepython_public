@@ -28,17 +28,18 @@ class likelihood(object):
     def __init__(self, path, data, command_line):
         """
         It copies the content of self.path from the initialization routine of
-        the :class:`Data <data.Data>` class, and defines a handful of useful methods, that
-        every likelihood might need.
+        the :class:`Data <data.Data>` class, and defines a handful of useful
+        methods, that every likelihood might need.
 
         If the nuisance parameters required to compute this likelihood are not
         defined (either fixed or varying), the code will stop.
 
-        :Parameters:
-            - **data** (`class`) - initialized instance of :class:`Data
-              <data.Data>`
-            - **command_line** (`dict`) - dictionary containing the command
-              line arguments
+        Parameters
+        ----------
+        data : class
+            Initialized instance of :class:`Data <data.Data>`
+        command_line : dict
+            Dictionary containing the command line arguments
 
         """
 
@@ -82,8 +83,9 @@ class likelihood(object):
         Placeholder to remind that this function needs to be defined for a
         new likelihood.
 
-        :Raises:
-            - **NotImplementedError**
+        Raises
+        ------
+        NotImplementedError
 
         """
         raise NotImplementedError(
@@ -176,10 +178,12 @@ class likelihood(object):
             better`. A bigger value will always overried any smaller one
             (`cl_max`, etc...)
 
-        :Parameters:
-            - **data** (`dict`) - initialized instance of :class:`data`
-            - **dictionary** (`dict`) - desired precision for some cosmological
-              parameters
+        Parameters
+        ----------
+        data : dict
+            Initialized instance of :class:`data`
+        dictionary : dict
+            Desired precision for some cosmological parameters
 
         """
         array_flag = False

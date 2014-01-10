@@ -142,14 +142,18 @@ def print_vector(out, N, loglkl, data):
     """
     Print the last accepted values to :code:`out`
 
-    :Parameters:
-        - **out** (`list`) - array containing both standard output and the output file.
+    Parameters
+    ----------
+    out : list
+        Array containing both standard output and the output file.
 
-          This way, if you run in interactive mode, you will be able to monitor
-          the progress of the chain.
-        - **N** (`int`) - multiplicity of the point, `i.e.` number of times the
-          code stayed at this particular place.
-        - **loglkl** (`float`) - value of the (- log likelihood) at this point
+        This way, if you run in interactive mode, you will be able to monitor
+        the progress of the chain.
+    N : int
+        Multiplicity of the point, `i.e.` number of times the code stayed at
+        this particular place.
+    loglkl : float
+        Value of the (- log likelihood) at this point
 
     .. note::
 
@@ -250,11 +254,16 @@ def get_tex_name(name, number=1):
         this case, please use an extra plot file with the command line option
         :code:`-extra plot_file`, or come up with a better function !
 
-    :Parameters:
-        - **name** (`str`) - input name
+    Parameters
+    ----------
+    name : str
+        Input name
 
-    :Keywords:
-        - **number** (`float`) - scale
+    Keyword Arguments
+    -----------------
+    number : float
+        Scale
+
     """
     tex_greek = ['omega', 'tau', 'alpha', 'beta', 'delta', 'nu',
                  'Omega', 'Lambda', 'lambda']

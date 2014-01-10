@@ -60,8 +60,10 @@ class Prior(object):
         """
         Draw a random point from the prior range considering the prior type
 
-        :Returns:
-            - **value** (`float`) - a random sample inside the prior region
+        Returns
+        -------
+        value : float
+            A random sample inside the prior region
 
         """
 

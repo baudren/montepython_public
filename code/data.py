@@ -55,11 +55,11 @@ class Data(object):
         It has a number of different **attributes**, and the more important
         ones are listed here:
 
+        * :attr:`boundary_loglike`
         * :attr:`cosmo_arguments`
         * :attr:`mcmc_parameters`
         * :attr:`need_cosmo_update`
         * :attr:`log_flag`
-        * :attr:`boundary_loglike`
 
         .. note::
 
@@ -69,16 +69,17 @@ class Data(object):
         To create an instance of this class, one must feed the following
         parameters and keyword arguments:
 
-        :Parameters:
-            - **command_line** (`dict`) - dictionary containing the input from the
-              :mod:`parser_mp`. It stores the input parameter file, the
-              jumping methods, the output folder, etc...
-              Most of the information extracted from the command_file will
-              be transformed into :class:`Data` attributes, whenever it felt
-              meaningful to do so.
-
-            - **path** (`dict`) - contains a dictionary of important local
-              paths. It is used here to find the cosmological module location.
+        Parameters
+        ----------
+        command_line : dict
+            Dictionary containing the input from the :mod:`parser_mp`. It
+            stores the input parameter file, the jumping methods, the output
+            folder, etc...  Most of the information extracted from the
+            command_file will be transformed into :class:`Data` attributes,
+            whenever it felt meaningful to do so.
+        path : dict
+            Contains a dictionary of important local paths. It is used here to
+            find the cosmological module location.
 
         """
 
@@ -358,19 +359,21 @@ class Data(object):
         Returns an ordered array of parameter names filtered by
         `table_of_strings`.
 
-        :Parameters:
-            - **table_of_strings** (`list`) - List of strings whose role and
-              status must be matched by a parameter. For instance,
+        Parameters
+        ----------
+        table_of_strings : list
+            List of strings whose role and status must be matched by a
+            parameter. For instance,
 
-              >>> get_mcmc_parameters(['varying'])
+            >>> get_mcmc_parameters(['varying'])
 
-              will return a list of all the varying parameters, both
-              cosmological and nuisance ones (derived parameters being `fixed`,
-              they wont be part of this list). Instead,
+            will return a list of all the varying parameters, both
+            cosmological and nuisance ones (derived parameters being `fixed`,
+            they wont be part of this list). Instead,
 
-              >>> get_mcmc_parameters(['nuisance', 'varying'])
+            >>> get_mcmc_parameters(['nuisance', 'varying'])
 
-              will only return the nuisance parameters that are being varied.
+            will only return the nuisance parameters that are being varied.
 
         """
         table = []
@@ -608,45 +611,51 @@ class Parameter(dict):
         the specified parameter, be it fixed or varying. The missing field is
         the 'last_accepted' one, that will be filled in the module :mod:`mcmc`.
 
-        The other fields are
-
-        `initial`:
-            initial array of input values defined in the parameter file.
-            Contains (in this order) `mean`, `minimum`, `maximum`, `1-sigma`.
-            If the min/max values (**TO CHECK** proposal density boundaries)
-            are unimportant/unconstrained, use `None` or `-1` (without a period
-            !)
-        `scale`:
-            5th entry of the initial array in the parameter file.
-        `role`:
-            6th entry of the initial array, can be `cosmo`, `nuisance` or
-            `derived`. A `derived` parameter will not be considered as varying,
-            but will be instead recovered from the cosmological code for each
-            point in the parameter space.
-        `prior`:
-            defined through the optional 7th entry of the initial array, can be
-            ommited or set to `flat` (same), or set to `gaussian`. An instance
-            of the :class:`prior` defined in :mod:`prior` will be initialized
-            and set to this value.
-        `tex_name`:
-            A tentative tex version of the name, provided by the function
-            :func:`io_mp.get_tex_name`.
-        `status`:
-            Depending on the `1-sigma` value in the initial array, it will be
-            set to `fixed` or `varying` (resp. zero and non-zero)
-        `current`:
-            Stores the value at the current point in parameter space (`not
-            allowed initially`)
-
         .. note::
 
             The syntax of the parameter files is defined here - if one
             wants to change it, one should report the changes in there.
 
-        :Parameters:
-            - **value** (`list`) - array read from the parameter file
-            - **key** (`str`) - name of the parameter
+        The other fields are
 
+        Attributes
+        ----------
+        initial : array
+            Initial array of input values defined in the parameter file.
+            Contains (in this order) `mean`, `minimum`, `maximum`, `1-sigma`.
+            If the min/max values (**TO CHECK** proposal density boundaries)
+            are unimportant/unconstrained, use `None` or `-1` (without a period
+            !)
+        scale : float
+            5th entry of the initial array in the parameter file, defines the
+            factor with which to multiply the values defined in `initial` to
+            give the real value.
+        role : str
+            6th entry of the initial array, can be `cosmo`, `nuisance` or
+            `derived`. A `derived` parameter will not be considered as varying,
+            but will be instead recovered from the cosmological code for each
+            point in the parameter space.
+        prior : :class:`Prior <prior.Prior>`
+            defined through the optional 7th entry of the initial array, can be
+            ommited or set to `flat` (same), or set to `gaussian`. An instance
+            of the :class:`prior` defined in :mod:`prior` will be initialized
+            and set to this value.
+        tex_name : str
+            A tentative tex version of the name, provided by the function
+            :func:`io_mp.get_tex_name`.
+        status : str
+            Depending on the `1-sigma` value in the initial array, it will be
+            set to `fixed` or `varying` (resp. zero and non-zero)
+        current : float
+            Stores the value at the current point in parameter space (`not
+            allowed initially`)
+
+        Parameters
+        ----------
+        value : list
+            Array read from the parameter file
+        key : str
+            Name of the parameter
 
         """
         # calling the parent method initialization
