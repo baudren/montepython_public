@@ -163,13 +163,29 @@ def run(cosmo, data, command_line):
         ns_subfolder,
         command_line.folder.split(os.path.sep)[-2]+'-')
 
+    # Prepare arguments for PyMultiNest
+    # -- Automatic parameters
+    data.ns_parameters['n_dims']   =  len(varying_param_names)
+    data.ns_parameters['n_params'] = (len(varying_param_names) + 
+                                      len(derived_param_names))
+    data.ns_parameters['verbose']  = True
+    data.ns_parameters['outputfiles_basename'] = basename
+    # -- User-defined parameters
+    parameters = ['n_live_points', 'sampling_efficiency', 'evidence_tolerance',
+                  'importance_nested_sampling', 'const_efficiency_mode',
+                  'log_zero', 'max_iter', 'seed', 'n_iter_before_update']
+    prefix = 'NS_option_'
+    for param in parameters:
+        value = getattr(command_line, prefix+param)
+        if value != -1:
+            data.ns_parameters[param] = value
+        # else: don't define them -> use PyMultiNest default value
+    print "\n\nDEBUG: Contents of the data.ns_parameters dictionary"
+    print data.ns_parameters
+    print "\n\n"
+
     # Launch MultiNest
-    pymultinest.run(loglike, prior, n_dims=len(varying_param_names),
-                    n_params=len(varying_param_names)+len(derived_param_names),
-                    outputfiles_basename=basename,
-                    evidence_tolerance=0.5,
-                    n_live_points=100,
-                    verbose=True)
+    pymultinest.run(loglike, prior, **data.ns_parameters)
 
     # Assuming this worked, translate the output ev.txt into the same format as
     # standard Monte Python chains for further analysis.

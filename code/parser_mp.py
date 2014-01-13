@@ -212,6 +212,40 @@ def create_parser():
     parser.add_argument('-ticksize', metavar='desired ticksize, default is 13',
                         type=int, dest='ticksize', default=13)
 
+    ###############
+    # MultiNest arguments (all OPTIONAL and ignored if not "-m='NS'")
+    # The default values of -1 mean to take the PyMultiNest default values
+    # -- number of live samples
+    parser.add_argument('--NS_option_n_live_points', metavar='Number of live samples',
+                        type=int, dest='NS_option_n_live_points', default=-1)
+    # -- Sampling efficiency
+    parser.add_argument('--NS_option_sampling_efficiency', metavar='Sampling efficiency',
+                        type=float, dest='NS_option_sampling_efficiency', default=-1)
+    # -- Evicence tolerance
+    parser.add_argument('--NS_option_evidence_tolerance', metavar='Evidence tolerance',
+                        type=float, dest='NS_option_evidence_tolerance', default=-1)
+    # -- Importance Nested Sampling
+    parser.add_argument('--NS_option_importance_nested_sampling',
+                        action='store_true',
+                        dest='NS_option_importance_nested_sampling', default=-1)
+    # -- Constant efficiency mode
+    parser.add_argument('--NS_option_const_efficiency_mode',
+                        action='store_true', dest='NS_option_const_efficiency_mode',
+                        default=-1)
+    # -- Minimum log-evidence to consider
+    parser.add_argument('--NS_option_log_zero',
+                        metavar='Minimum log-evidence to consider',
+                        type=float, dest='NS_option_log_zero', default=-1)
+    # -- Maximum number of iterations
+    parser.add_argument('--NS_option_max_iter', metavar='Maximum number of iterations',
+                        type=int, dest='NS_option_max_iter', default=-1)
+    # -- Random seed
+    parser.add_argument('--NS_option_seed', metavar='Random seed',
+                        type=int, dest='NS_option_seed', default=-1)
+    # -- Number of iterations between updates
+    parser.add_argument('--NS_option_n_iter_before_update',
+                        metavar='Number of iterations between updates',
+                        type=int, dest='NS_option_n_iter_before_update', default=-1)
     return parser
 
 

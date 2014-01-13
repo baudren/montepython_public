@@ -121,6 +121,18 @@ class Data(object):
 
         :rtype: ordereddict
         """
+        
+        # Options for PyMultiNest
+        self.ns_parameters = {}
+        """
+        Dictionary containing the parameters needed by the PyMultiNest sampler.
+        It is filled just before the run of the sampler.
+        Those parameters not defined will be set to the default value of PyMultiNest.
+
+        TODO: ADD PROPER REFERENCES TO DOCUMENTATION.
+
+        :rtype: dict
+        """
 
         # Read from the parameter file to fill properly the mcmc_parameters
         # dictionary.
