@@ -5,7 +5,8 @@
 
 This module interface Monte Python with the CosmoHammer, available
 `publicly<http://www.astro.ethz.ch/refregier/research/Software/cosmohammer>`_
-and developped by Joel Akeret and Sebastian Seehars.
+and developped by Joel Akeret and Sebastian Seehars, who helped me a lot
+creating this interface.
 
 The link between the two codes is that some functions have been added to the
 classes defined in Monte Python, so that they can become CoreModules and
@@ -14,6 +15,7 @@ LikelihoodModules of CosmoHammer.
 """
 import numpy as np
 import os
+import logging
 
 from cosmoHammer.likelihood.chain.LikelihoodComputationChain import LikelihoodComputationChain
 from cosmoHammer.sampler.CosmoHammerSampler import CosmoHammerSampler
@@ -24,7 +26,7 @@ def run(cosmo, data, command_line):
     Sample with the CosmoHammer
 
     """
-    # Store the parameters inside the format excpected by CosmoHammer
+    # Store the parameters inside the format expected by CosmoHammer
     parameter_names = data.get_mcmc_parameters(["varying"])
 
     params = []
@@ -58,5 +60,13 @@ def run(cosmo, data, command_line):
         walkersRatio=50,
         burninIterations=250,
         sampleIterations=250)
+
+    # Set the loggin level to DEBUG (TODO)
+    logging.getLogger().setLevel(logging.DEBUG)
+
+    # create console handler and set level to debug
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    logging.getLogger().addHandler(ch)
 
     sampler.startSampling()
