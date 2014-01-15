@@ -42,7 +42,7 @@ def run(cosmo, data, command_line):
     elif command_line.method == 'NS':
         import nested_sampling as ns
         ns.run(cosmo, data, command_line)
-    elif command_line.method == 'CosmoHammer':
+    elif command_line.method == 'CH':
         import cosmo_hammer as hammer
         hammer.run(cosmo, data, command_line)
     else:
@@ -161,18 +161,18 @@ def get_covariance_matrix(data, command_line):
                 covnames = line.strip('#').replace(' ', '').\
                     replace('\n', '').split(',')
                 # Initialize the matrices
-                M = np.zeros((len(covnames), len(covnames)), 'float64')
+                matrix = np.zeros((len(covnames), len(covnames)), 'float64')
                 rot = np.zeros((len(covnames), len(covnames)))
             else:
                 line = line.split()
                 for j in range(len(line)):
-                    M[i][j] = np.array(line[j], 'float64')
+                    matrix[i][j] = np.array(line[j], 'float64')
                 i += 1
 
         # First print out
         print('\nInput covariance matrix:')
         print(covnames)
-        print(M)
+        print(matrix)
         # Deal with the all problematic cases.
         # First, adjust the scales between stored parameters and the ones used
         # in mcmc
@@ -191,14 +191,14 @@ def get_covariance_matrix(data, command_line):
             decimal=5)
 
         # Apply the newly computed scales to the input matrix
-        M = np.dot(invscales.T, np.dot(M, invscales))
+        matrix = np.dot(invscales.T, np.dot(matrix, invscales))
 
         # Second print out, after having applied the scale factors
         print('\nFirst treatment (scaling)')
         print(covnames)
-        print(M)
+        print(matrix)
 
-        # Rotate M for the parameters to be well ordered, even if some
+        # Rotate matrix for the parameters to be well ordered, even if some
         # names are missing or some are in extra.
         # First, store the parameter names in temp_names that also appear in
         # the covariance matrix, in the right ordering for the code (might be
@@ -238,17 +238,17 @@ def get_covariance_matrix(data, command_line):
                     # still have the same size as the original, but with zeros
                     # on the unused lines.
                     rot[h][k] = 0.
-        M = np.dot(rot, np.dot(M, np.transpose(rot)))
+        matrix = np.dot(rot, np.dot(matrix, np.transpose(rot)))
 
         # Third print out
         print('\nSecond treatment (partial reordering and cleaning)')
         print(temp_names_2)
-        print(M)
+        print(matrix)
 
         # Final step, creating a temporary matrix, filled with 1, that will
         # eventually contain the result.
-        M_temp = np.ones((len(parameter_names),
-                          len(parameter_names)), 'float64')
+        matrix_temp = np.ones((len(parameter_names),
+                               len(parameter_names)), 'float64')
         indices_final = np.zeros(len(parameter_names))
         indices_initial = np.zeros(len(covnames))
         # Remove names that are in parameter names but not in covnames, and
@@ -257,8 +257,8 @@ def get_covariance_matrix(data, command_line):
             if parameter_names[k] in covnames:
                 indices_final[k] = 1
         for zeros in np.where(indices_final == 0)[0]:
-            M_temp[zeros, :] = 0
-            M_temp[:, zeros] = 0
+            matrix_temp[zeros, :] = 0
+            matrix_temp[:, zeros] = 0
         # Remove names that are in covnames but not in param_names
         for h in range(len(covnames)):
             if covnames[h] in parameter_names:
@@ -268,34 +268,34 @@ def get_covariance_matrix(data, command_line):
         # next step only copy the interesting part of the input to the final
         # matrix.
         for zeros in np.where(indices_initial == 0)[0]:
-            M[zeros, :] = 1*j
-            M[:, zeros] = 1*j
+            matrix[zeros, :] = 1j
+            matrix[:, zeros] = 1j
         # Now put in the temporary matrix, where the 1 were, the interesting
         # quantities from the input (the one that are not equal to i).
-        M_temp[M_temp == 1] = M[M != 1*j]
-        M = np.copy(M_temp)
+        matrix_temp[matrix_temp == 1] = matrix[matrix != 1j]
+        matrix = np.copy(matrix_temp)
         # on all other lines, that contain 0, just use sigma^2
         for zeros in np.where(indices_final == 0)[0]:
-            M[zeros, zeros] = np.array(
+            matrix[zeros, zeros] = np.array(
                 data.mcmc_parameters[parameter_names[zeros]]['initial'][3],
                 'float64')**2
 
     # else, take sigmas^2.
     else:
-        M = np.identity(len(parameter_names), 'float64')
+        matrix = np.identity(len(parameter_names), 'float64')
         for elem in parameter_names:
-            M[i][i] = np.array(
+            matrix[i][i] = np.array(
                 data.mcmc_parameters[elem]['initial'][3], 'float64')**2
             i += 1
 
     # Final print out, the actually used covariance matrix
     sys.stdout.write('\nDeduced starting covariance matrix:\n')
     print(parameter_names)
-    print(M)
+    print(matrix)
 
     #inverse, and diagonalization
-    eigv, eigV = np.linalg.eig(np.linalg.inv(M))
-    return eigv, eigV, M
+    eigv, eigV = np.linalg.eig(np.linalg.inv(matrix))
+    return eigv, eigV, matrix
 
 
 def accept_step(data):

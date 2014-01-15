@@ -207,19 +207,19 @@ def create_output_files(command_line, data):
     # output file
     outname_base = '{0}_{1}__'.format(date.today(), number)
     suffix = 0
-    Try = True
+    trying = True
     if command_line.chain_number is None:
         for files in os.listdir(command_line.folder):
             if files.find(outname_base) != -1:
                 if int(files.split('__')[-1].split('.')[0]) > suffix:
                     suffix = int(files.split('__')[-1].split('.')[0])
         suffix += 1
-        while Try:
+        while trying:
             data.out = open(command_line.folder+outname_base +
                             str(suffix)+'.txt', 'w')
             try:
                 lock(data.out, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                Try = False
+                trying = False
             except LockError:
                 suffix += 1
         sys.stdout.write('Creating {0}{1}{2}.txt\n'.format(
@@ -344,10 +344,7 @@ def pretty_print(string, status, return_string=False):
 
 
 def safe_exec(string):
-    """
-    Attempt at executing a string from file in a secure way
-
-    """
+    """Attempt at executing a string from file in a secure way"""
     exec(string, {'__builtins__': {}})
 
 
@@ -360,6 +357,7 @@ class File(file):
     """
 
     def tail(self, lines_2find=1):
+        """Imitates the classic tail command"""
         self.seek(0, 2)     # go to end of file
         bytes_in_file = self.tell()
         lines_found, total_bytes_scanned = 0, 0
@@ -430,6 +428,7 @@ class MyError(Exception):
 
     """
     def __init__(self, message):
+        """Reformat the name of the class for easier reading"""
         Exception.__init__(self)
         self.message = message
         name = self.__class__.__name__
@@ -445,6 +444,7 @@ class MyError(Exception):
                 self.name += letter
 
     def __str__(self):
+        """Define the behaviour under the print statement"""
         return '\n\n' + self.name + ':' + pretty_print(
             self.message, "error", True)
 

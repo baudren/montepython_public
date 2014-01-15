@@ -48,6 +48,11 @@ class likelihood(object):
             '/../likelihoods/'+self.name+'/'
         if not data.log_flag:
             path = command_line.folder+'log.param'
+
+        # Define some default fields
+        self.data_directory = ''
+
+        # Read values from the data file
         self.read_from_file(path, data, command_line)
 
         # Default state
@@ -307,7 +312,9 @@ class likelihood(object):
         cosmo = ctx.get("cosmo")
         data = ctx.get("data")
 
-        self.loglkl(cosmo, data)
+        loglkl = self.loglkl(cosmo, data)
+
+        return loglkl
 
 
 ###################################
