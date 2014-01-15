@@ -10,17 +10,23 @@ import math
 import random as rd
 import warnings
 
+import io_mp  # Needs to talk to io_mp.py file for the logging of parameters
+import prior
+
 # A modified version of Python dictionary in order to keep track of the order
 # in it (much the same as in an array). In case an older version of Python is
 # used, this module does not belong to collections. Please remind to put that
 # into your PYTHONPATH variable.
 try:
     from collections import OrderedDict as od
-except:
-    from ordereddict import OrderedDict as od
-
-import io_mp  # Needs to talk to io_mp.py file for the logging of parameters
-import prior
+except ImportError:
+    try:
+        from ordereddict import OrderedDict as od
+    except ImportError:
+        raise io_mp.MissingLibraryError(
+            "If you are running with Python v2.5 or 2.6, you need" +
+            "to manually install the ordereddict package by placing" +
+            "the file ordereddict.py in your Python Path")
 
 
 class Data(object):
@@ -95,12 +101,10 @@ class Data(object):
         self.path = path
 
         self.boundary_loglike = -1e30
-        """
-        Define the boundary loglike, the value used to defined a loglike that
-        is out of bounds. If a point in the parameter space is affected to this
-        value, it will be automatically rejected, hence increasing the
-        multiplicity of the last accepted point.
-        """
+        """Define the boundary loglike, the value used to defined a loglike
+        that is out of bounds. If a point in the parameter space is affected to
+        this value, it will be automatically rejected, hence increasing the
+        multiplicity of the last accepted point."""
 
         # Creation of the two main dictionnaries:
         self.cosmo_arguments = {}
@@ -133,6 +137,17 @@ class Data(object):
 
         :rtype: dict
         """
+
+        # Initialise the experiments attribute
+        self.experiments = []
+
+        # Default value for the number of steps
+        self.N = 10
+
+        # Create the variable out, and out_name, which will be initialised
+        # later by the :mod:`io_mp` module
+        self.out = None
+        self.out_name = ''
 
         # Read from the parameter file to fill properly the mcmc_parameters
         # dictionary.
@@ -266,7 +281,7 @@ class Data(object):
         of instances from the class :class:`parameter` (inheriting from
         dict)"""
 
-    def read_file(self, File):
+    def read_file(self, param_file):
         """
         Execute all lines concerning the Data class from a parameter file
 
@@ -284,11 +299,11 @@ class Data(object):
             A security should be added to protect from obvious attacks.
 
         """
-        for line in File:
+        for line in param_file:
             if line.find('#') == -1:
                 if line.split('=')[0].find('data.') != -1:
                     exec(line.replace('data.', 'self.').rstrip())
-        File.seek(0)
+        param_file.seek(0)
 
     def group_parameters_in_blocks(self):
         """
@@ -355,16 +370,16 @@ class Data(object):
         # Store the result
         self.blocks_parameters = array
 
-    def read_version(self, File):
+    def read_version(self, param_file):
         """
         Extract version and subversion from an existing log.param
         """
         # Read the first line (cosmological code version)
-        first_line = File.readline()
+        first_line = param_file.readline()
         self.version = first_line.split()[1]
         self.subversion = first_line.split()[-1].replace(')', '').\
             replace('-', '')
-        File.seek(0)
+        param_file.seek(0)
 
     def get_mcmc_parameters(self, table_of_strings):
         """
@@ -505,26 +520,26 @@ class Data(object):
                 # cosmological settings reio_parametrization to reio_bins_tanh,
                 # binned_reio_z set, and binned_reio_num First, you need to set
                 # reio_parametrization to reio_bins_tanh
-                    if (self.cosmo_arguments['reio_parametrization'] !=
-                            'reio_bins_tanh'):
+                if (self.cosmo_arguments['reio_parametrization'] !=
+                        'reio_bins_tanh'):
+                    raise io_mp.CosmologicalModuleError(
+                        "You set binned_reio_xe to some values " +
+                        "without setting reio_parametrization to " +
+                        "reio_bins_tanh")
+                else:
+                    try:
+                        size = self.cosmo_arguments['binned_reio_num']
+                    except (KeyError):
                         raise io_mp.CosmologicalModuleError(
-                            "You set binned_reio_xe to some values " +
-                            "without setting reio_parametrization to " +
-                            "reio_bins_tanh")
-                    else:
-                        try:
-                            size = self.cosmo_arguments['binned_reio_num']
-                        except (KeyError):
-                            raise io_mp.CosmologicalModuleError(
-                                "You need to set reio_binnumber to the value" +
-                                " corresponding to the one in binned_reio_xe")
-                    string = ''
-                    for i in range(1, size+1):
-                        string += '%.4g' % self.cosmo_arguments['xe_%d' % i]
-                        del self.cosmo_arguments['xe_%d' % i]
-                        if i != size:
-                            string += ','
-                    self.cosmo_arguments['binned_reio_xe'] = string
+                            "You need to set reio_binnumber to the value" +
+                            " corresponding to the one in binned_reio_xe")
+                string = ''
+                for i in range(1, size+1):
+                    string += '%.4g' % self.cosmo_arguments['xe_%d' % i]
+                    del self.cosmo_arguments['xe_%d' % i]
+                    if i != size:
+                        string += ','
+                self.cosmo_arguments['binned_reio_xe'] = string
 
     def __cmp__(self, other):
         """
