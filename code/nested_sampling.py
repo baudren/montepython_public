@@ -98,7 +98,7 @@ def run(cosmo, data, command_line):
                 space that has been selected within the MultiNest part.
             **ndim** (`int`) - Number of varying parameters
             **nparams** (`int`) - Total number of parameters, including the
-                derived ones
+                derived ones (not used, so hidden in `*args`)
 
 
     .. function:: loglike
@@ -110,7 +110,7 @@ def run(cosmo, data, command_line):
                 parameter space after transformation from :func:`prior`.
             **ndim** (`int`) - Number of varying parameters
             **nparams** (`int`) - Total number of parameters, including the
-                derived ones
+                derived ones (not used, so hidden in `*args`)
 
     """
     # Convenience variables
@@ -130,7 +130,7 @@ def run(cosmo, data, command_line):
             "parameters. Set reasonable bounds for them in the '.param'" +
             "file.")
 
-    def prior(cube, ndim, nparams):
+    def prior(cube, ndim, *args):
         """
         Please see the encompassing function docstring
 
@@ -139,7 +139,7 @@ def run(cosmo, data, command_line):
             cube[i] = data.mcmc_parameters[name]["prior"]\
                 .map_from_unit_interval(cube[i])
 
-    def loglike(cube, ndim, nparams):
+    def loglike(cube, ndim, *args):
         """
         Please see the encompassing function docstring
 
@@ -165,10 +165,10 @@ def run(cosmo, data, command_line):
 
     # Prepare arguments for PyMultiNest
     # -- Automatic parameters
-    data.ns_parameters['n_dims']   =  len(varying_param_names)
-    data.ns_parameters['n_params'] = (len(varying_param_names) + 
+    data.ns_parameters['n_dims'] = len(varying_param_names)
+    data.ns_parameters['n_params'] = (len(varying_param_names) +
                                       len(derived_param_names))
-    data.ns_parameters['verbose']  = True
+    data.ns_parameters['verbose'] = True
     data.ns_parameters['outputfiles_basename'] = basename
     # -- User-defined parameters
     parameters = ['n_live_points', 'sampling_efficiency', 'evidence_tolerance',
@@ -180,13 +180,12 @@ def run(cosmo, data, command_line):
         if value != -1:
             data.ns_parameters[param] = value
         # else: don't define them -> use PyMultiNest default value
-    print "\n\nDEBUG: Contents of the data.ns_parameters dictionary"
-    print data.ns_parameters
-    print "\n\n"
 
-    # Launch MultiNest
-    pymultinest.run(loglike, prior, **data.ns_parameters)
+    # Launch MultiNest, and recover the output code
+    output = pymultinest.run(loglike, prior, **data.ns_parameters)
 
-    # Assuming this worked, translate the output ev.txt into the same format as
-    # standard Monte Python chains for further analysis.
-    from_ns_output_to_chains(command_line, basename)
+    # Assuming this worked, i.e. if output is `None`, translate the output
+    # ev.txt into the same format as standard Monte Python chains for further
+    # analysis.
+    if output is None:
+        from_ns_output_to_chains(command_line, basename)
