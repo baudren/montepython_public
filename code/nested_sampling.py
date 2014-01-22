@@ -21,7 +21,7 @@ import io_mp
 import sampler
 
 
-def from_ns_output_to_chains(command_line, basename):
+def from_ns_output_to_chains(folder, basename):
     """
     Translate the output of MultiNest into readable output for Monte Python
 
@@ -30,9 +30,9 @@ def from_ns_output_to_chains(command_line, basename):
 
     """
     # First, take care of post_equal_weights (accepted points)
-    accepted_chain = os.path.join(command_line.folder,
+    accepted_chain = os.path.join(folder,
                                   'chain_NS__accepted.txt')
-    rejected_chain = os.path.join(command_line.folder,
+    rejected_chain = os.path.join(folder,
                                   'chain_NS__rejected.txt')
 
     # creating chain of accepted points (straightforward reshuffling of
