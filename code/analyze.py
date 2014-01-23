@@ -30,6 +30,7 @@ import matplotlib.pyplot as plt
 # Module to handle warnings from matplotlib
 import warnings
 
+
 def analyze(command_line):
     """
     Main function, does the entire analysis.
@@ -277,6 +278,7 @@ def analyze(command_line):
     # imported in a tex document.
     write_tex(info, indices)
 
+
 def prepare(info, Files, is_main_chain=True):
     """
     Scan the whole input folder, and include all chains in it.
@@ -293,7 +295,38 @@ def prepare(info, Files, is_main_chain=True):
         Only files ending with .txt will be selected, to keep compatibility
         with CosmoMC format
 
+    .. note::
+        New in version 2.0.0: if you ask to analyze a Nested Sampling
+        sub-folder (i.e. something that ends in `NS` with capital letters), the
+        analyze module will translate the output from Nested Sampling to
+        standard chains for Monte Python, and stops. You can then run the
+        `-- info` flag on the whole folder. **This procedure is not necessary
+        if the run was complete, but only if the Nested Sampling run was killed
+        before completion**.
+
     """
+
+    # First test if the folder is a Nested Sampling folder
+    if os.path.isdir(Files[0]):
+        folder = os.path.join(
+            *[elem for elem in Files[0].split(os.path.sep) if elem])
+        if folder.split(os.path.sep)[-1] == 'NS':
+            ns_subfolder = folder
+            basename = os.path.join(
+                ns_subfolder,
+                folder.split(os.path.sep)[-2] + '-')
+            folder = os.path.join(*ns_subfolder.split(os.path.sep)[:-1])
+
+            import nested_sampling as ns
+            try:
+                ns.from_ns_output_to_chains(
+                    folder, basename)
+            except IOError:
+                raise io_mp.AnalyzeError(
+                    "You asked to analyze a Nested Sampling folder " +
+                    "which seems to be empty or badly written. " +
+                    "Please make sure the run went smoothly enough.")
+
 
     # If the input command was an entire folder, then grab everything in it
     if os.path.isdir(Files[0]):
@@ -373,6 +406,7 @@ def prepare(info, Files, is_main_chain=True):
     else:
         return Files, folder, param
 
+
 def convergence(info, is_main_chain=True, Files=None, param=None):
     """
     Compute convergence for the desired chains
@@ -395,10 +429,6 @@ def convergence(info, is_main_chain=True, Files=None, param=None):
 
     # Backup names
     backup_names = []
-
-    # Derived parameters
-    derived_names = []
-    derived_tex_names = []
 
     plotted_parameters = []
 
@@ -1033,7 +1063,7 @@ def plot_triangle(
                 try:
                     cs = ax2dsub.contourf(
                         y_centers, x_centers, n,
-                        extent=extent, levels=ctr_level(n, lvls[:2]), #colors="k",
+                        extent=extent, levels=ctr_level(n, lvls[:2]),
                         zorder=5, cmap=plt.cm.autumn_r)
                 except Warning:
                     warnings.warn(
@@ -1181,6 +1211,7 @@ def plot_triangle(
                 info.folder.split('/')[-2], info.extension),
             bbox_inches=0)
 
+
 def ctr_level(histogram2d, lvl, infinite=False):
     """
     Extract the contours for the 2d plots (Karim Benabed)
@@ -1197,6 +1228,7 @@ def ctr_level(histogram2d, lvl, infinite=False):
     if not infinite:
         return clist[1:]
     return clist
+
 
 def minimum_credible_intervals(histogram, bincenters, levels):
     """
@@ -1293,6 +1325,7 @@ def minimum_credible_intervals(histogram, bincenters, levels):
     #print
     return bounds
 
+
 def write_h(file, indices, name, string, quantity, modifiers=None):
     """
     Write one horizontal line of output
@@ -1305,6 +1338,7 @@ def write_h(file, indices, name, string, quantity, modifiers=None):
         else:
             space_string = ''
         file.write(space_string+string % quantity[i]+'\t')
+
 
 def write_tex(info, indices):
     """
@@ -1326,10 +1360,11 @@ def write_tex(info, indices):
 
     info.tex.write("\\hline \n \\end{tabular} \\\\ \n")
     info.tex.write(
-        "$-\ln{\cal L}_\mathrm{min} =%.6g$, minimum $\chi^2=%.4g$ \\\\ \n"%
+        "$-\ln{\cal L}_\mathrm{min} =%.6g$, minimum $\chi^2=%.4g$ \\\\ \n" %
         (info.max_lkl, info.max_lkl*2.))
     #info.tex.write("\\end{tabular}\n")
     #info.tex.write("\\end{document}")
+
 
 def cubic_interpolation(info, hist, bincenters):
     """
@@ -1345,6 +1380,7 @@ def cubic_interpolation(info, hist, bincenters):
         return interp_hist, interp_grid
     else:
         return hist, bincenters
+
 
 def get_fontsize(diag_length):
     """
