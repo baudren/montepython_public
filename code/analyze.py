@@ -76,7 +76,10 @@ def analyze(command_line):
     # Prepare the files, according to the case, load the log.param, and
     # prepare the output (plots folder, .covmat, .info and .log files).
     # After this step, info.files will contain all chains.
-    prepare(info, Files)
+    status = prepare(info, Files)
+
+    if not status:
+        return
 
     # Compute the mean, maximum of likelihood, 1-sigma variance for this
     # main folder. This will create the info.spam chain
@@ -317,16 +320,20 @@ def prepare(info, Files, is_main_chain=True):
                 folder.split(os.path.sep)[-2] + '-')
             folder = os.path.join(*ns_subfolder.split(os.path.sep)[:-1])
 
-            import nested_sampling as ns
+            from nested_sampling import from_ns_output_to_chains as ns_output
             try:
-                ns.from_ns_output_to_chains(
-                    folder, basename)
+                ns_output(folder, basename)
             except IOError:
                 raise io_mp.AnalyzeError(
                     "You asked to analyze a Nested Sampling folder " +
                     "which seems to be empty or badly written. " +
                     "Please make sure the run went smoothly enough.")
-
+            else:
+                warnings.warn(
+                    "The content of the NS subfolder has been " +
+                    "translated for Monte Python. Please run an " +
+                    "analysis of the entire folder now.")
+                return False
 
     # If the input command was an entire folder, then grab everything in it
     if os.path.isdir(Files[0]):
@@ -365,11 +372,11 @@ def prepare(info, Files, is_main_chain=True):
             param = open(folder+'log.param', 'r')
         else:
             raise io_mp.AnalyzeError(
-                "The log param file %s" % os.path.join(folder, 'log.param') +
+                "The log param file %s " % os.path.join(folder, 'log.param') +
                 "seems empty")
     else:
         raise io_mp.AnalyzeError(
-            "The log param file %s" % os.path.join(folder, 'log.param') +
+            "The log param file %s " % os.path.join(folder, 'log.param') +
             "is missing in the analyzed folder?")
 
     # If the folder has no subdirectory, then go for a simple infoname,

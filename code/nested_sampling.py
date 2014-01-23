@@ -55,7 +55,6 @@ def from_ns_output_to_chains(folder, basename):
         if len(lines) > 1:
             lines = [line for line in lines if 'Importance' in line]
         log_evidence = float(lines[0].split(':')[1].split('+/-')[0])
-        print 'Evidence is ', log_evidence
 
     # Creating chain from rejected points, with some interpretation of the
     # weight associated to each point arXiv:0809.3437 sec 3
