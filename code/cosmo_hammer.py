@@ -4,7 +4,7 @@
 .. moduleauthor:: Benjamin Audren <benjamin.audren@epfl.ch>
 
 This module interface Monte Python with the CosmoHammer, available
-`publicly<http://www.astro.ethz.ch/refregier/research/Software/cosmohammer>`_
+`publicly <http://www.astro.ethz.ch/refregier/research/Software/cosmohammer>`_
 and developped by Joel Akeret and Sebastian Seehars, who helped me a lot
 creating this interface.
 
@@ -17,7 +17,8 @@ import numpy as np
 import os
 import logging
 
-from cosmoHammer.likelihood.chain.LikelihoodComputationChain import LikelihoodComputationChain
+from cosmoHammer.likelihood.chain.LikelihoodComputationChain import (
+    LikelihoodComputationChain)
 from cosmoHammer.sampler.CosmoHammerSampler import CosmoHammerSampler
 
 
@@ -61,12 +62,9 @@ def run(cosmo, data, command_line):
         burninIterations=250,
         sampleIterations=250)
 
-    # Set the loggin level to DEBUG (TODO)
-    logging.getLogger().setLevel(logging.DEBUG)
-
-    # create console handler and set level to debug
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    logging.getLogger().addHandler(ch)
+    # create console handler and set level to debug (does not seem to appear)
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.DEBUG)
+    logging.getLogger().addHandler(console_handler)
 
     sampler.startSampling()
