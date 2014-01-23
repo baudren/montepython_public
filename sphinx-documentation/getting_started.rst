@@ -2,6 +2,22 @@ Getting Started
 ===============
 
 
+Foreword
+--------
+
+Python has a very nice way of handling errors in the execution.
+Instead of a segmentation fault as in C, when the code breaks, you
+have access to the whole stack of actions that lead to the error. This
+helps you pin-point which function was called, which line was
+responsible for the error. 
+
+It can however be lengthy, and to help everyone reading it, a
+messaging system was implemented in Monte Python. After a blank line,
+a summary of the actual error will be displayed. When reporting for an
+error, please attach the entire output, as this is priceless for
+debugging.
+
+
 Input parameter file
 --------------------
 
