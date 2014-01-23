@@ -292,6 +292,8 @@ epub_copyright = u'2013, Benjamin Audren'
 autoclass_content = 'both'
 
 # Napoleon settings
+# go to http://sphinxcontrib-napoleon.readthedocs.org/en/latest/
+# to see what all this is about
 napoleon_google_docstring = True
 napoleon_numpy_docstring = True
 napoleon_include_private_with_doc = False
