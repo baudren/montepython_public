@@ -7,7 +7,7 @@
 
 Collection of functions needed to analyze the Markov chains.
 
-This module defines as well a class :class:`information`, that stores useful
+This module defines as well a class :class:`Information`, that stores useful
 quantities, and shortens the argument passing between the functions.
 
 .. note::
@@ -36,15 +36,15 @@ def analyze(command_line):
     Main function, does the entire analysis.
 
     It calls in turn all the other routines from this module. To limit the
-    arguments of each function to a reasonnable size, a :class:`information`
+    arguments of each function to a reasonnable size, a :class:`Information`
     instance is used. This instance is initialized in this function, then
     appended by the other routines.
 
     """
-    # Create an instance of the information class, that will hold all relevant
+    # Create an instance of the Information class, that will hold all relevant
     # information, and be used as a compact way of exchanging information
     # between functions
-    info = information()
+    info = Information()
 
     # Check if the scipy module has the interpolate method correctly
     # installed (should be the case on every linux distribution with
@@ -54,13 +54,14 @@ def analyze(command_line):
         info.has_interpolate_module = True
     except ImportError:
         info.has_interpolate_module = False
-        print('No cubic interpolation done ')
-        print('(no interpolate method found in scipy), only linear')
+        warnings.warn(
+            'No cubic interpolation done (no interpolate method found ' +
+            'in scipy), only linear')
 
-    # At this points, Files could contain either a list of files (that
+    # At this points, `files` could contain either a list of files (that
     # could be only one) or a folder. This is the reason why it is not yet
     # copied to the info class.
-    Files = command_line.files
+    files = command_line.files
     binnumber = command_line.bins
 
     # Save the extension to output files
@@ -76,7 +77,7 @@ def analyze(command_line):
     # Prepare the files, according to the case, load the log.param, and
     # prepare the output (plots folder, .covmat, .info and .log files).
     # After this step, info.files will contain all chains.
-    status = prepare(info, Files)
+    status = prepare(info, files)
 
     if not status:
         return
@@ -94,14 +95,14 @@ def analyze(command_line):
     # In case of comparison, launch the prepare and convergence methods,
     # with an additional flag: is_main_chain=False. This will ensure that
     # all the information will not be stored to info.files, info.covmat...
-    # but to the specified output, respectively comp_Files, comp_spam...
+    # but to the specified output, respectively comp_files, comp_spam...
     if command_line.comp is not None:
-        comp_Files, comp_folder, comp_param = \
+        comp_files, comp_folder, comp_param = \
             prepare(info, command_line.comp, is_main_chain=False)
         comp_spam, comp_ref_names, comp_tex_names, comp_backup_names, \
             comp_plotted_parameters, comp_boundaries, comp_mean = \
-            convergence(info, is_main_chain=False, Files=comp_Files,
-                             param=comp_param)
+            convergence(info, is_main_chain=False, files=comp_files,
+                        param=comp_param)
         comp_mean = comp_mean[0]
 
         # Create comp_chain
@@ -117,7 +118,7 @@ def analyze(command_line):
     info.var = info.var[0]
     info.covar = np.zeros((len(info.ref_names), len(info.ref_names)))
 
-    print('--> Computing covariance matrix')
+    warnings.warn('--> Computing covariance matrix')
     for i in range(len(info.ref_names)):
         for j in range(i, len(info.ref_names)):
             info.covar[i, j] = np.sum(
@@ -151,21 +152,21 @@ def analyze(command_line):
     total = chain[:, 0].sum()
 
     # Writing the best-fit model in name_of_folder.bestfit
-    info.bf.write('# ')
+    info.best_fit.write('# ')
     for i in range(len(info.ref_names)):
         string = info.backup_names[i]
         if i != len(info.ref_names)-1:
             string += ','
-        info.bf.write('%-16s' % string)
-    info.bf.write('\n')
+        info.best_fit.write('%-16s' % string)
+    info.best_fit.write('\n')
     # Removing scale factors in order to store true parameter values
     for i in range(len(info.ref_names)):
         bfvalue = chain[a[0], 2+i]*info.scales[i, i]
         if bfvalue > 0:
-                info.bf.write(' %.5e\t' % bfvalue)
+            info.best_fit.write(' %.5e\t' % bfvalue)
         else:
-                info.bf.write('%.5e\t' % bfvalue)
-    info.bf.write('\n')
+            info.best_fit.write('%.5e\t' % bfvalue)
+    info.best_fit.write('\n')
 
     # Defining the sigma contours (1, 2 and 3-sigma)
     info.lvls = (68.26, 95.4, 99.7)
@@ -198,7 +199,7 @@ def analyze(command_line):
     for i in range(len(info.plotted_parameters)):
         indices.append(info.ref_names.index(info.plotted_parameters[i]))
 
-    print('--> Writing .info and .tex files')
+    warnings.warn('--> Writing .info and .tex files')
     # Write down to the .h_info file all necessary information
     info.h_info.write(' param names\t:\t')
     info.v_info_names = []
@@ -208,7 +209,7 @@ def analyze(command_line):
                     (info.scales[i, i]) < 0.01):
                 string = ' %0.e%s' % (
                     1./info.scales[i, i], info.ref_names[i])
-            elif (float(info.scales[i, i] < 1)):
+            elif float(info.scales[i, i]) < 1:
                 string = ' %2d%s' % (
                     1./info.scales[i, i], info.ref_names[i])
             else:
@@ -221,37 +222,37 @@ def analyze(command_line):
 
     write_h(info.h_info, indices, 'R-1 values', '%.6f', info.R)
     write_h(info.h_info, indices, 'Best Fit  ', '%.6e',
-                 chain[a[0], 2:])
+            chain[a[0], 2:])
     write_h(info.h_info, indices, 'mean      ', '%.6e', info.mean)
     write_h(info.h_info, indices, 'sigma     ', '%.6e',
-                 (info.bounds[:, 0, 1]-info.bounds[:, 0, 0])/2.)
+            (info.bounds[:, 0, 1]-info.bounds[:, 0, 0])/2.)
     info.h_info.write('\n')
     write_h(info.h_info, indices, '1-sigma - ', '%.6e',
-                 info.bounds[:, 0, 0])
+            info.bounds[:, 0, 0])
     write_h(info.h_info, indices, '1-sigma + ', '%.6e',
-                 info.bounds[:, 0, 1])
+            info.bounds[:, 0, 1])
     write_h(info.h_info, indices, '2-sigma - ', '%.6e',
-                 info.bounds[:, 1, 0])
+            info.bounds[:, 1, 0])
     write_h(info.h_info, indices, '2-sigma + ', '%.6e',
-                 info.bounds[:, 1, 1])
+            info.bounds[:, 1, 1])
     write_h(info.h_info, indices, '3-sigma - ', '%.6e',
-                 info.bounds[:, 2, 0])
+            info.bounds[:, 2, 0])
     write_h(info.h_info, indices, '3-sigma + ', '%.6e',
-                 info.bounds[:, 2, 1])
+            info.bounds[:, 2, 1])
     # bounds
     info.h_info.write('\n')
     write_h(info.h_info, indices, '1-sigma > ', '%.6e',
-                 info.mean+info.bounds[:, 0, 0])
+            info.mean+info.bounds[:, 0, 0])
     write_h(info.h_info, indices, '1-sigma < ', '%.6e',
-                 info.mean+info.bounds[:, 0, 1])
+            info.mean+info.bounds[:, 0, 1])
     write_h(info.h_info, indices, '2-sigma > ', '%.6e',
-                 info.mean+info.bounds[:, 1, 0])
+            info.mean+info.bounds[:, 1, 0])
     write_h(info.h_info, indices, '2-sigma < ', '%.6e',
-                 info.mean+info.bounds[:, 1, 1])
+            info.mean+info.bounds[:, 1, 1])
     write_h(info.h_info, indices, '3-sigma > ', '%.6e',
-                 info.mean+info.bounds[:, 2, 0])
+            info.mean+info.bounds[:, 2, 0])
     write_h(info.h_info, indices, '3-sigma < ', '%.6e',
-                 info.mean+info.bounds[:, 2, 1])
+            info.mean+info.bounds[:, 2, 1])
 
     info.bestfit = np.zeros(len(info.ref_names))
     for i in range(len(info.ref_names)):
@@ -282,7 +283,7 @@ def analyze(command_line):
     write_tex(info, indices)
 
 
-def prepare(info, Files, is_main_chain=True):
+def prepare(info, files, is_main_chain=True):
     """
     Scan the whole input folder, and include all chains in it.
 
@@ -310,9 +311,9 @@ def prepare(info, Files, is_main_chain=True):
     """
 
     # First test if the folder is a Nested Sampling folder
-    if os.path.isdir(Files[0]):
+    if os.path.isdir(files[0]):
         folder = os.path.join(
-            *[elem for elem in Files[0].split(os.path.sep) if elem])
+            *[elem for elem in files[0].split(os.path.sep) if elem])
         if folder.split(os.path.sep)[-1] == 'NS':
             ns_subfolder = folder
             basename = os.path.join(
@@ -336,35 +337,35 @@ def prepare(info, Files, is_main_chain=True):
                 return False
 
     # If the input command was an entire folder, then grab everything in it
-    if os.path.isdir(Files[0]):
-        if Files[0][-1] != '/':
-            Files[0] += '/'
-        folder = Files[0]
-        Files = [
+    if os.path.isdir(files[0]):
+        if files[0][-1] != '/':
+            files[0] += '/'
+        folder = files[0]
+        files = [
             folder+elem for elem in os.listdir(folder)
-            if (elem.find('.txt') != -1 and elem.find('__') != -1)]
+            if elem.find('.txt') != -1 and elem.find('__') != -1]
 
     # Else, one needs to recover the folder, depending on the case
     else:
-        if (len(Files[0].split('/')) == 0 or
-                (Files[0].split('/')[0] == '.')):
+        if (len(files[0].split('/')) == 0 or
+                (files[0].split('/')[0] == '.')):
             folder = './'
         else:
             folder = ''
-            for i in range(len(Files[0].split('/')[:-1])):
-                folder += Files[0].split('/')[i]+'/'
+            for i in range(len(files[0].split('/')[:-1])):
+                folder += files[0].split('/')[i]+'/'
 
     # Remove too small files to potentially eliminate any problems of
     # chains being too short, and sub-folders (as the ./plots/ one that
     # will be created after the first run anyway
-    for elem in np.copy(Files):
+    for elem in np.copy(files):
         if os.path.isdir('{0}'.format(elem)) is True:
-            Files.remove(elem)
+            files.remove(elem)
         # Note, this limit with the size is taylored for not too huge
         # number of parameters. Be aware that it might not work when having
         # more than, say, 20 free parameters.
         elif os.path.getsize(elem) < 600:
-            Files.remove(elem)
+            files.remove(elem)
 
     # Check if the log.param file exists
     if os.path.isfile(folder+'log.param') is True:
@@ -381,7 +382,7 @@ def prepare(info, Files, is_main_chain=True):
 
     # If the folder has no subdirectory, then go for a simple infoname,
     # otherwise, call it with the last name
-    if (len(folder.split('/')) <= 2 and folder.split('/')[-1] == ''):
+    if len(folder.split('/')) <= 2 and folder.split('/')[-1] == '':
         v_infoname = folder+folder.rstrip('/')+'.v_info'
         h_infoname = folder+folder.rstrip('/')+'.h_info'
         texname = folder+folder.rstrip('/')+'.tex'
@@ -404,21 +405,21 @@ def prepare(info, Files, is_main_chain=True):
         info.tex = open(texname, 'w')
         info.cov = open(covname, 'w')
         info.log = open(logname, 'w')
-        info.bf = open(bfname, 'w')
+        info.best_fit = open(bfname, 'w')
         info.param = param
 
-        info.Files = Files
+        info.files = files
         info.folder = folder
         return True
     else:
-        return Files, folder, param
+        return files, folder, param
 
 
-def convergence(info, is_main_chain=True, Files=None, param=None):
+def convergence(info, is_main_chain=True, files=None, param=None):
     """
     Compute convergence for the desired chains
 
-    Chains have been stored in the info instance of :class:`information`. If
+    Chains have been stored in the info instance of :class:`Information`. If
     this function is called for another chain than the main one (with the
     *comp* command line argument), it requires some extra keyword arguments.
     """
@@ -440,7 +441,7 @@ def convergence(info, is_main_chain=True, Files=None, param=None):
     plotted_parameters = []
 
     if is_main_chain:
-        Files = info.Files
+        files = info.files
         param = info.param
 
     # Recovering parameter names and scales, creating tex names,
@@ -498,24 +499,24 @@ def convergence(info, is_main_chain=True, Files=None, param=None):
 
     # Circle through all files to find the maximum (and largest filename)
     length_of_largest_filename = 0
-    print('--> Finding global maximum of likelihood')
-    for File in Files:
-        i = Files.index(File)
-        if len(File.split('/')[-1]) > length_of_largest_filename:
-            length_of_largest_filename = len(File.split('/')[-1])
-        # cheese will brutally contain everything in the chain File being
-        # scanned Small trick, to analyze CosmoMC files directly, since the
+    warnings.warn('--> Finding global maximum of likelihood')
+    for chain_file in files:
+        i = files.index(chain_file)
+        if len(chain_file.split('/')[-1]) > length_of_largest_filename:
+            length_of_largest_filename = len(chain_file.split('/')[-1])
+        # cheese will brutally contain everything in the file chain_file being
+        # scanned. Small trick, to analyze CosmoMC files directly, since the
         # convention of spacing is different, we have to test for the
-        # configuration of the line. If it starts with three blanck spaces,
-        # it will be a CosmoMC file, so every element will be separated
-        # with three spaces
+        # configuration of the line. If it starts with three blanck spaces, it
+        # will be a CosmoMC file, so every element will be separated with three
+        # spaces
         if line.startswith("   "):
             cheese = (np.array([[float(elem) for elem in line[4:].split()]
-                                for line in open(File, 'r')]))
+                                for line in open(chain_file, 'r')]))
         # else it is the normal Monte Python convention
         else:
             cheese = (np.array([[float(elem) for elem in line.split()]
-                                for line in open(File, 'r')]))
+                                for line in open(chain_file, 'r')]))
 
         # If the file contains a line with a different number of elements, the
         # previous array generation will fail, and will not have the correct
@@ -529,9 +530,9 @@ def convergence(info, is_main_chain=True, Files=None, param=None):
                 "Error while scanning %s. This file most probably contains " +
                 "an incomplete line, rendering the analysis impossible. " +
                 "I think that the following line(s) is(are) wrong:\n %s" % (
-                    File, '\n '.join(
+                    chain_file, '\n '.join(
                         ['-> %s' % line for line in
-                         open(File, 'r') if
+                         open(chain_file, 'r') if
                          len(line.split()) != len(backup_names)+2])))
 
     # beware, it is the min because we are talking about
@@ -548,34 +549,34 @@ def convergence(info, is_main_chain=True, Files=None, param=None):
     info.max_lkl = max_lkl
 
     # Restarting the circling through files
-    for File in Files:
-        i = Files.index(File)
+    for chain_file in files:
+        i = files.index(chain_file)
         # To improve presentation, and print only once the full path of the
         # analyzed folder, we recover the length of the path name, and
         # create an empty complementary string of this length
-        index_slash = File.rfind('/')
+        index_slash = chain_file.rfind('/')
         complementary_string = ''
         for j in range(index_slash+2):
             complementary_string += ' '
         if i == 0:
-            exec "print '--> Scanning file %-{0}s' % File,".format(
+            exec "print '--> Scanning file %-{0}s' % chain_file,".format(
                 length_of_largest_filename)
         else:
-            exec "print '                 %s%-{0}s' % (complementary_string,File.split('/')[-1]),".format(
+            exec "print '                 %s%-{0}s' % (complementary_string,chain_file.split('/')[-1]),".format(
                 length_of_largest_filename)
-        # cheese will brutally contain everything in the chain File being
+        # cheese will brutally contain everything in the chain chain_file being
         # scanned
         cheese = (np.array([[float(elem) for elem in line.split()]
-                            for line in open(File, 'r')]))
+                            for line in open(chain_file, 'r')]))
         local_max_lkl = min(cheese[:, 1])
         # beware, it is the min because we are talking about
         # '- log likelihood'
         line_count = 0
-        for line in open(File, 'r'):
+        for line in open(chain_file, 'r'):
             line_count += 1
         if is_main_chain:
             info.log.write("%s\t Number of steps:%d\tSteps accepted:%d\tacc = %.2g\tmin(-loglike) = %.2f " % (
-                File, sum(cheese[:, 0]), line_count,
+                chain_file, sum(cheese[:, 0]), line_count,
                 line_count*1.0/sum(cheese[:, 0]), local_max_lkl))
             info.log.write("\n")
             total_number_of_steps += sum(cheese[:, 0])
@@ -586,9 +587,9 @@ def convergence(info, is_main_chain=True, Files=None, param=None):
         try:
             while cheese[start, 1] > max_lkl+3:
                 start += 1
-            print('  \t: Removed {0}\t points of burn-in'.format(start))
+            print '  \t: Removed {0}\t points of burn-in'.format(start)
         except IndexError:
-            print('  \t: Removed everything: chain not converged')
+            print '  \t: Removed everything: chain not converged'
 
         # ham contains cheese without the burn-in, if there are any points
         # left (more than 5)
@@ -596,7 +597,7 @@ def convergence(info, is_main_chain=True, Files=None, param=None):
             ham = np.copy(cheese[start::])
 
             # Deal with single file case
-            if len(Files) == 1:
+            if len(files) == 1:
                 warnings.warn("Convergence computed for a single file")
                 bacon = np.copy(cheese[::3, :])
                 egg = np.copy(cheese[1::3, :])
@@ -640,7 +641,7 @@ def convergence(info, is_main_chain=True, Files=None, param=None):
     total[0] = np.sum(total[1:])
 
     # Compute mean and variance for each chain
-    print('--> Computing mean values')
+    print '--> Computing mean values'
     for i in range(np.shape(mean)[1]):
         for j in range(len(spam)):
             submean = np.sum(spam[j][:, 0]*spam[j][:, i+2])
@@ -648,7 +649,7 @@ def convergence(info, is_main_chain=True, Files=None, param=None):
             mean[0, i] += submean
         mean[0, i] /= total[0]
 
-    print('--> Computing variance')
+    print '--> Computing variance'
     for i in range(np.shape(mean)[1]):
         for j in range(len(spam)):
             var[0, i] += np.sum(
@@ -670,7 +671,7 @@ def convergence(info, is_main_chain=True, Files=None, param=None):
     within = 0
     between = 0
 
-    print('--> Computing convergence')
+    print '--> Computing convergence'
     for i in range(np.shape(mean)[1]):
         for j in range(len(spam)):
             within += total[j+1]*var[j+1, i]
@@ -718,6 +719,7 @@ def convergence(info, is_main_chain=True, Files=None, param=None):
     else:
         return spam, ref_names, tex_names, \
             backup_names, plotted_parameters, boundaries, mean
+
 
 def plot_triangle(
         info, chain, command_line, bin_number=20, scales=(),
@@ -778,8 +780,8 @@ def plot_triangle(
         scales = np.ones(n)
     scales = np.array(scales)
 
-    mean = info.mean*scales
-    var = info.var*scales**2
+    #mean = info.mean*scales
+    #var = info.var*scales**2
 
     # 1D plot
     max_values = np.max(chain[:, 2:], axis=0)*scales
@@ -857,7 +859,7 @@ def plot_triangle(
             len(info.plotted_parameters)*1.0/num_columns))
 
     # Actual plotting
-    print('-----------------------------------------------')
+    warnings.warn('-----------------------------------------------')
     for i in range(len(info.plotted_parameters)):
 
         print ' -> Computing histograms for ',\
@@ -917,7 +919,7 @@ def plot_triangle(
         if bounds is False:
             # print out the faulty histogram (try reducing the binnumber to
             # avoir this)
-            print(hist)
+            print hist
         else:
             for elem in bounds:
                 for j in (0, 1):
@@ -928,7 +930,7 @@ def plot_triangle(
             comp_bounds = minimum_credible_intervals(
                 comp_hist, comp_bincenters, lvls)
             if comp_bounds is False:
-                print(comp_hist)
+                print comp_hist
             else:
                 for elem in comp_bounds:
                     for j in (0, 1):
@@ -985,7 +987,7 @@ def plot_triangle(
                 linewidth=2, ls='-')
 
         # mean likelihood (optional, if comparison, it will not be printed)
-        if (plot_2d and command_line.mean_likelihood):
+        if plot_2d and command_line.mean_likelihood:
             try:
                 lkl_mean = np.zeros(len(bincenters), 'float64')
                 norm = np.zeros(len(bincenters), 'float64')
@@ -1068,7 +1070,7 @@ def plot_triangle(
                 # Benabed). Note that only the 1 and 2 sigma contours are
                 # displayed (due to the line with lvls[:2])
                 try:
-                    cs = ax2dsub.contourf(
+                    contours = ax2dsub.contourf(
                         y_centers, x_centers, n,
                         extent=extent, levels=ctr_level(n, lvls[:2]),
                         zorder=5, cmap=plt.cm.autumn_r)
@@ -1103,7 +1105,7 @@ def plot_triangle(
                             info.tex_names[second_index]),
                         fontsize=fontsize1d)
                     try:
-                        cs = ax_temp.contourf(
+                        contours = ax_temp.contourf(
                             y_centers, x_centers, n, extent=extent,
                             levels=ctr_level(n, lvls[:2]),  # colors="k",
                             zorder=5, cmap=plt.cm.autumn_r)
@@ -1131,7 +1133,7 @@ def plot_triangle(
                     plot_file.write(
                         '# contour for confidence level {0}\n'.format(
                             levels[1]))
-                    for elem in cs.collections[0].get_paths():
+                    for elem in contours.collections[0].get_paths():
                         points = elem.vertices
                         for k in range(np.shape(points)[0]):
                             plot_file.write("%.8g\t %.8g\n" % (
@@ -1141,7 +1143,7 @@ def plot_triangle(
                     plot_file.write(
                         '# contour for confidence level {0}\n'.format(
                             levels[0]))
-                    for elem in cs.collections[1].get_paths():
+                    for elem in contours.collections[1].get_paths():
                         points = elem.vertices
                         for k in range(np.shape(points)[0]):
                             plot_file.write("%.8g\t %.8g\n" % (
@@ -1174,7 +1176,7 @@ def plot_triangle(
             comp_bounds = minimum_credible_intervals(
                 comp_hist, comp_bincenters, lvls)
             if comp_bounds is False:
-                print(comp_hist)
+                print comp_hist
             else:
                 for elem in comp_bounds:
                     for j in (0, 1):
@@ -1200,8 +1202,8 @@ def plot_triangle(
     # If plots/ folder in output folder does not exist, create it
     if os.path.isdir(info.folder+'plots') is False:
         os.mkdir(info.folder+'plots')
-    print('-----------------------------------------------')
-    print('--> Saving figures to .{0} files'.format(info.extension))
+    warnings.warn('-----------------------------------------------')
+    warnings.warn('--> Saving figures to .{0} files'.format(info.extension))
     if plot_2d:
         fig2d.savefig(
             info.folder+'plots/{0}_triangle.{1}'.format(
@@ -1231,7 +1233,7 @@ def ctr_level(histogram2d, lvl, infinite=False):
     cum_hist /= cum_hist[-1]
 
     alvl = np.searchsorted(cum_hist, lvl)[::-1]
-    clist = [0]+[hist[-ii] for ii in alvl]+[np.max(hist)]
+    clist = [0]+[hist[-i] for i in alvl]+[np.max(hist)]
     if not infinite:
         return clist[1:]
     return clist
@@ -1256,11 +1258,11 @@ def minimum_credible_intervals(histogram, bincenters, levels):
         water_level_down = min(histogram)*1.0
         top = 0.
 
-        ii = 0
-        while ((abs((top/norm)-level) > 0.0001) and not failed):
+        iterations = 0
+        while (abs((top/norm)-level) > 0.0001) and not failed:
             top = 0.
             water_level = (water_level_up + water_level_down)/2.
-            ontop = [elem for elem in histogram if elem > water_level]
+            #ontop = [elem for elem in histogram if elem > water_level]
             indices = [i for i in range(len(histogram))
                        if histogram[i] > water_level]
             # check for multimodal posteriors
@@ -1270,33 +1272,42 @@ def minimum_credible_intervals(histogram, bincenters, levels):
                     "for this multimodal posterior")
                 failed = True
                 break
-            top = (sum(histogram[indices])-0.5*(histogram[indices[0]]+histogram[indices[-1]]))*(delta)
+            top = (sum(histogram[indices]) -
+                   0.5*(histogram[indices[0]]+histogram[indices[-1]]))*(delta)
 
             # left
             if indices[0] > 0:
-                top += 0.5 * (water_level + histogram[indices[0]]) * delta * (histogram[indices[0]]-water_level)/(histogram[indices[0]]-histogram[indices[0]-1])
+                top += (0.5*(water_level+histogram[indices[0]]) *
+                        delta*(histogram[indices[0]]-water_level) /
+                        (histogram[indices[0]]-histogram[indices[0]-1]))
             else:
                 if (left_edge > water_level):
                     top += 0.25*(left_edge+histogram[indices[0]])*delta
                 else:
-                    top += 0.25 * (water_level + histogram[indices[0]]) * delta * (histogram[indices[0]]-water_level)/(histogram[indices[0]]-left_edge)
+                    top += (0.25*(water_level + histogram[indices[0]]) *
+                            delta*(histogram[indices[0]]-water_level) /
+                            (histogram[indices[0]]-left_edge))
 
             # right
             if indices[-1] < (len(histogram)-1):
-                top += 0.5 * (water_level + histogram[indices[-1]]) * (delta)*(histogram[indices[-1]]-water_level)/(histogram[indices[-1]]-histogram[indices[-1]+1])
+                top += (0.5*(water_level + histogram[indices[-1]]) *
+                        delta*(histogram[indices[-1]]-water_level) /
+                        (histogram[indices[-1]]-histogram[indices[-1]+1]))
             else:
                 if (right_edge > water_level):
                     top += 0.25*(right_edge+histogram[indices[-1]])*delta
                 else:
-                    top += 0.25 * (water_level + histogram[indices[-1]]) * delta * (histogram[indices[-1]]-water_level)/(histogram[indices[-1]]-right_edge)
+                    top += (0.25*(water_level + histogram[indices[-1]]) *
+                            delta * (histogram[indices[-1]]-water_level) /
+                            (histogram[indices[-1]]-right_edge))
 
             if top/norm >= level:
                 water_level_down = water_level
             else:
                 water_level_up = water_level
             # safeguard, just in case
-            ii += 1
-            if (ii > 1000):
+            iterations += 1
+            if (iterations > 1000):
                 warnings.warn(
                     "the loop to check for sigma deviations was " +
                     "taking too long to converge")
@@ -1333,18 +1344,18 @@ def minimum_credible_intervals(histogram, bincenters, levels):
     return bounds
 
 
-def write_h(file, indices, name, string, quantity, modifiers=None):
+def write_h(info_file, indices, name, string, quantity, modifiers=None):
     """
     Write one horizontal line of output
 
     """
-    file.write('\n '+name+'\t:\t')
+    info_file.write('\n '+name+'\t:\t')
     for i in indices:
         if quantity[i] >= 0:
             space_string = ' '
         else:
             space_string = ''
-        file.write(space_string+string % quantity[i]+'\t')
+        info_file.write(space_string+string % quantity[i]+'\t')
 
 
 def write_tex(info, indices):
@@ -1409,7 +1420,7 @@ def get_fontsize(diag_length):
     return fontsize, ticksize
 
 
-class information(object):
+class Information(object):
     """
     Hold all information for analyzing runs
 
@@ -1442,3 +1453,10 @@ class information(object):
         name, and the value its scale.
 
         """
+
+        # Follows a bunch of initialisation to provide default members
+        self.ref_names, self.backup_names = [], []
+        self.scales, self.plotted_parameters = [], []
+        self.spam = []
+        self.cov, self.v_info, self.h_info, self.R = None, None, None, None
+        self.best_fit = None
