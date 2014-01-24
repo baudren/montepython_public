@@ -22,6 +22,8 @@ import io_mp
 import numpy as np
 import sys
 
+from classy import CosmoSevereError, CosmoComputationError
+
 
 def run(cosmo, data, command_line):
     """
@@ -340,7 +342,7 @@ def compute_lkl(cosmo, data):
 
     # If the cosmological module has already been called once, and if the
     # cosmological parameters have changed, then clean up, and compute.
-    if (cosmo.state is True and data.need_cosmo_update is True):
+    if cosmo.state is True and data.need_cosmo_update is True:
         cosmo._struct_cleanup(set(["lensing", "nonlinear", "spectra",
                                    "primordial", "transfer", "perturb",
                                    "thermodynamics", "background", "bessel"]))
@@ -361,20 +363,20 @@ def compute_lkl(cosmo, data):
 
         # In classy.pyx, we made use of two type of python errors, to handle
         # two different situations.
-        # - AttributeError is returned if a parameter was not properly set
+        # - CosmoSevereError is returned if a parameter was not properly set
         # during the initialisation (for instance, you entered Ommega_cdm
         # instead of Omega_cdm).  Then, the code exits, to prevent running with
         # imaginary parameters. This behaviour is also used in case you want to
         # kill the process.
-        # - NameError is returned if Class fails to compute the output given
-        # the parameter values. This will be considered as a valid point, but
-        # with minimum likelihood, so will be rejected, resulting in the choice
-        # of a new point.
+        # - CosmoComputationError is returned if Class fails to compute the
+        # output given the parameter values. This will be considered as a valid
+        # point, but with minimum likelihood, so will be rejected, resulting in
+        # the choice of a new point.
         try:
             cosmo.compute(["lensing"])
-        except NameError:
+        except CosmoComputationError:
             return data.boundary_loglike
-        except AttributeError:
+        except CosmoSevereError:
             raise io_mp.CosmologicalModuleError(
                 "Something went terribly wrong with CLASS")
         except KeyboardInterrupt:
