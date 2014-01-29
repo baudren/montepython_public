@@ -226,18 +226,20 @@ def create_parser():
                         type=float, dest='NS_option_evidence_tolerance', default=-1)
     # -- Importance Nested Sampling
     parser.add_argument('--NS_option_importance_nested_sampling',
-                        action='store_true',
+                        metavar='True or False', type=bool,
                         dest='NS_option_importance_nested_sampling', default=-1)
     # -- Constant efficiency mode
     parser.add_argument('--NS_option_const_efficiency_mode',
-                        action='store_true', dest='NS_option_const_efficiency_mode',
+                        metavar='True or False', type=bool,
+                        dest='NS_option_const_efficiency_mode',
                         default=-1)
     # -- Minimum log-evidence to consider
     parser.add_argument('--NS_option_log_zero',
                         metavar='Minimum log-evidence to consider',
                         type=float, dest='NS_option_log_zero', default=-1)
     # -- Maximum number of iterations
-    parser.add_argument('--NS_option_max_iter', metavar='Maximum number of iterations',
+    parser.add_argument('--NS_option_max_iter',
+                        metavar='Maximum number of iterations',
                         type=int, dest='NS_option_max_iter', default=-1)
     # -- Random seed
     parser.add_argument('--NS_option_seed', metavar='Random seed',
@@ -245,7 +247,30 @@ def create_parser():
     # -- Number of iterations between updates
     parser.add_argument('--NS_option_n_iter_before_update',
                         metavar='Number of iterations between updates',
-                        type=int, dest='NS_option_n_iter_before_update', default=-1)
+                        type=int, dest='NS_option_n_iter_before_update',
+                        default=-1)
+    # -- Multi-modal: perform mode separation
+    parser.add_argument('--NS_option_multimodal',
+                        metavar='True or False', type=bool,
+                        dest='NS_option_multimodal', default=False)
+    # -- Multi-modal: number of parameters used for the clustering
+    parser.add_argument('--NS_option_n_clustering_params',
+                        metavar=('Number of parameters, starting from the first'+
+                                 'one in the parameter file,'+
+                                 'to be used in the mode separation'),
+                        type=int, dest='NS_option_n_clustering_params',
+                        default=-1)
+    # -- Multi-modal: maximum number of modes to consider
+    parser.add_argument('--NS_option_max_modes',
+                        metavar='Maximum number of modes to consider',
+                        type=int, dest='NS_option_max_modes',
+                        default=-1)
+    # -- Multi-modal: minimum value of the evidence to conside a mode
+    parser.add_argument('--NS_option_mode_tolerance',
+                        metavar=('Minimum value of the log-evidence'+
+                                 'for a mode to be considered'),
+                        type=float, dest='NS_option_mode_tolerance', default=-1)
+
     return parser
 
 

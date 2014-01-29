@@ -19,7 +19,7 @@ import numpy as np
 import os
 import io_mp
 import sampler
-
+import warnings
 
 def from_ns_output_to_chains(folder, basename):
     """
@@ -172,13 +172,24 @@ def run(cosmo, data, command_line):
     # -- User-defined parameters
     parameters = ['n_live_points', 'sampling_efficiency', 'evidence_tolerance',
                   'importance_nested_sampling', 'const_efficiency_mode',
-                  'log_zero', 'max_iter', 'seed', 'n_iter_before_update']
+                  'log_zero', 'max_iter', 'seed', 'n_iter_before_update',
+                  'multimodal', 'n_clustering_params', 'max_modes',
+                  'mode_tolerance']
     prefix = 'NS_option_'
     for param in parameters:
         value = getattr(command_line, prefix+param)
         if value != -1:
             data.ns_parameters[param] = value
         # else: don't define them -> use PyMultiNest default value
+
+    # One caveat: If multi-modal sampling is requested, Importance NS is disabled
+    try:
+        if data.ns_parameters['multimodal']:
+            data.ns_parameters['importance_nested_sampling'] = False
+            warnings.warn('Multi-modal sampling has been requested, '+
+                          'so Importance Nested Sampling has been disabled')
+    except KeyError:
+        pass        
 
     # Launch MultiNest, and recover the output code
     output = pymultinest.run(loglike, prior, **data.ns_parameters)
