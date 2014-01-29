@@ -21,6 +21,107 @@ import io_mp
 import sampler
 import warnings
 
+def from_ns_output_to_chains_MULTIMODAL(data, command_line):
+    """
+    Translate the output of MultiNest into readable output for Monte Python
+
+    This routine will be called after the MultiNest run has been successfully
+    completed.
+
+    """
+    # Open the 'stats.dat' file to see what happened
+    stats_name = data.ns_parameters['outputfiles_basename'] + 'stats.dat'
+    with open(stats_name) as stats_file:
+        line = stats_file.next()
+        # Retrieve local evidence
+        while not "Nested Sampling Global Log-Evidence" in line:
+            line = stats_file.next()
+        global_logZ, global_logZ_err = [float(a.strip()) for a in
+                                        line.split(":")[1].split("+/-")]
+        # How many modes
+        while not "Total Modes Found" in line:
+            line = stats_file.next()
+        n_modes = int(line.split(":")[1].strip())
+
+    # Prepare the accepted-points file -- modes are separated by 2 line breaks
+    samples_name = (data.ns_parameters['outputfiles_basename'] +
+                    'post_separate.dat')
+    with open(samples_name, 'r') as samples_file:
+        mode_lines = [a for a in ''.join(samples_file.readlines()).split('\n\n')
+                      if a != '']
+        assert len(mode_lines) == n_modes, "Something is wrong..."
+
+    # Process each mode:
+    for i in range(n_modes):
+        # Create subfolder
+        mode_subfolder = 'mode_'+str(i+1).zfill(len(str(n_modes)))
+        mode_subfolder = os.path.join(command_line.folder, mode_subfolder)
+        if not os.path.exists(mode_subfolder):
+            os.makedirs(mode_subfolder)
+        # Add points of ACCEPTED
+        mode_data = np.array(mode_lines[i].split(), dtype='float64')
+        columns = 2+data.ns_parameters['n_params']
+        mode_data = mode_data.reshape([mode_data.shape[0]/columns, columns])
+
+        # NOW REARRANGE; WEIGHT; ETC; ETC
+
+
+
+
+
+
+
+
+    quit()
+
+
+    exit()
+    
+    
+    # First, take care of post_equal_weights (accepted points)
+    accepted_chain = os.path.join(folder,
+                                  'chain_NS__accepted.txt')
+    rejected_chain = os.path.join(folder,
+                                  'chain_NS__rejected.txt')
+
+    # creating chain of accepted points (straightforward reshuffling of
+    # columns)
+    with open(basename+'post_equal_weights.dat', 'r') as input_file:
+        output_file = open(accepted_chain, 'w')
+        array = np.loadtxt(input_file)
+        output_array = np.ones((np.shape(array)[0], np.shape(array)[1]+1))
+        output_array[:, 1] = -array[:, -1]
+        output_array[:, 2:] = array[:, :-1]
+        np.savetxt(
+            output_file, output_array,
+            fmt='%i '+' '.join(['%.6e' for _ in
+                               range(np.shape(array)[1])]))
+        output_file.close()
+
+    # Extracting log evidence
+    with open(basename+'stats.dat') as input_file:
+        lines = [line for line in input_file if 'Global Log-Evidence' in line]
+        if len(lines) > 1:
+            lines = [line for line in lines if 'Importance' in line]
+        log_evidence = float(lines[0].split(':')[1].split('+/-')[0])
+
+    # Creating chain from rejected points, with some interpretation of the
+    # weight associated to each point arXiv:0809.3437 sec 3
+    with open(basename+'ev.dat', 'r') as input_file:
+        output = open(rejected_chain, 'w')
+        array = np.loadtxt(input_file)
+        output_array = np.zeros((np.shape(array)[0], np.shape(array)[1]-1))
+        output_array[:, 0] = np.exp(array[:, -3]+array[:, -2]-log_evidence)
+        output_array[:, 0] *= np.sum(output_array[:, 0])*np.shape(array)[0]
+        output_array[:, 1] = -array[:, -3]
+        output_array[:, 2:] = array[:, :-3]
+        np.savetxt(
+            output, output_array,
+            fmt=' '.join(['%.6e' for _ in
+                         range(np.shape(output_array)[1])]))
+        output.close()
+
+
 def from_ns_output_to_chains(folder, basename):
     """
     Translate the output of MultiNest into readable output for Monte Python
@@ -192,10 +293,14 @@ def run(cosmo, data, command_line):
         pass        
 
     # Launch MultiNest, and recover the output code
-    output = pymultinest.run(loglike, prior, **data.ns_parameters)
+#    output = pymultinest.run(loglike, prior, **data.ns_parameters)
+    output = None
 
     # Assuming this worked, i.e. if output is `None`, translate the output
     # ev.txt into the same format as standard Monte Python chains for further
     # analysis.
     if output is None:
-        from_ns_output_to_chains(command_line, basename)
+        if data.ns_parameters['multimodal']:
+            from_ns_output_to_chains_MULTIMODAL(data, command_line)
+        else:
+            from_ns_output_to_chains(command_line, data, basename)
