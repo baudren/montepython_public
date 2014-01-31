@@ -21,7 +21,7 @@ import io_mp
 import sampler
 import warnings
 
-def from_ns_output_to_chains_MULTIMODAL(data, command_line):
+def from_ns_output_to_chains(data, command_line):
     """
     Translate the output of MultiNest into readable output for Monte Python
 
@@ -34,15 +34,21 @@ def from_ns_output_to_chains_MULTIMODAL(data, command_line):
     nested sampling, and the same for the sigma. The minimum and maximum value
     are cropped to the extent of the modes in the case of the parameters used
     for the mode separation, and preserved in the rest.
+
+    The mono-modal case is treated as a special case of the multi-modal one.
+
     """
+    multimodal = data.ns_parameters.get('multimodal')
+
     # Open the 'stats.dat' file to see what happened and retrieve some info
     stats_name = data.ns_parameters['outputfiles_basename'] + 'stats.dat'
     stats_file = open(stats_name, 'r')
     lines = stats_file.readlines()
     stats_file.close()
     # Mode-separated info
-    stats_mode_lines = {}
     i = 0
+    n_modes = 0
+    stats_mode_lines = {0:[]}
     for line in lines:
         if 'Nested Sampling Global Log-Evidence' in line:
             global_logZ, global_logZ_err = [float(a.strip()) for a in
@@ -52,20 +58,31 @@ def from_ns_output_to_chains_MULTIMODAL(data, command_line):
         if line[:4] == 'Mode':
             i += 1
             stats_mode_lines[i] = []
-        if i:
-            stats_mode_lines[i].append(line)
+        # This stores the info of each mode i>1 in stats_mode_lines[i]
+        #    and in i=0 the lines previous to the modes, in the multi-modal case
+        #    or the info of the only mode, in the mono-modal case
+        stats_mode_lines[i].append(line)
     assert n_modes == max(stats_mode_lines.keys()), (
         'Something is wrong... (strange error n.1)')
 
     # Prepare the accepted-points file -- modes are separated by 2 line breaks
+    if multimodal:
+        accepted_name = 'post_separate.dat'
+    else:
+        accepted_name = '.txt'
     accepted_name = (data.ns_parameters['outputfiles_basename'] +
-                    'post_separate.dat')
+                     accepted_name)
     with open(accepted_name, 'r') as accepted_file:
         mode_lines = [a for a in ''.join(accepted_file.readlines()).split('\n\n')
                       if a != '']
+    if multimodal:
         assert len(mode_lines) == n_modes, 'Something is wrong... (strange error n.2)'
     accepted_chain_name = 'chain_NS__accepted.txt'
-   
+
+
+    # TODO: prepare total and rejected chain
+
+  
     # Preparing log.param files of modes
     with open(os.path.join(command_line.folder, 'log.param'), 'r') as log_file:
         log_lines = log_file.readlines()
@@ -85,20 +102,26 @@ def from_ns_output_to_chains_MULTIMODAL(data, command_line):
 
     # Parameters to cut: clustering_params, if exists, otherwise varying_params
     cut_params = data.ns_parameters.get('n_clustering_params')
-    if cut_params:
+    if cut_params and multimodal:
         cut_param_names = varying_param_names[:cut_params]
-    else:
+    elif multimodal:
         cut_param_names = varying_param_names
-
-    # TODO: prepare total and rejected chain
+    # mono-modal case
+    else:
+        cut_param_names = []
 
     # Process each mode:
-    for i in range(n_modes):
+    ini = 1 if multimodal else 0
+    for i in range(ini, 1+n_modes):
         # Create subfolder
-        mode_subfolder = 'mode_'+str(i+1).zfill(len(str(n_modes)))
+        if multimodal:
+            mode_subfolder = 'mode_'+str(i).zfill(len(str(n_modes)))
+        else:
+            mode_subfolder = ''
         mode_subfolder = os.path.join(command_line.folder, mode_subfolder)
         if not os.path.exists(mode_subfolder):
             os.makedirs(mode_subfolder)
+
         # Add ACCEPTED points
         mode_data = np.array(mode_lines[i].split(), dtype='float64')
         columns = 2+data.ns_parameters['n_params']
@@ -108,9 +131,10 @@ def from_ns_output_to_chains_MULTIMODAL(data, command_line):
         mode_data[:, 1] = mode_data[: ,1] / 2.
         np.savetxt(os.path.join(mode_subfolder, accepted_chain_name),
                    mode_data, fmt='%.6e')
+
         # Get the necessary info of the parameters:
         #  -- max_posterior (MAP), sigma  <---  stats.dat file
-        for j, line in enumerate(stats_mode_lines[i+1]):
+        for j, line in enumerate(stats_mode_lines[i]):
             if 'Sigma' in line:
                 line_sigma = j+1
             if 'MAP' in line:
@@ -118,10 +142,10 @@ def from_ns_output_to_chains_MULTIMODAL(data, command_line):
         MAPs   = {}
         sigmas = {}
         for j, param in enumerate(varying_param_names):
-            n, MAP = stats_mode_lines[i+1][line_MAP+j].split()
+            n, MAP = stats_mode_lines[i][line_MAP+j].split()
             assert int(n) == j+1,  'Something is wrong... (strange error n.3)'
             MAPs[param] = MAP
-            n, mean, sigma = stats_mode_lines[i+1][line_sigma+j].split()
+            n, mean, sigma = stats_mode_lines[i][line_sigma+j].split()
             assert int(n) == j+1,  'Something is wrong... (strange error n.4)'
             sigmas[param] = sigma
         #  -- minimum rectangle containing the mode (only clustering params)
@@ -150,24 +174,9 @@ def from_ns_output_to_chains_MULTIMODAL(data, command_line):
 
         # TODO: USE POINTS FROM TOTAL AND REJECTED SAMPLE???
 
-        # # Creating chain from rejected points, with some interpretation of the
-        # # weight associated to each point arXiv:0809.3437 sec 3
-        # with open(basename+'ev.dat', 'r') as input_file:
-        #     output = open(rejected_chain, 'w')
-        #     array = np.loadtxt(input_file)
-        #     output_array = np.zeros((np.shape(array)[0], np.shape(array)[1]-1))
-        #     output_array[:, 0] = np.exp(array[:, -3]+array[:, -2]-log_evidence)
-        #     output_array[:, 0] *= np.sum(output_array[:, 0])*np.shape(array)[0]
-        #     output_array[:, 1] = -array[:, -3]
-        #     output_array[:, 2:] = array[:, :-3]
-        #     np.savetxt(
-        #         output, output_array,
-        #         fmt=' '.join(['%.6e' for _ in
-        #                       range(np.shape(output_array)[1])]))
-        #     output.close()
 
-
-def from_ns_output_to_chains(folder, basename):
+### THE NEXT FUNCTION IS CURRENTLY NOT USED:
+def from_ns_output_to_chains_OLD(folder, basename):
     """
     Translate the output of MultiNest into readable output for Monte Python
 
@@ -338,14 +347,12 @@ def run(cosmo, data, command_line):
         pass        
 
     # Launch MultiNest, and recover the output code
-    output = pymultinest.run(loglike, prior, **data.ns_parameters)
-#    output = None
+#    output = pymultinest.run(loglike, prior, **data.ns_parameters)
+    output = None
 
+    # TODO: modify this comment
     # Assuming this worked, i.e. if output is `None`, translate the output
     # ev.txt into the same format as standard Monte Python chains for further
     # analysis.
     if output is None:
-        if data.ns_parameters['multimodal']:
-            from_ns_output_to_chains_MULTIMODAL(data, command_line)
-        else:
-            from_ns_output_to_chains(command_line, data, basename)
+        from_ns_output_to_chains(data, command_line)
