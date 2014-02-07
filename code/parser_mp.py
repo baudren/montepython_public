@@ -274,17 +274,29 @@ def create_parser():
     return parser
 
 
-def parse():
+def parse(custom_command=''):
     """
     Check some basic organization of the folder, and exit the program in case
     something goes wrong.
+
+    Keyword Arguments
+    -----------------
+    custom_command : str
+        For testing purposes, instead of reading the command line argument,
+        read instead the given string. It should ommit the start of the
+        command, so e.g.: '-N 10 -o toto/'
 
     """
     # Create the parser
     parser = create_parser()
 
-    # Recover all command line arguments in the args dictionnary
-    args = parser.parse_args()
+    # Recover all command line arguments in the args dictionary, except for a
+    # test
+    if not custom_command:
+        args = parser.parse_args()
+    else:
+        print custom_command
+        args = parser.parse_args(custom_command.split(' '))
 
     # First of all, if the analyze module is invoked, there is no point in
     # checking for existing folder
