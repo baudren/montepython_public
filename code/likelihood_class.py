@@ -44,10 +44,10 @@ class likelihood(object):
         """
 
         self.name = self.__class__.__name__
-        self.folder = os.path.abspath(data.path['MontePython']) +\
-            '/../likelihoods/'+self.name+'/'
+        self.folder = os.path.abspath(os.path.join(
+            data.path['root'], os.path.join('likelihoods', self.name)))
         if not data.log_flag:
-            path = command_line.folder+'log.param'
+            path = os.path.join(command_line.folder, 'log.param')
 
         # Define some default fields
         self.data_directory = ''
@@ -75,7 +75,7 @@ class likelihood(object):
         # If at least one is missing, raise an exception.
         if error_flag:
             raise io_mp.LikelihoodError(
-                "Check your nuisance parameter list for your set of" +
+                "Check your nuisance parameter list for your set of"
                 "experiments")
 
         # Append to the log.param the value used (WARNING: so far no comparison
@@ -147,11 +147,6 @@ class likelihood(object):
                 "run. To solve this, you can do a \n " +
                 "]$ rm -rf %s \n " % command_line.folder +
                 "Be sure there is noting in it before doing this !")
-        try:
-            if (self.data_directory[-1] != '/'):
-                self.data_directory[-1] += '/'
-        except:
-            pass
 
     def get_cl(self, cosmo):
         """
@@ -233,11 +228,12 @@ class likelihood(object):
             # read spectrum contamination (so far, assumes only temperature
             # contamination; will be trivial to generalize to polarization when
             # such templates will become relevant)
-            exec "self.%s_contamination=np.zeros(self.l_max+1, 'float64')" %\
-                nuisance
+            setattr(self, "%s_contamination" % nuisance,
+                    np.zeros(self.l_max+1, 'float64'))
             try:
-                exec "File = open(self.data_directory+self.%s_file, 'r')" %\
-                    nuisance
+                File = open(os.path.join(
+                    self.data_directory, getattr(self, "%s_file" % nuisance)),
+                    'r')
                 for line in File:
                     l = int(float(line.split()[0]))
                     if ((l >= 2) and (l <= self.l_max)):
@@ -250,25 +246,28 @@ class likelihood(object):
             # read renormalization factor
             # if it is not there, assume it is one, i.e. do not renormalize
             try:
-                exec "self.%s_contamination *= float(self.%s_scale)" %\
-                    (nuisance, nuisance)
-            except:
+                # do the following operation:
+                # self.nuisance_contamination *= float(self.nuisance_scale)
+                setattr(self, "%s_contamination" % nuisance,
+                        getattr(self, "%s_contamination" % nuisance) *
+                        float(getattr(self, "%s_scale" % nuisance)))
+            except AttributeError:
                 pass
 
             # read central value of nuisance parameter
             # if it is not there, assume one by default
             try:
-                exec "self.%s_prior_center" % nuisance
-            except:
-                exec "self.%s_prior_center = 1." % nuisance
+                getattr(self, "%s_prior_center" % nuisance)
+            except AttributeError:
+                setattr(self, "%s_prior_center" % nuisance, 1.)
 
             # read variance of nuisance parameter
             # if it is not there, assume flat prior (encoded through
             # variance=0)
             try:
-                exec "self.%s_prior_variance" % nuisance
+                getattr(self, "%s_prior_variance" % nuisance)
             except:
-                exec "self.%s_prior_variance = 0." % nuisance
+                setattr(self, "%s_prior_variance" % nuisance, 0.)
 
     def add_contamination_spectra(self, cl, data):
 
@@ -293,7 +292,11 @@ class likelihood(object):
                 data.mcmc_parameters[nuisance]['scale'])
 
             # add prior on nuisance parameters
-            exec "if (self.%s_prior_variance>0): lkl += -0.5*((nuisance_value-self.%s_prior_center)/self.%s_prior_variance)**2" % (nuisance, nuisance, nuisance)
+            if getattr(self, "%s_prior_variance" % nuisance) > 0:
+                # convenience variables
+                prior_center = getattr(self, "%s_prior_center" % nuisance)
+                prior_variance = getattr(self, "%s_prior_variance" % nuisance)
+                lkl += -0.5*((nuisance_value-prior_center)/prior_variance)**2
 
         return lkl
 
@@ -527,8 +530,9 @@ class likelihood_newdat(likelihood):
         self.win_min = np.zeros(self.num_points, 'int')
         self.win_max = np.zeros(self.num_points, 'int')
         for point in range(self.num_points):
-            for line in open(
-                    self.data_directory+'windows/'+window_name +
+            for line in open(os.path.join(
+                    self.data_directory,
+                    os.path.join('windows', window_name)) +
                     str(used_index[point]+1), 'r'):
                 if any([float(line.split()[i]) != 0.
                         for i in range(1, len(line.split()))]):
@@ -560,8 +564,10 @@ class likelihood_newdat(likelihood):
         # columns contaim W_l/l, not W_l we mutiply by l in order to store the
         # actual W_l
         for point in range(self.num_points):
-            for line in open(self.data_directory+'windows/' +
-                             window_name+str(used_index[point]+1), 'r'):
+            for line in open(os.path.join(
+                    self.data_directory,
+                    os.path.join('windows', window_name)) +
+                    str(used_index[point]+1), 'r'):
                 l = int(line.split()[0])
                 if (((self.has_pol is False) and (len(line.split()) != 2))
                         or ((self.has_pol is True) and
@@ -779,7 +785,7 @@ class likelihood_newdat(likelihood):
                     chisq = chisq-wdd*(chi2od-wpp*chi2op*chi2pd)**2
                     denom = denom/wdd
 
-                chisq += log(denom)
+                chisq += math.log(denom)
 
         # finally, return ln(L)=-chi2/2
 
@@ -975,9 +981,11 @@ class likelihood_mock_cmb(likelihood):
         # If the file exists, initialize the fiducial values
         self.Cl_fid = np.zeros((3, self.l_max+1), 'float64')
         self.fid_values_exist = False
-        if os.path.exists(self.data_directory+'/'+self.fiducial_file):
+        if os.path.exists(os.path.join(
+                self.data_directory, self.fiducial_file)):
             self.fid_values_exist = True
-            fid_file = open(self.data_directory+'/'+self.fiducial_file, 'r')
+            fid_file = open(os.path.join(
+                self.data_directory, self.fiducial_file), 'r')
             line = fid_file.readline()
             while line.find('#') != -1:
                 line = fid_file.readline()
@@ -1011,7 +1019,8 @@ class likelihood_mock_cmb(likelihood):
         # that case)
         if self.fid_values_exist is False:
             # Store the values now.
-            fid_file = open(self.data_directory+'/'+self.fiducial_file, 'w')
+            fid_file = open(os.path.join(
+                self.data_directory, self.fiducial_file), 'w')
             fid_file.write('# Fiducial parameters')
             for key, value in data.mcmc_parameters.iteritems():
                 fid_file.write(', %s = %.5g' % (

@@ -12,6 +12,7 @@ v2.0.0: + Wrapping of the Cosmo Hammer within Monte Python. This
 	+ New WiggleZ analysis (Signe Riemer, David Parkinson)
 	+ First version of the test module, with basic functionalities
 	  being checked.
+	+ Convention of path changed to comply with Python standards
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

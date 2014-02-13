@@ -24,7 +24,7 @@ import sampler     # generic sampler that calls different sampling algorithms
 from data import Data  # data handling
 
 
-def main():
+def main(custom_command=''):
     """
     Main call of the function
 
@@ -40,20 +40,25 @@ def main():
 
     .. note::
         A possible parallelization would take place here.
+
+    Parameters
+    ----------
+        custom_command: str
+            allows for testing the code
     """
     # Parsing line argument
-    command_line = parser_mp.parse()
+    command_line = parser_mp.parse(custom_command)
 
     # Default configuration
     path = {}
 
-    # On execution, sys.path contains all the standard locations for the
-    # libraries, plus, on the first position (index 0), the directory from
-    # where the code is executed. By default, then, the data folder is located
-    # in the same root directory. Any setting in the configuration file will
-    # overwrite this one.
-    path['MontePython'] = sys.path[0] + '/'
-    path['data'] = path['MontePython'][:-5] + 'data/'
+    # The path is recovered by taking the path to this file. By default, then,
+    # the data folder is located in the same root directory. Any setting in the
+    # configuration file will overwrite this one.
+    path['root'] = os.path.sep.join(
+        os.path.abspath(__file__).split(os.path.sep)[:-2])
+    path['MontePython'] = os.path.join(path['root'], 'code')
+    path['data'] = os.path.join(path['root'], 'data')
 
     # Configuration file, defaulting to default.conf in your root directory.
     # This can be changed with the command line option -conf. All changes will
@@ -64,8 +69,7 @@ def main():
         for line in open(conf_file):
             exec(line)
         for key, value in path.iteritems():
-            if not value.endswith('/'):
-                path[key] = value + '/'
+            path[key] = os.path.normpath(value)
     else:
         raise io_mp.ConfigurationError(
             "You must provide a .conf file (default.conf by default in your" +
@@ -73,7 +77,7 @@ def main():
             " your data folder, Class (, Clik), etc...")
 
     # Recover the version number
-    with open(path['MontePython'][:-5] + 'VERSION', 'r') as version_file:
+    with open(os.path.join(path['root'], 'VERSION'), 'r') as version_file:
         version = version_file.readline()
 
     sys.stdout.write('Running MontePython version %s\n' % version)
@@ -87,24 +91,10 @@ def main():
         analyze(command_line)
         return
 
-    # If the restart flag was used, load the cosmology directly from the
-    # log.param file, and append to the existing chain.
-    if command_line.restart is not None:
-        if command_line.restart[0] == '/':
-            folder = ''
-        else:
-            folder = './'
-        for elem in command_line.restart.split("/")[:-1]:
-            folder += ''.join(elem+'/')
-        command_line.param = folder+'log.param'
-        command_line.folder = folder
-        sys.stdout.write('Reading {0} file'.format(command_line.restart))
-        data = Data(command_line, path)
-
-    # Else, fill in data, starting from  parameter file. If output folder
-    # already exists, the input parameter file was automatically replaced by
-    # the existing log.param. This prevents you to run different things in a
-    # same folder.
+    # Fill in data, starting from  parameter file. If output folder already
+    # exists, the input parameter file was automatically replaced by the
+    # existing log.param. This prevents you to run different things in a same
+    # folder.
     else:
         data = Data(command_line, path)
 

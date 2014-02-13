@@ -18,7 +18,7 @@ ascii-art for the exclamation mark sign.
 """
 
 import os
-import sys
+import warnings
 import re  # Module to handle regular expressions
 from datetime import date
 import fcntl
@@ -46,7 +46,7 @@ def log_parameters(data, command_line):
     input parameter file.
 
     """
-    log = open(command_line.folder+'/log.param', 'w')
+    log = open(os.path.join(command_line.folder, 'log.param'), 'w')
     param_file = open(command_line.param, 'r')
     log.write("#-----{0} {1} (subversion {2})-----\n\n".format(
         data.cosmological_module_name, data.version, data.subversion))
@@ -58,7 +58,7 @@ def log_parameters(data, command_line):
 
 def log_likelihood_parameters(likelihood, command_line):
     """Write down the .data file of the input likelihood to log.param"""
-    log = open(command_line.folder+'log.param', 'a')
+    log = open(os.path.join(command_line.folder, 'log.param'), 'a')
     tolog = open(likelihood.path, 'r')
     log.write("\n\n#-----Likelihood-{0}-----\n".format(likelihood.name))
     for line in tolog:
@@ -82,7 +82,7 @@ def log_cosmo_arguments(data, command_line):
 
     """
     if len(data.cosmo_arguments) >= 1:
-        log = open(command_line.folder+'/log.param', 'a')
+        log = open(os.path.join(command_line.folder, 'log.param'), 'a')
         log.write('\n\n#-----------Cosmological-arguments---------\n')
         log.write('data.cosmo_arguments.update({0})\n'.format(
             data.cosmo_arguments))
@@ -99,7 +99,7 @@ def log_default_configuration(data, command_line):
     go wrong, it is logged everytime !
 
     """
-    log = open(command_line.folder+'/log.param', 'a')
+    log = open(os.path.join(command_line.folder, 'log.param'), 'a')
     log.write('\n\n#--------Default-Configuration------\n')
     for key, value in data.path.iteritems():
         log.write("data.path['{0}']\t= '{1}'\n".format(key, value))
@@ -188,21 +188,23 @@ def create_output_files(command_line, data):
     Automatically create a new name for the chain.
 
     This routine takes care of organising the folder for you. It will
-    automatically generate names for the new chains according to the date, number
-    of points chosen.
+    automatically generate names for the new chains according to the date,
+    number of points chosen.
 
     .. warning::
 
-        The way these names are generated (with the proper number of _, __, -, and
-        their placement) is exploited in the rest of the code in various places.
-        Please keep that in mind if ever you are in the mood of changing things here.
+        The way these names are generated (with the proper number of _, __, -,
+        and their placement) is exploited in the rest of the code in various
+        places.  Please keep that in mind if ever you are in the mood of
+        changing things here.
 
     """
     if command_line.restart is None:
         number = command_line.N
     else:
-        number = int(command_line.restart.split('/')[-1].split('__')[0].
-                     split('_')[1]) + command_line.N
+        number = int(
+            command_line.restart.split(os.path.sep)[-1].split('__')[0].
+            split('_')[1]) + command_line.N
 
     # output file
     outname_base = '{0}_{1}__'.format(date.today(), number)
@@ -215,24 +217,21 @@ def create_output_files(command_line, data):
                     suffix = int(files.split('__')[-1].split('.')[0])
         suffix += 1
         while trying:
-            data.out = open(command_line.folder+outname_base +
-                            str(suffix)+'.txt', 'w')
+            data.out = open(os.path.join(
+                command_line.folder, outname_base)+str(suffix)+'.txt', 'w')
             try:
                 lock(data.out, fcntl.LOCK_EX | fcntl.LOCK_NB)
                 trying = False
             except LockError:
                 suffix += 1
-        sys.stdout.write('Creating {0}{1}{2}.txt\n'.format(
-            command_line.folder, outname_base, suffix))
-        data.out_name = '{0}{1}{2}.txt'.format(
-            command_line.folder, outname_base, suffix)
+        data.out_name = os.path.join(
+            command_line.folder, outname_base)+suffix+'.txt'
+        warnings.warn('Creating %s\n' % data.out_name)
     else:
-        data.out = open(command_line.folder+outname_base +
-                        command_line.chain_number+'.txt', 'w')
-        sys.stdout.write('Creating {0}{1}{2}.txt\n'.format(
-            command_line.folder, outname_base, command_line.chain_number))
-        data.out_name = '{0}{1}{2}.txt'.format(
-            command_line.folder, outname_base, command_line.chain_number)
+        data.out_name = os.path.join(
+            command_line.folder, outname_base)+command_line.chain_number+'.txt'
+        data.out = open(data.out_name, 'w')
+        warnings.warn('Creating %s\n' % data.out_name)
     # in case of a restart, copying the whole thing in the new file
     if command_line.restart is not None:
         for line in open(command_line.restart, 'r'):
@@ -278,7 +277,7 @@ def get_tex_name(name, number=1):
         name = temp_name + '}'
     if number == 1:
         name = "${0}$".format(name)
-    elif (number < 1000 and number > 1):
+    elif number < 1000 and number > 1:
         name = "$%0.d~%s$" % (number, name)
     else:
         temp_name = "$%0.e%s$" % (number, name)

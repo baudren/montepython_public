@@ -162,6 +162,7 @@ class Data(object):
         # Recover the cosmological code version (and subversion if relevant).
         # To implement a new cosmological code, please add another case to the
         # test below.
+        # TODO
         if self.cosmological_module_name == 'Class':
             svn_file = open(path['cosmo']+'/include/svnversion.h', 'r')
             self.subversion = svn_file.readline().split()[-1].\
@@ -200,10 +201,11 @@ class Data(object):
         sys.stdout.write('\n')
 
         # logging the parameter file (only if folder does not exist !)
-        if command_line.folder[-1] != '/':
-            command_line.folder += '/'
+        ## temporary variable for readability
+        log_param = os.path.join(command_line.folder, 'log.param')
+
         if (os.path.exists(command_line.folder) and
-                not os.path.exists(command_line.folder+'log.param')):
+                not os.path.exists(log_param)):
             if command_line.param is not None:
                 warnings.warn(
                     "Detecting empty folder, logging the parameter file")
@@ -228,8 +230,8 @@ class Data(object):
 
         for elem in self.experiments:
 
-            folder = os.path.abspath(
-                path['MontePython'])+"/../likelihoods/%s" % elem
+            folder = os.path.abspath(os.path.join(
+                path['root'], os.path.join("likelihoods", "%s" % elem)))
             # add the folder of the likelihood to the path of libraries to...
             if folder not in sys.path:
                 sys.path.insert(0, folder)

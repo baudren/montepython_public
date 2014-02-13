@@ -255,8 +255,8 @@ def create_parser():
                         dest='NS_option_multimodal', default=False)
     # -- Multi-modal: number of parameters used for the clustering
     parser.add_argument('--NS_option_n_clustering_params',
-                        metavar=('Number of parameters, starting from the first'+
-                                 'one in the parameter file,'+
+                        metavar=('Number of parameters, starting from the ' +
+                                 'first one in the parameter file,' +
                                  'to be used in the mode separation'),
                         type=int, dest='NS_option_n_clustering_params',
                         default=-1)
@@ -267,9 +267,10 @@ def create_parser():
                         default=-1)
     # -- Multi-modal: minimum value of the evidence to conside a mode
     parser.add_argument('--NS_option_mode_tolerance',
-                        metavar=('Minimum value of the log-evidence'+
+                        metavar=('Minimum value of the log-evidence' +
                                  'for a mode to be considered'),
-                        type=float, dest='NS_option_mode_tolerance', default=-1)
+                        type=float, dest='NS_option_mode_tolerance',
+                        default=-1)
 
     return parser
 
@@ -295,7 +296,6 @@ def parse(custom_command=''):
     if not custom_command:
         args = parser.parse_args()
     else:
-        print custom_command
         args = parser.parse_args(custom_command.split(' '))
 
     # First of all, if the analyze module is invoked, there is no point in
@@ -305,8 +305,12 @@ def parse(custom_command=''):
         # If the user wants to start over from an existing chain, the program
         # will use automatically the same folder, and the log.param in it
         if args.restart is not None:
-            args.folder = args.restart.split('/')[0]+'/'
-            args.param = args.folder+'log.param'
+            args.folder = os.path.sep.join(
+                args.restart.split(os.path.sep)[:-1])
+            args.param = os.path.join(args.folder, 'log.param')
+            warnings.warn(
+                "Restarting from %s." % args.restart +
+                " Using associated log.param.")
 
         # Else, the user should provide an output folder
         else:
@@ -315,36 +319,32 @@ def parse(custom_command=''):
                     "You must provide an output folder, because you do not " +
                     "want your main folder to look dirty, do you ?")
 
-            # If he did so,
-            else:
-                # check that the provided name is ending with a /,
-                if args.folder[-1] != '/':
-                    args.folder += '/'
-
             # and if the folder already exists, and that no parameter file was
             # provided, use the log.param
             if os.path.isdir(args.folder):
-                if os.path.exists(args.folder+'log.param'):
+                if os.path.exists(
+                        os.path.join(args.folder, 'log.param')):
                     # if the log.param exists, and that a parameter file was
                     # provided, take instead the log.param, and notify the
                     # user.
                     old_param = args.param
-                    args.param = args.folder+'log.param'
+                    args.param = os.path.join(
+                        args.folder, 'log.param')
                     if args.param is not None:
                         warnings.warn(
-                            "Appending to an existing folder: using the " +
+                            "Appending to an existing folder: using the "
                             "log.param instead of %s" % old_param)
                 else:
                     if args.param is None:
                         raise io_mp.ConfigurationError(
-                            "The requested output folder seems empty. " +
-                            "You must then provide a parameter file (command" +
+                            "The requested output folder seems empty. "
+                            "You must then provide a parameter file (command"
                             " line option -p any.param)")
             else:
                 if args.param is None:
                     raise io_mp.ConfigurationError(
-                        "The requested output folder appears to be non " +
-                        "existent. You must then provide a parameter file " +
+                        "The requested output folder appears to be non "
+                        "existent. You must then provide a parameter file "
                         "(command line option -p any.param)")
 
     return args
