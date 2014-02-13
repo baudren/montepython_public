@@ -36,10 +36,6 @@ data.parameters['tau_reio']    	= [0.085,  -1,-1, 0.0044,1,   'cosmo']
 data.parameters['z_reio']       = [0,       -1, -1, 0,1,  'derived']
 data.parameters['Omega_Lambda'] = [0,       -1, -1, 0,1,  'derived']
 
-# Other class parameters (fixed parameters, precision parameters, etc.)
-data.cosmo_arguments['sBBN file'] = data.path['cosmo']+'/bbn/sBBN.dat'
-
-
 #------ Mcmc parameters ----
 # Number of steps taken, by default (overwritten by the -N command)
 data.N=10
