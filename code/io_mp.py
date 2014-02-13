@@ -225,7 +225,7 @@ def create_output_files(command_line, data):
             except LockError:
                 suffix += 1
         data.out_name = os.path.join(
-            command_line.folder, outname_base)+suffix+'.txt'
+            command_line.folder, outname_base)+str(suffix)+'.txt'
         warnings.warn('Creating %s\n' % data.out_name)
     else:
         data.out_name = os.path.join(
