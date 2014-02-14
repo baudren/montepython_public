@@ -1,12 +1,23 @@
+"""
+.. module:: test_montepython
+
+to run it, do
+~] nosetest code/test_montepython.py
+"""
 import unittest
 import os
 import datetime
+import shutil
+import re
+import warnings
+# This discards warning messages (maybe this should be tuned to discard only
+# the ones specifically asked by this code..)
+warnings.filterwarnings('ignore')
 
 #---- local imports -----#
 import io_mp
 import parser_mp
 from MontePython import main
-import shutil
 
 
 class TestMontePython(unittest.TestCase):
@@ -18,12 +29,9 @@ class TestMontePython(unittest.TestCase):
                 ": " + self._testMethodDoc)
 
 
-class TestInputBehaviour(TestMontePython):
+class Test01CommandLineInputBehaviour(TestMontePython):
     """
     Testing basic reaction to user input
-
-    to run it, do
-    ~] nosetest code/test_montepython.py -v
     """
 
     def setUp(self):
@@ -72,12 +80,12 @@ class TestInputBehaviour(TestMontePython):
         os.rmdir(self.temp_folder_path)
 
 
-class TestReferenceCosmology(TestMontePython):
-    """Input from know cosmology to expected results"""
+class Test02Setup(TestMontePython):
+    """Input from known cosmology on one single point"""
     def setUp(self):
         self.date = str(datetime.date.today())
         self.custom_command = (
-            '-N 1 -p example.param -o code/test_%s' % self.date)
+            '-N 1 -p test.param -o code/test_%s' % self.date)
         main(self.custom_command)
 
     def tearDown(self):
@@ -96,6 +104,38 @@ class TestReferenceCosmology(TestMontePython):
         """
         assert os.path.exists(
             'code/test_%s/log.param' % self.date)
+
+        # Check if the CLASS version is written properly in the log.param
+        with open('code/test_%s/log.param' % self.date, 'r') as log_param:
+            first_line = log_param.readline().strip()
+            version = first_line.split()[1]
+            assert re.match('v[0-9].[0-9].[0-9]', version) is not None
+
+    def test_likelihood_data_recovered(self):
+        """
+        Check if the data from the likelihood folder is properly handled
+        """
+        # A rerun should read the data from the log.importparam, not from the
+        # original likelihood folder
+        pass
+
+    def test_configuration_file(self):
+        """
+        Check if the .conf is recovered and used properly
+        """
+        pass
+
+
+class Test03SamplingMethodBehaviour(TestMontePython):
+    """
+    Check that all existing sampling method are initializing
+    """
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
 
 if __name__ == '__main__':
     unittest.main()
