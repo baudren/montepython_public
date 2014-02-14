@@ -76,11 +76,11 @@ def main(custom_command=''):
             " montepython directory that specifies the correct locations for" +
             " your data folder, Class (, Clik), etc...")
 
-    # Recover the version number
+    # Recover Monte Python's version number
     with open(os.path.join(path['root'], 'VERSION'), 'r') as version_file:
         version = version_file.readline()
 
-    sys.stdout.write('Running MontePython version %s\n' % version)
+    sys.stdout.write('Running Monte Python v%s' % version)
 
     # If the info flag was used, read a potential chain (or set of chains) to
     # be analysed with default procedure. If the argument is a .info file, then
@@ -119,21 +119,23 @@ def main(custom_command=''):
             "Your log.param file is in contradiction with your .conf file, " +
             "please check your path in these two places.")
 
-    # Loading up the cosmological backbone. For the moment, only Class has been
+    # Loading up the cosmological backbone. For the moment, only CLASS has been
     # wrapped.
 
-    # Importing the python-wrapped Class from the correct folder, defined in
+    # Importing the python-wrapped CLASS from the correct folder, defined in
     # the .conf file, or overwritten at this point by the log.param.
-    # If the cosmological code is Class, do the following to import all
+    # If the cosmological code is CLASS, do the following to import all
     # relevant quantities
-    if data.cosmological_module_name == 'Class':
+    if data.cosmological_module_name == 'CLASS':
         try:
-            for elem in os.listdir(data.path['cosmo']+"python/build"):
+            for elem in os.listdir(os.path.join(
+                    data.path['cosmo'], os.path.join(
+                    "python", "build"))):
                 if elem.find("lib.") != -1:
                     classy_path = path['cosmo']+"python/build/"+elem
         except OSError:
             raise io_mp.ConfigurationError(
-                "You probably did not compile the python wrapper of Class. " +
+                "You probably did not compile the python wrapper of CLASS. " +
                 "Please go to /path/to/class/python/ and do\n" +
                 "..]$ python setup.py build")
 

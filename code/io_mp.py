@@ -26,13 +26,13 @@ import textwrap  # used to format the error messages
 
 # Ascii art for error display
 START_LINE = {}
-START_LINE['error'] = [' /|\   ',
-                       '/_o_\  ',
-                       '       ']
-START_LINE['warning'] = [' /!\ ',
-                         '     ']
-START_LINE['info'] = [' /!\ ',
-                      '     ']
+START_LINE['error'] = [r' /|\   ',
+                       r'/_o_\  ',
+                       r'       ']
+START_LINE['warning'] = [r' /!\ ',
+                         r'     ']
+START_LINE['info'] = [r' /!\ ',
+                      r'     ']
 
 STANDARD_LENGTH = 80  # standard, increase if you have a big screen
 
@@ -42,18 +42,17 @@ def log_parameters(data, command_line):
     Write the first lines of the log.param
 
     Writes the beginning of log.param, starting with the header with the
-    cosmological code version and subversion, and then recopies entirely the
-    input parameter file.
+    cosmological code version and potential git hash and branch name, and then
+    recopies entirely the input parameter file.
 
     """
-    log = open(os.path.join(command_line.folder, 'log.param'), 'w')
-    param_file = open(command_line.param, 'r')
-    log.write("#-----{0} {1} (subversion {2})-----\n\n".format(
-        data.cosmological_module_name, data.version, data.subversion))
-    for line in param_file:
-        log.write(line)
-    param_file.close()
-    log.close()
+    with open(os.path.join(command_line.folder, 'log.param'), 'w') as log:
+        log.write("#-----{0} {1} (branch: {2}, hash: {3})-----\n\n".format(
+            data.cosmological_module_name, data.version,
+            data.git_branch, data.git_version))
+        with open(command_line.param, 'r') as param_file:
+            for line in param_file:
+                log.write(line)
 
 
 def log_likelihood_parameters(likelihood, command_line):

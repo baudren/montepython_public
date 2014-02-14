@@ -9,6 +9,8 @@ import sys
 import math
 import random as rd
 import warnings
+import subprocess as sp
+import re
 
 import io_mp  # Needs to talk to io_mp.py file for the logging of parameters
 import prior
@@ -101,10 +103,12 @@ class Data(object):
         self.path = path
 
         self.boundary_loglike = -1e30
-        """Define the boundary loglike, the value used to defined a loglike
+        """
+        Define the boundary loglike, the value used to defined a loglike
         that is out of bounds. If a point in the parameter space is affected to
         this value, it will be automatically rejected, hence increasing the
-        multiplicity of the last accepted point."""
+        multiplicity of the last accepted point.
+        """
 
         # Creation of the two main dictionnaries:
         self.cosmo_arguments = {}
@@ -125,13 +129,13 @@ class Data(object):
 
         :rtype: ordereddict
         """
-        
+
         # Options for PyMultiNest
         self.ns_parameters = {}
         """
         Dictionary containing the parameters needed by the PyMultiNest sampler.
-        It is filled just before the run of the sampler.
-        Those parameters not defined will be set to the default value of PyMultiNest.
+        It is filled just before the run of the sampler.  Those parameters not
+        defined will be set to the default value of PyMultiNest.
 
         TODO: ADD PROPER REFERENCES TO DOCUMENTATION.
 
@@ -155,25 +159,75 @@ class Data(object):
 
         # Determine which cosmological code is in use
         if path['cosmo'].find('class') != -1:
-            self.cosmological_module_name = 'Class'
+            self.cosmological_module_name = 'CLASS'
         else:
             self.cosmological_module_name = None
 
-        # Recover the cosmological code version (and subversion if relevant).
+        # Recover the cosmological code version (and git hash if relevant).
         # To implement a new cosmological code, please add another case to the
         # test below.
-        # TODO
-        if self.cosmological_module_name == 'Class':
-            svn_file = open(path['cosmo']+'/include/svnversion.h', 'r')
-            self.subversion = svn_file.readline().split()[-1].\
-                replace('"', '')
-            svn_file.close()
-            for line in open(path['cosmo']+'/include/common.h', 'r'):
-                if line.find('_VERSION_') != -1:
-                    self.version = line.split()[-1].replace('"', '')
-                    break
-        else:  # read in the existing parameter file
-            self.read_version(self.param_file)
+        if self.cosmological_module_name == 'CLASS':
+            # Official version number
+            common_file_path = os.path.join(
+                path['cosmo'], os.path.join('include', 'common.h'))
+            with open(common_file_path, 'r') as common_file:
+                for line in common_file:
+                    if line.find('_VERSION_') != -1:
+                        self.version = line.split()[-1].replace('"', '')
+                        break
+            print 'with CLASS %s' % self.version
+            # Git version number and branch
+            try:
+                # This nul_file helps to get read of a potential useless error
+                # message
+                with open(os.devnull, "w") as nul_file:
+                    self.git_version = sp.check_output(
+                        ["git", "rev-parse", "HEAD"],
+                        cwd=path['cosmo'],
+                        stderr=nul_file).strip()
+                    self.git_branch = sp.check_output(
+                        ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                        cwd=path['cosmo'],
+                        stderr=nul_file).strip()
+            except sp.CalledProcessError:
+                warnings.warn(
+                    "Running CLASS from a non version-controlled repository")
+                self.git_version, self.git_branch = '', ''
+
+            # If using an existing log.param, read in and compare this number
+            # to the already stored one
+            if self.param.find('log.param') != -1:
+                try:
+                    version, git_version, git_branch = self.read_version(
+                        self.param_file)
+                    if version != self.version:
+                        warnings.warn(
+                            "Your version of CLASS: %s" % self.version +
+                            " does not match the one used previously" +
+                            " in this folder (%s)." % version +
+                            " Proceed with caution")
+                    else:
+                        if self.git_branch != git_branch:
+                            warnings.warn(
+                                "CLASS set to branch %s" % self.git_branch +
+                                ", wrt. the one used in the log.param:" +
+                                " %s." % git_branch)
+                        if self.git_version != git_version:
+                            warnings.warn(
+                                "CLASS set to version %s" % self.git_version +
+                                ", wrt. the one used in the log.param:" +
+                                " %s." % git_version)
+
+                except AttributeError:
+                    # This error is raised when the regular expression match
+                    # failed - due to comparing to an old log.param that did
+                    # not have this feature properly implemented. Ignore this.
+                    pass
+
+        else:
+            raise io_mp.CosmologicalModuleError(
+                "If you want to check for another cosmological module version"
+                " please add an elif clause to this part")
 
         # End of initialisation with the parameter file
         self.param_file.close()
@@ -194,11 +248,6 @@ class Data(object):
 
         :rtype: bool
         """
-
-        sys.stdout.write('Testing likelihoods for:\n -> ')
-        for i in range(len(self.experiments)):
-            sys.stdout.write(self.experiments[i]+', ')
-        sys.stdout.write('\n')
 
         # logging the parameter file (only if folder does not exist !)
         ## temporary variable for readability
@@ -227,6 +276,12 @@ class Data(object):
 
         # For the logging if log_flag is True, each likelihood will log its
         # parameters
+
+        sys.stdout.write('\nTesting likelihoods for:\n -> ')
+        sys.stdout.write(', '.join(self.experiments)+'\n')
+        #for i in range(len(self.experiments)):
+            #sys.stdout.write(self.experiments[i]+', ')
+        #sys.stdout.write('\n')
 
         for elem in self.experiments:
 
@@ -378,10 +433,13 @@ class Data(object):
         """
         # Read the first line (cosmological code version)
         first_line = param_file.readline()
-        self.version = first_line.split()[1]
-        self.subversion = first_line.split()[-1].replace(')', '').\
-            replace('-', '')
         param_file.seek(0)
+        regexp = re.match(
+            ".*\(branch: (.*), hash: (.*)\).*",
+            first_line)
+        version = first_line.split()[1]
+        git_branch, git_version = regexp.groups()
+        return version, git_version, git_branch
 
     def get_mcmc_parameters(self, table_of_strings):
         """
@@ -485,7 +543,7 @@ class Data(object):
                 self.mcmc_parameters[elem]['scale']
 
         # For all elements in the cosmological parameters from the mcmc list,
-        # translate any-one that is not directly a Class parameter into one.
+        # translate any-one that is not directly a CLASS parameter into one.
         # The try: except: syntax ensures that the first call
         for elem in self.get_mcmc_parameters(['cosmo']):
             # infer h from Omega_Lambda and delete Omega_Lambda
