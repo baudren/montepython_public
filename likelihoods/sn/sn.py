@@ -16,7 +16,8 @@ class sn(likelihood):
         self.moduli = np.array([], 'float64')
 
         # read redshifts and data points
-        for line in open(self.data_directory + self.z_mu_dmu, 'r'):
+        for line in open(os.path.join(
+                self.data_directory, self.z_mu_dmu), 'r'):
             if (line.find('#') == -1):
                 self.z = np.append(self.z, float(line.split()[1]))
                 self.moduli = np.append(self.moduli, float(line.split()[2]))
@@ -35,7 +36,8 @@ class sn(likelihood):
 
         # read correlation matrix
         i = 0
-        for line in open(self.data_directory + covmat_filename, 'r'):
+        for line in open(os.path.join(
+                self.data_directory, covmat_filename), 'r'):
             if (line.find('#') == -1):
                 covmat[i] = line.split()
                 i += 1

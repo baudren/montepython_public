@@ -1,4 +1,5 @@
 from likelihood_class import likelihood
+import os
 import io_mp
 import numpy as np
 from math import exp
@@ -26,7 +27,8 @@ class lya(likelihood):
 
         # k, z, pk, noise
 
-        inputfile = open(self.data_directory+self.table, 'r')
+        inputfile = open(os.path.join(
+            self.data_directory, self.table), 'r')
 
         for zz in range(self.num_z):
             for kk in range(self.num_k):
@@ -59,7 +61,8 @@ class lya(likelihood):
 
         # covariance matrix
 
-        inputfile = open(self.data_directory+self.covar, 'r')
+        inputfile = open(os.path.join(
+            self.data_directory, self.covar), 'r')
 
         for np1 in range(self.num_k*self.num_z):
             line = inputfile.readline()
@@ -81,7 +84,8 @@ class lya(likelihood):
 
         # damping factors
 
-        inputfile = open(self.data_directory+self.damp, 'r')
+        inputfile = open(os.path.join(
+            self.data_directory, self.damp), 'r')
 
         for zz in range(self.num_z):
             for kk in range(self.num_k):
@@ -149,7 +153,8 @@ class lya(likelihood):
 #         if (param == self.index_zr):
 #                table_name = 'highzreion.dat'
 
-            inputfile = open(self.data_directory+table_name, 'r')
+            inputfile = open(os.path.join(
+                self.data_directory, table_name), 'r')
 
             # reio table is special: only 1st order coefs, only 2nd half of table
 #            if (param == self.index_zr):
@@ -224,7 +229,8 @@ class lya(likelihood):
 
         self.pkth = np.zeros((self.num_k, self.num_z), 'float64')
 
-        inputfile = open(self.data_directory+'B2_gamma1_all.txt', 'r')
+        inputfile = open(os.path.join(
+            self.data_directory, 'B2_gamma1_all.txt'), 'r')
 
         for zz in range(self.num_z):
             for kk in range(self.num_k):
@@ -234,7 +240,8 @@ class lya(likelihood):
 
         # resolution box size correction
 
-        inputfile = open(self.data_directory+'res_box_table_all.txt', 'r')
+        inputfile = open(os.path.join(
+            self.data_directory, 'res_box_table_all.txt'), 'r')
 
         for kk in range(self.num_k):
             line = inputfile.readline()

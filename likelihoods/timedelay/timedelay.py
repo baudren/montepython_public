@@ -20,7 +20,8 @@ class timedelay(likelihood):
         self.sigma_d = np.array([], 'float64')
 
         # read redshifts and data points
-        for line in open(self.data_directory + self.file, 'r'):
+        for line in open(os.path.join(
+                self.data_directory, self.file), 'r'):
             if (line.find("#") == -1):
                 self.zd = np.append(self.zd, float(line.split()[0]))
                 self.zs = np.append(self.zs, float(line.split()[1]))

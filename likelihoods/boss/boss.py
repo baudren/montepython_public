@@ -2,6 +2,7 @@ from likelihood_class import likelihood
 import io_mp
 import numpy as np
 from math import exp
+import os
 
 
 class boss(likelihood):
@@ -25,7 +26,8 @@ class boss(likelihood):
 
         # k, z, pk
 
-        inputfile = open(self.data_directory+self.table, 'r')
+        inputfile = open(os.path.join(
+            self.data_directory, self.table), 'r')
 
         for zz in range(self.num_z):
             for kk in range(self.num_k):
@@ -58,7 +60,8 @@ class boss(likelihood):
 
         # covariance matrix
 
-        inputfile = open(self.data_directory+self.covar, 'r')
+        inputfile = open(os.path.join(
+            self.data_directory, self.covar), 'r')
 
         for np1 in range(self.num_k*self.num_z):
             line = inputfile.readline()
@@ -136,7 +139,8 @@ class boss(likelihood):
 #         if (param == self.index_zr):
 #                table_name = 'highzreion.dat'
 
-            with open(self.data_directory+table_name, 'r') as inputfile:
+            with open(os.path.join(
+                    self.data_directory, table_name), 'r') as inputfile:
             # reio table is special: only 1st order coefs, only 2nd half of table
 #            if (param == self.index_zr):
 #                for kk in range(self.num_k):
@@ -208,15 +212,16 @@ class boss(likelihood):
 
         self.pkth = np.zeros((self.num_k, self.num_z), 'float64')
 
-        with open(self.data_directory+'B2_gamma1_all.txt', 'r') as inputfile:
+        with open(os.path.join(self.data_directory,
+                               'B2_gamma1_all.txt'), 'r') as inputfile:
             for zz in range(self.num_z):
                 for kk in range(self.num_k):
                     self.pkth[kk, zz] = float(inputfile.readline())
 
         # resolution box size correction
 
-        with open(self.data_directory+'res_box_table_all.txt',
-                  'r') as inputfile:
+        with open(os.path.join(self.data_directory,
+                               'res_box_table_all.txt'), 'r') as inputfile:
             for kk in range(self.num_k):
                 line = inputfile.readline()
                 for zz in range(self.num_z):

@@ -18,7 +18,8 @@ class bao(likelihood):
         self.type = np.array([], 'int')
 
         # read redshifts and data points
-        for line in open(self.data_directory + self.file, 'r'):
+        for line in open(os.path.join(
+                self.data_directory, self.file), 'r'):
             if (line.find('#') == -1):
                 self.z = np.append(self.z, float(line.split()[0]))
                 self.data = np.append(self.data, float(line.split()[1]))

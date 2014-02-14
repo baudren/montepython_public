@@ -128,7 +128,8 @@ class euclid_lensing(likelihood):
     self.fid_values_exist = False
     if os.path.exists(self.data_directory+'/'+self.fiducial_file):
       self.fid_values_exist = True
-      fid_file = open(self.data_directory+'/'+self.fiducial_file,'r')
+      fid_file = open(os.path.join(
+          self.data_directory, self.fiducial_file),'r')
       line = fid_file.readline()
       while line.find('#')!=-1:
 	line = fid_file.readline()
@@ -273,7 +274,8 @@ class euclid_lensing(likelihood):
     # Write fiducial model spectra if needed (exit in that case)
     if self.fid_values_exist is False:
       # Store the values now, and exit.
-      fid_file = open(self.data_directory+'/'+self.fiducial_file,'w')
+      fid_file = open(os.path.join(
+          self.data_directory, self.fiducial_file), 'w')
       fid_file.write('# Fiducial parameters')
       for key,value in data.mcmc_parameters.iteritems():
 	fid_file.write(', %s = %.5g' % (key,value['current']*value['scale']))

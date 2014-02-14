@@ -103,7 +103,8 @@ class euclid_pk(likelihood):
 
     if os.path.exists(self.data_directory+'/'+self.fiducial_file):
       self.fid_values_exist = True
-      fid_file = open(self.data_directory+'/'+self.fiducial_file,'r')
+      fid_file = open(os.path.join(
+          self.data_directory, self.fiducial_file),'r')
       line = fid_file.readline()
       while line.find('#')!=-1:
 	line = fid_file.readline()
@@ -168,7 +169,8 @@ class euclid_pk(likelihood):
     # store it, then exit.
     if self.fid_values_exist is False:
       pk = np.zeros((self.k_size,2*self.nbin+1),'float64')
-      fid_file = open(self.data_directory+'/'+self.fiducial_file,'w')
+      fid_file = open(os.path.join(
+          self.data_directory, self.fiducial_file),'w')
       fid_file.write('# Fiducial parameters')
       for key,value in data.mcmc_parameters.iteritems():
 	fid_file.write(', %s = %.5g' % (key,value['current']*value['scale']))
