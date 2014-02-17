@@ -215,63 +215,73 @@ def create_parser():
     ###############
     # MultiNest arguments (all OPTIONAL and ignored if not "-m='NS'")
     # The default values of -1 mean to take the PyMultiNest default values
+    from nested_sampling import NS_prefix
     # -- number of live samples
-    parser.add_argument('--NS_option_n_live_points', metavar='Number of live samples',
-                        type=int, dest='NS_option_n_live_points', default=-1)
+    parser.add_argument('--'+NS_prefix+'n_live_points',
+                        dest=NS_prefix+'n_live_points',
+                        metavar='Number of live samples',
+                        type=int, default=-1)
     # -- Sampling efficiency
-    parser.add_argument('--NS_option_sampling_efficiency', metavar='Sampling efficiency',
-                        type=float, dest='NS_option_sampling_efficiency', default=-1)
+    parser.add_argument('--'+NS_prefix+'sampling_efficiency',
+                        dest=NS_prefix+'sampling_efficiency',
+                        metavar='Sampling efficiency',
+                        type=float, default=-1)
     # -- Evicence tolerance
-    parser.add_argument('--NS_option_evidence_tolerance', metavar='Evidence tolerance',
-                        type=float, dest='NS_option_evidence_tolerance', default=-1)
+    parser.add_argument('--'+NS_prefix+'evidence_tolerance',
+                        dest=NS_prefix+'evidence_tolerance',
+                        metavar='Evidence tolerance',
+                        type=float, default=-1)
     # -- Importance Nested Sampling
-    parser.add_argument('--NS_option_importance_nested_sampling',
-                        metavar='True or False', type=bool,
-                        dest='NS_option_importance_nested_sampling', default=-1)
+    parser.add_argument('--'+NS_prefix+'importance_nested_sampling',
+                        dest=NS_prefix+'importance_nested_sampling',
+                        metavar='True or False',
+                        type=bool, default=-1)
     # -- Constant efficiency mode
-    parser.add_argument('--NS_option_const_efficiency_mode',
-                        metavar='True or False', type=bool,
-                        dest='NS_option_const_efficiency_mode',
-                        default=-1)
+    parser.add_argument('--'+NS_prefix+'const_efficiency_mode',
+                        dest=NS_prefix+'const_efficiency_mode',
+                        metavar='True or False',
+                        type=bool, default=-1)
     # -- Minimum log-evidence to consider
-    parser.add_argument('--NS_option_log_zero',
+    parser.add_argument('--'+NS_prefix+'log_zero',
+                        dest=NS_prefix+'log_zero',
                         metavar='Minimum log-evidence to consider',
-                        type=float, dest='NS_option_log_zero', default=-1)
+                        type=float, default=-1)
     # -- Maximum number of iterations
-    parser.add_argument('--NS_option_max_iter',
+    parser.add_argument('--'+NS_prefix+'max_iter',
+                        dest=NS_prefix+'max_iter',
                         metavar='Maximum number of iterations',
-                        type=int, dest='NS_option_max_iter', default=-1)
+                        type=int, default=-1)
     # -- Random seed
-    parser.add_argument('--NS_option_seed', metavar='Random seed',
-                        type=int, dest='NS_option_seed', default=-1)
+    parser.add_argument('--'+NS_prefix+'seed',
+                        dest=NS_prefix+'seed',
+                        metavar='Random seed',
+                        type=int, default=-1)
     # -- Number of iterations between updates
-    parser.add_argument('--NS_option_n_iter_before_update',
+    parser.add_argument('--'+NS_prefix+'n_iter_before_update',
+                        dest=NS_prefix+'n_iter_before_update',
                         metavar='Number of iterations between updates',
-                        type=int, dest='NS_option_n_iter_before_update',
-                        default=-1)
+                        type=int, default=-1)
     # -- Multi-modal: perform mode separation
-    parser.add_argument('--NS_option_multimodal',
-                        metavar='True or False', type=bool,
-                        dest='NS_option_multimodal', default=False)
+    parser.add_argument('--'+NS_prefix+'multimodal',
+                        dest=NS_prefix+'multimodal',
+                        metavar='True or False',
+                        type=bool, default=-1)
     # -- Multi-modal: number of parameters used for the clustering
-    parser.add_argument('--NS_option_n_clustering_params',
-                        metavar=('Number of parameters, starting from the ' +
-                                 'first one in the parameter file,' +
-                                 'to be used in the mode separation'),
-                        type=int, dest='NS_option_n_clustering_params',
-                        default=-1)
+    parser.add_argument('--'+NS_prefix+'clustering_params',
+                        dest=NS_prefix+'clustering_params',
+                        metavar='Parameters to be used for mode separation',
+                        type=str, nargs='+', default=-1)
     # -- Multi-modal: maximum number of modes to consider
-    parser.add_argument('--NS_option_max_modes',
+    parser.add_argument('--'+NS_prefix+'max_modes',
+                        dest=NS_prefix+'max_modes',
                         metavar='Maximum number of modes to consider',
-                        type=int, dest='NS_option_max_modes',
-                        default=-1)
+                        type=int, default=-1)
     # -- Multi-modal: minimum value of the evidence to conside a mode
-    parser.add_argument('--NS_option_mode_tolerance',
+    parser.add_argument('--'+NS_prefix+'mode_tolerance',
+                        dest=NS_prefix+'mode_tolerance',
                         metavar=('Minimum value of the log-evidence' +
                                  'for a mode to be considered'),
-                        type=float, dest='NS_option_mode_tolerance',
-                        default=-1)
-
+                        type=float, default=-1)
     return parser
 
 

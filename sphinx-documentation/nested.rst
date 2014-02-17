@@ -54,7 +54,7 @@ Now go to the installation directory and install:
     $ cd PyMultiNest
     $ python setup.py install  # --user
 
-You may need the flag :code:`--user` in the last command if you don't have admin privileges.
+You may need the flag :code:`--user` in the last command if you do not have admin privileges.
 
 If everything went ok, you should be able to run :code:`import pymultinest` in a python console without any output. In that case, you are good to go!
 
@@ -143,12 +143,26 @@ Multi-modal sampling
 ^^^^^^^^^^^^^^^^^^^^
 
 -  :code:`mmodal | multimodal (False)` : whether to try to find separate modes in the posterior.
--  :code:`nCdims | n_clustering_params ([all used])` : on which parameters' subspace should MultiNest look for the separated modes.
 -  :code:`maxModes | max_modes (100)` : maximum number of separate modes to consider.
 -  :code:`Ztol | mode_tolerance (-1e90)` : if the local log-evidence is greater than this value, a mode is created.
 
 .. NOTE::
    Here, multi-modal sampling is disabled by default. If enabled, Imporance Nested Sampling will be automatically disabled, since both modes are not compatible.
+
+We left out the option concerning the *clustering parameters*, i.e. on which parameters's subspace is MultiNest to look for posterior mode separation:
+
+.. code::
+
+   nCdims | n_clustering_params
+
+In (Py)MultiNest, clustering parameters are specified as the :code:`n` first ones, which **must** be at the beginning of the parameters list. Here, instead, we override that limitation, and the clustering parameters are specified as
+
+.. code::
+
+   --NS_option_clustering_params param1 param2 ...
+
+The reason for doing it this way is giving more flexibility to the user, being able to change the clustering parameters without having to modify the ordering of the parameters in the :code:`param` file to put the clustering parameters at the beginnig. But this comes at a price: the raw MultiNest chain files have the parameters ordered with the clustering parameters at the beginning, and then the rest as they appear in the :code:`.param` file. The ordering of the parameters is save to a file :code:`[chain name].paramnames` in the :code:`NS` subfolder. If you intend to use MustiNest's raw output files, you must take this into account! If, instead, you use nested sampling simply as a means to get a covariance matrix and some sample points (saved in :code:`chain_NS__[accepted/rejected].txt`), you do not need to care about this.
+
 
 Usage cases (and suggested values of the options)
 -------------------------------------------------
