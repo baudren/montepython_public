@@ -21,6 +21,7 @@ Contents:
    installation
    getting_started
    example
+   nested
    likelihoods
    documentation
 
