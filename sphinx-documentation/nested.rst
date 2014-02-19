@@ -1,13 +1,18 @@
 Using MultiNest with MontePython
 ================================
 
-Monte Python uses the implementation of `MultiNest <http://ccpforge.cse.rl.ac.uk/gf/project/multinest/>`__ by F. Feroz M. Hobson and M. Bridges, through the Python wrapper `PyMultiNest <http://github.com/JohannesBuchner/PyMultiNest>`__ by J. Buchner.
+Monte Python can easily use the implementation of `MultiNest <http://ccpforge.cse.rl.ac.uk/gf/project/multinest/>`__ by F. Feroz and M. Hobson [1]_, through the Python wrapper `PyMultiNest <http://github.com/JohannesBuchner/PyMultiNest>`__ by J. Buchner [2]_.
+
+Some hints about why and how to use MultiNest can be found in `A Basic usage and parameters`_. A more thorough description of the MultiNest sampler can be found in the MultiNest papers [1]_. The `PyMultiNest tutorial <http://johannesbuchner.github.io/pymultinest-tutorial/>`_ is also worth checking out, as well as the respective :code:`README` files of both MultiNest and PyMultiNest.
 
 .. NOTE::
-   By using MultiNest and PyMultiNest, you agree to their respective licenses, that can be found in the :code:`LICENCE` files into the respective installation folders.
+   By using MultiNest and PyMultiNest, you agree to their respective licenses, that can be found in the :code:`LICENSE` (or :code:`LICENCE`) files into the respective installation folders.
+
 
 Installation
 ------------
+
+This basically follows the installation procedure in the `PyMultiNest documentation <http://johannesbuchner.github.io/PyMultiNest/pymultinest.html>`_.
 
 1. MultiNest
 ~~~~~~~~~~~~
@@ -35,7 +40,7 @@ It is not necessary to install (:code:`make install`), but it is so to add the f
 
     export LD_LIBRARY_PATH=/path/to/MultiNest/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 
-By default, MultiNest will try to use the Intel Fortran Compiler if installed. If you want to use :code:`gfortran` instead, add the flag :code:`-DCMAKE_Fortran_COMPILER=gfortran` to :code:`cmake`.
+By default, MultiNest will try to use the Intel Fortran Compiler if installed. If you want to use :code:`gfortran` instead, add the flag :code:`-DCMAKE_Fortran_COMPILER=gfortran` to :code:`cmake`. If you want to force compilation with MPI support (though :code:`gfortran` should autodetect it and implement it in most systems), use :code:`mpif90` as compiler name.
 
 2. PyMultiNest
 ~~~~~~~~~~~~~~
@@ -188,3 +193,12 @@ Usage cases (and suggested values of the options)
 **(Other cases...)**
 
 
+References
+----------
+
+.. [1] `arXiv:0704.3704 <http://arxiv.org/abs/0704.3704>`_,
+       `arXiv:0809.3437 <http://arxiv.org/abs/0809.3437>`_ and
+       `arXiv:1306.2144 <http://arxiv.org/abs/1306.2144>`_.
+
+.. [2] `arXiv:1402.0004 <http://arxiv.org/abs/1402.0004>`_.
+       
