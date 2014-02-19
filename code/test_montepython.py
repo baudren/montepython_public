@@ -5,6 +5,7 @@ to run it, do
 ~] nosetest code/test_montepython.py
 """
 import unittest
+import nose
 import os
 import datetime
 import shutil
@@ -18,6 +19,8 @@ warnings.filterwarnings('ignore')
 import io_mp
 import parser_mp
 from MontePython import main
+
+CONF_FILE = ''
 
 
 class TestMontePython(unittest.TestCase):
@@ -36,6 +39,7 @@ class Test01CommandLineInputBehaviour(TestMontePython):
 
     def setUp(self):
         """set up the data used in the tests"""
+        print CONF_FILE
         self.date = str(datetime.date.today())
         self.temp_folder_path = os.path.join(
             os.path.sep.join(os.path.realpath(__file__).split(
@@ -138,4 +142,4 @@ class Test03SamplingMethodBehaviour(TestMontePython):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    nose.runmodule()
