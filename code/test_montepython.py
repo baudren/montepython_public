@@ -18,9 +18,7 @@ warnings.filterwarnings('ignore')
 #---- local imports -----#
 import io_mp
 import parser_mp
-from MontePython import main
-
-CONF_FILE = ''
+from MontePython import initialise
 
 
 class TestMontePython(unittest.TestCase):
@@ -39,7 +37,6 @@ class Test01CommandLineInputBehaviour(TestMontePython):
 
     def setUp(self):
         """set up the data used in the tests"""
-        print CONF_FILE
         self.date = str(datetime.date.today())
         self.temp_folder_path = os.path.join(
             os.path.sep.join(os.path.realpath(__file__).split(
@@ -90,21 +87,22 @@ class Test02Setup(TestMontePython):
         self.date = str(datetime.date.today())
         self.custom_command = (
             '-N 1 -p test.param -o code/test_%s' % self.date)
-        main(self.custom_command)
+        self.cosmo, self.data, self.command_line = initialise(
+            self.custom_command)
 
     def tearDown(self):
         shutil.rmtree('code/test_%s' % self.date)
 
     def test_folder_created(self):
         """
-        Check that the code creates a folder
+        Is the initialisation creating a folder?
         """
         assert os.path.exists(
             'code/test_%s' % self.date)
 
     def test_log_param_written(self):
         """
-        Check that the log.param is properly written
+        Is the log.param properly written?
         """
         assert os.path.exists(
             'code/test_%s/log.param' % self.date)
@@ -117,7 +115,7 @@ class Test02Setup(TestMontePython):
 
     def test_likelihood_data_recovered(self):
         """
-        Check if the data from the likelihood folder is properly handled
+        Is the data from the likelihood folder properly handled?
         """
         # A rerun should read the data from the log.importparam, not from the
         # original likelihood folder
@@ -125,12 +123,27 @@ class Test02Setup(TestMontePython):
 
     def test_configuration_file(self):
         """
-        Check if the .conf is recovered and used properly
+        Is the .conf recovered and used properly?
         """
         pass
 
 
-class Test03SamplingMethodBehaviour(TestMontePython):
+class Test03CosmologicalCode(TestMontePython):
+    """
+    Check the behaviour of the cosmological code through Monte Python
+    """
+    def setUp(self):
+        self.date = str(datetime.date.today())
+        self.custom_command = (
+            '-N 1 -p test.param -o code/test_%s' % self.date)
+        self.cosmo, self.data, self.command_line = initialise(
+            self.custom_command)
+
+    def tearDown(self):
+        shutil.rmtree('code/test_%s' % self.date)
+
+
+class Test04SamplingMethodBehaviour(TestMontePython):
     """
     Check that all existing sampling method are initializing
     """

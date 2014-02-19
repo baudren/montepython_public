@@ -24,6 +24,30 @@ def main(custom_command=''):
     """
     Main call of the function
 
+    It recovers the initialised instances of cosmo Class, :class:`Data` and the
+    NameSpace containing the command line arguments, feeding into the sampler.
+
+    Parameters
+    ----------
+        custom_command: str
+            allows for testing the code
+    """
+    # Initialisation routine
+    cosmo, data, command_line = initialise(custom_command)
+
+    # Generic sampler call
+    sampler.run(cosmo, data, command_line)
+
+    # Closing up the file TODO (I should not do that, the file should be close
+    # elsewhere...)
+    if command_line.method == 'MH':
+        data.out.close()
+
+
+def initialise(custom_command=''):
+    """
+    Initialisation routine
+
     This function recovers the input from the command line arguments, from
     :mod:`parser_mp`, the parameter files.
 
@@ -87,13 +111,7 @@ def main(custom_command=''):
     # wrapped.
     cosmo = recover_cosmological_module(data)
 
-    # Generic sampler call
-    sampler.run(cosmo, data, command_line)
-
-    # Closing up the file TODO
-    if command_line.method == 'MH':
-        data.out.close()
-
+    return cosmo, data, command_line
 
 def recover_local_path(command_line):
     """
