@@ -10,16 +10,12 @@ import os
 import sys
 import warnings
 
-# Checking for python version, comment if you are tired of seeing it when using
-# a version < 2.7
-VERSION = sys.version[:3]
-if float(VERSION) < 2.7:
-    print '\n\n /|\  You must have Python >= 2.7,'
-    print '/_o_\ or install manually the following modules for your older'
-    print '      distribution: argparse and OrderedDict'
-
-import parser_mp   # parsing the input command line
 import io_mp       # all the input/output mechanisms
+try:
+    import parser_mp   # parsing the input command line
+except ImportError:
+    raise io_mp.ConfigurationError(
+        "Please install the Python argparse module for your Python version")
 import sampler     # generic sampler that calls different sampling algorithms
 from data import Data  # data handling
 
@@ -49,38 +45,13 @@ def main(custom_command=''):
     # Parsing line argument
     command_line = parser_mp.parse(custom_command)
 
-    # Default configuration
-    path = {}
-
-    # The path is recovered by taking the path to this file. By default, then,
-    # the data folder is located in the same root directory. Any setting in the
-    # configuration file will overwrite this one.
-    path['root'] = os.path.sep.join(
-        os.path.abspath(__file__).split(os.path.sep)[:-2])
-    path['MontePython'] = os.path.join(path['root'], 'code')
-    path['data'] = os.path.join(path['root'], 'data')
-
-    # Configuration file, defaulting to default.conf in your root directory.
-    # This can be changed with the command line option -conf. All changes will
-    # be stored into the log.param of your folder, and hence will be reused for
-    # an ulterior run in the same directory
-    conf_file = os.path.abspath(command_line.config_file)
-    if os.path.isfile(conf_file):
-        for line in open(conf_file):
-            exec(line)
-        for key, value in path.iteritems():
-            path[key] = os.path.normpath(value)
-    else:
-        raise io_mp.ConfigurationError(
-            "You must provide a .conf file (default.conf by default in your" +
-            " montepython directory that specifies the correct locations for" +
-            " your data folder, Class (, Clik), etc...")
+    # Recovering the local configuration
+    path = recover_local_path(command_line)
 
     # Recover Monte Python's version number
     with open(os.path.join(path['root'], 'VERSION'), 'r') as version_file:
         version = version_file.readline()
-
-    sys.stdout.write('Running Monte Python v%s' % version)
+    print 'Running Monte Python v%s' % version
 
     # If the info flag was used, read a potential chain (or set of chains) to
     # be analysed with default procedure. If the argument is a .info file, then
@@ -112,16 +83,69 @@ def main(custom_command=''):
     if command_line.method == 'MH':
         io_mp.create_output_files(command_line, data)
 
-    # If there is a conflict between the log.param value and the .conf file,
-    # exiting.
-    if data.path != path:
-        raise io_mp.ConfigurationError(
-            "Your log.param file is in contradiction with your .conf file, " +
-            "please check your path in these two places.")
-
     # Loading up the cosmological backbone. For the moment, only CLASS has been
     # wrapped.
+    cosmo = recover_cosmological_module(data)
 
+    # Generic sampler call
+    sampler.run(cosmo, data, command_line)
+
+    # Closing up the file TODO
+    if command_line.method == 'MH':
+        data.out.close()
+
+
+def recover_local_path(command_line):
+    """
+    Read the configuration file, filling a dictionary
+
+    Returns
+    -------
+    path : dict
+        contains the absolute path to the location of the code, the data, the
+        cosmological code, and potential likelihood codes (clik for Planck,
+        etc)
+    """
+    # Define the dictionnary that will hold the local configuration
+    path = {}
+
+    # The path is recovered by taking the path to this file (MontePython.py).
+    # By default, then, the data folder is located in the same root directory.
+    # Any setting in the configuration file will overwrite this one.
+    path['root'] = os.path.sep.join(
+        os.path.abspath(__file__).split(os.path.sep)[:-2])
+    path['MontePython'] = os.path.join(path['root'], 'code')
+    path['data'] = os.path.join(path['root'], 'data')
+
+    # Configuration file, defaulting to default.conf in your root directory.
+    # This can be changed with the command line option -conf. All changes will
+    # be stored into the log.param of your folder, and hence will be reused for
+    # an ulterior run in the same directory
+    conf_file = os.path.abspath(command_line.config_file)
+    if os.path.isfile(conf_file):
+        for line in open(conf_file):
+            exec(line)
+        for key, value in path.iteritems():
+            path[key] = os.path.normpath(value)
+    else:
+        raise io_mp.ConfigurationError(
+            "You must provide a .conf file (default.conf by default in your" +
+            " montepython directory that specifies the correct locations for" +
+            " your data folder, Class (, Clik), etc...")
+
+    return path
+
+
+def recover_cosmological_module(data):
+    """
+    From the cosmological module name, initialise the proper Boltzmann code
+
+    .. note::
+
+        Only CLASS is currently wrapped, but a python wrapper of CosmoMC should
+        enter here.
+
+    """
     # Importing the python-wrapped CLASS from the correct folder, defined in
     # the .conf file, or overwritten at this point by the log.param.
     # If the cosmological code is CLASS, do the following to import all
@@ -132,7 +156,8 @@ def main(custom_command=''):
                     data.path['cosmo'], os.path.join(
                     "python", "build"))):
                 if elem.find("lib.") != -1:
-                    classy_path = path['cosmo']+"python/build/"+elem
+                    classy_path = data.path['cosmo']+"python/build/"+elem
+                    break
         except OSError:
             raise io_mp.ConfigurationError(
                 "You probably did not compile the python wrapper of CLASS. " +
@@ -157,15 +182,12 @@ def main(custom_command=''):
             "Be sure to define the correct behaviour in MontePython.py " +
             "and data.py, to support a new one.")
 
-    # Generic sampler call
-    sampler.run(cosmo, data, command_line)
+    return cosmo
 
-    # Closing up the file
-    if command_line.method == 'MH':
-        data.out.close()
 
 #-----------------MAIN-CALL---------------------------------------------
 if __name__ == '__main__':
     # Default action when facing a warning is being remapped to a custom one
     warnings.showwarning = io_mp.warning_message
+
     sys.exit(main())
