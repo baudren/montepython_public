@@ -79,8 +79,8 @@ class Data(object):
 
         Parameters
         ----------
-        command_line : dict
-            Dictionary containing the input from the :mod:`parser_mp`. It
+        command_line : NameSpace
+            NameSpace containing the input from the :mod:`parser_mp`. It
             stores the input parameter file, the jumping methods, the output
             folder, etc...  Most of the information extracted from the
             command_file will be transformed into :class:`Data` attributes,
