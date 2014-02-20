@@ -315,15 +315,15 @@ def prepare(info, files, is_main_chain=True):
         folder = os.path.join(
             *[elem for elem in files[0].split(os.path.sep) if elem])
         if folder.split(os.path.sep)[-1] == 'NS':
-            ns_subfolder = folder
+            NS_subfolder = folder
             basename = os.path.join(
-                ns_subfolder,
+                NS_subfolder,
                 folder.split(os.path.sep)[-2] + '-')
-            folder = os.path.join(*ns_subfolder.split(os.path.sep)[:-1])
+            folder = os.path.join(*NS_subfolder.split(os.path.sep)[:-1])
 
-            from nested_sampling import from_ns_output_to_chains as ns_output
+            from nested_sampling import from_NS_output_to_chains as NS_output
             try:
-                ns_output(folder, basename)
+                NS_output(folder, basename)
             except IOError:
                 raise io_mp.AnalyzeError(
                     "You asked to analyze a Nested Sampling folder " +

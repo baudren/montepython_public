@@ -21,21 +21,73 @@ import io_mp
 import sampler
 import warnings
 
-# Multinest option prefix
-NS_prefix       = 'NS_option_'
+# Data on file names and MultiNest options, that may be called by other modules
+
 # MultiNest subfolder
 NS_subfolder    = 'NS'
 # MultiNest file names ending, i.e. after the defined 'basename'
-name_rejected   = 'ev.dat'                 # rejected points
-name_post       = '.txt'                   # accepted points
-name_post_sep   = 'post_separate.dat'      # accepted points, separated by '\n\n'
-name_post_equal = 'post_equal_weights.dat' # some acc. points, same sample prob.
-name_stats      = 'stats.dat'              # summarized information, explained
-name_summary    = 'summary.txt'            # summarized information
+name_rejected   = '-ev.dat'                 # rejected points
+name_post       = '-.txt'                   # accepted points
+name_post_sep   = '-post_separate.dat'      # accepted points separated by '\n\n'
+name_post_equal = '-post_equal_weights.dat' # some acc. points, same sample prob.
+name_stats      = '-stats.dat'              # summarized information, explained
+name_summary    = '-summary.txt'            # summarized information
 # New files
 name_paramnames = '.paramnames'            # in the NS/ subfolder
-name_chain_acc  = 'chain_NS__accepted.txt'
-name_chain_rej  = 'chain_NS__rejected.txt'
+name_arguments  = '.arguments'             # in the NS/ subfolder
+name_chain_acc  = 'chain_NS__accepted.txt' # in the chain root folder
+name_chain_rej  = 'chain_NS__rejected.txt' # in the chain root folder
+# Log.param name (ideally, we should import this one from somewhere else)
+name_logparam = 'log.param'
+
+# Multinest option prefix
+NS_prefix       = 'NS_'
+# User-defined arguments of PyMultiNest, and 'argparse' keywords
+NS_user_arguments = {
+    # General sampling options
+    'n_live_points':
+        {'metavar': 'Number of live samples',
+         'type': int},
+    'importance_nested_sampling':
+        {'metavar': 'True or False',
+         'type': bool},
+    'sampling_efficiency':
+        {'metavar': 'Sampling efficiency',
+         'type': float},
+    'const_efficiency_mode':
+        {'metavar': 'True or False',
+         'type': bool},
+    'seed':
+        {'metavar': 'Random seed',
+         'type': int},
+    'log_zero':
+        {'metavar': 'Min. log-evidence to consider',
+         'type': float},
+    'n_iter_before_update':
+        {'metavar': 'Number of iterations between updates',
+         'type': int},
+    # Ending conditions
+    'evidence_tolerance':
+        {'metavar': 'Evidence tolerance',
+         'type': float},
+    'max_iter':
+        {'metavar': 'Max. number of iterations',
+         'type': int},
+    # Multimodal sampling
+    'multimodal':
+        {'metavar': 'True or False',
+         'type': bool},
+    'max_modes':
+        {'metavar': 'Max. number of modes to consider',
+         'type': int},
+    'mode_tolerance':
+        {'metavar': 'Min. value of the log-evidence for a mode to be considered',
+         'type': float},
+    'clustering_params':
+        {'metavar': 'Parameters to be used for mode separation',
+         'type': str,
+         'nargs': '+'}
+    }
 
 
 def run(cosmo, data, command_line):
@@ -100,53 +152,62 @@ def run(cosmo, data, command_line):
     if not os.path.exists(NS_folder):
         os.makedirs(NS_folder)
 
-    # Add a hyphen to the chain name as a base name for MultiNest files
+    # Use chain name as a base name for MultiNest files
     chain_name = [a for a in command_line.folder.split(os.path.sep) if a][-1]
-    basename = os.path.join(NS_folder, chain_name+'-')
+    basename = os.path.join(NS_folder, chain_name)
 
     # Prepare arguments for PyMultiNest
-    # -- Automatic parameters
-    data.NS_parameters['n_dims']   =  len(varying_param_names)
-    data.NS_parameters['n_params'] = (len(varying_param_names) +
+    # -- Automatic arguments
+    data.NS_arguments['n_dims']   =  len(varying_param_names)
+    data.NS_arguments['n_params'] = (len(varying_param_names) +
                                       len(derived_param_names))
-    data.NS_parameters['verbose']  = True
-    data.NS_parameters['outputfiles_basename'] = basename
-    # -- User-defined parameters
-    parameters = ['n_live_points', 'sampling_efficiency', 'evidence_tolerance',
-                  'importance_nested_sampling', 'const_efficiency_mode',
-                  'log_zero', 'max_iter', 'seed', 'n_iter_before_update',
-                  'multimodal', 'max_modes',
-                  'mode_tolerance']
-    for param in parameters:
-        value = getattr(command_line, NS_prefix+param)
+    data.NS_arguments['verbose']  = True
+    data.NS_arguments['outputfiles_basename'] = basename + '-'
+    # -- User-defined arguments
+    for arg in NS_user_arguments:
+        value = getattr(command_line, NS_prefix+arg)
+        # Special case: clustering parameters
+        if arg == 'clustering_params':
+            clustering_param_names = value if value != -1 else []
+            continue
+        # Rest of the cases
         if value != -1:
-            data.NS_parameters[param] = value
+            data.NS_arguments[arg] = value
         # else: don't define them -> use PyMultiNest default value
-
-    # Caveat: multi-modal sampling OFF by default; if requested, INS disabled
-    try:
-        if data.NS_parameters['multimodal']:
-            data.NS_parameters['importance_nested_sampling'] = False
-            warnings.warn('Multi-modal sampling has been requested, '+
-                          'so Importance Nested Sampling has been disabled')
-    except KeyError:
-        data.NS_parameters['multimodal'] = False
 
     # Clustering parameters -- reordering and writing order in a file
     NS_param_names = []
-    for param in getattr(command_line, NS_prefix+'clustering_params'):
-        if not param in varying_param_names:
-            raise io_mp.ConfigurationError(
-                'The requested clustering parameter "%s" was not found. '%param+
-                'Check your ".param" file and pick valid ones.')
-        NS_param_names.append(param)
+    if clustering_param_names:
+        data.NS_arguments['n_clustering_params'] = len(clustering_param_names)
+        for param in clustering_param_names:
+            if not param in varying_param_names:
+                raise io_mp.ConfigurationError(
+                'The requested clustering parameter "%s"'%param+
+                ' was not found in your ".param" file. Pick a valid one.')
+            NS_param_names.append(param)
     for param in varying_param_names:
         if not param in NS_param_names:
-            NS_param_names.append(param)
-    data.NS_parameters['n_clustering_params'] = \
-        len(getattr(command_line, NS_prefix+'clustering_params'))
-    # Write the ordering to NS/[chain name].paramnames
-    with open(basename[:-1]+name_paramnames, 'w') as pfile:
+            NS_param_names.append(param)       
+        
+    # Caveat: multi-modal sampling OFF by default; if requested, INS disabled
+    try:
+        if data.NS_arguments['multimodal']:
+            data.NS_arguments['importance_nested_sampling'] = False
+            warnings.warn('Multi-modal sampling has been requested, '+
+                          'so Importance Nested Sampling has been disabled')
+    except KeyError:
+        data.NS_arguments['multimodal'] = False
+
+    # Write the MultiNest arguments and parameter ordering
+    with open(basename+name_arguments, 'w') as afile:
+        for arg in data.NS_arguments:
+            if arg != 'n_clustering_params':
+                afile.write(' = '.join([str(arg), str(data.NS_arguments[arg])]))
+            else:
+                afile.write('clustering_params = '+
+                            ' '.join(clustering_param_names))
+            afile.write('\n')
+    with open(basename+name_paramnames, 'w') as pfile:
         pfile.write('\n'.join(NS_param_names+derived_param_names))
 
     # Function giving the prior probability
@@ -174,23 +235,23 @@ def run(cosmo, data, command_line):
         for i, name in enumerate(derived_param_names):
             cube[ndim+i] = data.mcmc_parameters[name]['current']
         return lkl
-    
+
     # Launch MultiNest, and recover the output code
-#    output = pymultinest.run(loglike, prior, **data.NS_parameters)
-    output = None
-
-    # Assuming this worked, i.e. if output is `None`, translate the output
-    # into the same format as standard Monte Python chains for further analysis.
+    output = pymultinest.run(loglike, prior, **data.NS_arguments)
+    
+    # Assuming this worked, i.e. if output is `None`,
+    # state it and suggest the user to analyse the output.
     if output is None:
-        from_NS_output_to_chains(data, command_line)
+        warnings.warn('The sampling with MultiNest is done.\n' +
+                      'You can now analyse the output calling MontePython ' +
+                      ' with the -info flag in the chain_name/NS subfolder.')
 
-
+        
 def from_NS_output_to_chains(data, command_line):
     """
     Translate the output of MultiNest into readable output for Monte Python
 
-    This routine will be called after the MultiNest run has been successfully
-    completed.
+    This routine will be called by the analyze modules.
 
     If mode separation has been performed (i.e., multimodal=True), it creates
     'mode_#' subfolders containing a chain file with the corresponding samples
@@ -202,11 +263,29 @@ def from_NS_output_to_chains(data, command_line):
     The mono-modal case is treated as a special case of the multi-modal one.
 
     """
+    # Read the arguments of the NS run
+    with open(basename+name_arguments, 'r') as afile:
+        for line in afile:
+            arg   = line.split('=')[0].strip()
+            value = line.split('=')[1].strip()
+            if arg in NS_user_arguments:
+                print arg, str(NS_user_arguments[arg]['type'])
+#        data.NS_arguments = dict([line.split('=')[0].strip(),
+#                                  exec(line.split('=')[1].strip()] for line in afile)
+#        for arg in data.NS_arguments:
+#            afile.write(" = ".join([str(arg), str(data.NS_arguments[arg])])+"\n")
+#    with open(basename+name_paramnames, 'r') as pfile:
+#        pfile.write('\n'.join(NS_param_names+derived_param_names))
+    
+
     multimodal = data.NS_parameters.get('multimodal')
+    basename   = data.NS_parameters['outputfiles_basename']
+    
+    # Parameter order
+    NS_param_names = np.loadtxt(basename+name_paramnames, dtype='str').tolist()
 
     # Open the 'stats.dat' file to see what happened and retrieve some info
-    stats_name = data.NS_parameters['outputfiles_basename'] + 'stats.dat'
-    stats_file = open(stats_name, 'r')
+    stats_file = open(basename+name_stats, 'r')
     lines = stats_file.readlines()
     stats_file.close()
     # Mode-separated info
@@ -230,40 +309,33 @@ def from_NS_output_to_chains(data, command_line):
         'Something is wrong... (strange error n.1)')
 
     # Prepare the accepted-points file -- modes are separated by 2 line breaks
-    if multimodal:
-        accepted_name = 'post_separate.dat'
-    else:
-        accepted_name = '.txt'
-    accepted_name = (data.NS_parameters['outputfiles_basename'] +
-                     accepted_name)
+    accepted_name = basename + (name_post_sep if multimodal else name_post)
     with open(accepted_name, 'r') as accepted_file:
         mode_lines = [a for a in ''.join(accepted_file.readlines()).split('\n\n')
                       if a != '']
     if multimodal:
         assert len(mode_lines) == n_modes, 'Something is wrong... (strange error n.2)'
-    accepted_chain_name = 'chain_NS__accepted.txt'
 
-
-    # TODO: prepare total and rejected chain
-
+# TODO: prepare total and rejected chain
   
     # Preparing log.param files of modes
-    with open(os.path.join(command_line.folder, 'log.param'), 'r') as log_file:
+    with open(os.path.join(command_line.folder, name_logparam), 'r') as log_file:
         log_lines = log_file.readlines()
     # Number of the lines to be changed
     varying_param_names = data.get_mcmc_parameters(['varying'])
     param_lines = {}
-    pre = 'data.parameters['
-    pos = ']'
+    pre, pos = 'data.parameters[', ']'
     for i, line in enumerate(log_lines):
         if pre in line:
             if line.strip()[0] == '#':
                 continue
-            param_name = line.split('=')[0][line.find(pre)+len(pre):line.find(pos)]
+            param_name = line.split('=')[0][line.find(pre)+len(pre):
+                                            line.find(pos)]
             param_name = param_name.replace('"','').replace("'",'').strip()
             if param_name in varying_param_names:
                 param_lines[param_name] = i
 
+                
     # Parameters to cut: clustering_params, if exists, otherwise varying_params
     cut_params = data.NS_parameters.get('n_clustering_params')
     if cut_params and multimodal:
@@ -274,6 +346,28 @@ def from_NS_output_to_chains(data, command_line):
     else:
         cut_param_names = []
 
+
+
+
+## MultiNest file names ending, i.e. after the defined 'basename'
+#name_rejected   = '-ev.dat'                 # rejected points
+#name_post       = '.txt'                   # accepted points
+#name_post_sep   = '-post_separate.dat'      # accepted points, separated by '\n\n'
+#name_post_equal = '-post_equal_weights.dat' # some acc. points, same sample prob.
+#name_stats      = '-stats.dat'              # summarized information, explained
+#name_summary    = '-summary.txt'            # summarized information
+# New files
+#name_paramnames = '.paramnames'            # in the NS/ subfolder
+#name_chain_acc  = 'chain_NS__accepted.txt'
+#name_chain_rej  = 'chain_NS__rejected.txt'
+
+#accepted_chain_name = 'chain_NS__accepted.txt'
+
+# SEGUIR DESDE AQUI
+
+
+
+        
     # Process each mode:
     ini = 1 if multimodal else 0
     for i in range(ini, 1+n_modes):
@@ -337,6 +431,8 @@ def from_NS_output_to_chains(data, command_line):
             log_file.writelines(log_lines)
 
         # TODO: USE POINTS FROM TOTAL AND REJECTED SAMPLE???
+
+
 
 
 ### THE NEXT FUNCTION IS CURRENTLY NOT USED:
