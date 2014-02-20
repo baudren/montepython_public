@@ -1,3 +1,5 @@
+# Move this file to default.conf, and adapt it to your needs
+
 # Fill in the relevant path to your personal distribution. 
 # If you create a new file out of this one, please remember to call
 # MontePython.py with the option '-conf my.conf'
@@ -17,6 +19,7 @@
 # you are executing the code, please also add:
 # ** path['data']  =  /path/to/the/other/data/
 
-root = '/Users/benjaminaudren/Desktop/professional/codes'
+root = '/Path/to/your/codes'
 
-path['cosmo']		= root+'/class/'
+path['cosmo']		= root+'/class'
+path['clik']            = root+'/planck/plc-1.0'
