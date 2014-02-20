@@ -162,13 +162,18 @@ class Data(object):
         self.out = None
         self.out_name = ''
 
+        # If the parameter file is not a log.param, the path will be read
+        # before reading the parameter file.
+        if self.param.find('log.param') == -1:
+            self.path.update(path)
+
         # Read from the parameter file to fill properly the mcmc_parameters
         # dictionary.
         self.fill_mcmc_parameters()
 
-        # Test if the recovered path agree with the one extracted from
+        # Test if the recovered path agrees with the one extracted from
         # the configuration file. Note that the root field depends simply on
-        # where the code leaves, and so should not be read nor stored
+        # where the code lives, and so should not be read nor stored
         # permanently on the log.param.
         if self.path != {}:
             self.path.update({'root': path['root']})
@@ -177,11 +182,6 @@ class Data(object):
                     "Your code location in the log.param file is "
                     "in contradiction with your .conf file. "
                     "I will use the one from log.param.")
-        else:
-            # If none was extracted, it means it was a first run, and in this
-            # case, one should use the path dictionnary specified in the .conf
-            # file
-            self.path.update(path)
 
         # Determine which cosmological code is in use
         if self.path['cosmo'].find('class') != -1:
