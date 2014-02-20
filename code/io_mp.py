@@ -97,6 +97,8 @@ def log_default_configuration(data, command_line):
     locations, or different versions of Clik. But, as you never know what might
     go wrong, it is logged everytime !
 
+    TODO: should the root be still logged? (@packaging)
+
     """
     log = open(os.path.join(command_line.folder, 'log.param'), 'a')
     log.write('\n\n#--------Default-Configuration------\n')
