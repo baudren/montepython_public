@@ -215,7 +215,7 @@ def create_parser():
     ###############
     # MultiNest arguments (all OPTIONAL and ignored if not "-m='NS'")
     # The default values of -1 mean to take the PyMultiNest default values
-    from nested_sampling import NS_prefix, NS_user_arguments
+    from nested_sampling import NS_prefix, NS_user_arguments, str2bool
     for arg in NS_user_arguments:
         parser.add_argument('--'+NS_prefix+arg,
                             dest=NS_prefix+arg,

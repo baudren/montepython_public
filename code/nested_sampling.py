@@ -14,7 +14,7 @@ internally two functions, :func:`prior() <nested_sampling.prior>` and
 .. moduleauthor:: Jesus Torrado <torradocacho@lorentz.leidenuniv.nl>
 .. moduleauthor:: Benjamin Audren <benjamin.audren@epfl.ch>
 """
-import pymultinest
+from pymultinest import run as nested_run
 import numpy as np
 import os
 import io_mp
@@ -23,15 +23,16 @@ import warnings
 
 # Data on file names and MultiNest options, that may be called by other modules
 
-# MultiNest subfolder
+# MultiNest subfolder and name separator
 NS_subfolder    = 'NS'
-# MultiNest file names ending, i.e. after the defined 'basename'
-name_rejected   = '-ev.dat'                 # rejected points
-name_post       = '-.txt'                   # accepted points
-name_post_sep   = '-post_separate.dat'      # accepted points separated by '\n\n'
-name_post_equal = '-post_equal_weights.dat' # some acc. points, same sample prob.
-name_stats      = '-stats.dat'              # summarized information, explained
-name_summary    = '-summary.txt'            # summarized information
+NS_separator    = '-'
+# MultiNest file names ending, i.e. after the defined 'base_name'
+name_rejected   = NS_separator + 'ev.dat'                 # rejected points
+name_post       = NS_separator + '.txt'                   # accepted points
+name_post_sep   = NS_separator + 'post_separate.dat'      # accepted points separated by '\n\n'
+name_post_equal = NS_separator + 'post_equal_weights.dat' # some acc. points, same sample prob.
+name_stats      = NS_separator + 'stats.dat'              # summarized information, explained
+name_summary    = NS_separator + 'summary.txt'            # summarized information
 # New files
 name_paramnames = '.paramnames'            # in the NS/ subfolder
 name_arguments  = '.arguments'             # in the NS/ subfolder
@@ -43,6 +44,8 @@ name_logparam = 'log.param'
 # Multinest option prefix
 NS_prefix       = 'NS_'
 # User-defined arguments of PyMultiNest, and 'argparse' keywords
+# First: basic string -> bool type conversion:
+str2bool = lambda s: True if s.lower() == 'true' else False
 NS_user_arguments = {
     # General sampling options
     'n_live_points':
@@ -50,13 +53,13 @@ NS_user_arguments = {
          'type': int},
     'importance_nested_sampling':
         {'metavar': 'True or False',
-         'type': bool},
+         'type': str2bool},
     'sampling_efficiency':
         {'metavar': 'Sampling efficiency',
          'type': float},
     'const_efficiency_mode':
         {'metavar': 'True or False',
-         'type': bool},
+         'type': str2bool},
     'seed':
         {'metavar': 'Random seed',
          'type': int},
@@ -76,7 +79,7 @@ NS_user_arguments = {
     # Multimodal sampling
     'multimodal':
         {'metavar': 'True or False',
-         'type': bool},
+         'type': str2bool},
     'max_modes':
         {'metavar': 'Max. number of modes to consider',
          'type': int},
@@ -87,6 +90,13 @@ NS_user_arguments = {
         {'metavar': 'Parameters to be used for mode separation',
          'type': str,
          'nargs': '+'}
+    }
+# Automatically-defined arguments of PyMultiNest, type specified
+NS_auto_arguments = {
+    'n_dims':   {'type': int},
+    'n_params': {'type': int},
+    'verbose':  {'type': str2bool},
+    'outputfiles_basename': {'type': str}
     }
 
 
@@ -154,7 +164,7 @@ def run(cosmo, data, command_line):
 
     # Use chain name as a base name for MultiNest files
     chain_name = [a for a in command_line.folder.split(os.path.sep) if a][-1]
-    basename = os.path.join(NS_folder, chain_name)
+    base_name = os.path.join(NS_folder, chain_name)
 
     # Prepare arguments for PyMultiNest
     # -- Automatic arguments
@@ -162,7 +172,7 @@ def run(cosmo, data, command_line):
     data.NS_arguments['n_params'] = (len(varying_param_names) +
                                       len(derived_param_names))
     data.NS_arguments['verbose']  = True
-    data.NS_arguments['outputfiles_basename'] = basename + '-'
+    data.NS_arguments['outputfiles_basename'] = base_name + NS_separator
     # -- User-defined arguments
     for arg in NS_user_arguments:
         value = getattr(command_line, NS_prefix+arg)
@@ -175,7 +185,7 @@ def run(cosmo, data, command_line):
             data.NS_arguments[arg] = value
         # else: don't define them -> use PyMultiNest default value
 
-    # Clustering parameters -- reordering and writing order in a file
+    # Clustering parameters -- reordering to put them first
     NS_param_names = []
     if clustering_param_names:
         data.NS_arguments['n_clustering_params'] = len(clustering_param_names)
@@ -199,7 +209,7 @@ def run(cosmo, data, command_line):
         data.NS_arguments['multimodal'] = False
 
     # Write the MultiNest arguments and parameter ordering
-    with open(basename+name_arguments, 'w') as afile:
+    with open(base_name+name_arguments, 'w') as afile:
         for arg in data.NS_arguments:
             if arg != 'n_clustering_params':
                 afile.write(' = '.join([str(arg), str(data.NS_arguments[arg])]))
@@ -207,7 +217,7 @@ def run(cosmo, data, command_line):
                 afile.write('clustering_params = '+
                             ' '.join(clustering_param_names))
             afile.write('\n')
-    with open(basename+name_paramnames, 'w') as pfile:
+    with open(base_name+name_paramnames, 'w') as pfile:
         pfile.write('\n'.join(NS_param_names+derived_param_names))
 
     # Function giving the prior probability
@@ -237,7 +247,7 @@ def run(cosmo, data, command_line):
         return lkl
 
     # Launch MultiNest, and recover the output code
-    output = pymultinest.run(loglike, prior, **data.NS_arguments)
+    output = nested_run(loglike, prior, **data.NS_arguments)
     
     # Assuming this worked, i.e. if output is `None`,
     # state it and suggest the user to analyse the output.
@@ -247,7 +257,7 @@ def run(cosmo, data, command_line):
                       ' with the -info flag in the chain_name/NS subfolder.')
 
         
-def from_NS_output_to_chains(data, command_line):
+def from_NS_output_to_chains(folder):
     """
     Translate the output of MultiNest into readable output for Monte Python
 
@@ -263,32 +273,32 @@ def from_NS_output_to_chains(data, command_line):
     The mono-modal case is treated as a special case of the multi-modal one.
 
     """
+    chain_name = [a for a in folder.split(os.path.sep) if a][-2]
+    base_name = os.path.join(folder, chain_name)
+
     # Read the arguments of the NS run
-    with open(basename+name_arguments, 'r') as afile:
+    # This file is intended to be machine generated: no "#" ignored or tests done
+    NS_arguments = {}
+    with open(base_name+name_arguments, 'r') as afile:
         for line in afile:
             arg   = line.split('=')[0].strip()
             value = line.split('=')[1].strip()
-            if arg in NS_user_arguments:
-                print arg, str(NS_user_arguments[arg]['type'])
-#        data.NS_arguments = dict([line.split('=')[0].strip(),
-#                                  exec(line.split('=')[1].strip()] for line in afile)
-#        for arg in data.NS_arguments:
-#            afile.write(" = ".join([str(arg), str(data.NS_arguments[arg])])+"\n")
-#    with open(basename+name_paramnames, 'r') as pfile:
-#        pfile.write('\n'.join(NS_param_names+derived_param_names))
-    
-
-    multimodal = data.NS_parameters.get('multimodal')
-    basename   = data.NS_parameters['outputfiles_basename']
-    
-    # Parameter order
-    NS_param_names = np.loadtxt(basename+name_paramnames, dtype='str').tolist()
+            arg_type = (NS_user_arguments[arg]['type']
+                        if arg in NS_user_arguments else
+                        NS_auto_arguments[arg]['type'])
+            value = arg_type(value)
+            if arg == 'clustering_params':
+                value = [a.strip() for a in value.split()]
+            NS_arguments[arg] = value
+    # Read parameters order
+    NS_param_names = np.loadtxt(base_name+name_paramnames, dtype='str').tolist()
 
     # Open the 'stats.dat' file to see what happened and retrieve some info
-    stats_file = open(basename+name_stats, 'r')
+    stats_file = open(base_name+name_stats, 'r')
     lines = stats_file.readlines()
     stats_file.close()
     # Mode-separated info
+    multimodal = NS_arguments.get('multimodal')
     i = 0
     n_modes = 0
     stats_mode_lines = {0:[]}
@@ -309,17 +319,20 @@ def from_NS_output_to_chains(data, command_line):
         'Something is wrong... (strange error n.1)')
 
     # Prepare the accepted-points file -- modes are separated by 2 line breaks
-    accepted_name = basename + (name_post_sep if multimodal else name_post)
+    accepted_name = base_name + (name_post_sep if multimodal else name_post)
     with open(accepted_name, 'r') as accepted_file:
         mode_lines = [a for a in ''.join(accepted_file.readlines()).split('\n\n')
                       if a != '']
+
     if multimodal:
-        assert len(mode_lines) == n_modes, 'Something is wrong... (strange error n.2)'
+        assert len(mode_lines) == n_modes, 'Something is wrong... (strange error n.2a)'
+    else:
+        assert len(mode_lines) == 1, 'Something is wrong... (strange error n.2b)'
 
 # TODO: prepare total and rejected chain
   
     # Preparing log.param files of modes
-    with open(os.path.join(command_line.folder, name_logparam), 'r') as log_file:
+    with open(os.path.join(chain_name, name_logparam), 'r') as log_file:
         log_lines = log_file.readlines()
     # Number of the lines to be changed
     varying_param_names = data.get_mcmc_parameters(['varying'])
@@ -349,7 +362,7 @@ def from_NS_output_to_chains(data, command_line):
 
 
 
-## MultiNest file names ending, i.e. after the defined 'basename'
+## MultiNest file names ending, i.e. after the defined 'base_name'
 #name_rejected   = '-ev.dat'                 # rejected points
 #name_post       = '.txt'                   # accepted points
 #name_post_sep   = '-post_separate.dat'      # accepted points, separated by '\n\n'
@@ -436,7 +449,7 @@ def from_NS_output_to_chains(data, command_line):
 
 
 ### THE NEXT FUNCTION IS CURRENTLY NOT USED:
-def from_NS_output_to_chains_OLD(folder, basename):
+def from_NS_output_to_chains_OLD(folder, base_name):
     """
     Translate the output of MultiNest into readable output for Monte Python
 
@@ -452,7 +465,7 @@ def from_NS_output_to_chains_OLD(folder, basename):
 
     # creating chain of accepted points (straightforward reshuffling of
     # columns)
-    with open(basename+'post_equal_weights.dat', 'r') as input_file:
+    with open(base_name+'post_equal_weights.dat', 'r') as input_file:
         output_file = open(accepted_chain, 'w')
         array = np.loadtxt(input_file)
         output_array = np.ones((np.shape(array)[0], np.shape(array)[1]+1))
@@ -465,7 +478,7 @@ def from_NS_output_to_chains_OLD(folder, basename):
         output_file.close()
 
     # Extracting log evidence
-    with open(basename+'stats.dat') as input_file:
+    with open(base_name+'stats.dat') as input_file:
         lines = [line for line in input_file if 'Global Log-Evidence' in line]
         if len(lines) > 1:
             lines = [line for line in lines if 'Importance' in line]
@@ -473,7 +486,7 @@ def from_NS_output_to_chains_OLD(folder, basename):
 
     # Creating chain from rejected points, with some interpretation of the
     # weight associated to each point arXiv:0809.3437 sec 3
-    with open(basename+'ev.dat', 'r') as input_file:
+    with open(base_name+'ev.dat', 'r') as input_file:
         output = open(rejected_chain, 'w')
         array = np.loadtxt(input_file)
         output_array = np.zeros((np.shape(array)[0], np.shape(array)[1]-1))
