@@ -10,6 +10,7 @@ import os
 import datetime
 import shutil
 import re
+import numpy as np
 import warnings
 # This discards warning messages (maybe this should be tuned to discard only
 # the ones specifically asked by this code..)
@@ -18,7 +19,8 @@ warnings.filterwarnings('ignore')
 #---- local imports -----#
 import io_mp
 import parser_mp
-from MontePython import initialise
+import sampler
+from MontePython import initialise, main
 
 
 class TestMontePython(unittest.TestCase):
@@ -87,8 +89,13 @@ class Test02Setup(TestMontePython):
         self.date = str(datetime.date.today())
         self.custom_command = (
             '-N 1 -p test.param -o code/test_%s' % self.date)
-        self.cosmo, self.data, self.command_line = initialise(
-            self.custom_command)
+        try:
+            self.cosmo, self.data, self.command_line, _ = initialise(
+                self.custom_command)
+        except io_mp.ConfigurationError:
+            raise io_mp.ConfigurationError(
+                "For the test suite to run, you need to have"
+                " your default.conf properly configured")
 
     def tearDown(self):
         del self.custom_command
@@ -183,7 +190,7 @@ class Test04CosmologicalCodeWrapper(TestMontePython):
         self.date = str(datetime.date.today())
         self.custom_command = (
             '-N 1 -p test.param -o code/test_%s' % self.date)
-        self.cosmo, self.data, self.command_line = initialise(
+        self.cosmo, self.data, self.command_line, _ = initialise(
             self.custom_command)
 
     def tearDown(self):
@@ -257,15 +264,86 @@ class Test04CosmologicalCodeWrapper(TestMontePython):
         self.cosmo.empty()
 
 
-class Test05SamplingMethodBehaviour(TestMontePython):
+class Test05MetropolisHastingsBehaviour(TestMontePython):
     """
-    Check that all existing sampling method are initializing
+    Check that the default sampling method is working
+
+    The call should create a chain, check that the number of points is properly
+    used.
     """
     def setUp(self):
-        pass
+        self.date = str(datetime.date.today())
+        self.folder = os.path.join(
+            'code', 'test_%s' % self.date)
+        self.number = 50
+        self.custom_command = (
+            '-N %d -p test.param -o %s' % (self.number, self.folder))
+        self.cosmo, self.data, self.command_line, _ = initialise(
+            self.custom_command)
+        sampler.run(self.cosmo, self.data, self.command_line)
+        self.data.out.close()  # TODO bad
 
     def tearDown(self):
-        pass
+        shutil.rmtree('%s' % self.folder)
+        self.cosmo.struct_cleanup()
+        self.cosmo.empty()
+        del self.cosmo, self.data, self.command_line
+
+    def test_short_run(self):
+        """Are the MH sampler basic functionnalities working?"""
+        # Check that a file with the proper name was created
+        output_file = os.path.join(
+            self.folder, self.date+'_%d__1.txt' % self.number)
+        self.assertTrue(os.path.exists(output_file))
+        # Recover the data in it
+        data = np.loadtxt(output_file)
+        # Check that the sum of the first column adds up to the desired number
+        self.assertEqual(np.sum(data[:, 0]), self.number)
+        # Check that the analyze module works for this
+        custom_command = '-info %s' % self.folder
+        main(custom_command)
+        ## verify that this command created the appropriate files
+        expected_files = [
+            'test_' + self.date + '.' + elem
+            for elem in ['bestfit', 'covmat', 'h_info', 'v_info',
+                         'info', 'log', 'tex']]
+        for output_file in os.listdir(self.folder):
+            if os.path.isfile(output_file):
+                if output_file.find('.txt') == -1:
+                    self.assertIn(output_file, expected_files)
+        ## check if the plot folder was created, with the two pdf files
+        self.assertTrue(os.path.isdir(
+            os.path.join(self.folder, 'plots')))
+        for pdf_file in os.listdir(
+                os.path.join(self.folder, 'plots')):
+            self.assertTrue(
+                pdf_file.find('_triangle') != -1 or pdf_file.find('_1d') != -1)
+
+
+class Test06CosmoHammerBehaviour(TestMontePython):
+    """
+    Check if the modules are callable
+    """
+    def setUp(self):
+        self.date = str(datetime.date.today())
+        self.custom_command = (
+            '-N 1 -p test.param -o code/test_%s' % self.date +
+            ' -m CH')
+        self.cosmo, self.data, self.command_line, _ = initialise(
+            self.custom_command)
+
+    def tearDown(self):
+        shutil.rmtree('code/test_%s' % self.date)
+        self.cosmo.empty()
+        del self.cosmo, self.data, self.command_line
+
+    def test_callable_objects(self):
+        """Are the cosmo and data objects callable?"""
+        self.assertTrue(hasattr(self.cosmo, '__call__'))
+        self.assertTrue(hasattr(self.data, '__call__'))
+        for experiment in self.data.experiments:
+            self.assertTrue(hasattr(
+                self.data.lkl[experiment], 'computeLikelihood'))
 
 
 if __name__ == '__main__':
