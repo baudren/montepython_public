@@ -33,7 +33,12 @@ def main(custom_command=''):
             allows for testing the code
     """
     # Initialisation routine
-    cosmo, data, command_line = initialise(custom_command)
+    cosmo, data, command_line, success = initialise(custom_command)
+
+    # If success is False, it means either that the initialisation was not
+    # successful, or that it was simply an analysis call. The run should stop
+    if not success:
+        return
 
     # Generic sampler call
     sampler.run(cosmo, data, command_line)
@@ -42,6 +47,8 @@ def main(custom_command=''):
     # elsewhere...)
     if command_line.method == 'MH':
         data.out.close()
+
+    return
 
 
 def initialise(custom_command=''):
@@ -84,7 +91,7 @@ def initialise(custom_command=''):
     if command_line.files is not None:
         from analyze import analyze  # only invoked when analyzing
         analyze(command_line)
-        return
+        return None, None, command_line, False
 
     # Fill in data, starting from  parameter file. If output folder already
     # exists, the input parameter file was automatically replaced by the
@@ -111,7 +118,7 @@ def initialise(custom_command=''):
     # wrapped.
     cosmo = recover_cosmological_module(data)
 
-    return cosmo, data, command_line
+    return cosmo, data, command_line, True
 
 def recover_local_path(command_line):
     """
