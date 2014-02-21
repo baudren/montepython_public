@@ -178,6 +178,8 @@ Usage cases (and suggested values of the options)
 
 In case you want to use the raw output of MultiNest, you must know: The output of MultiNest is untouched inside the NS subfolder under the chain folder. It contains the raw output of MultiNest, plust 2 files: *.arguments are the arguments passed to PyMultiNest by the previous run; *.paramnames are the names of the parameters in the order in which the columns of the MultiNest output files are. This last order will in general not be equal to the order in the parameters in the log.param. In particular, when there are clustering parameters, in the MultiNest files they appear first.
 
+Remember too that the scaling is not applied in the raw files!
+
 **I want a good covariance matrix**
 
 (low sampling)

@@ -17,6 +17,7 @@ internally two functions, :func:`prior() <nested_sampling.prior>` and
 from pymultinest import run as nested_run
 import numpy as np
 import os
+from copy import copy
 import io_mp
 import sampler
 import warnings
@@ -254,7 +255,9 @@ def run(cosmo, data, command_line):
     if output is None:
         warnings.warn('The sampling with MultiNest is done.\n' +
                       'You can now analyse the output calling MontePython ' +
-                      ' with the -info flag in the chain_name/NS subfolder.')
+                      ' with the -info flag in the chain_name/NS subfolder,' +
+                      'or, if you used multimodal sampling, in the ' +
+                      'chain_name/mode_# subfolders.')
 
         
 def from_NS_output_to_chains(folder):
@@ -290,15 +293,42 @@ def from_NS_output_to_chains(folder):
             if arg == 'clustering_params':
                 value = [a.strip() for a in value.split()]
             NS_arguments[arg] = value
+    multimodal = NS_arguments.get('multimodal')
     # Read parameters order
     NS_param_names = np.loadtxt(base_name+name_paramnames, dtype='str').tolist()
+    # In multimodal case, if there were no clustering params specified, ALL are
+    if multimodal and not NS_arguments.get('clustering_params'):
+        NS_arguments['clustering_params'] = NS_param_names
 
+    # Extract the necessary information from the log.param file
+    # Including line numbers of the parameters
+    with open(os.path.join(chain_name, name_logparam), 'r') as log_file:
+        log_lines = log_file.readlines()
+    # Number of the lines to be changed
+    param_names = []
+    param_lines = {}
+    param_data  = {}
+    pre, pos = 'data.parameters[', ']'
+    for i, line in enumerate(log_lines):
+        if pre in line:
+            if line.strip()[0] == '#':
+                continue
+            param_name = line.split('=')[0][line.find(pre)+len(pre):
+                                            line.find(pos)]
+            param_name = param_name.replace('"','').replace("'",'').strip()
+            param_names.append(param_name)
+            param_data[param_name] = [a.strip() for a in
+                                      line.split('=')[1].strip('[]').split(',')]
+            param_lines[param_name] = i
+            
+    # Create the mapping from NS ordering to log.param ordering
+    columns_reorder = [NS_param_names.index(param) for param in param_names]
+    
     # Open the 'stats.dat' file to see what happened and retrieve some info
     stats_file = open(base_name+name_stats, 'r')
     lines = stats_file.readlines()
     stats_file.close()
     # Mode-separated info
-    multimodal = NS_arguments.get('multimodal')
     i = 0
     n_modes = 0
     stats_mode_lines = {0:[]}
@@ -323,64 +353,12 @@ def from_NS_output_to_chains(folder):
     with open(accepted_name, 'r') as accepted_file:
         mode_lines = [a for a in ''.join(accepted_file.readlines()).split('\n\n')
                       if a != '']
-
     if multimodal:
-        assert len(mode_lines) == n_modes, 'Something is wrong... (strange error n.2a)'
-    else:
-        assert len(mode_lines) == 1, 'Something is wrong... (strange error n.2b)'
+        mode_lines = [[]] + mode_lines
+    assert len(mode_lines) == 1+n_modes, 'Something is wrong... (strange error n.2)'
 
 # TODO: prepare total and rejected chain
   
-    # Preparing log.param files of modes
-    with open(os.path.join(chain_name, name_logparam), 'r') as log_file:
-        log_lines = log_file.readlines()
-    # Number of the lines to be changed
-    varying_param_names = data.get_mcmc_parameters(['varying'])
-    param_lines = {}
-    pre, pos = 'data.parameters[', ']'
-    for i, line in enumerate(log_lines):
-        if pre in line:
-            if line.strip()[0] == '#':
-                continue
-            param_name = line.split('=')[0][line.find(pre)+len(pre):
-                                            line.find(pos)]
-            param_name = param_name.replace('"','').replace("'",'').strip()
-            if param_name in varying_param_names:
-                param_lines[param_name] = i
-
-                
-    # Parameters to cut: clustering_params, if exists, otherwise varying_params
-    cut_params = data.NS_parameters.get('n_clustering_params')
-    if cut_params and multimodal:
-        cut_param_names = varying_param_names[:cut_params]
-    elif multimodal:
-        cut_param_names = varying_param_names
-    # mono-modal case
-    else:
-        cut_param_names = []
-
-
-
-
-## MultiNest file names ending, i.e. after the defined 'base_name'
-#name_rejected   = '-ev.dat'                 # rejected points
-#name_post       = '.txt'                   # accepted points
-#name_post_sep   = '-post_separate.dat'      # accepted points, separated by '\n\n'
-#name_post_equal = '-post_equal_weights.dat' # some acc. points, same sample prob.
-#name_stats      = '-stats.dat'              # summarized information, explained
-#name_summary    = '-summary.txt'            # summarized information
-# New files
-#name_paramnames = '.paramnames'            # in the NS/ subfolder
-#name_chain_acc  = 'chain_NS__accepted.txt'
-#name_chain_rej  = 'chain_NS__rejected.txt'
-
-#accepted_chain_name = 'chain_NS__accepted.txt'
-
-# SEGUIR DESDE AQUI
-
-
-
-        
     # Process each mode:
     ini = 1 if multimodal else 0
     for i in range(ini, 1+n_modes):
@@ -389,20 +367,27 @@ def from_NS_output_to_chains(folder):
             mode_subfolder = 'mode_'+str(i).zfill(len(str(n_modes)))
         else:
             mode_subfolder = ''
-        mode_subfolder = os.path.join(command_line.folder, mode_subfolder)
+        mode_subfolder = os.path.join(chain_name, mode_subfolder)
         if not os.path.exists(mode_subfolder):
             os.makedirs(mode_subfolder)
 
         # Add ACCEPTED points
         mode_data = np.array(mode_lines[i].split(), dtype='float64')
-        columns = 2+data.NS_parameters['n_params']
+        columns = 2+NS_arguments['n_params']
         mode_data = mode_data.reshape([mode_data.shape[0]/columns, columns])
-        # Rearrange: sample-prob | -2*loglik | params
-        #       ---> sample-prob |   -loglik | params
-        mode_data[:, 1] = mode_data[: ,1] / 2.
-        np.savetxt(os.path.join(mode_subfolder, accepted_chain_name),
+        # Rearrange: sample-prob | -2*loglik | params (clustering first)
+        #       ---> sample-prob |   -loglik | params (log.param order)
+        mode_data[:, 1]  = mode_data[: ,1] / 2.
+        mode_data[:, 2:] = mode_data[:, [2+j for j in columns_reorder]]
+        np.savetxt(os.path.join(mode_subfolder, name_chain_acc),
                    mode_data, fmt='%.6e')
 
+        # If we are not in the multimodal case, we are done!
+        if not multimodal:
+            break
+        # In the multimodal case, we want to write a log.param for each mode       
+        this_log_lines = copy(log_lines)
+        
         # Get the necessary info of the parameters:
         #  -- max_posterior (MAP), sigma  <---  stats.dat file
         for j, line in enumerate(stats_mode_lines[i]):
@@ -412,7 +397,7 @@ def from_NS_output_to_chains(folder):
                 line_MAP = j+2
         MAPs   = {}
         sigmas = {}
-        for j, param in enumerate(varying_param_names):
+        for j, param in enumerate(NS_param_names):
             n, MAP = stats_mode_lines[i][line_MAP+j].split()
             assert int(n) == j+1,  'Something is wrong... (strange error n.3)'
             MAPs[param] = MAP
@@ -422,81 +407,24 @@ def from_NS_output_to_chains(folder):
         #  -- minimum rectangle containing the mode (only clustering params)
         mins = {}
         maxs = {}
-        for j, param in enumerate(varying_param_names):
-            if param in cut_param_names:
-                mins[param] = min(mode_data[:, 2+j])
-                maxs[param] = max(mode_data[:, 2+j])
-            else:
-                mins[param] = data.mcmc_parameters[param]['initial'][1]
-                maxs[param] = data.mcmc_parameters[param]['initial'][2]
+        for param in NS_arguments['clustering_params']:
+            # Notice that in the next line we use param_names and not
+            # NS_param_names: the chain lines have already been reordered
+            values = mode_data[:, 2+param_names.index(param)]
+            mins[param] = min(values)
+            maxs[param] = max(values)
         # Create the log.param file
-        for param in varying_param_names:
-            line = pre+"'"+param+"'] = ["
-            values = [MAPs[param], '%.6e'%mins[param], '%.6e'%maxs[param],
-                      sigmas[param], '%e'%data.mcmc_parameters[param]['scale'],
-                      "'"+data.mcmc_parameters[param]['role']+"'"]
-            line += ', '.join(values) + ']\n'
-            log_lines[param_lines[param]] = line
-
-        # TODO: HANDLE SCALING!!!!
-
+        for param in param_names:
+            if param in NS_arguments['clustering_params']:
+                mini, maxi = '%.6e'%mins[param], '%.6e'%maxs[param]
+            else:
+                mini, maxi = param_data[param][1], param_data[param][2]
+            scaling = param_data[param][4]
+            ptype   = param_data[param][5]
+            line = pre+"'"+param+"'"+pos
+            values = [MAPs[param], mini, maxi, sigmas[param], scaling, ptype]
+            line += ' = [' + ', '.join(values) + ']\n'
+            this_log_lines[param_lines[param]] = line
+        # Write it!
         with open(os.path.join(mode_subfolder, 'log.param'), 'w') as log_file:
-            log_file.writelines(log_lines)
-
-        # TODO: USE POINTS FROM TOTAL AND REJECTED SAMPLE???
-
-
-
-
-### THE NEXT FUNCTION IS CURRENTLY NOT USED:
-def from_NS_output_to_chains_OLD(folder, base_name):
-    """
-    Translate the output of MultiNest into readable output for Monte Python
-
-    This routine will be called after the MultiNest run has been successfully
-    completed.
-
-    """
-    # First, take care of post_equal_weights (accepted points)
-    accepted_chain = os.path.join(folder,
-                                  'chain_NS__accepted.txt')
-    rejected_chain = os.path.join(folder,
-                                  'chain_NS__rejected.txt')
-
-    # creating chain of accepted points (straightforward reshuffling of
-    # columns)
-    with open(base_name+'post_equal_weights.dat', 'r') as input_file:
-        output_file = open(accepted_chain, 'w')
-        array = np.loadtxt(input_file)
-        output_array = np.ones((np.shape(array)[0], np.shape(array)[1]+1))
-        output_array[:, 1] = -array[:, -1]
-        output_array[:, 2:] = array[:, :-1]
-        np.savetxt(
-            output_file, output_array,
-            fmt='%i '+' '.join(['%.6e' for _ in
-                               range(np.shape(array)[1])]))
-        output_file.close()
-
-    # Extracting log evidence
-    with open(base_name+'stats.dat') as input_file:
-        lines = [line for line in input_file if 'Global Log-Evidence' in line]
-        if len(lines) > 1:
-            lines = [line for line in lines if 'Importance' in line]
-        log_evidence = float(lines[0].split(':')[1].split('+/-')[0])
-
-    # Creating chain from rejected points, with some interpretation of the
-    # weight associated to each point arXiv:0809.3437 sec 3
-    with open(base_name+'ev.dat', 'r') as input_file:
-        output = open(rejected_chain, 'w')
-        array = np.loadtxt(input_file)
-        output_array = np.zeros((np.shape(array)[0], np.shape(array)[1]-1))
-        output_array[:, 0] = np.exp(array[:, -3]+array[:, -2]-log_evidence)
-        output_array[:, 0] *= np.sum(output_array[:, 0])*np.shape(array)[0]
-        output_array[:, 1] = -array[:, -3]
-        output_array[:, 2:] = array[:, :-3]
-        np.savetxt(
-            output, output_array,
-            fmt=' '.join(['%.6e' for _ in
-                         range(np.shape(output_array)[1])]))
-        output.close()
-
+            log_file.writelines(this_log_lines)
