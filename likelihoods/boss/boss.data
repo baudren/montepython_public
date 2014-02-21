@@ -1,4 +1,4 @@
-boss.data_directory = data.path['data']+'lya/'
+boss.data_directory = os.path.join(data.path['data'], 'lya/')
 
 boss.use_nuisance = ['teffvala','teffvals','gvala','gvals','gvals2','t0vala','t0vals','t0vals2','alpha']
 

@@ -38,8 +38,8 @@ class likelihood(object):
         ----------
         data : class
             Initialized instance of :class:`Data <data.Data>`
-        command_line : dict
-            Dictionary containing the command line arguments
+        command_line : NameSpace
+            NameSpace containing the command line arguments
 
         """
 

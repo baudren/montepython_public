@@ -343,9 +343,7 @@ def compute_lkl(cosmo, data):
     # If the cosmological module has already been called once, and if the
     # cosmological parameters have changed, then clean up, and compute.
     if cosmo.state is True and data.need_cosmo_update is True:
-        cosmo._struct_cleanup(set(["lensing", "nonlinear", "spectra",
-                                   "primordial", "transfer", "perturb",
-                                   "thermodynamics", "background", "bessel"]))
+        cosmo.struct_cleanup()
 
     # If the data needs to change, then do a normal call to the cosmological
     # compute function. Note that, even if need_cosmo update is True, this

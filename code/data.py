@@ -74,13 +74,20 @@ class Data(object):
             The `experiments` attribute is extracted from the parameter file,
             and contains the list of likelihoods to use
 
+        .. note::
+
+            The path argument will be used in case it is a first run, and hence
+            a new folder is created. If starting from an existing folder, this
+            dictionary will be compared with the one extracted from the
+            log.param, and will use the latter while warning the user.
+
         To create an instance of this class, one must feed the following
         parameters and keyword arguments:
 
         Parameters
         ----------
-        command_line : dict
-            Dictionary containing the input from the :mod:`parser_mp`. It
+        command_line : NameSpace
+            NameSpace containing the input from the :mod:`parser_mp`. It
             stores the input parameter file, the jumping methods, the output
             folder, etc...  Most of the information extracted from the
             command_file will be transformed into :class:`Data` attributes,
@@ -100,7 +107,9 @@ class Data(object):
         # Recover jumping method from command_line
         self.jumping = command_line.jumping
         self.jumping_factor = command_line.jumping_factor
-        self.path = path
+
+        # Initialise the path dictionnary.
+        self.path = {}
 
         self.boundary_loglike = -1e30
         """
@@ -153,12 +162,29 @@ class Data(object):
         self.out = None
         self.out_name = ''
 
+        # If the parameter file is not a log.param, the path will be read
+        # before reading the parameter file.
+        if self.param.find('log.param') == -1:
+            self.path.update(path)
+
         # Read from the parameter file to fill properly the mcmc_parameters
         # dictionary.
         self.fill_mcmc_parameters()
 
+        # Test if the recovered path agrees with the one extracted from
+        # the configuration file. Note that the root field depends simply on
+        # where the code lives, and so should not be read nor stored
+        # permanently on the log.param.
+        if self.path != {}:
+            self.path.update({'root': path['root']})
+            if self.path != path:
+                warnings.warn(
+                    "Your code location in the log.param file is "
+                    "in contradiction with your .conf file. "
+                    "I will use the one from log.param.")
+
         # Determine which cosmological code is in use
-        if path['cosmo'].find('class') != -1:
+        if self.path['cosmo'].find('class') != -1:
             self.cosmological_module_name = 'CLASS'
         else:
             self.cosmological_module_name = None
@@ -169,7 +195,7 @@ class Data(object):
         if self.cosmological_module_name == 'CLASS':
             # Official version number
             common_file_path = os.path.join(
-                path['cosmo'], os.path.join('include', 'common.h'))
+                self.path['cosmo'], os.path.join('include', 'common.h'))
             with open(common_file_path, 'r') as common_file:
                 for line in common_file:
                     if line.find('_VERSION_') != -1:
@@ -183,11 +209,11 @@ class Data(object):
                 with open(os.devnull, "w") as nul_file:
                     self.git_version = sp.check_output(
                         ["git", "rev-parse", "HEAD"],
-                        cwd=path['cosmo'],
+                        cwd=self.path['cosmo'],
                         stderr=nul_file).strip()
                     self.git_branch = sp.check_output(
                         ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-                        cwd=path['cosmo'],
+                        cwd=self.path['cosmo'],
                         stderr=nul_file).strip()
             except sp.CalledProcessError:
                 warnings.warn(
@@ -330,6 +356,10 @@ class Data(object):
             raise io_mp.ConfigurationError(
                 "Error in initializing the Data class, the parameter file " +
                 "{0} does not point to a proper file".format(self.param))
+        # In case the parameter file is a log.param, scan first once the file
+        # to extract the path dictionnary.
+        if self.param.find('log.param') != -1:
+            self.read_file(self.param_file, search_path=True)
         self.read_file(self.param_file)
 
         for key, value in self.parameters.iteritems():
@@ -338,7 +368,7 @@ class Data(object):
         of instances from the class :class:`parameter` (inheriting from
         dict)"""
 
-    def read_file(self, param_file):
+    def read_file(self, param_file, search_path=False):
         """
         Execute all lines concerning the Data class from a parameter file
 
@@ -355,10 +385,20 @@ class Data(object):
 
             A security should be added to protect from obvious attacks.
 
+        .. warning::
+
+            New in version 2.0.0, the file is read twice, because the path
+            dictionnary was unfortunately stored in the end of the file.
         """
         for line in param_file:
-            if line.find('#') == -1:
-                if line.split('=')[0].find('data.') != -1:
+            if line.find('#') == -1 and line:
+                lhs = line.split('=')[0]
+                if lhs.find('data.') != -1:
+                    if search_path:
+                        # Do not execute this line if the flag search_path is
+                        # set to True
+                        if lhs.find('data.path') == -1:
+                            continue
                     exec(line.replace('data.', 'self.').rstrip())
         param_file.seek(0)
 
