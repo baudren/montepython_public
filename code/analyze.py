@@ -311,23 +311,18 @@ def prepare(info, files, is_main_chain=True):
     """
 
     # First test if the folder is a Nested Sampling folder
+    from nested_sampling import NS_subfolder
     if os.path.isdir(files[0]):
         folder = os.path.join(
             *[elem for elem in files[0].split(os.path.sep) if elem])
-        if folder.split(os.path.sep)[-1] == 'NS':
-            ns_subfolder = folder
-            basename = os.path.join(
-                ns_subfolder,
-                folder.split(os.path.sep)[-2] + '-')
-            folder = os.path.join(*ns_subfolder.split(os.path.sep)[:-1])
-
-            from nested_sampling import from_ns_output_to_chains as ns_output
+        if folder.split(os.path.sep)[-1] == NS_subfolder:
             try:
-                ns_output(folder, basename)
+                from nested_sampling import from_NS_output_to_chains as NS_output
+                NS_output(folder)
             except IOError:
                 raise io_mp.AnalyzeError(
-                    "You asked to analyze a Nested Sampling folder " +
-                    "which seems to be empty or badly written. " +
+                    "You asked to analyze a Nested Sampling folder which seems "+
+                    "to come from an unfinished run, or to be empty or corrupt."+
                     "Please make sure the run went smoothly enough.")
             else:
                 warnings.warn(
