@@ -1,6 +1,6 @@
-from likelihood_class import likelihood
+from montepython.likelihood_class import likelihood
+import montepython.io_mp as io_mp
 import os
-import io_mp
 import numpy as np
 from math import exp
 

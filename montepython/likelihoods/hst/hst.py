@@ -1,5 +1,5 @@
 import os
-from likelihood_class import likelihood_prior
+from montepython.likelihood_class import likelihood_prior
 
 
 class hst(likelihood_prior):

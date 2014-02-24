@@ -312,19 +312,20 @@ class Data(object):
         for elem in self.experiments:
 
             folder = os.path.abspath(os.path.join(
-                path['root'], os.path.join("likelihoods", "%s" % elem)))
+                path['MontePython'], os.path.join("likelihoods", "%s" % elem)))
             # add the folder of the likelihood to the path of libraries to...
             if folder not in sys.path:
                 sys.path.insert(0, folder)
             # ... import easily the likelihood.py program
-            exec "import %s" % elem
+            exec "import montepython.likelihoods.%s.%s as %s" % (
+                elem, elem, elem.upper())
             # Initialize the likelihoods. Depending on the values of
             # command_line and log_flag, the routine will call slightly
             # different things. If log_flag is True, the log.param will be
             # appended.
             exec "self.lkl['%s'] = %s.%s('%s/%s.data',\
                 self,command_line)" % (
-                elem, elem, elem, folder, elem)
+                elem, elem.upper(), elem, folder, elem)
 
         # Storing parameters by blocks of speed
         self.group_parameters_in_blocks()

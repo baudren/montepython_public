@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from likelihood_class import likelihood
+from montepython.likelihood_class import likelihood
 
 
 class bao(likelihood):

@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from math import log, sqrt, pi
-from likelihood_class import likelihood
+from montepython.likelihood_class import likelihood
 
 
 class timedelay(likelihood):

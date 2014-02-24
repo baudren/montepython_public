@@ -2,7 +2,7 @@
 .. module:: test_montepython
 
 to run it, do
-~] nosetest code/test_montepython.py
+~] nosetest tests/test_montepython.py
 """
 import unittest
 import nose
@@ -17,10 +17,10 @@ import warnings
 warnings.filterwarnings('ignore')
 
 #---- local imports -----#
-import io_mp
-import parser_mp
-import sampler
-from MontePython import initialise, main
+from montepython import io_mp
+from montepython import parser_mp
+from montepython import sampler
+from montepython import MontePython as mp
 
 
 class TestMontePython(unittest.TestCase):
@@ -69,7 +69,7 @@ class Test01CommandLineInputBehaviour(TestMontePython):
         self.assertRaises(
             io_mp.ConfigurationError,
             parser_mp.parse,
-            '-N 10 -o code/test_config_%s' % self.date)
+            '-N 10 -o tests/test_config_%s' % self.date)
 
     def test_no_log_param_in_output_folder(self):
         """
@@ -79,7 +79,7 @@ class Test01CommandLineInputBehaviour(TestMontePython):
         self.assertRaises(
             io_mp.ConfigurationError,
             parser_mp.parse,
-            '-N 10 -o code/test_config_%s' % self.date)
+            '-N 10 -o tests/test_config_%s' % self.date)
         os.rmdir(self.temp_folder_path)
 
 
@@ -88,9 +88,9 @@ class Test02Setup(TestMontePython):
     def setUp(self):
         self.date = str(datetime.date.today())
         self.custom_command = (
-            '-N 1 -p test.param -o code/test_%s' % self.date)
+            '-N 1 -p test.param -o tests/test_%s' % self.date)
         try:
-            self.cosmo, self.data, self.command_line, _ = initialise(
+            self.cosmo, self.data, self.command_line, _ = mp.initialise(
                 self.custom_command)
         except io_mp.ConfigurationError:
             raise io_mp.ConfigurationError(
@@ -100,7 +100,7 @@ class Test02Setup(TestMontePython):
     def tearDown(self):
         del self.custom_command
         del self.cosmo, self.data, self.command_line
-        shutil.rmtree('code/test_%s' % self.date)
+        shutil.rmtree('tests/test_%s' % self.date)
         del self.date
 
     def test_folder_created(self):
@@ -108,17 +108,17 @@ class Test02Setup(TestMontePython):
         Is the initialisation creating a folder?
         """
         assert os.path.exists(
-            'code/test_%s' % self.date)
+            'tests/test_%s' % self.date)
 
     def test_log_param_written(self):
         """
         Is the log.param properly written?
         """
         assert os.path.exists(
-            'code/test_%s/log.param' % self.date)
+            'tests/test_%s/log.param' % self.date)
 
         # Check if the CLASS version is written properly in the log.param
-        with open('code/test_%s/log.param' % self.date, 'r') as log_param:
+        with open('tests/test_%s/log.param' % self.date, 'r') as log_param:
             first_line = log_param.readline().strip()
             version = first_line.split()[1]
             assert re.match('v[0-9].[0-9].[0-9]', version) is not None
@@ -158,7 +158,7 @@ class Test03NoDefaultConf(TestMontePython):
     def setUp(self):
         self.date = str(datetime.date.today())
         self.custom_command = (
-            '-N 1 -p test.param -o code/test_%s' % self.date)
+            '-N 1 -p test.param -o tests/test_%s' % self.date)
         try:
             shutil.move("default.conf", "default_%s.conf" % self.date)
         except IOError:
@@ -178,7 +178,7 @@ class Test03NoDefaultConf(TestMontePython):
         """
         self.assertRaises(
             io_mp.ConfigurationError,
-            initialise,
+            mp.initialise,
             self.custom_command)
 
 
@@ -189,12 +189,12 @@ class Test04CosmologicalCodeWrapper(TestMontePython):
     def setUp(self):
         self.date = str(datetime.date.today())
         self.custom_command = (
-            '-N 1 -p test.param -o code/test_%s' % self.date)
-        self.cosmo, self.data, self.command_line, _ = initialise(
+            '-N 1 -p test.param -o tests/test_%s' % self.date)
+        self.cosmo, self.data, self.command_line, _ = mp.initialise(
             self.custom_command)
 
     def tearDown(self):
-        shutil.rmtree('code/test_%s' % self.date)
+        shutil.rmtree('tests/test_%s' % self.date)
         self.cosmo.cleanup()
         del self.cosmo, self.data, self.command_line
 
@@ -274,11 +274,11 @@ class Test05MetropolisHastingsBehaviour(TestMontePython):
     def setUp(self):
         self.date = str(datetime.date.today())
         self.folder = os.path.join(
-            'code', 'test_%s' % self.date)
+            'tests', 'test_%s' % self.date)
         self.number = 50
         self.custom_command = (
             '-N %d -p test.param -o %s' % (self.number, self.folder))
-        self.cosmo, self.data, self.command_line, _ = initialise(
+        self.cosmo, self.data, self.command_line, _ = mp.initialise(
             self.custom_command)
         sampler.run(self.cosmo, self.data, self.command_line)
         self.data.out.close()  # TODO bad
@@ -301,7 +301,7 @@ class Test05MetropolisHastingsBehaviour(TestMontePython):
         self.assertEqual(np.sum(data[:, 0]), self.number)
         # Check that the analyze module works for this
         custom_command = '-info %s' % self.folder
-        main(custom_command)
+        mp.main(custom_command)
         ## verify that this command created the appropriate files
         expected_files = [
             'test_' + self.date + '.' + elem
@@ -327,13 +327,13 @@ class Test06CosmoHammerBehaviour(TestMontePython):
     def setUp(self):
         self.date = str(datetime.date.today())
         self.custom_command = (
-            '-N 1 -p test.param -o code/test_%s' % self.date +
+            '-N 1 -p test.param -o tests/test_%s' % self.date +
             ' -m CH')
-        self.cosmo, self.data, self.command_line, _ = initialise(
+        self.cosmo, self.data, self.command_line, _ = mp.initialise(
             self.custom_command)
 
     def tearDown(self):
-        shutil.rmtree('code/test_%s' % self.date)
+        shutil.rmtree('tests/test_%s' % self.date)
         self.cosmo.empty()
         del self.cosmo, self.data, self.command_line
 

@@ -45,7 +45,7 @@ class likelihood(object):
 
         self.name = self.__class__.__name__
         self.folder = os.path.abspath(os.path.join(
-            data.path['root'], os.path.join('likelihoods', self.name)))
+            data.path['MontePython'], os.path.join('likelihoods', self.name)))
         if not data.log_flag:
             path = os.path.join(command_line.folder, 'log.param')
 

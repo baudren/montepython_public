@@ -139,7 +139,7 @@ def recover_local_path(command_line):
     # Any setting in the configuration file will overwrite this one.
     path['root'] = os.path.sep.join(
         os.path.abspath(__file__).split(os.path.sep)[:-2])
-    path['MontePython'] = os.path.join(path['root'], 'code')
+    path['MontePython'] = os.path.join(path['root'], 'montepython')
     path['data'] = os.path.join(path['root'], 'data')
 
     # Configuration file, defaulting to default.conf in your root directory.

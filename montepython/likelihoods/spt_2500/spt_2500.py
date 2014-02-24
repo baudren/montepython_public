@@ -4,7 +4,7 @@
 # "likelihood_newdat", which knows how to deal with all experiments in
 # "newdat" format.
 
-from likelihood_class import likelihood_newdat
+from montepython.likelihood_class import likelihood_newdat
 
 
 class spt_2500(likelihood_newdat):

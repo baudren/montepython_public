@@ -1,4 +1,4 @@
-from likelihood_class import likelihood_clik
+from montepython.likelihood_class import likelihood_clik
 
 
 class lowlike(likelihood_clik):

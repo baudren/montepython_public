@@ -22,3 +22,6 @@ wrapper_wmap/build/
 
 # File created by git big-picture for branch visualisation
 montepython.png
+
+# Build files of the package
+build/
