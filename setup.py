@@ -9,7 +9,7 @@ VERSION_FILE_NAME = os.path.join(
     'VERSION')
 
 with open(VERSION_FILE_NAME, 'r') as version_file:
-    VERSION = version_file.readline()
+    VERSION = version_file.readline().strip()
 
 PACKAGES = find_packages()
 print PACKAGES

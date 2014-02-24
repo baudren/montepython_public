@@ -25,3 +25,5 @@ montepython.png
 
 # Build files of the package
 build/
+dist/
+*.egg-info/

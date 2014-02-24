@@ -1,4 +1,4 @@
-from montepyhon.likelihood_class import likelihood
+from montepython.likelihood_class import likelihood
 from numpy import matrix, dot
 
 

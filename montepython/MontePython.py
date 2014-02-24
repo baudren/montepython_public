@@ -10,14 +10,14 @@ import os
 import sys
 import warnings
 
-import io_mp       # all the input/output mechanisms
+from montepython import io_mp       # all the input/output mechanisms
 try:
     import parser_mp   # parsing the input command line
 except ImportError:
     raise io_mp.ConfigurationError(
         "Please install the Python argparse module for your Python version")
-import sampler     # generic sampler that calls different sampling algorithms
-from data import Data  # data handling
+from montepython import sampler     # generic sampler that calls different sampling algorithms
+from montepython.data import Data  # data handling
 
 
 def main(custom_command=''):
@@ -89,7 +89,7 @@ def initialise(custom_command=''):
     # it will extract information from it (plots to compute, chains to analyse,
     # etc...)
     if command_line.files is not None:
-        from analyze import analyze  # only invoked when analyzing
+        from montepython.analyze import analyze  # only invoked when analyzing
         analyze(command_line)
         return None, None, command_line, False
 
@@ -119,6 +119,7 @@ def initialise(custom_command=''):
     cosmo = recover_cosmological_module(data)
 
     return cosmo, data, command_line, True
+
 
 def recover_local_path(command_line):
     """
