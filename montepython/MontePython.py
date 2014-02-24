@@ -12,12 +12,13 @@ import warnings
 
 from montepython import io_mp       # all the input/output mechanisms
 try:
-    import parser_mp   # parsing the input command line
+    from montepython import parser_mp   # parsing the input command line
 except ImportError:
     raise io_mp.ConfigurationError(
         "Please install the Python argparse module for your Python version")
-from montepython import sampler     # generic sampler that calls different sampling algorithms
-from montepython.data import Data  # data handling
+from montepython import sampler     # generic sampler that calls different
+                                    # sampling algorithms
+from montepython.data import Data   # data handling
 
 
 def main(custom_command=''):

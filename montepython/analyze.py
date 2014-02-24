@@ -16,19 +16,17 @@ quantities, and shortens the argument passing between the functions.
 
 """
 import os
-import io_mp
 import math
 import numpy as np
-
 # The root plotting module, to change options like font sizes, etc...
 import matplotlib
 # The following line suppresses the need for an X server
 matplotlib.use("Agg")
 # Module for handling display
 import matplotlib.pyplot as plt
-
 # Module to handle warnings from matplotlib
 import warnings
+from montepython import io_mp
 
 
 def analyze(command_line):

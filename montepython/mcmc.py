@@ -38,8 +38,8 @@ import numpy as np
 import warnings
 import scipy.linalg as la
 
-import io_mp
-import sampler
+from montepython import io_mp
+from montepython import sampler
 
 
 def get_new_position(data, eigv, U, k, Cholesky, Inverse_Cholesky, Rotation):

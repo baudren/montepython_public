@@ -18,10 +18,10 @@ all different sampler methods:
 
 
 """
-import io_mp
 import numpy as np
 import sys
 
+from montepython import io_mp
 from classy import CosmoSevereError, CosmoComputationError
 
 

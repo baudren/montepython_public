@@ -5,8 +5,8 @@
 .. moduleauthor:: Benjamin Audren <benjamin.audren@epfl.ch>
 """
 import random as rd
-import io_mp
 from copy import deepcopy
+from montepython import io_mp
 
 
 class Prior(object):

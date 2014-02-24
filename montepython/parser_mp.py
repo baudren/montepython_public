@@ -11,7 +11,8 @@ with different possible configurations.
 import os
 import argparse  # Python module to handle command line arguments
 import warnings
-import io_mp
+
+from montepython import io_mp
 
 
 def create_parser():

@@ -12,8 +12,9 @@ import warnings
 import subprocess as sp
 import re
 
-import io_mp  # Needs to talk to io_mp.py file for the logging of parameters
-import prior
+from montepython import io_mp  # Needs to talk to io_mp.py file for the logging
+                               # of parameters
+from montepython import prior
 
 # A modified version of Python dictionary in order to keep track of the order
 # in it (much the same as in an array). In case an older version of Python is
