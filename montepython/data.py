@@ -304,11 +304,8 @@ class Data(object):
         # For the logging if log_flag is True, each likelihood will log its
         # parameters
 
-        sys.stdout.write('\nTesting likelihoods for:\n -> ')
-        sys.stdout.write(', '.join(self.experiments)+'\n')
-        #for i in range(len(self.experiments)):
-            #sys.stdout.write(self.experiments[i]+', ')
-        #sys.stdout.write('\n')
+        print '\nTesting likelihoods for:\n -> '
+        print ', '.join(self.experiments)+'\n'
 
         for elem in self.experiments:
 
@@ -318,15 +315,15 @@ class Data(object):
             if folder not in sys.path:
                 sys.path.insert(0, folder)
             # ... import easily the likelihood.py program
-            exec "import montepython.likelihoods.%s.%s as %s" % (
-                elem, elem, elem.upper())
+            exec "from montepython.likelihoods.%s import %s" % (
+                elem, elem)
             # Initialize the likelihoods. Depending on the values of
             # command_line and log_flag, the routine will call slightly
             # different things. If log_flag is True, the log.param will be
             # appended.
-            exec "self.lkl['%s'] = %s.%s('%s/%s.data',\
+            exec "self.lkl['%s'] = %s('%s/%s.data',\
                 self,command_line)" % (
-                elem, elem.upper(), elem, folder, elem)
+                elem, elem, folder, elem)
 
         # Storing parameters by blocks of speed
         self.group_parameters_in_blocks()
