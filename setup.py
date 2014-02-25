@@ -21,4 +21,5 @@ setup(name='Monte Python',
       author_email='benjamin.audren@epfl.ch',
       url='http://www.montepython.net/',
       packages= PACKAGES,
+      install_requires = ['argparse'],
       )
