@@ -20,7 +20,8 @@ warnings.filterwarnings('ignore')
 from montepython import io_mp
 from montepython import parser_mp
 from montepython import sampler
-from montepython import MontePython as mp
+from montepython.initialise import initialise
+from montepython.run import run
 
 
 class TestMontePython(unittest.TestCase):
@@ -90,7 +91,7 @@ class Test02Setup(TestMontePython):
         self.custom_command = (
             '-N 1 -p test.param -o tests/test_%s' % self.date)
         try:
-            self.cosmo, self.data, self.command_line, _ = mp.initialise(
+            self.cosmo, self.data, self.command_line, _ = initialise(
                 self.custom_command)
         except io_mp.ConfigurationError:
             raise io_mp.ConfigurationError(
@@ -178,7 +179,7 @@ class Test03NoDefaultConf(TestMontePython):
         """
         self.assertRaises(
             io_mp.ConfigurationError,
-            mp.initialise,
+            initialise,
             self.custom_command)
 
 
@@ -190,7 +191,7 @@ class Test04CosmologicalCodeWrapper(TestMontePython):
         self.date = str(datetime.date.today())
         self.custom_command = (
             '-N 1 -p test.param -o tests/test_%s' % self.date)
-        self.cosmo, self.data, self.command_line, _ = mp.initialise(
+        self.cosmo, self.data, self.command_line, _ = initialise(
             self.custom_command)
 
     def tearDown(self):
@@ -278,7 +279,7 @@ class Test05MetropolisHastingsBehaviour(TestMontePython):
         self.number = 50
         self.custom_command = (
             '-N %d -p test.param -o %s' % (self.number, self.folder))
-        self.cosmo, self.data, self.command_line, _ = mp.initialise(
+        self.cosmo, self.data, self.command_line, _ = initialise(
             self.custom_command)
         sampler.run(self.cosmo, self.data, self.command_line)
         self.data.out.close()  # TODO bad
@@ -301,7 +302,7 @@ class Test05MetropolisHastingsBehaviour(TestMontePython):
         self.assertEqual(np.sum(data[:, 0]), self.number)
         # Check that the analyze module works for this
         custom_command = '-info %s' % self.folder
-        mp.main(custom_command)
+        run(custom_command)
         ## verify that this command created the appropriate files
         expected_files = [
             'test_' + self.date + '.' + elem
@@ -329,7 +330,7 @@ class Test06CosmoHammerBehaviour(TestMontePython):
         self.custom_command = (
             '-N 1 -p test.param -o tests/test_%s' % self.date +
             ' -m CH')
-        self.cosmo, self.data, self.command_line, _ = mp.initialise(
+        self.cosmo, self.data, self.command_line, _ = initialise(
             self.custom_command)
 
     def tearDown(self):

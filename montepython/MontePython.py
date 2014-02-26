@@ -9,8 +9,8 @@ Monte Python, a Monte Carlo Markov Chain code (with Class!)
 import sys
 import warnings
 
-from montepython import io_mp       # all the input/output mechanisms
-from montepython import run
+import io_mp       # all the input/output mechanisms
+from run import run
 
 
 #-----------------MAIN-CALL---------------------------------------------

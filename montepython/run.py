@@ -1,6 +1,12 @@
-from montepython import sampler     # generic sampler that calls different
+"""
+.. module:: run_mp
+    :synopsis: Run the code, initialising everything and calling the sampler
+.. moduleauthor:: Benjamin Audren <benjamin.audren@epfl.ch>
+
+"""
+import sampler     # generic sampler that calls different
                                     # sampling algorithms
-from montepython.initialise import initialise
+from initialise import initialise
 
 
 def run(custom_command=''):

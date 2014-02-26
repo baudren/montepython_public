@@ -173,11 +173,10 @@ class Data(object):
         self.fill_mcmc_parameters()
 
         # Test if the recovered path agrees with the one extracted from
-        # the configuration file. Note that the root field depends simply on
-        # where the code lives, and so should not be read nor stored
-        # permanently on the log.param.
+        # the configuration file.
         if self.path != {}:
-            self.path.update({'root': path['root']})
+            if not self.path.has_key('root'):
+                self.path.update({'root': path['root']})
             if self.path != path:
                 warnings.warn(
                     "Your code location in the log.param file is "
@@ -304,7 +303,7 @@ class Data(object):
         # For the logging if log_flag is True, each likelihood will log its
         # parameters
 
-        print '\nTesting likelihoods for:\n -> '
+        print '\nTesting likelihoods for:\n ->',
         print ', '.join(self.experiments)+'\n'
 
         for elem in self.experiments:
@@ -315,7 +314,7 @@ class Data(object):
             if folder not in sys.path:
                 sys.path.insert(0, folder)
             # ... import easily the likelihood.py program
-            exec "from montepython.likelihoods.%s import %s" % (
+            exec "from likelihoods.%s import %s" % (
                 elem, elem)
             # Initialize the likelihoods. Depending on the values of
             # command_line and log_flag, the routine will call slightly

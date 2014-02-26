@@ -4,9 +4,9 @@
 .. moduleauthor:: Benjamin Audren <benjamin.audren@epfl.ch>
 
 """
-from montepython import io_mp
-from montepython import parser_mp   # parsing the input command line
-from montepython.data import Data
+import io_mp
+import parser_mp   # parsing the input command line
+from data import Data
 import sys
 import os
 
@@ -40,7 +40,9 @@ def initialise(custom_command=''):
     path = recover_local_path(command_line)
 
     # Recover Monte Python's version number
-    with open(os.path.join(path['root'], 'VERSION'), 'r') as version_file:
+    version_path = os.path.join(
+        path['root'], 'VERSION')
+    with open(version_path, 'r') as version_file:
         version = version_file.readline()
     print 'Running Monte Python v%s' % version
 
