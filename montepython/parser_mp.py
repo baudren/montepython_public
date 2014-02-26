@@ -12,7 +12,7 @@ import os
 import argparse  # Python module to handle command line arguments
 import warnings
 
-from montepython import io_mp
+import io_mp
 
 
 def create_parser():

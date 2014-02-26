@@ -16,7 +16,7 @@ import numpy as np
 import math
 import warnings
 
-from montepython import io_mp
+import io_mp
 
 
 class likelihood(object):

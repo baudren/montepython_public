@@ -6,7 +6,7 @@
 """
 import random as rd
 from copy import deepcopy
-from montepython import io_mp
+import io_mp
 
 
 class Prior(object):

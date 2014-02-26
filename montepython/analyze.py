@@ -26,7 +26,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 # Module to handle warnings from matplotlib
 import warnings
-from montepython import io_mp
+import io_mp
 
 
 def analyze(command_line):
@@ -116,7 +116,7 @@ def analyze(command_line):
     info.var = info.var[0]
     info.covar = np.zeros((len(info.ref_names), len(info.ref_names)))
 
-    warnings.warn('--> Computing covariance matrix')
+    print '--> Computing covariance matrix'
     for i in range(len(info.ref_names)):
         for j in range(i, len(info.ref_names)):
             info.covar[i, j] = np.sum(
@@ -197,7 +197,7 @@ def analyze(command_line):
     for i in range(len(info.plotted_parameters)):
         indices.append(info.ref_names.index(info.plotted_parameters[i]))
 
-    warnings.warn('--> Writing .info and .tex files')
+    print '--> Writing .info and .tex files'
     # Write down to the .h_info file all necessary information
     info.h_info.write(' param names\t:\t')
     info.v_info_names = []
@@ -492,7 +492,7 @@ def convergence(info, is_main_chain=True, files=None, param=None):
 
     # Circle through all files to find the maximum (and largest filename)
     length_of_largest_filename = 0
-    warnings.warn('--> Finding global maximum of likelihood')
+    print '--> Finding global maximum of likelihood'
     for chain_file in files:
         i = files.index(chain_file)
         if len(chain_file.split('/')[-1]) > length_of_largest_filename:
@@ -852,7 +852,7 @@ def plot_triangle(
             len(info.plotted_parameters)*1.0/num_columns))
 
     # Actual plotting
-    warnings.warn('-----------------------------------------------')
+    print '-----------------------------------------------'
     for i in range(len(info.plotted_parameters)):
 
         print ' -> Computing histograms for ',\
@@ -997,6 +997,9 @@ def plot_triangle(
                 lkl_mean /= max(lkl_mean)
                 interp_lkl_mean, interp_grid = cubic_interpolation(
                     info, lkl_mean, bincenters)
+                print interp_lkl_mean
+                print interp_grid
+                print lkl_mean
                 ax2d.plot(interp_grid, interp_lkl_mean, color='red',
                           ls='--', lw=2)
                 ax1d.plot(interp_grid, interp_lkl_mean, color='red',
@@ -1004,6 +1007,7 @@ def plot_triangle(
             except:
                 print 'could not find likelihood contour for ',
                 print info.plotted_parameters[i]
+                exit()
 
         if command_line.subplot is True:
             if not comp:
@@ -1195,8 +1199,8 @@ def plot_triangle(
     # If plots/ folder in output folder does not exist, create it
     if os.path.isdir(info.folder+'plots') is False:
         os.mkdir(info.folder+'plots')
-    warnings.warn('-----------------------------------------------')
-    warnings.warn('--> Saving figures to .{0} files'.format(info.extension))
+    print '-----------------------------------------------'
+    print '--> Saving figures to .{0} files'.format(info.extension)
     if plot_2d:
         fig2d.savefig(
             info.folder+'plots/{0}_triangle.{1}'.format(

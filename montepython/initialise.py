@@ -51,7 +51,7 @@ def initialise(custom_command=''):
     # it will extract information from it (plots to compute, chains to analyse,
     # etc...)
     if command_line.files is not None:
-        from montepython.analyze import analyze  # only invoked when analyzing
+        from analyze import analyze  # only invoked when analyzing
         analyze(command_line)
         return None, None, command_line, False
 
