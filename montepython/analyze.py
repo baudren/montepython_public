@@ -982,24 +982,14 @@ def plot_triangle(
         # mean likelihood (optional, if comparison, it will not be printed)
         if plot_2d and command_line.mean_likelihood:
             try:
-                lkl_mean = np.zeros(len(bincenters), 'float64')
-                norm = np.zeros(len(bincenters), 'float64')
-                for j in range(len(bin_edges)-1):
-                    tmp = np.array(
-                        [elem for elem in chain[:, :] if
-                         (elem[index+2] >= bin_edges[j] and
-                          elem[index+2] <= bin_edges[j+1])], 'float')
-                    lkl_mean[j] += np.sum(np.exp(
-                        best_minus_lkl - tmp[:, 1])*tmp[:, 0])
-                    norm[j] += np.sum(tmp, axis=0)[0]
-                lkl_mean /= norm
-                #lkl_mean *= max(hist)/max(lkl_mean)
+                lkl_mean, _ = np.histogram(
+                    chain[:, index+2],
+                    bins=bin_edges,
+                    normed=True,
+                    weights=chain[:, 1]*chain[:, 0])
                 lkl_mean /= max(lkl_mean)
                 interp_lkl_mean, interp_grid = cubic_interpolation(
                     info, lkl_mean, bincenters)
-                print interp_lkl_mean
-                print interp_grid
-                print lkl_mean
                 ax2d.plot(interp_grid, interp_lkl_mean, color='red',
                           ls='--', lw=2)
                 ax1d.plot(interp_grid, interp_lkl_mean, color='red',
@@ -1007,7 +997,6 @@ def plot_triangle(
             except:
                 print 'could not find likelihood contour for ',
                 print info.plotted_parameters[i]
-                exit()
 
         if command_line.subplot is True:
             if not comp:
