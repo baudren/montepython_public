@@ -207,11 +207,11 @@ def create_parser():
     parser.add_argument('-ext', metavar='change extension for the output file',
                         type=str, dest='extension', default='pdf')
     # -- fontsize of plots (defaulting to 15)
-    parser.add_argument('-fontsize', metavar='desired fontsize, default is 15',
-                        type=int, dest='fontsize', default=15)
+    parser.add_argument('-fontsize', metavar='desired fontsize',
+                        type=int, dest='fontsize', default=-1)
     # -- ticksize of plots (defaulting to 13)
-    parser.add_argument('-ticksize', metavar='desired ticksize, default is 13',
-                        type=int, dest='ticksize', default=13)
+    parser.add_argument('-ticksize', metavar='desired ticksize',
+                        type=int, dest='ticksize', default=-1)
 
     ###############
     # MultiNest arguments (all OPTIONAL and ignored if not "-m='NS'")

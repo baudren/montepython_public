@@ -932,9 +932,13 @@ def plot_triangle(
         # plotting
         if plot_2d:
             ax2d.set_xticks(ticks[index])
-            #fontsize2d,ticksize2d=info.get_fontsize(len(info.tex_names))
-            fontsize2d = command_line.fontsize
-            ticksize2d = command_line.ticksize
+            # First, assign to it the default value
+            fontsize2d, ticksize2d = get_fontsize(info, '2d')
+            # Then potentially overwrite with provided command line arguments
+            if command_line.fontsize != -1:
+                fontsize2d = command_line.fontsize
+            if command_line.ticksize != -1:
+                ticksize2d = command_line.ticksize
             ax2d.set_xticklabels(['%.3g' % s for s in ticks[index]],
                                  fontsize=ticksize2d)
             ax2d.set_title('%s= $%.3g^{+%.3g}_{%.3g}$' % (
@@ -944,10 +948,12 @@ def plot_triangle(
                       linewidth=2, ls='-')
             ax2d.axis([x_range[index][0], x_range[index][1], 0, 1.05])
 
-        #fontsize1d,ticksize1d =\
-        #info.get_fontsize(max(num_columns,num_lines))
-        fontsize1d = command_line.fontsize
-        ticksize1d = command_line.ticksize
+        fontsize1d, ticksize1d = get_fontsize(info, '1d', num_columns)
+
+        if command_line.fontsize != -1:
+            fontsize1d = command_line.fontsize
+        if command_line.ticksize != -1:
+            ticksize1d = command_line.ticksize
         ax1d.set_title('%s= $%.3g^{+%.3g}_{%.3g}$' % (
             info.tex_names[index], info.mean[index],
             bounds[0][1], bounds[0][0]), fontsize=fontsize1d)
@@ -1386,24 +1392,23 @@ def cubic_interpolation(info, hist, bincenters):
         return hist, bincenters
 
 
-def get_fontsize(diag_length):
+def get_fontsize(info, geometry, width=None):
     """
     Empirical method to adjust font size on the plots to fit the number of
     parameters. Feel free to modify to your needs.
 
-    .. note::
-
-        Currently unused (commented at lines 888 and 901)
-
     """
     # Approximate values to have roughly nice displays font size
-    #fontsize = round( 19 - (diag_length-5)*1.38)
-    #ticksize = round( 14 - (diag_length-5)*1)
-    # If the above does not work, please fix the values with the following
-    # two lines (and commenting the above)
-    fontsize = 15
-    ticksize = 14
-    return fontsize, ticksize
+    if geometry == '2d':
+        size = 75./len(info.plotted_parameters)
+    if geometry == '1d':
+        if width:
+            size = 80./width
+        else:
+            raise io_mp.AnalyzeError(
+                "This routine expects a number of columns "
+                "for the 1d plot")
+    return size, size
 
 
 class Information(object):
