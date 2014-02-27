@@ -269,12 +269,15 @@ def get_covariance_matrix(data, command_line):
         # number: i, to avoid any problem) in the initial matrix, so that the
         # next step only copy the interesting part of the input to the final
         # matrix.
+        max_value = np.finfo(np.float64).max
         for zeros in np.where(indices_initial == 0)[0]:
-            matrix[zeros, :] = 1j
-            matrix[:, zeros] = 1j
+            matrix[zeros, :] = [max_value for _ in range(
+                len(matrix[zeros, :]))]
+            matrix[:, zeros] = [max_value for _ in range(
+                len(matrix[:, zeros]))]
         # Now put in the temporary matrix, where the 1 were, the interesting
         # quantities from the input (the one that are not equal to i).
-        matrix_temp[matrix_temp == 1] = matrix[matrix != 1j]
+        matrix_temp[matrix_temp == 1] = matrix[matrix != max_value]
         matrix = np.copy(matrix_temp)
         # on all other lines, that contain 0, just use sigma^2
         for zeros in np.where(indices_final == 0)[0]:
