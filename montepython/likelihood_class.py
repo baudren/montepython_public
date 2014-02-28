@@ -352,7 +352,8 @@ class likelihood_newdat(likelihood):
             data, {'lensing': 'yes', 'output': 'tCl lCl pCl'})
 
         # open .newdat file
-        newdatfile = open(self.data_directory+self.file, 'r')
+        newdatfile = open(
+            os.path.join(self.data_directory, self.file), 'r')
 
         # find beginning of window functions file names
         window_name = newdatfile.readline().strip('\n').replace(' ', '')
