@@ -433,11 +433,17 @@ class Data(object):
         # Then, store all nuisance parameters
         nuisance = self.get_mcmc_parameters(['varying', 'nuisance'])
 
+        # Create an array to keep track of the already taken into account
+        # nuisance parameters. This will come in handy when using likelihoods
+        # that share some nuisance parameters.
+        used_nuisance = []
         for likelihood in self.lkl.itervalues():
             count = 0
             for elem in nuisance:
                 if elem in likelihood.nuisance:
-                    count += 1
+                    if elem not in used_nuisance:
+                        count += 1
+                        used_nuisance.append(elem)
             likelihood.varying_nuisance_parameters = count
 
         # Then circle through them
@@ -490,13 +496,13 @@ class Data(object):
             List of strings whose role and status must be matched by a
             parameter. For instance,
 
-            >>> get_mcmc_parameters(['varying'])
+            >>> Data.get_mcmc_parameters(['varying'])
 
             will return a list of all the varying parameters, both
             cosmological and nuisance ones (derived parameters being `fixed`,
             they wont be part of this list). Instead,
 
-            >>> get_mcmc_parameters(['nuisance', 'varying'])
+            >>> Data.get_mcmc_parameters(['nuisance', 'varying'])
 
             will only return the nuisance parameters that are being varied.
 
