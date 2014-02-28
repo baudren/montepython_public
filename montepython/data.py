@@ -155,6 +155,18 @@ class Data(object):
         # Initialise the experiments attribute
         self.experiments = []
 
+        # Initialise the oversampling setting
+        self.over_sampling = []
+        """
+        List storing the respective over sampling of the parameters. The first
+        entry, applied to the cosmological parameters, will always be 1.
+        Setting it to anything else would simply rescale the whole process. If
+        not specified otherwise in the parameter file, all other numbers will
+        be set to 1 as well.
+
+        :rtype: list
+        """
+
         # Default value for the number of steps
         self.N = 10
 
@@ -362,9 +374,10 @@ class Data(object):
 
         for key, value in self.parameters.iteritems():
             self.mcmc_parameters[key] = Parameter(value, key)
-        """Transform from parameters dictionnary to mcmc_parameters dictionary
-        of instances from the class :class:`parameter` (inheriting from
-        dict)"""
+        """
+        Transform from parameters dictionnary to mcmc_parameters dictionary of
+        instances from the class :class:`parameter` (inheriting from dict)
+        """
 
     def read_file(self, param_file, search_path=False):
         """
@@ -408,7 +421,7 @@ class Data(object):
         into as many categories as there are likelihoods, plus one (the slow
         block of cosmological parameters).
 
-        It creates the attribute :attr:`blocks_parameters`, to be used in the
+        It creates the attribute :attr:`block_parameters`, to be used in the
         module :mod:`mcmc`.
 
         .. note::
@@ -469,7 +482,33 @@ class Data(object):
                     "nuisance parameter %s " % elem +
                     "is associated to no likelihood")
         # Store the result
-        self.blocks_parameters = array
+        self.block_parameters = array
+
+        # Setting a default value for the over_sampling array
+        if not self.over_sampling:
+            self.over_sampling = [1 for _ in range(len(self.block_parameters))]
+        # Test that the over_sampling list has the same size as
+        # block_parameters.
+        else:
+            try:
+                assert len(self.block_parameters) == len(self.over_sampling)
+            except AssertionError:
+                raise io_mp.ConfigurationError(
+                    "The length of the over_sampling field should be"
+                    " equal to the number of blocks (one for cosmological "
+                    "parameters, plus one for each likelihood with "
+                    "nuisance parameters)")
+
+        # Create a list of indices corresponding of the oversampling strategy
+        self.over_sampling_indices = []
+        for index in range(len(self.get_mcmc_parameters(['varying']))):
+            if index == 0:
+                self.over_sampling_indices.append(index)
+            else:
+                block_index = self.block_parameters.index(
+                    [i for i in self.block_parameters if index < i][0])
+                for _ in range(self.over_sampling[block_index]):
+                    self.over_sampling_indices.append(index)
 
     def read_version(self, param_file):
         """

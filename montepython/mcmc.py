@@ -118,10 +118,12 @@ def get_new_position(data, eigv, U, k, Cholesky, Inverse_Cholesky, Rotation):
         i = k % len(vector)
         sigmas[i] = (math.sqrt(1/eigv[i]))*rd.gauss(0, 1)*data.jumping_factor
     elif data.jumping == 'fast':
-        i = k % len(vector)
+        #i = k % len(vector)
+        j = k % len(data.over_sampling_indices)
+        i = data.over_sampling_indices[j]
         ###############
         # method fast+global
-        for index, elem in enumerate(data.blocks_parameters):
+        for index, elem in enumerate(data.block_parameters):
             # When the running index is below the maximum index of a block of
             # parameters, this block is varied, and **only this one** (note the
             # break at the end of the if clause, it is not a continue)
@@ -130,8 +132,8 @@ def get_new_position(data, eigv, U, k, Cholesky, Inverse_Cholesky, Rotation):
                     Range = elem
                     Previous = 0
                 else:
-                    Range = elem-data.blocks_parameters[index-1]
-                    Previous = data.blocks_parameters[index-1]
+                    Range = elem-data.block_parameters[index-1]
+                    Previous = data.block_parameters[index-1]
                 # All the varied parameters are given a random variation with a
                 # sigma of 1. This will translate in a jump for all the
                 # parameters (as long as the Cholesky matrix is non diagonal)
