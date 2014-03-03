@@ -12,7 +12,6 @@ with open(VERSION_FILE_NAME, 'r') as version_file:
     VERSION = version_file.readline().strip()
 
 PACKAGES = find_packages()
-print PACKAGES
 
 setup(name='Monte Python',
       version=VERSION,
@@ -22,5 +21,6 @@ setup(name='Monte Python',
       url='http://www.montepython.net/',
       packages=PACKAGES,
       install_requires=['argparse'],
-      data_files=[('version', ['VERSION'])],
+      data_files=[('', ['VERSION']),
+                  ('', ['default.conf.template'])],
       )
