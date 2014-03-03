@@ -5,7 +5,7 @@
 # euclid_pk, euclid_lensing
 # and clik_fake_planck (for Planck members)
 
-data.experiments=['hst', 'timedelay']
+data.experiments=['hst', 'timedelay', 'test_nuisance1', 'test_nuisance2']
 
 #------ Parameter list -------
 # data.parameters[class name] = [mean, min, max, 1-sigma, scale, role]
@@ -16,8 +16,12 @@ data.experiments=['hst', 'timedelay']
 
 
 # Cosmological parameters list
-data.parameters['omega_b'] 	= [2.249,  1.8, 3, 0.016, 0.01,'cosmo']
-data.parameters['h']         	= [0.703,  0.6,0.8, 0.0065,1,   'cosmo']
+data.parameters['omega_b']   = [2.249,  1.8, 3, 0.016, 0.01, 'cosmo']
+data.parameters['h']         = [0.703,  0.6,0.8, 0.0065,1,   'cosmo']
+
+# Nuisance parameters
+data.parameters['amplitude'] = [0.1, -1., 1, 0.01, 1, 'nuisance']
+data.parameters['other']     = [0.1, -1., 1, 0.01, 1, 'nuisance']
 
 # Derived parameter list
 data.parameters['Omega_Lambda'] = [0,       -1, -1, 0,1,  'derived']

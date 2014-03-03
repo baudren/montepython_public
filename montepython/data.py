@@ -500,6 +500,12 @@ class Data(object):
                     "nuisance parameters)")
 
         # Create a list of indices corresponding of the oversampling strategy
+        self.assign_over_sampling_indices()
+
+    def assign_over_sampling_indices(self):
+        """
+        Create the list of varied parameters given the oversampling
+        """
         self.over_sampling_indices = []
         for index in range(len(self.get_mcmc_parameters(['varying']))):
             if index == 0:

@@ -265,7 +265,93 @@ class Test04CosmologicalCodeWrapper(TestMontePython):
         self.cosmo.empty()
 
 
-class Test05MetropolisHastingsBehaviour(TestMontePython):
+class Test05DataModule(TestMontePython):
+    """
+    Check all functionnalities of the Data and Parameter class
+
+    """
+    def setUp(self):
+        self.date = str(datetime.date.today())
+        self.folder = os.path.join(
+            'tests', 'test_%s' % self.date)
+        self.number = 30
+        self.custom_command = (
+            '-N %d -p test.param -o %s -j fast' % (self.number, self.folder))
+        self.cosmo, self.data, self.command_line, _ = initialise(
+            self.custom_command)
+
+    def tearDown(self):
+        shutil.rmtree(self.folder)
+        self.cosmo.struct_cleanup()
+        self.cosmo.empty()
+        del self.cosmo, self.data, self.command_line
+
+    def test_cosmological_arguments(self):
+        """
+        Are the cosmological arguments well set?
+        """
+        # After the initialisation, the dictionnary mcmc_parameters should
+        # contain five Parameter instances
+        self.assertEqual(
+            len(self.data.mcmc_parameters),
+            5,
+            "mcmc_parameters badly defined")
+
+        # Run the sampler
+        sampler.run(self.cosmo, self.data, self.command_line)
+        self.assertEqual(
+            self.data.mcmc_parameters['omega_b']['current'] *
+            self.data.mcmc_parameters['omega_b']['scale'],
+            self.data.cosmo_arguments['omega_b'],
+            "the cosmo_arguments dict was not updated properly")
+
+    def test_block_behaviour(self):
+        """
+        Are the mcmc arguments well grouped by block?
+        """
+        # The block separation must have selected three blocks, of size
+        # respectively 2, 1, and 1 (the two test nuisance likelihoods are
+        # sharing a nuisance parameter)
+        self.assertEqual(
+            self.data.block_parameters,
+            [2, 3, 4],
+            "The block selection went wrong")
+
+        # By default, the over-sampling should be set to 1
+        self.assertEqual(
+            self.data.over_sampling,
+            [1, 1, 1],
+            "The default over sampling is messed up")
+
+        # For the sake of the test, set them to something else
+        self.data.over_sampling = [1, 3, 5]
+        self.data.assign_over_sampling_indices()
+        self.assertEqual(
+            self.data.over_sampling_indices,
+            [0, 1, 2, 2, 2, 3, 3, 3, 3, 3])
+
+        # Run the sampler
+        sampler.run(self.cosmo, self.data, self.command_line)
+
+        # Verify that the output is well behaved
+        output_path = os.path.join(
+            self.folder, '%s_%d__1.txt' % (self.date, self.number))
+        with open(output_path, 'r') as output_file:
+            chain = np.loadtxt(output_file)
+        for index in range(2, 4):
+            self.assertLessEqual(
+                len(np.unique(chain[:, index])),
+                float(self.number)/10*2,
+                "%s" % np.unique(chain[:, index]))
+        self.assertLessEqual(
+            len(np.unique(chain[:, 3])),
+            float(self.number)/10*3)
+        self.assertLessEqual(
+            len(np.unique(chain[:, 4])),
+            float(self.number)/10*5)
+
+
+class Test06MetropolisHastingsBehaviour(TestMontePython):
     """
     Check that the default sampling method is working
 
@@ -276,13 +362,12 @@ class Test05MetropolisHastingsBehaviour(TestMontePython):
         self.date = str(datetime.date.today())
         self.folder = os.path.join(
             'tests', 'test_%s' % self.date)
-        self.number = 50
+        self.number = 30
         self.custom_command = (
             '-N %d -p test.param -o %s' % (self.number, self.folder))
         self.cosmo, self.data, self.command_line, _ = initialise(
             self.custom_command)
         sampler.run(self.cosmo, self.data, self.command_line)
-        self.data.out.close()  # TODO bad
 
     def tearDown(self):
         shutil.rmtree('%s' % self.folder)
@@ -321,7 +406,7 @@ class Test05MetropolisHastingsBehaviour(TestMontePython):
                 pdf_file.find('_triangle') != -1 or pdf_file.find('_1d') != -1)
 
 
-class Test06CosmoHammerBehaviour(TestMontePython):
+class Test07CosmoHammerBehaviour(TestMontePython):
     """
     Check if the modules are callable
     """
