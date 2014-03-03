@@ -41,6 +41,7 @@ def run(cosmo, data, command_line):
     if command_line.method == 'MH':
         import mcmc
         mcmc.chain(cosmo, data, command_line)
+        data.out.close()
     elif command_line.method == 'NS':
         import nested_sampling as ns
         ns.run(cosmo, data, command_line)

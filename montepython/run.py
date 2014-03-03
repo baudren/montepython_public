@@ -32,9 +32,4 @@ def run(custom_command=''):
     # Generic sampler call
     sampler.run(cosmo, data, command_line)
 
-    # Closing up the file TODO (I should not do that, the file should be close
-    # elsewhere...)
-    if command_line.method == 'MH':
-        data.out.close()
-
     return
