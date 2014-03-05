@@ -18,15 +18,8 @@ def initialise(custom_command=''):
     This function recovers the input from the command line arguments, from
     :mod:`parser_mp`, the parameter files.
 
-    It then extracts the path of the used Monte Python code, assuming a
-    standard setting (the data folder is in the same directory as the code
-    folder).
-
-    It finally proceeds to initialize a :class:`data` instance, a cosmological
-    code instance, and runs the Markov chain.
-
-    .. note::
-        A possible parallelization would take place here.
+    It then extracts the path of the used Monte Python code, and proceeds to
+    initialise a :class:`data` instance, a cosmological code instance.
 
     Parameters
     ----------

@@ -16,6 +16,9 @@ def run(custom_command=''):
     It recovers the initialised instances of cosmo Class, :class:`Data` and the
     NameSpace containing the command line arguments, feeding into the sampler.
 
+    .. note::
+        A possible parallelization would take place here.
+
     Parameters
     ----------
         custom_command: str
