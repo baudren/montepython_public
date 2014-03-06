@@ -329,6 +329,25 @@ def prepare(info, files, is_main_chain=True):
                     "analysis of the entire folder now.")
                 return False
 
+    # Or a CosmoHammer folder
+    from cosmo_hammer import CH_subfolder
+    if os.path.isdir(files[0]):
+        folder = os.path.abspath(files[0])
+        if folder.split(os.path.sep)[-1] == CH_subfolder:
+            try:
+                from cosmo_hammer import from_CH_output_to_chains as CH_output
+                CH_output(folder)
+            except IOError:
+                raise io_mp.AnalyzeError(
+                    "You asked to analyze a Cosmo Hammer run which appears "
+                    "empty - maybe the run did not finish?")
+            else:
+                warnings.warn(
+                    "The content of the CH subfolder has been "
+                    "translated for Monte Python. Please run an "
+                    "analysis of the entire folder now.")
+                return False
+
     # If the input command was an entire folder, then grab everything in it
     if os.path.isdir(files[0]):
         if files[0][-1] != '/':

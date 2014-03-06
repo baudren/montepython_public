@@ -28,6 +28,7 @@ CH_subfolder = 'CH'
 CH_separator = '-'
 # Cosmo Hammer file names ending, after the defined 'base_name'
 name_arguments = '.arguments'
+name_chain = 'chain_CH__sampling.txt'
 
 # Cosmo Hammer option prefix
 CH_prefix = 'CH_'
@@ -123,3 +124,38 @@ def run(cosmo, data, command_line):
     logging.getLogger().addHandler(console_handler)
 
     sampler_hammer.startSampling()
+
+
+def from_CH_output_to_chains(folder):
+    """
+    Translate the output of the Cosmo Hammer into Monte Python chains
+
+    This function will be called by the module :mod:`analyze`.
+    """
+
+    chain_name = [a for a in folder.split(os.path.sep) if a][-2]
+    base_name = os.path.join(folder, chain_name)
+    # Recover the points in parameter space
+    with open(base_name+'.out', 'r') as param_values_file:
+        chains = np.loadtxt(param_values_file)
+    # Recover the associated likelihood (it is the -log likelihood)
+    with open(base_name+'prob.out', 'r') as lkl_values_file:
+        lkl = np.loadtxt(lkl_values_file)
+
+    # Glue them together, with an additional column of ones, for the
+    # multiplicity. This does not mean that the acceptance rate is one, but
+    # points where the code stayed are duplicated in the file.
+
+    ## First, reshape the lkl array
+    lkl = np.array([[elem] for elem in lkl])
+
+    ## Create the array of ones
+    ones = np.array([[1] for _ in range(len(lkl))])
+
+    ## Concatenate everything and save to file
+    final = np.concatenate((ones, lkl, chains), axis=1)
+    output_folder = os.path.abspath(
+        [a for a in folder.split(os.path.sep) if a][-2])
+    output_chain_path = os.path.join(
+        output_folder, name_chain)
+    np.savetxt(output_chain_path, final)
