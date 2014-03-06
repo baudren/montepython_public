@@ -249,7 +249,7 @@ def run(cosmo, data, command_line):
 
     # Launch MultiNest, and recover the output code
     output = nested_run(loglike, prior, **data.NS_arguments)
-    
+
     # Assuming this worked, i.e. if output is `None`,
     # state it and suggest the user to analyse the output.
     if output is None:
@@ -259,12 +259,12 @@ def run(cosmo, data, command_line):
                       'or, if you used multimodal sampling, in the ' +
                       'chain_name/mode_# subfolders.')
 
-        
+
 def from_NS_output_to_chains(folder):
     """
     Translate the output of MultiNest into readable output for Monte Python
 
-    This routine will be called by the analyze modules.
+    This routine will be called by the module :mod:`analyze`.
 
     If mode separation has been performed (i.e., multimodal=True), it creates
     'mode_#' subfolders containing a chain file with the corresponding samples
@@ -358,7 +358,7 @@ def from_NS_output_to_chains(folder):
     assert len(mode_lines) == 1+n_modes, 'Something is wrong... (strange error n.2)'
 
 # TODO: prepare total and rejected chain
-  
+
     # Process each mode:
     ini = 1 if multimodal else 0
     for i in range(ini, 1+n_modes):
