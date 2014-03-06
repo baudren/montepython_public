@@ -214,14 +214,24 @@ def create_parser():
                         type=int, dest='ticksize', default=-1)
 
     ###############
-    # MultiNest arguments (all OPTIONAL and ignored if not "-m='NS'")
+    # MultiNest arguments (all OPTIONAL and ignored if not "-m=NS")
     # The default values of -1 mean to take the PyMultiNest default values
-    from nested_sampling import NS_prefix, NS_user_arguments, str2bool
+    from nested_sampling import NS_prefix, NS_user_arguments
     for arg in NS_user_arguments:
         parser.add_argument('--'+NS_prefix+arg,
                             dest=NS_prefix+arg,
                             default=-1,
                             **NS_user_arguments[arg])
+    ###############
+    # CosmoHammer arguments (all OPTIONAL and ignored if not "-m=CH")
+    # The default values of -1 mean to take the CosmoHammer default values
+    from cosmo_hammer import CH_prefix, CH_user_arguments
+    for arg in CH_user_arguments:
+        parser.add_argument('--'+CH_prefix+arg,
+                            dest=CH_prefix+arg,
+                            default=-1,
+                            **CH_user_arguments[arg])
+
     return parser
 
 

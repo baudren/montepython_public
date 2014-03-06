@@ -146,13 +146,13 @@ def run(cosmo, data, command_line):
     derived_param_names = data.get_mcmc_parameters(['derived'])
 
     # Check that all the priors are flat and that all the parameters are bound
-    if not(all(data.mcmc_parameters[name]['prior'].prior_type == 'flat'
-               for name in varying_param_names)):
+    is_flat, is_bound = sampler.check_flat_bound_priors(
+        data.mcmc_parameters, varying_param_names)
+    if not is_flat:
         raise io_mp.ConfigurationError(
             'Nested Sampling with MultiNest is only possible with flat ' +
             'priors. Sorry!')
-    if not(all(data.mcmc_parameters[name]['prior'].is_bound()
-               for name in varying_param_names)):
+    if not is_bound:
         raise io_mp.ConfigurationError(
             'Nested Sampling with MultiNest is only possible for bound ' +
             'parameters. Set reasonable bounds for them in the ".param"' +
@@ -198,7 +198,7 @@ def run(cosmo, data, command_line):
             NS_param_names.append(param)
     for param in varying_param_names:
         if not param in NS_param_names:
-            NS_param_names.append(param)       
+            NS_param_names.append(param)
         
     # Caveat: multi-modal sampling OFF by default; if requested, INS disabled
     try:

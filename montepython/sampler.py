@@ -318,6 +318,20 @@ def accept_step(data):
             data.mcmc_parameters[elem]['current']
 
 
+def check_flat_bound_priors(parameters, names):
+    """
+    Ensure that all varying parameters are bound and flat
+
+    It is a necessary condition to use the code with Nested Sampling or the
+    Cosmo Hammer.
+    """
+    is_flat = all(parameters[name]['prior'].prior_type == 'flat'
+                  for name in names)
+    is_bound = all(parameters[name]['prior'].is_bound()
+                   for name in names)
+    return is_flat, is_bound
+
+
 def compute_lkl(cosmo, data):
     """
     Compute the likelihood, given the current point in parameter space.
