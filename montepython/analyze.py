@@ -308,9 +308,16 @@ def prepare(info, files, is_main_chain=True):
 
     """
 
+    has_multinest, has_cosmohammer = False, False
+
     # First test if the folder is a Nested Sampling folder
-    from nested_sampling import NS_subfolder
-    if os.path.isdir(files[0]):
+    try:
+        from nested_sampling import NS_subfolder
+        has_multinest = True
+    except ImportError:
+        print 'No pymultinest installation found'
+
+    if has_multinest and os.path.isdir(files[0]):
         folder = os.path.join(
             *[elem for elem in files[0].split(os.path.sep) if elem])
         if folder.split(os.path.sep)[-1] == NS_subfolder:
@@ -319,9 +326,10 @@ def prepare(info, files, is_main_chain=True):
                 NS_output(folder)
             except IOError:
                 raise io_mp.AnalyzeError(
-                    "You asked to analyze a Nested Sampling folder which seems "+
-                    "to come from an unfinished run, or to be empty or corrupt."+
-                    "Please make sure the run went smoothly enough.")
+                    "You asked to analyze a Nested Sampling folder which " +
+                    "seems to come from an unfinished run, or to be empty " +
+                    "or corrupt. Please make sure the run went smoothly " +
+                    "enough.")
             else:
                 warnings.warn(
                     "The content of the NS subfolder has been " +
@@ -330,8 +338,13 @@ def prepare(info, files, is_main_chain=True):
                 return False
 
     # Or a CosmoHammer folder
-    from cosmo_hammer import CH_subfolder
-    if os.path.isdir(files[0]):
+    try:
+        from cosmo_hammer import CH_subfolder
+        has_cosmohammer = True
+    except ImportError:
+        print 'No cosmohammer installation found'
+
+    if has_cosmohammer and os.path.isdir(files[0]):
         folder = os.path.abspath(files[0])
         if folder.split(os.path.sep)[-1] == CH_subfolder:
             try:

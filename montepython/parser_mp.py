@@ -216,21 +216,30 @@ def create_parser():
     ###############
     # MultiNest arguments (all OPTIONAL and ignored if not "-m=NS")
     # The default values of -1 mean to take the PyMultiNest default values
-    from nested_sampling import NS_prefix, NS_user_arguments
-    for arg in NS_user_arguments:
-        parser.add_argument('--'+NS_prefix+arg,
-                            dest=NS_prefix+arg,
-                            default=-1,
-                            **NS_user_arguments[arg])
+    try:
+        from nested_sampling import NS_prefix, NS_user_arguments
+        for arg in NS_user_arguments:
+            parser.add_argument('--'+NS_prefix+arg,
+                                dest=NS_prefix+arg,
+                                default=-1,
+                                **NS_user_arguments[arg])
+    except ImportError:
+        # Not defined if not installed
+        pass
+
     ###############
     # CosmoHammer arguments (all OPTIONAL and ignored if not "-m=CH")
     # The default values of -1 mean to take the CosmoHammer default values
-    from cosmo_hammer import CH_prefix, CH_user_arguments
-    for arg in CH_user_arguments:
-        parser.add_argument('--'+CH_prefix+arg,
-                            dest=CH_prefix+arg,
-                            default=-1,
-                            **CH_user_arguments[arg])
+    try:
+        from cosmo_hammer import CH_prefix, CH_user_arguments
+        for arg in CH_user_arguments:
+            parser.add_argument('--'+CH_prefix+arg,
+                                dest=CH_prefix+arg,
+                                default=-1,
+                                **CH_user_arguments[arg])
+    except ImportError:
+        # Not defined if not installed
+        pass
 
     return parser
 
