@@ -1,9 +1,9 @@
 import os
 import numpy as np
-from montepython.likelihood_class import likelihood
+from montepython.likelihood_class import Likelihood
 
 
-class da_rec(likelihood):
+class da_rec(Likelihood):
 
     # The initialization routine is no different from the parent class one.
 

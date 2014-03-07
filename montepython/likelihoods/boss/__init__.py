@@ -1,15 +1,15 @@
-from montepython.likelihood_class import likelihood
+from montepython.likelihood_class import Likelihood
 import montepython.io_mp as io_mp
 import numpy as np
 from math import exp
 import os
 
 
-class boss(likelihood):
+class boss(Likelihood):
 
     def __init__(self, path, data, command_line):
 
-        likelihood.__init__(self, path, data, command_line)
+        Likelihood.__init__(self, path, data, command_line)
 
         ############ read data ###########
 

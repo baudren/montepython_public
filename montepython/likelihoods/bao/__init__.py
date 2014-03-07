@@ -1,15 +1,15 @@
 import os
 import numpy as np
-from montepython.likelihood_class import likelihood
+from montepython.likelihood_class import Likelihood
 
 
-class bao(likelihood):
+class bao(Likelihood):
 
     # initialization routine
 
     def __init__(self, path, data, command_line):
 
-        likelihood.__init__(self, path, data, command_line)
+        Likelihood.__init__(self, path, data, command_line)
 
         # define array for values of z and data points
         self.z = np.array([], 'float64')

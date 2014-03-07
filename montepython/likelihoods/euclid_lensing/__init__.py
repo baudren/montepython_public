@@ -1,14 +1,14 @@
-from montepython.likelihood_class import likelihood
+from montepython.likelihood_class import Likelihood
 import os
 import numpy as np
 import math
 # Adapted from Julien Lesgourgues
 
-class euclid_lensing(likelihood):
+class euclid_lensing(Likelihood):
 
   def __init__(self, path, data, command_line):
 
-    likelihood.__init__(self, path, data, command_line)
+    Likelihood.__init__(self, path, data, command_line)
 
     self.need_cosmo_arguments(data,{'output':'mPk'})
 

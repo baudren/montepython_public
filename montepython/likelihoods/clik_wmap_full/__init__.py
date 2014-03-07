@@ -1,5 +1,5 @@
-from montepython.likelihood_class import likelihood_clik
+from montepython.likelihood_class import Likelihood_clik
 
 
-class clik_wmap_full(likelihood_clik):
+class clik_wmap_full(Likelihood_clik):
     pass

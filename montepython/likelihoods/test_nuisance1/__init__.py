@@ -1,7 +1,7 @@
-from montepython.likelihood_class import likelihood
+from montepython.likelihood_class import Likelihood
 
 
-class test_nuisance1(likelihood):
+class test_nuisance1(Likelihood):
 
     def loglkl(self, cosmo, data):
 

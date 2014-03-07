@@ -1,15 +1,15 @@
-from montepython.likelihood_class import likelihood
+from montepython.likelihood_class import Likelihood
 import montepython.io_mp as io_mp
 import os
 import numpy as np
 from math import exp
 
 
-class lya(likelihood):
+class lya(Likelihood):
 
     def __init__(self, path, data, command_line):
 
-        likelihood.__init__(self, path, data, command_line)
+        Likelihood.__init__(self, path, data, command_line)
 
         ############ read data ###########
 

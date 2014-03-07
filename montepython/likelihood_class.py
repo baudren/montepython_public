@@ -4,11 +4,9 @@
 .. moduleauthor:: Julien Lesgourgues <lesgourg@cern.ch>
 .. moduleauthor:: Benjamin Audren <benjamin.audren@epfl.ch>
 
-Contains the definition of the base likelihood class, with basic functions,
-as well as more specific likelihood classes that may be reused to implement
-new ones.
-
-The most important one is :class:`likelihood`
+Contains the definition of the base likelihood class :class:`Likelihood`, with
+basic functions, as well as more specific likelihood classes that may be reused
+to implement new ones.
 
 """
 import os
@@ -19,7 +17,7 @@ import warnings
 import io_mp
 
 
-class likelihood(object):
+class Likelihood(object):
     """
     General class that all likelihoods will inherit from.
 
@@ -332,7 +330,7 @@ class likelihood(object):
 # PRIOR TYPE LIKELIHOOD
 # --> H0,...
 ###################################
-class likelihood_prior(likelihood):
+class Likelihood_prior(Likelihood):
 
     def loglkl(self):
         raise NotImplementedError('Must implement method loglkl() in your likelihood')
@@ -342,11 +340,11 @@ class likelihood_prior(likelihood):
 # NEWDAT TYPE LIKELIHOOD
 # --> spt,boomerang,etc.
 ###################################
-class likelihood_newdat(likelihood):
+class Likelihood_newdat(Likelihood):
 
     def __init__(self, path, data, command_line):
 
-        likelihood.__init__(self, path, data, command_line)
+        Likelihood.__init__(self, path, data, command_line)
 
         self.need_cosmo_arguments(
             data, {'lensing': 'yes', 'output': 'tCl lCl pCl'})
@@ -798,11 +796,11 @@ class likelihood_newdat(likelihood):
 # CLIK TYPE LIKELIHOOD
 # --> clik_fake_planck,clik_wmap,etc.
 ###################################
-class likelihood_clik(likelihood):
+class Likelihood_clik(Likelihood):
 
     def __init__(self, path, data, command_line):
 
-        likelihood.__init__(self, path, data, command_line)
+        Likelihood.__init__(self, path, data, command_line)
         self.need_cosmo_arguments(
             data, {'lensing': 'yes', 'output': 'tCl lCl pCl'})
 
@@ -936,11 +934,11 @@ class likelihood_clik(likelihood):
 # MOCK CMB TYPE LIKELIHOOD
 # --> mock planck, cmbpol, etc.
 ###################################
-class likelihood_mock_cmb(likelihood):
+class Likelihood_mock_cmb(Likelihood):
 
     def __init__(self, path, data, command_line):
 
-        likelihood.__init__(self, path, data, command_line)
+        Likelihood.__init__(self, path, data, command_line)
 
         self.need_cosmo_arguments(
             data, {'lensing': 'yes', 'output': 'tCl lCl pCl'})
@@ -1075,11 +1073,11 @@ class likelihood_mock_cmb(likelihood):
 # MPK TYPE LIKELIHOOD
 # --> sdss, wigglez, etc.
 ###################################
-class likelihood_mpk(likelihood):
+class Likelihood_mpk(Likelihood):
 
     def __init__(self, path, data, command_line, common=False, common_dict={}):
 
-        likelihood.__init__(self, path, data, command_line)
+        Likelihood.__init__(self, path, data, command_line)
 
         # require P(k) from class
         self.need_cosmo_arguments(data, {'output': 'mPk'})

@@ -1,7 +1,7 @@
-from montepython.likelihood_class import likelihood_mpk, likelihood
+from montepython.likelihood_class import Likelihood_mpk, Likelihood
 
 
-class WiggleZ(likelihood):
+class WiggleZ(Likelihood):
     """
     Likelihood for WiggleZ
 
@@ -14,13 +14,13 @@ class WiggleZ(likelihood):
         
         Each redshift bin in WiggleZ contains a .dataset file with information
         on this redshift bin. The structure to read this has been encoded in
-        the class likelihood_mpk. It will be used also with the next data
+        the class Likelihood_mpk. It will be used also with the next data
         release of SDSS.
 
-        The whole WiggleZ is then made out of the four likelihood_mpk:
+        The whole WiggleZ is then made out of the four Likelihood_mpk:
         WiggleZ_a, b, c and d, which are **defined dynamically** thanks to the
         :func:`type` function in python, inheriting from
-        :class:`likelihood_mpk`. 
+        :class:`Likelihood_mpk`. 
 
         Some additional keyword arguments are sent to the initialization of
         these classes, in order to use the function
@@ -29,13 +29,13 @@ class WiggleZ(likelihood):
 
         """
 
-        likelihood.__init__(self, path, data, command_line)
+        Likelihood.__init__(self, path, data, command_line)
 
         # This obscure command essentially creates dynamically 4 likelihoods,
         # respectively called WiggleZ_a, b, c and d, inheriting from
-        # likelihood_mpk. 
+        # Likelihood_mpk. 
         for elem in ['a', 'b', 'c', 'd']:
-            exec("WiggleZ_%s = type('WiggleZ_%s', (likelihood_mpk, ), {})" % \
+            exec("WiggleZ_%s = type('WiggleZ_%s', (Likelihood_mpk, ), {})" % \
                 (elem, elem))
 
         # Initialize one after the other the four independant redshift bins (note:

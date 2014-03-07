@@ -1,8 +1,8 @@
-from montepython.likelihood_class import likelihood
+from montepython.likelihood_class import Likelihood
 from numpy import matrix, dot
 
 
-class test_gaussian(likelihood):
+class test_gaussian(Likelihood):
 
     def loglkl(self, cosmo, data):
         H0, ob, oc  = (

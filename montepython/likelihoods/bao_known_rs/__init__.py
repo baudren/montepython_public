@@ -1,16 +1,16 @@
 import os
 import numpy as np
 from math import sqrt
-from montepython.likelihood_class import likelihood
+from montepython.likelihood_class import Likelihood
 
 
-class bao_known_rs(likelihood):
+class bao_known_rs(Likelihood):
 
     # initialization routine
 
     def __init__(self, path, data, command_line):
 
-        likelihood.__init__(self, path, data, command_line)
+        Likelihood.__init__(self, path, data, command_line)
 
         # define array for values of z and data points
         self.z = np.array([], 'float64')

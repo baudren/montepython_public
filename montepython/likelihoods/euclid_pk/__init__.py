@@ -1,13 +1,13 @@
-from montepython.likelihood_class import likelihood
+from montepython.likelihood_class import Likelihood
 import os
 import numpy as np
 from math import exp,log,sqrt,pi
 
-class euclid_pk(likelihood):
+class euclid_pk(Likelihood):
 
   def __init__(self, path, data, command_line):
 
-    likelihood.__init__(self, path, data, command_line)
+    Likelihood.__init__(self, path, data, command_line)
 
     self.need_cosmo_arguments(data, {'output':'mPk'})
     

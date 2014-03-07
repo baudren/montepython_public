@@ -1,12 +1,12 @@
 import os
-from montepython.likelihood_class import likelihood_prior
+from montepython.likelihood_class import Likelihood_prior
 
 
-class hst(likelihood_prior):
+class hst(Likelihood_prior):
 
-    # initialisation of the class is done within the parent likelihood_prior. For
+    # initialisation of the class is done within the parent Likelihood_prior. For
     # this case, it does not differ, actually, from the __init__ method in
-    # likelihood class.
+    # Likelihood class.
     def loglkl(self, cosmo, data):
 
         h = cosmo.h()

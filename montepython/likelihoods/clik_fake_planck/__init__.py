@@ -1,5 +1,5 @@
-from montepython.likelihood_class import likelihood_clik
+from montepython.likelihood_class import Likelihood_clik
 
 
-class clik_fake_planck(likelihood_clik):
+class clik_fake_planck(Likelihood_clik):
     pass

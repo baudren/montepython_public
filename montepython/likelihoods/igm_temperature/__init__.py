@@ -1,9 +1,9 @@
 import os
 import numpy as np
-from montepython.likelihood_class import likelihood_prior
+from montepython.likelihood_class import Likelihood_prior
 
 
-class igm_temperature(likelihood_prior):
+class igm_temperature(Likelihood_prior):
 
     def loglkl(self, cosmo, data):
 

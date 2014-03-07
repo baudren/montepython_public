@@ -1,14 +1,14 @@
-from montepython.likelihood_class import likelihood
+from montepython.likelihood_class import Likelihood
 import montepython.io_mp as io_mp
 import numpy as np
 
 
-class wmap(likelihood):
+class wmap(Likelihood):
 
     def __init__(self, path, data, command_line):
 
         # Standard initialization, reads the .data
-        likelihood.__init__(self, path, data, command_line)
+        Likelihood.__init__(self, path, data, command_line)
 
         # Extra needed cosmological paramters
         self.need_cosmo_arguments(
