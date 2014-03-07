@@ -689,6 +689,9 @@ class Data(object):
                     if i != size:
                         string += ','
                 self.cosmo_arguments['binned_reio_xe'] = string
+            if elem == 'M_tot':
+                self.cosmo_arguments['m_ncdm'] = self.cosmo_arguments['M_tot']/3.
+                del self.cosmo_arguments[elem]
 
     def __cmp__(self, other):
         """
