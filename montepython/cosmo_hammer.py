@@ -15,6 +15,7 @@ LikelihoodModules of CosmoHammer.
 """
 import numpy as np
 import os
+import warnings
 import logging
 
 import io_mp
@@ -22,6 +23,7 @@ import sampler
 from cosmoHammer.likelihood.chain.LikelihoodComputationChain import (
     LikelihoodComputationChain)
 from cosmoHammer.sampler.CosmoHammerSampler import CosmoHammerSampler
+from cosmoHammer.util.SampleFileUtil import SampleFileUtil
 
 # Cosmo Hammer subfolder and name separator
 CH_subfolder = 'CH'
@@ -109,13 +111,28 @@ def run(cosmo, data, command_line):
     # Write the CosmoHammer arguments
     with open(file_prefix+name_arguments, 'w') as arg_file:
         for arg in data.CH_arguments:
-            arg_file.write(' = '.join([str(arg), str(data.CH_arguments[arg])]))
+            arg_file.write(
+                ' = '.join([str(arg), str(data.CH_arguments[arg])]) + '\n')
+
+    # Create an extension to the SampleFileUtil from cosmoHammer
+    derived_util = DerivedUtil(file_prefix)
+
+    try:
+        num_threads = int(os.environ['OMP_NUM_THREADS'])
+    except KeyError:
+        warnings.warn(
+            "The environment variable OMP_NUM_THREADS is not set. "
+            "To run the Cosmo Hammer meaningfully, you should better "
+            "set it to something! Defaulting to 1 for now.")
+        num_threads = 1
 
     # Create the Sampler object
     sampler_hammer = CosmoHammerSampler(
         params=params,
         likelihoodComputationChain=chain,
         filePrefix=file_prefix,
+        storageUtil=derived_util,
+        threadCount=num_threads,
         **data.CH_arguments)
 
     # create console handler and set level to debug (does not seem to appear)
@@ -124,6 +141,12 @@ def run(cosmo, data, command_line):
     logging.getLogger().addHandler(console_handler)
 
     sampler_hammer.startSampling()
+
+    #print sampler_hammer
+    #for elem in dir(sampler_hammer):
+        #print elem
+    #_, data_from_context = chain()
+    #print data_from_context
 
 
 def from_CH_output_to_chains(folder):
@@ -159,3 +182,27 @@ def from_CH_output_to_chains(folder):
     output_chain_path = os.path.join(
         output_folder, name_chain)
     np.savetxt(output_chain_path, final)
+
+
+class DerivedUtil(SampleFileUtil):
+    """
+    Extends the writing class from CosmoHammer to include derived parameters.
+    """
+    def persistValues(self, posFile, probFile, pos, prob, data):
+        """
+        Writes the walker positions and the likelihood to the disk
+        """
+        # extend the pos array to also contain the value of the derived
+        # parameters
+        derived = np.array(
+            [[a for a in elem.itervalues()] for elem in data])
+        final = np.concatenate((pos, derived), axis=1)
+
+        posFile.write("\n".join(
+            [" ".join([str(q) for q in p]) for p in final]))
+        posFile.write("\n")
+        posFile.flush()
+
+        probFile.write("\n".join([str(p) for p in prob]))
+        probFile.write("\n")
+        probFile.flush()
