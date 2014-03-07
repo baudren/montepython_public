@@ -4,7 +4,7 @@
 # "Likelihood_mock_cmb", which knows how to deal with all experiments in
 # "mock CMB" format.
 
-from likelihood_class import Likelihood_mock_cmb
+from montepython.likelihood_class import Likelihood_mock_cmb
 
 
 class fake_planck_bluebook(Likelihood_mock_cmb):

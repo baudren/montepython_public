@@ -1,4 +1,4 @@
-from likelihood_class import Likelihood
+from montepython.likelihood_class import Likelihood
 import os
 import numpy as np
 import math

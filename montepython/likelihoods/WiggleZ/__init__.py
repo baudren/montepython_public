@@ -1,4 +1,4 @@
-from likelihood_class import Likelihood_mpk, Likelihood
+from montepython.likelihood_class import Likelihood_mpk, Likelihood
 
 
 class WiggleZ(Likelihood):

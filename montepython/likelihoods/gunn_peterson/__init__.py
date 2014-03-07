@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from likelihood_class import Likelihood_prior
+from montepython.likelihood_class import Likelihood_prior
 
 
 class gunn_peterson(Likelihood_prior):
