@@ -91,7 +91,8 @@ class Data(object):
             contains a 1 on the first element, and then the over sampling of
             the desired likelihoods. This array must have the same size as the
             number of blocks (1 for the cosmo + 1 for each likelihood with
-            varying nuisance parameters).
+            varying nuisance parameters). You need to call the code with the
+            flag `-j jast` for it to be used.
 
         To create an instance of this class, one must feed the following
         parameters and keyword arguments:

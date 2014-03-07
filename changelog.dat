@@ -1,4 +1,6 @@
-v2.0.0: + **Repackaging**: the whole folder now should behave more like a
+v2.0.0: + Over sampling implemented: it helps running with likelihoods with a
+	  high number of varying nuisance parameters.
+	+ **Repackaging**: the whole folder now should behave more like a
 	  proper python package. This included renaming the `code` directory
 	  into `montepython`, and moving the `likelihoods` folder
 	  inside this new `montepython`. Also, considering a `lkl` likelihood,
