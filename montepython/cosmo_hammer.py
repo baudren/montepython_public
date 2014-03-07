@@ -10,7 +10,9 @@ creating this interface.
 
 The link between the two codes is that some functions have been added to the
 classes defined in Monte Python, so that they can become CoreModules and
-LikelihoodModules of CosmoHammer.
+LikelihoodModules of CosmoHammer. Mostly, all the important classes in Monte
+Python (:class:`Data` <data.Data>, Class and :class:`Likelihood`
+<likelihood_class.Likelihood>)
 
 """
 import numpy as np

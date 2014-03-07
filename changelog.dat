@@ -5,7 +5,7 @@ v2.0.0: + **Repackaging**: the whole folder now should behave more like a
 	  instead of following the previous structure:
 	  `likelihoods/lkl/lkl.py and .data, 
 	  you should now use:
-	  `montepython/likelihoods/lkl/__ini__.py and lkl.data`.
+	  `montepython/likelihoods/lkl/__init__.py and lkl.data`.
 	+ Wrapping of the Cosmo Hammer within Monte Python. This
 	  should allow runs being able to scale on the biggest
 	  available clusters (big thanks to Joel Akeret and Sebastian

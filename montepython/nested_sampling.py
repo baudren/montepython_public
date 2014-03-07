@@ -121,24 +121,32 @@ def run(cosmo, data, command_line):
         <prior.Prior.map_from_unit_interval>` of the class :class:`Prior
         <prior.Prior>`.
 
-        :Parameters:
-            **cube** (`array`) - Contains the current point in unit parameter
-                space that has been selected within the MultiNest part.
-            **ndim** (`int`) - Number of varying parameters
-            **nparams** (`int`) - Total number of parameters, including the
-                derived ones (not used, so hidden in `*args`)
+        Parameters
+        ----------
+        cube : array
+            Contains the current point in unit parameter space that has been
+            selected within the MultiNest part.
+        ndim : int
+            Number of varying parameters
+        nparams : int
+            Total number of parameters, including the derived ones (not used,
+            so hidden in `*args`)
 
 
     .. function:: loglike
 
         Generate the Likelihood function for MultiNest
 
-        :Parameters:
-            **cube** (`array`) - Contains the current point in the correct
-                parameter space after transformation from :func:`prior`.
-            **ndim** (`int`) - Number of varying parameters
-            **nparams** (`int`) - Total number of parameters, including the
-                derived ones (not used, so hidden in `*args`)
+        Parameters
+        ----------
+        cube : array
+            Contains the current point in the correct parameter space after
+            transformation from :func:`prior`.
+        ndim : int
+            Number of varying parameters
+        nparams : int
+            Total number of parameters, including the derived ones (not used,
+            so hidden in `*args`)
 
     """
     # Convenience variables
@@ -169,10 +177,10 @@ def run(cosmo, data, command_line):
 
     # Prepare arguments for PyMultiNest
     # -- Automatic arguments
-    data.NS_arguments['n_dims']   =  len(varying_param_names)
+    data.NS_arguments['n_dims'] = len(varying_param_names)
     data.NS_arguments['n_params'] = (len(varying_param_names) +
-                                      len(derived_param_names))
-    data.NS_arguments['verbose']  = True
+                                     len(derived_param_names))
+    data.NS_arguments['verbose'] = True
     data.NS_arguments['outputfiles_basename'] = base_name + NS_separator
     # -- User-defined arguments
     for arg in NS_user_arguments:
@@ -193,18 +201,18 @@ def run(cosmo, data, command_line):
         for param in clustering_param_names:
             if not param in varying_param_names:
                 raise io_mp.ConfigurationError(
-                'The requested clustering parameter "%s"'%param+
-                ' was not found in your ".param" file. Pick a valid one.')
+                    'The requested clustering parameter "%s"' % param +
+                    ' was not found in your ".param" file. Pick a valid one.')
             NS_param_names.append(param)
     for param in varying_param_names:
         if not param in NS_param_names:
             NS_param_names.append(param)
-        
+
     # Caveat: multi-modal sampling OFF by default; if requested, INS disabled
     try:
         if data.NS_arguments['multimodal']:
             data.NS_arguments['importance_nested_sampling'] = False
-            warnings.warn('Multi-modal sampling has been requested, '+
+            warnings.warn('Multi-modal sampling has been requested, ' +
                           'so Importance Nested Sampling has been disabled')
     except KeyError:
         data.NS_arguments['multimodal'] = False
@@ -213,9 +221,10 @@ def run(cosmo, data, command_line):
     with open(base_name+name_arguments, 'w') as afile:
         for arg in data.NS_arguments:
             if arg != 'n_clustering_params':
-                afile.write(' = '.join([str(arg), str(data.NS_arguments[arg])]))
+                afile.write(' = '.join(
+                    [str(arg), str(data.NS_arguments[arg])]))
             else:
-                afile.write('clustering_params = '+
+                afile.write('clustering_params = ' +
                             ' '.join(clustering_param_names))
             afile.write('\n')
     with open(base_name+name_paramnames, 'w') as pfile:
@@ -231,7 +240,7 @@ def run(cosmo, data, command_line):
             cube[i] = data.mcmc_parameters[name]['prior']\
                 .map_from_unit_interval(cube[i])
 
-    # Function giving the likelihood probability            
+    # Function giving the likelihood probability
     def loglike(cube, ndim, *args):
         """
         Please see the encompassing function docstring
@@ -254,7 +263,7 @@ def run(cosmo, data, command_line):
     # state it and suggest the user to analyse the output.
     if output is None:
         warnings.warn('The sampling with MultiNest is done.\n' +
-                      'You can now analyse the output calling MontePython ' +
+                      'You can now analyse the output calling Monte Python ' +
                       ' with the -info flag in the chain_name/NS subfolder,' +
                       'or, if you used multimodal sampling, in the ' +
                       'chain_name/mode_# subfolders.')
@@ -280,7 +289,8 @@ def from_NS_output_to_chains(folder):
     base_name = os.path.join(folder, chain_name)
 
     # Read the arguments of the NS run
-    # This file is intended to be machine generated: no "#" ignored or tests done
+    # This file is intended to be machine generated: no "#" ignored or tests
+    # done
     NS_arguments = {}
     with open(base_name+name_arguments, 'r') as afile:
         for line in afile:
@@ -320,10 +330,10 @@ def from_NS_output_to_chains(folder):
             param_data[param_name] = [a.strip() for a in
                                       line.split('=')[1].strip('[]').split(',')]
             param_lines[param_name] = i
-            
+
     # Create the mapping from NS ordering to log.param ordering
     columns_reorder = [NS_param_names.index(param) for param in param_names]
-    
+
     # Open the 'stats.dat' file to see what happened and retrieve some info
     stats_file = open(base_name+name_stats, 'r')
     lines = stats_file.readlines()
@@ -331,7 +341,7 @@ def from_NS_output_to_chains(folder):
     # Mode-separated info
     i = 0
     n_modes = 0
-    stats_mode_lines = {0:[]}
+    stats_mode_lines = {0: []}
     for line in lines:
         if 'Nested Sampling Global Log-Evidence' in line:
             global_logZ, global_logZ_err = [float(a.strip()) for a in
@@ -341,9 +351,9 @@ def from_NS_output_to_chains(folder):
         if line[:4] == 'Mode':
             i += 1
             stats_mode_lines[i] = []
-        # This stores the info of each mode i>1 in stats_mode_lines[i]
-        #    and in i=0 the lines previous to the modes, in the multi-modal case
-        #    or the info of the only mode, in the mono-modal case
+        # This stores the info of each mode i>1 in stats_mode_lines[i] and in
+        # i=0 the lines previous to the modes, in the multi-modal case or the
+        # info of the only mode, in the mono-modal case
         stats_mode_lines[i].append(line)
     assert n_modes == max(stats_mode_lines.keys()), (
         'Something is wrong... (strange error n.1)')
@@ -377,7 +387,7 @@ def from_NS_output_to_chains(folder):
         mode_data = mode_data.reshape([mode_data.shape[0]/columns, columns])
         # Rearrange: sample-prob | -2*loglik | params (clustering first)
         #       ---> sample-prob |   -loglik | params (log.param order)
-        mode_data[:, 1]  = mode_data[: ,1] / 2.
+        mode_data[:, 1]  = mode_data[:, 1] / 2.
         mode_data[:, 2:] = mode_data[:, [2+j for j in columns_reorder]]
         np.savetxt(os.path.join(mode_subfolder, name_chain_acc),
                    mode_data, fmt='%.6e')
@@ -385,9 +395,9 @@ def from_NS_output_to_chains(folder):
         # If we are not in the multimodal case, we are done!
         if not multimodal:
             break
-        # In the multimodal case, we want to write a log.param for each mode       
+        # In the multimodal case, we want to write a log.param for each mod
         this_log_lines = copy(log_lines)
-        
+
         # Get the necessary info of the parameters:
         #  -- max_posterior (MAP), sigma  <---  stats.dat file
         for j, line in enumerate(stats_mode_lines[i]):
