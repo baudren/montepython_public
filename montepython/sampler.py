@@ -392,9 +392,10 @@ def compute_lkl(cosmo, data):
             cosmo.compute(["lensing"])
         except CosmoComputationError:
             return data.boundary_loglike
-        except CosmoSevereError:
+        except CosmoSevereError, message:
+            print str(message)
             raise io_mp.CosmologicalModuleError(
-                "Something went terribly wrong with CLASS")
+                "Something went wrong when calling CLASS")
         except KeyboardInterrupt:
             raise io_mp.CosmologicalModuleError(
                 "You interrupted execution")
