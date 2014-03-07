@@ -1,5 +1,5 @@
-from montepython.likelihood_class import Likelihood
-import montepython.io_mp as io_mp
+from likelihood_class import Likelihood
+import io_mp
 import numpy as np
 
 

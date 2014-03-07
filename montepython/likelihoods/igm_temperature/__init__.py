@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from montepython.likelihood_class import Likelihood_prior
+from likelihood_class import Likelihood_prior
 
 
 class igm_temperature(Likelihood_prior):

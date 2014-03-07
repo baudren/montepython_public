@@ -1,9 +1,0 @@
-boss.data_directory = os.path.join(data.path['data'], 'lya/')
-
-boss.use_nuisance = ['teffvala','teffvals','gvala','gvals','gvals2','t0vala','t0vals','t0vals2','alpha']
-
-boss.num_z = 11
-boss.num_k = 12
-
-boss.table = 'PkBossWithSystMcDoFormat.txt'
-boss.covar = 'PkCorrBossWithSystMcDoFormat.txt'

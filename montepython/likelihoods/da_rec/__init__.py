@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from montepython.likelihood_class import Likelihood
+from likelihood_class import Likelihood
 
 
 class da_rec(Likelihood):

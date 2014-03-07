@@ -1,4 +1,4 @@
-from montepython.likelihood_class import Likelihood
+from likelihood_class import Likelihood
 
 
 class test_nuisance2(Likelihood):
