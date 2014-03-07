@@ -870,6 +870,10 @@ def plot_triangle(
         num_lines = int(math.ceil(
             len(info.plotted_parameters)*1.0/num_columns))
 
+    # If plots/ folder in output folder does not exist, create it
+    if os.path.isdir(info.folder+'plots') is False:
+        os.mkdir(info.folder+'plots')
+
     # Actual plotting
     print '-----------------------------------------------'
     for i in range(len(info.plotted_parameters)):
@@ -1210,9 +1214,6 @@ def plot_triangle(
                     info.ref_names[i], info.extension),
                     bbox_inches=extent1d.expanded(1.1, 1.4))
 
-    # If plots/ folder in output folder does not exist, create it
-    if os.path.isdir(info.folder+'plots') is False:
-        os.mkdir(info.folder+'plots')
     print '-----------------------------------------------'
     print '--> Saving figures to .{0} files'.format(info.extension)
     if plot_2d:
