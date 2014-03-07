@@ -82,6 +82,17 @@ class Data(object):
             dictionary will be compared with the one extracted from the
             log.param, and will use the latter while warning the user.
 
+        .. warning::
+
+            New in version 2.0.0, you can now specify an oversampling of the
+            nuisance parameters, to hasten the execution of a run with
+            likelihoods that have many of them. You should specify a new field
+            in the parameter file, `data.over_sampling = [1, ...]`, that
+            contains a 1 on the first element, and then the over sampling of
+            the desired likelihoods. This array must have the same size as the
+            number of blocks (1 for the cosmo + 1 for each likelihood with
+            varying nuisance parameters).
+
         To create an instance of this class, one must feed the following
         parameters and keyword arguments:
 
