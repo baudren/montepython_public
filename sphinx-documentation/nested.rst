@@ -45,6 +45,9 @@ By default, MultiNest will try to use the Intel Fortran Compiler if installed. I
 2. PyMultiNest
 ~~~~~~~~~~~~~~
 
+.. NOTE::
+   In a future implementation (hopefully soon), PyMultiNest will be installed automatically. Right now, the installations has to be done manually as it follows.
+
 Download PyMultiNest from `here <http://github.com/JohannesBuchner/PyMultiNest>`__, either using the `releases
 page <http://github.com/JohannesBuchner/PyMultiNest/releases>`__ or cloning with git
 
@@ -61,27 +64,23 @@ Now go to the installation directory and install:
 
 You may need the flag :code:`--user` in the last command if you do not have admin privileges.
 
-If everything went ok, you should be able to run :code:`import pymultinest` in a python console without any output. In that case, you are good to go!
+If everything went ok, you should be able to run :code:`import pymultinest` in a python console without getting any output. In that case, you are good to go!
 
 
 Basic usage and parameters
 --------------------------
 
-**TODO**
-   Why would anyone like to use MultiNest?
+The MultiNest sampling is invoked with the command line option :code:`-m NS`. As in the MCMC case, the parameter file is read and the sampling is launched. The output files are created inside a subfolder :code:`NS` inside the chain folder. This will create the expected :code:`log.param` file inside the chain's root folder, and the expected raw MultiNest files in the :code:`NS` subfolder (see MultiNest's :code:`README`), along with two more files: :code:`[chain name].paramnames`, which contains the ordering of the parameters in the nested sampling chain files (not necessarily the ordering in which they appear in the :code:`log.param`, since clustering parameters must go first), and :code:`[chain name].arguments`, which contains the user defined MultiNest arguments and their values (see below).
 
-The MultiNest sampling is invoked with the command line option :code:`-m NS`. As in the MCMC case, the parameter file is read and the sampling is launched. The output files are created inside a subfolder :code:`NS` inside the chain folder.
+.. NOTE::
+   If the sampling has been interrupted, simply run it again and MultiNest should be able to restart where it finished. If you intend to start a new sampling with different parameters for MultiNest, it is safer to delete the :code:`NS` subfolder (otherwise, the behaviour is not well defined).
 
-**TODO**
-   What to do after finished.
+.. NOTE::
+   There is no support right now for MPI running of MultiNest. It will be implemented soon. Help is welcome.
 
-**TODO**
-   Derived parameters can be used as in MCMC
+Once the sampling has finished, the output of it can be analised as in the MCMC case with :code:`MontePython.py -info [chain_folder]/NS` (notice that one must specify the :code:`NS` subfolder). This will create a chain file in the chain root folder containing the (accepted) points of the nested sampling, and it will be automatically analysed as a MCMC chain, producing the expected files and plots.
 
-**TODO**
-   Caveat about column ordering when usering clustering parameters
-
-Thorough descriptions of the parameters can be found in the README file on MultiNest and the documentation of PyMultiNest. Here is how Monte Python manages them:
+The MultiNest parameters are added after the :code:`-m NS` flag in the command line. They are described in the next section (more thorough descriptions are to be looked for within the MultiNest documentation).
 
 Automatic parameters
 ~~~~~~~~~~~~~~~~~~~~
@@ -111,13 +110,13 @@ and are set in every run by command line options as
 
 .. code::
 
-    --NS_option_[PyMultiNest name] [value]
+    --NS_[PyMultiNest name] [value]
 
 E.g. to set the number of "live points" to 100, one should add to the command :code:`python MontePython.py [...] -m NS` the option
 
 .. code::
 
-    --NS_option_n_live_points 100
+    --NS_n_live_points 100
 
 .. NOTE::
    The default values are those defined in PyMultiNest (at least most of them), and are not hard-coded in Monte Python.
@@ -164,40 +163,9 @@ In (Py)MultiNest, clustering parameters are specified as the :code:`n` first one
 
 .. code::
 
-   --NS_option_clustering_params param1 param2 ...
+   --NS_clustering_params param1 param2 ...
 
 The reason for doing it this way is giving more flexibility to the user, being able to change the clustering parameters without having to modify the ordering of the parameters in the :code:`param` file to put the clustering parameters at the beginnig. But this comes at a price: the raw MultiNest chain files have the parameters ordered with the clustering parameters at the beginning, and then the rest as they appear in the :code:`.param` file. The ordering of the parameters is save to a file :code:`[chain name].paramnames` in the :code:`NS` subfolder. If you intend to use MustiNest's raw output files, you must take this into account! If, instead, you use nested sampling simply as a means to get a covariance matrix and some sample points (saved in :code:`chain_NS__[accepted/rejected].txt`), you do not need to care about this.
-
-
-Usage cases (and suggested values of the options)
--------------------------------------------------
-
-**TODO**
-
-**I want to use the output of MultiNest directly**
-
-In case you want to use the raw output of MultiNest, you must know: The output of MultiNest is untouched inside the NS subfolder under the chain folder. It contains the raw output of MultiNest, plust 2 files: *.arguments are the arguments passed to PyMultiNest by the previous run; *.paramnames are the names of the parameters in the order in which the columns of the MultiNest output files are. This last order will in general not be equal to the order in the parameters in the log.param. In particular, when there are clustering parameters, in the MultiNest files they appear first.
-
-Remember too that the scaling is not applied in the raw files!
-
-**I want a good covariance matrix**
-
-(low sampling)
-
-**I want to sample the posterior thoroughly, and I know there is only one mode**
-
-**I want to map a posterior to find the different modes**
-
-(multimodal, clustering, medium sampling)
-
-**I want to sample a multi-modal posterior thoroughly**
-
-(multimodal, clustering, high sampling)
-
-**I want to evaluate the evidence of a model**
-
-**(Other cases...)**
-
 
 References
 ----------
