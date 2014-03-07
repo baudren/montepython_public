@@ -1033,14 +1033,14 @@ def plot_triangle(
                     fig2d.dpi_scale_trans.inverted())
                 fig2d.savefig(info.folder+'plots/{0}_{1}.{2}'.format(
                     info.folder.split('/')[-2],
-                    info.plotted_parameters[index], info.extension),
+                    info.plotted_parameters[i], info.extension),
                     bbox_inches=extent2d.expanded(1.1, 1.4))
             else:
                 extent1d = ax1d.get_window_extent().transformed(
                     fig1d.dpi_scale_trans.inverted())
                 fig1d.savefig(info.folder+'plots/{0}_{1}.{2}'.format(
                     info.folder.split('/')[-2],
-                    info.plotted_parameters[index], info.extension),
+                    info.plotted_parameters[i], info.extension),
                     bbox_inches=extent1d.expanded(1.1, 1.4))
 
         # Now do the rest of the triangle plot
