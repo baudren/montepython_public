@@ -330,13 +330,16 @@ class Data(object):
         print '\nTesting likelihoods for:\n ->',
         print ', '.join(self.experiments)+'\n'
 
+        # Due to problems in relative import, this line must be there. Until a
+        # better solution is found. It adds the root folder of the MontePython
+        # used as the first element in the sys.path
+        sys.path.insert(0, self.path['root'])
+
         for elem in self.experiments:
 
             folder = os.path.abspath(os.path.join(
                 path['MontePython'], os.path.join("likelihoods", "%s" % elem)))
             # add the folder of the likelihood to the path of libraries to...
-            if folder not in sys.path:
-                sys.path.insert(0, folder)
             # ... import easily the likelihood.py program
             exec "from likelihoods.%s import %s" % (
                 elem, elem)
