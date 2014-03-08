@@ -137,7 +137,10 @@ def recover_cosmological_module(data):
                     data.path['cosmo'], os.path.join(
                     "python", "build"))):
                 if elem.find("lib.") != -1:
-                    classy_path = data.path['cosmo']+"python/build/"+elem
+                    classy_path = os.path.join(
+                        data.path['cosmo'],
+                        os.path.join("python",
+                                     os.path.join("build", elem)))
                     break
         except OSError:
             raise io_mp.ConfigurationError(
@@ -147,7 +150,7 @@ def recover_cosmological_module(data):
 
         # Inserting the previously found path into the list of folders to
         # search for python modules.
-        sys.path.insert(1, classy_path)
+        sys.path.insert(0, classy_path)
         try:
             from classy import Class
         except ImportError:
