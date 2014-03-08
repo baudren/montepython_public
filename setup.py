@@ -13,7 +13,7 @@ with open(VERSION_FILE_NAME, 'r') as version_file:
 
 PACKAGES = find_packages()
 
-setup(name='Monte Python',
+setup(name='montepython',
       version=VERSION,
       description='Cosmological Monte Carlo parameter extraction code',
       author='Benjamin Audren',
