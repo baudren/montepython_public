@@ -24,6 +24,9 @@ Prerequisites
 * *[optional]* If you want to use fully the plotting capabilities of Monte Python,
   you also need the scipy module, with interpolate.
 
+* *[optional]* You can now use Multi Nest and the CosmoHammer with Monte
+  Python, though you need to install them. Please refer to the documentation.
+
 
 The MontePython part
 --------------------
