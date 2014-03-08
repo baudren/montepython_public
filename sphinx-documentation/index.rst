@@ -22,6 +22,7 @@ Contents:
    getting_started
    example
    nested
+   hammer
    likelihoods
    documentation
 

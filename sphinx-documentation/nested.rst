@@ -1,5 +1,5 @@
-Using MultiNest with MontePython
-================================
+Using MultiNest with Monte Python
+=================================
 
 Monte Python can easily use the implementation of `MultiNest <http://ccpforge.cse.rl.ac.uk/gf/project/multinest/>`__ by F. Feroz and M. Hobson [1]_, through the Python wrapper `PyMultiNest <http://github.com/JohannesBuchner/PyMultiNest>`__ by J. Buchner [2]_.
 
@@ -70,24 +70,46 @@ If everything went ok, you should be able to run :code:`import pymultinest` in a
 Basic usage and parameters
 --------------------------
 
-The MultiNest sampling is invoked with the command line option :code:`-m NS`. As in the MCMC case, the parameter file is read and the sampling is launched. The output files are created inside a subfolder :code:`NS` inside the chain folder. This will create the expected :code:`log.param` file inside the chain's root folder, and the expected raw MultiNest files in the :code:`NS` subfolder (see MultiNest's :code:`README`), along with two more files: :code:`[chain name].paramnames`, which contains the ordering of the parameters in the nested sampling chain files (not necessarily the ordering in which they appear in the :code:`log.param`, since clustering parameters must go first), and :code:`[chain name].arguments`, which contains the user defined MultiNest arguments and their values (see below).
+The MultiNest sampling is invoked with the command line option :code:`-m NS`.
+As in the MCMC case, the parameter file is read and the sampling is launched.
+The output files are created inside a subfolder :code:`NS` inside the chain
+folder. This will create the expected :code:`log.param` file inside the chain's
+root folder, and the expected raw MultiNest files in the :code:`NS` subfolder
+(see MultiNest's :code:`README`), along with two more files: :code:`[chain
+name].paramnames`, which contains the ordering of the parameters in the nested
+sampling chain files (not necessarily the ordering in which they appear in the
+:code:`log.param`, since clustering parameters must go first), and
+:code:`[chain name].arguments`, which contains the user defined MultiNest
+arguments and their values (see below).
 
 .. NOTE::
-   If the sampling has been interrupted, simply run it again and MultiNest should be able to restart where it finished. If you intend to start a new sampling with different parameters for MultiNest, it is safer to delete the :code:`NS` subfolder (otherwise, the behaviour is not well defined).
+   If the sampling has been interrupted, simply run it again and MultiNest
+   should be able to restart where it finished. If you intend to start a new
+   sampling with different parameters for MultiNest, it is safer to delete the
+   :code:`NS` subfolder (otherwise, the behaviour is not well defined).
 
 .. NOTE::
-   There is no support right now for MPI running of MultiNest. It will be implemented soon. Help is welcome.
+   There is no support right now for MPI running of MultiNest. It will be
+   implemented soon. Help is welcome.
 
-Once the sampling has finished, the output of it can be analised as in the MCMC case with :code:`MontePython.py -info [chain_folder]/NS` (notice that one must specify the :code:`NS` subfolder). This will create a chain file in the chain root folder containing the (accepted) points of the nested sampling, and it will be automatically analysed as a MCMC chain, producing the expected files and plots.
+Once the sampling has finished, the output of it can be analised as in the MCMC
+case with :code:`MontePython.py -info [chain_folder]/NS` (notice that one must
+specify the :code:`NS` subfolder). This will create a chain file in the chain
+root folder containing the (accepted) points of the nested sampling, and it
+will be automatically analysed as a MCMC chain, producing the expected files
+and plots.
 
-The MultiNest parameters are added after the :code:`-m NS` flag in the command line. They are described in the next section (more thorough descriptions are to be looked for within the MultiNest documentation).
+The MultiNest parameters are added after the :code:`-m NS` flag in the command
+line. They are described in the next section (more thorough descriptions are to
+be looked for within the MultiNest documentation).
 
 Automatic parameters
 ~~~~~~~~~~~~~~~~~~~~
 
 (Technical section, you can skip)
 
-The following parameters are defined automatically by the content of the :code:`.param` file, and you should not care about them:
+The following parameters are defined automatically by the content of the
+:code:`.param` file, and you should not care about them:
 
 -  :code:`ndims | n_dims` : number of varying parameters.
 -  :code:`nPar | n_params` : number of varying parameters.
@@ -165,7 +187,17 @@ In (Py)MultiNest, clustering parameters are specified as the :code:`n` first one
 
    --NS_clustering_params param1 param2 ...
 
-The reason for doing it this way is giving more flexibility to the user, being able to change the clustering parameters without having to modify the ordering of the parameters in the :code:`param` file to put the clustering parameters at the beginnig. But this comes at a price: the raw MultiNest chain files have the parameters ordered with the clustering parameters at the beginning, and then the rest as they appear in the :code:`.param` file. The ordering of the parameters is save to a file :code:`[chain name].paramnames` in the :code:`NS` subfolder. If you intend to use MustiNest's raw output files, you must take this into account! If, instead, you use nested sampling simply as a means to get a covariance matrix and some sample points (saved in :code:`chain_NS__[accepted/rejected].txt`), you do not need to care about this.
+The reason for doing it this way is giving more flexibility to the user, being
+able to change the clustering parameters without having to modify the ordering
+of the parameters in the :code:`param` file to put the clustering parameters at
+the beginnig. But this comes at a price: the raw MultiNest chain files have the
+parameters ordered with the clustering parameters at the beginning, and then
+the rest as they appear in the :code:`.param` file. The ordering of the
+parameters is save to a file :code:`[chain name].paramnames` in the :code:`NS`
+subfolder. If you intend to use MustiNest's raw output files, you must take
+this into account! If, instead, you use nested sampling simply as a means to
+get a covariance matrix and some sample points (saved in
+:code:`chain_NS__[accepted/rejected].txt`), you do not need to care about this.
 
 References
 ----------
