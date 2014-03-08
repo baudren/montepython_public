@@ -12,12 +12,12 @@ One likelihood is one directory, one :code:`.py` and one :code:`.data` file
 
 We have seen already that cosmological parameters are passed directly from the
 input file to *Class*, and do not appear anywhere in the code itself, i.e. in
-the files located in the :code:`code/` directory. The situation is the same for
+the files located in the :code:`montepython/` directory. The situation is the same for
 likelihoods. You can write the name of a likelihood in the input file, and
 |MP| will directly call one of the external likelihood codes implemented in the
-:code:`likelihood/` directory. This means that when you add some new
+:code:`montepython/likelihoods/` directory. This means that when you add some new
 likelihoods, you don't need to declare them in the code. You implement them in
-the :code:`likelihood` directory, and they are ready to be used if mentioned in
+the :code:`likelihoods` directory, and they are ready to be used if mentioned in
 the input file.
 
 For This to work, a precise syntax must be respected. Each likelihood
@@ -25,18 +25,23 @@ is associated to a name, e.g. :code:`hst`,  :code:`wmap`,
 :code:`WiggleZ` (the name is case-sensitive). This name is used:
 
 * for calling the likelihood in the input file, e.g. :code:`data.experiments = ['hst', ...]`,
-* for naming the directory of the likelihood, e.g. :code:`likelihoods/hst/`,
+* for naming the directory of the likelihood, e.g. :code:`montepython/likelihoods/hst/`,
 * for naming the input data file describing the characteristics of the
-  experiment,  :code:`likelihoods/hst/hst.data` (this file can point
+  experiment,  :code:`montepython/likelihoods/hst/hst.data` (this file can point
   to raw data files located in the :code:`data` directory)
-* for naming the python file containing the likelihood code,  :code:`likelihoods/hst/hst.py` 
-* for naming the class declared in :code:`likelihoods/hst/hst.py` and used also in :code:`likelihoods/hst/hst.data`
+* for naming the class declared in :code:`montepython/likelihoods/hst/__init__.py` and used also in :code:`montepython/likelihoods/hst/hst.data`
+
+.. warning::
+
+    Note that since release 2.0.0, the likelihood python source is not called
+    any longer :code:`hst.py`, but :code:`__init__.py`. The reason was for
+    packaging and ease of use when calling from a Python console.
 
 When  implementing new likelihoods, you will have to follow this rule. You
 could already wish to have two Hubble priors/likelihoods in your folder. For
 instance, the distributed version of :code:`hst` corresponds to a gaussian prior
 with standard deviation :math:`h=0.738\pm0.024`. If you want to change these numbers,
-you can simply edit :code:`likelihoods/hst/hst.data`. But you could
+you can simply edit :code:`montepython/likelihoods/hst/hst.data`. But you could
 also keep :code:`hst` unchanged and create a new likelihood called
 e.g. :code:`spitzer`. We will come back to the creation of likelihoods
 later, but just to illustrate the structure of likelihoods, let us see
@@ -46,15 +51,15 @@ how to create such a prior/likelihood:
 
   $ mkdir likelihoods/spitzer
   $ cp likelihoods/hst/hst.data likelihoods/spitzer/spitzer.data
-  $ cp likelihoods/hst/hst.py likelihoods/spitzer/spitzer.py
+  $ cp likelihoods/hst/__init__.py likelihoods/spitzer/__init__.py
 
-Then edit :code:`likelihoods/spitzer/spitzer.py` and replace in the initial declaration the class name :code:`hst` by :code:`spitzer`:
+Then edit :code:`montepython/likelihoods/spitzer/__init__.py` and replace in the initial declaration the class name :code:`hst` by :code:`spitzer`:
 
 .. code::
 
-  class spitzer(likelihood_prior):
+  class spitzer(Likelihood_prior):
 
-Edit also :code:`likelihoods/spitzer/spitzer.data`, replace the class name :code:`hst` by :code:`spitzer`, and the numbers by your constraint:
+Edit also :code:`montepython/likelihoods/spitzer/spitzer.data`, replace the class name :code:`hst` by :code:`spitzer`, and the numbers by your constraint:
 
 .. code::
 
@@ -131,7 +136,7 @@ exactly to the same logic.
 
 
 When you download the code, the file
-:code:`likelihoods/fake_planck_bluebook/fake_planck_bluebook.data` has
+:code:`montepython/likelihoods/fake_planck_bluebook/fake_planck_bluebook.data` has
 a field :code:`fake_planck_bluebook.fiducial_file` pointing to the
 file :code:`'fake_planck_bluebook_fiducial.dat'`. You downloaded this
 file together with the code: it is located in :code:`data` and it
@@ -167,24 +172,24 @@ Creating new likelihoods belonging to pre-defined category
 ----------------------------------------------------------
 
 A likelihood is a class (let's call it generically :code:`xxx`), declared and
-defined in :code:`likelihoods/xxx/xxx.py`, using input numbers and input files
-names specified in :code:`likelihoods/xxx/xxx.data`. The actual data files
+defined in :code:`montepython/likelihoods/xxx/__init__.py`, using input numbers and input files
+names specified in :code:`montepython/likelihoods/xxx/xxx.data`. The actual data files
 should usually be placed in the :code:`data/` folder (with the exception of WMAP
 data). Such a class will always inherit from the properties of the most generic
-class defined inside :code:`code/likelihoods_class.py`. But it may fall in the
+class defined inside :code:`montepython/likelihoods_class.py`. But it may fall in the
 category of some pre-defined likelihoods and inherit more properties. In this
 case the coding will be extremely simple, you won't need to write a specific
 likelihood code.
 
 In the current version, pre-defined classes are:
 
-:class:`likelihood_newdat <likelihood_class.likelihood_newdat>` 
+:class:`Likelihood_newdat <likelihood_class.Likelihood_newdat>` 
   suited for all CMB experiments described by a file in the
   :code:`.newdat` format (same files as in CosmoMC).
-:class:`likelihood_mock_cmb <likelihood_class.likelihood_mock_cmb>`
+:class:`Likelihood_mock_cmb <likelihood_class.Likelihood_mock_cmb>`
   suited for all CMB experiments dexcribed with a simplified gaussian
   likelihood, like our :code:`fake_planck_bluebook` likelihood.
-:class:`likelihood_mpk <likelihood_class.likelihood_mpk>`
+:class:`Likelihood_mpk <likelihood_class.Likelihood_mpk>`
   suited for matter power spectrum data that would be described with a
   :code:`.dataset` file in CosmoMC. This generic likelihood contains a
   piece of code following closely the routine :code:`mpk` developped
@@ -203,15 +208,15 @@ likelihood, starting from an existing one, e.g cbi:
 
   $ mkdir likelihoods/nextcmb
   $ cp likelihoods/cbi/cbi.data likelihoods/nextcmb/nextcmb.data
-  $ cp likelihoods/cbi/cbi.py likelihoods/nextcmb/nextcmb.py
+  $ cp likelihoods/cbi/__init__.py likelihoods/nextcmb/__init__.py
 
 The python file should only be there to tell the code that nextcmb is
 in the :code:`.newdat` format. Hence it should only contain:
 
 .. code::
 
-  from likelihood_class import likelihood_newdat 
-  class nextcmb(likelihood_newdat):
+  from montepython.likelihood_class import Likelihood_newdat 
+  class nextcmb(Likelihood_newdat):
       pass
 
 This is enough: the likelihood is fully defined. The data file should
@@ -246,15 +251,15 @@ properties through:
 
 .. code::
 
-  from likelihood_class import likelihood
-  class my-likelihood(likelihood):
+  from montepython.likelihood_class import Likelihood
+  class my-likelihood(Likelihood):
 
 
 Implementing the likelihood amounts in developing in the python file
 :code:`my-likelihood.py` the properties of two essential functions,
 :code:`__init__` and :code:`loglkl`. But you don't need to code
 everything from scratch, because the generic :class:`likelihood
-<likelihood_class.likelihood>` already knows the most generic steps.
+<likelihood_class.Likelihood>` already knows the most generic steps.
 The previous link will give you all the functions defined from this
 base class, that your daughter class will inherit from. Here follows a
 detailled explanation about how to use these.
@@ -277,7 +282,7 @@ you need the matter power spectrum, write
   self.need_cosmo_arguments(data,{'output':'mPk'})
 
 that uses the method :func:`need_cosmo_arguments
-<likelihood_class.likelihood.need_cosmo_arguments>`. If this
+<likelihood_class.Likelihood.need_cosmo_arguments>`. If this
 likelihood is used, the field :code:`mPk` will be appended to the list
 of output fields (e.g. :code:`output=tCl,pCl,mPk`), unless it was
 already there. If you write

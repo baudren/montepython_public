@@ -46,7 +46,7 @@ organised as follows:
 The first command is rather explicit. You will list there all the
 experiments you want to take into account. Their name should coincide
 with the name of one of the several sub-directories in the
-:code:`likelihood/` directory. Likelihoods will be explained in the
+:code:`montepython/likelihoods/` directory. Likelihoods will be explained in the
 :doc:`likelihood_class`
 
 In :attr:`data.parameters`, you can list all the cosmo and nuisance
@@ -176,7 +176,7 @@ command
 
 .. code::
 
-    montepython]$ code/MontePython.py -conf my-machine.conf -p example.param -o test
+    montepython]$ montepython/MontePython.py -conf my-machine.conf -p example.param -o test
 
 
 
