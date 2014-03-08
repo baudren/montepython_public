@@ -2,6 +2,14 @@
 
 data.experiments=['Planck_highl','Planck_lowl','lowlike']
 
+#------ Settings for the over-sampling. The first element will always be set to
+# 1, for it is the sampling of the cosmological parameters. The other numbers
+# describe the over sampling of the nuisance parameter space. This array must
+# have the same dimension as the number of blocks in your run (so, 1 for
+# cosmological parameters, and then 1 for each experiment with varying nuisance
+# parameters).
+data.over_sampling=[1, 4]
+
 #------ Parameter list -------
 
 # data.parameters[class name] = [mean, min, max, 1-sigma, scale, role]

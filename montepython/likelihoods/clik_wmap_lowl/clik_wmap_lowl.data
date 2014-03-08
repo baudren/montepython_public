@@ -1,0 +1,4 @@
+# Grab the clik version of wmap
+
+clik_wmap_lowl.path_clik = os.path.join(data.path['clik'], 'wmap_7_2-32_gibbs.clik')
+

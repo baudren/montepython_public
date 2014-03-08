@@ -1,3 +1,0 @@
-# Grab the clik version of CAMSpec
-
-Planck_highl.path_clik = data.path['clik']+'../CAMspec_v6.2TN_2013_02_26_dist.clik'

@@ -3,7 +3,6 @@ Monte Python, a Monte Carlo Markov Chain code (with Class!)
 ===========================================================
 
 :Author: Benjamin Audren <benjamin.audren@epfl.ch>
-:Version: Version 1.1
 
 
 If you are searching for specific examples of a work session, please refer to
@@ -24,6 +23,9 @@ Prerequisites
 
 * *[optional]* If you want to use fully the plotting capabilities of Monte Python,
   you also need the scipy module, with interpolate.
+
+* *[optional]* You can now use Multi Nest and the CosmoHammer with Monte
+  Python, though you need to install them. Please refer to the documentation.
 
 
 The MontePython part
@@ -94,34 +96,60 @@ Remember that if you modify CLASS to implement some new physics, you will need t
 perform this part again for the new CLASS.
 
 
-The wmap wrapper part
----------------------
+The Planck likelihood part
+---------------------------
 
-Go to your `wrapper_wmap` sub-folder, and execute:
+The release of the Planck data comes with a likelihood program, called
+Clik, that one can recover from the `ESA website
+<http://www.sciops.esa.int/index.php?project=planck&page=Planck_Legacy_Archive>`_,
+along with the data. Download all `tar.gz` files, extract them to the
+place of your convenience.
+
+The Planck Likelihood Code (**plc**) is based on a library called
+`clik`. It will be extracted, alongside several `.clik` folders that
+contain the likelihoods. The installation of the code is described in
+the archive, and it uses an auto installer device, called `waf`.
+
+.. warning::
+
+  Note that you **are strongly advised** to configure `clik` with the
+  Intel mkl library, and not with lapack. There is a massive gain in
+  execution time: without it, the code is dominated by the execution
+  of the low-l polarisation data from WMAP.
+
+Go to your plc folder, and execute the following line, taking into
+account the mkl installation
 
 .. code::
 
-    $ ./waf configure --install_all_deps
+    $ ./waf configure --install_all_deps --mkl=...
 
-This will automatically install the wrapper. Please refer to the
-MontePython.pdf documentation for further details, and more options concerning
-this wrapper.
+In your |MP| configuration file, to use this
+code, you should add the following line
 
-Do not forget to source your wrapper everytime you want to use it:
+.. code:: python
+
+  path['clik'] = 'path/to/your/plc/folder/'
+
+The four likelihoods defined in |MP| for Planck are `Planck_highl`,
+`Planck_lowl`, `Planck_lensing`, `lowlike` (the polarization data from
+WMAP). In each of the respective data files for these likelihood,
+please make sure that the line, for instance,
+
+.. code:: python
+
+  Planck_highl.path_clik = data.path['clik']+'../something.clik'
+
+points to the correct clik file. Do not forget to source your Planck
+likelihood everytime you want to use it:
 
 .. code::
 
-    $ source YourWlikPath/bin/clik_profile.sh
+    $ source Your/Plc/bin/clik_profile.sh
 
 You can put this line in your .bashrc file, and you should put it in your
 scripts for cluster computing.
 
-
-For Planck collaborators (for future Planck users)
---------------------------------------------------
-
-Replace the upper section by Clik. You also have to source the file everytime
-you want Monte Python to use it.
 
 
 Enjoying the difference
@@ -131,35 +159,35 @@ Now the code is installed. Go anywhere, and just call
 
 .. code::
 
-    $ ./MontePython.py --help
+    $ python code/MontePython.py --help
 
 To see a list of all commands. There are two essential ones, without which
 the program will not start. At minimum, you should precise an output folder
 ('-o') and a parameter file ('-p'). An example of parameter file is found in
-the main directory of MontePython (planck.param, for instance).
+the main directory of MontePython (test.param, for instance).
 
 A typical call would then be:
 
 .. code::
 
-    $ ./MontePython.py -o planck -p planck.param
+    $ python code/MontePython.py -o test -p example.param
 
-If non existant, the `planck/` folder will be created, and a run with the
-number of steps described in `planck.param` will be started. To run a chain with
-less steps, one can type:
+If non existant, the `test/` folder will be created, and a run with the
+number of steps described in `example.param` will be started. To run a chain with
+more steps, one can type:
 
 .. code::
 
-    $ ./MontePython.py -o planck -p planck.param -N 100
+    $ python code/MontePython.py -o test -p example.param -N 100
 
 If you want to analyse the run, then just type
 
 .. code::
 
-    $ ./MontePython.py -info planck/
+    $ python code/MontePython.py -info test/
 
 
 Details and Examples
 --------------------
 
-Please refer to the pdf documentation for further details.
+Please refer to the pdf or online documentation for further details.

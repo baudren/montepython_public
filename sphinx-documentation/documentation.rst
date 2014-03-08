@@ -12,9 +12,14 @@ Contents:
    :maxdepth: 2
 
    MontePython
+   run
+   initialise
    parser_mp
    data
+   prior
    likelihood_class
+   sampler
    mcmc
+   nested_sampling
    analyze
    io_mp

@@ -34,7 +34,9 @@ To test for the presence of the modules **numpy**,  **scipy**,
 If one of these steps fails, go to the corresponding websites, and
 follow the instructions (if you have the privilege to have the root
 password on your machine, an `apt-get install python-numpy`,
-`python-scipy` and `cython` will do the trick.).
+`python-scipy` and `cython` will do the trick. Otherwise, all these
+packages can also be downloaded and installed locally, with the
+command :code:`python setup.py install --user`).
 
 Note that you can use the code with Python 2.6 also, even though you
 need to download two packages separately ordereddict_ and argparse_.
@@ -66,9 +68,11 @@ command:
   ~]$ python
   >>> from classy import Class
 
-If the installation was successfull, this should work within any
+If the installation was successful, this should work within any
 directory. If you get no error message from this line, you know
-everything is fine.
+everything is fine. If the step :code:`python setup.py install --user` does not
+succeed, but that the :code:`build` is successful, then as far as |MP| is
+concerned, there are no issues. The code will be found nonetheless.
 
 If at some point you have several different coexisting versions of
 |CLASS| on the system, and you are worried that |MP| is not using the
@@ -97,31 +101,32 @@ Move the latest release of |MP| to one of your folders, called e.g.
 
 You will have to edit two files (the first, once for every new distribution of |MP|, and
 the second, once and for all). The first to edit is
-:code:`code/MontePython.py`. Its first line reads:
+:code:`montepython/MontePython.py`. Its first line reads:
 
 .. code::
 
   #!/usr/bin/python
 
 You should eventually replace this path with the one of your python 2.7 executable, if different.
-This modification is not crucial, it simply allows to run the code by simply typing :code:`code/Montepython.py`.
+This modification is not crucial, it simply allows to run the code by simply typing :code:`montepython/Montepython.py`.
 If, instead, you run it through python (\emph{i.e.}: :code:`python`
-:code:`code/MontePython.py`), then this line will be disregarded.
+:code:`montepython/MontePython.py`), then this line will be disregarded.
 
 The second file to change, and this one is crucial, is
-:code:`default.conf`, in the root directory of the code. This file will
-tell |MP|, where your other programs (in particular |CLASS|) are
-installed, and where you are storing the data for the likelihoods. It
-will be interpreted as a python file, so be careful to reproduce the
-syntax exactly. At minimum, {\bf default.conf} should contain one
-line, filled with the path of your :code:`class/` directory:
+:code:`default.conf.template`, in the root directory of the code. It is a
+template to help you create the file :code:`default.conf`, which will tell
+|MP|, where your other programs (in particular |CLASS|) are installed, and
+where you are storing the data for the likelihoods. It will be interpreted as a
+python file, so be careful to reproduce the syntax exactly. At minimum, {\bf
+default.conf} should contain one line, filled with the path of your
+:code:`class/` directory:
 
 .. code::
 
    path['cosmo']   = 'path/to/your/class/'
  
 To check that |MP| is ready to work, simply type :code:`python
-code/MontePython.py --help` (or just :code:`code/MontePython.py
+montepython/MontePython.py --help` (or just :code:`montepython/MontePython.py
 --help`). This will provide you with a short description of the
 available command line arguments, explained in :doc:`parser_mp`. 
 
@@ -137,7 +142,18 @@ place of your convenience.
 
 The Planck Likelihood Code (**plc**) is based on a library called
 `clik`. It will be extracted, alongside several `.clik` folders that
-contain the likelihoods. In your |MP| configuration file, to use this
+contain the likelihoods. The installation of the code is described in
+the archive, and it uses an auto installer device, called `waf`.
+
+.. warning::
+
+  Note that you **are strongly advised** to configure `clik` with the
+  Intel mkl library, and not with lapack. There is a massive gain in
+  execution time: without it, the code is dominated by the execution
+  of the low-l polarisation data from WMAP.
+
+
+In your |MP| configuration file, to use this
 code, you should add the following line
 
 .. code:: python
@@ -168,7 +184,7 @@ command:
 
 .. code::
 
-  python code/MontePython.py -o planck/ -p base.param -c covmat/base.covmat \
+  python montepython/MontePython.py -o planck/ -p base.param -c covmat/base.covmat \
   -bf bestfit/base.bestfit -conf default.conf -f 1.5
 
 .. note::
@@ -179,6 +195,13 @@ command:
 
 WMAP likelihood
 ^^^^^^^^^^^^^^^
+
+.. warning::
+
+  As of version 1.2.5, with Planck data being available, installing
+  this likelihood might not be so important anymore. You might prefer
+  to skip this, at it is an **optional** part of the installation
+  process.
 
 .. warning::
 

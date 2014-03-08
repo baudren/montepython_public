@@ -1,0 +1,6 @@
+# Gaussian likelihood for sigma8 *(Omega_m/Omega_m_ref)^Omega_m_index, 
+# coming from the Planck SZ cluster mass function
+Planck_SZ.Omega_m_ref    = 0.27
+Planck_SZ.Omega_m_index  = 0.3
+Planck_SZ.bestfit  	 = 0.782
+Planck_SZ.sigma  	 = 0.010

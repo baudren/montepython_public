@@ -1,0 +1,8 @@
+# Grab the clik version of wmap
+
+clik_wmap_full.path_clik = os.path.join(data.path['clik'], 'wmap_7_full_gibbs_lowl.clik')
+clik_wmap_full.use_nuisance	= ['A_SZ']
+
+clik_wmap_full.data_directory   = data.path['data']
+clik_wmap_full.A_SZ_file        = 'WMAP_SZ_VBand.dat'
+clik_wmap_full.A_SZ_scale       = 1.

@@ -1,3 +1,0 @@
-# Grab the clik version of fake planck
-
-clik_fake_planck.path_clik = data.path['clik']+'fake_smica_TE_2_1700_b10_143.clik'

@@ -28,7 +28,7 @@ I then launch a short chain with
 
 .. code::
 
-  $ code/Montepython.py -conf my-conf.conf -p input/lcdm.param -o chains/planck/lcdm -N 5
+  $ montepython/Montepython.py -conf my-conf.conf -p input/lcdm.param -o chains/planck/lcdm -N 5
 
 I can see on the screen the evolution of the initialization of the
 code. At the end I check that I have a chain and a :code:`log.param`
@@ -39,7 +39,7 @@ run again without the input file:
 
 .. code::
 
-  $ code/Montepython.py -o chains/planck/lcdm -N 5
+  $ montepython/Montepython.py -o chains/planck/lcdm -N 5
 
 This works equally well because all information is taken from the :code:`log.param` file.
 
@@ -49,7 +49,7 @@ the one delivered with the |MP| package, in the :code:`covmat/` directory:
 
 .. code::
 
-  $ code/Moncode/Montepython.py -conf my-conf.conf -p input/lcdm.param\
+  $ montepython/Montepython.py -conf my-conf.conf -p input/lcdm.param\
           -o chains/planck/lcdm -c covmat/fake_planck_lcdm.covmat -N 5
 
 
@@ -58,7 +58,7 @@ would have run with
 
 .. code::
 
-  $ code/Montepython.py -conf my-conf.conf -p input/lcdm.param -o chains/planck/lcdm -c mycovmat.covmat -N 5
+  $ montepython/Montepython.py -conf my-conf.conf -p input/lcdm.param -o chains/planck/lcdm -c mycovmat.covmat -N 5
 
 
 I now wish to launch longer runs on my cluster or powerful desktop.
@@ -102,7 +102,7 @@ When the runs have stopped, I can analyse them with
 
 .. code::
 
-  $ code/Montepython.py -info chains/planck/lcdm 
+  $ montepython/Montepython.py -info chains/planck/lcdm 
 
 If I had been running without a covariance matrix, the results would probably
 be bad, with a very low acceptance rate and few points. It would have however
@@ -113,7 +113,7 @@ to copy it in order to keep track of it even after analysing future runs,
 
   cp chains/planck/lcdm/lcdm.covmat chains/planck/lcdm/lcdm_run1.covmat
 
-I now add to my script, in the line starting with :code:`code/Montepyhton.py`, the option 
+I now add to my script, in the line starting with :code:`montepython/Montepyhton.py`, the option 
 
 .. code::
 
@@ -127,7 +127,7 @@ When this second run is finished, I analyse it with e.g.
 
 .. code::
 
-  code/Montepython.py -info chains/planck/lcdm/2012-10-27_5001*
+  montepython/Montepython.py -info chains/planck/lcdm/2012-10-27_5001*
 
 If all R-1 numbers are small (typically :math:`<0.05`) and plots look nice, I am
 done. If not, there can be two reasons: the covariance matrix is still bad, or

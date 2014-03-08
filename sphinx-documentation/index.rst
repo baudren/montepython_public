@@ -21,6 +21,8 @@ Contents:
    installation
    getting_started
    example
+   nested
+   hammer
    likelihoods
    documentation
 

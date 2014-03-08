@@ -1,71 +1,103 @@
-v1.2.4: - Fixed behaviour for the -all option when analyzing folders.
-v1.2.3: - Tentative error message to catch a typical error appearing
-	when running with a badly initialized log.param file. It now
-	states that you should probably remove the folder entirely. It
-	is not sure that this catches all types of situation, but it
-	does catch some of them.
-v1.2.2: - Several bug fixes. One with analyze module, that failed when
-	a file was not complete (wrong number of columns) - fixed. The
-	two other were more serious, and detailed below:
-	- When using as an input a covariance matrix containing less
-	parameters than the current run, wrong numbers were used for
-	the remaining proposal distribution - fixed 
-	- When running with *no* varying parameters, instead of using
-	the values specified in the parameter file, the code would
-	instead run with default Class values - fixed 
-v1.2.1: - Planck lensing is now working
-v1.2.0: - Added the Planck likelihoods (called Planck_highl,
-	Planck_lowl, Planck_lensing and	lowlike)
-	- Added a Cholesky decomposition method to speed up sampling
-	for likelihoods with a large number of nuisance parameters (A.
-	Lewis in Preparation, based on ?), which groups parameters by
-	blocks of same speed.
-	- Transfered the documentation to a sphinx-documentation. Most
-	comments in the code have been replaced by docstrings,
-	automatically extracted to create a web-site. You can now
-	navigate the different functions, see the dependencies, see
-	the source code in one convenient place.
-	- Renamed both io.py and parser.py into io_mp.py and
-	parser_mp.py (mp for Monte Python). It was conflicting with
-	some installed packages of python, both being some very often
-	used names.
-	- Removed the comparison between input param and log.param:
-	always choose the latest.
-	- Changed the architecture of analyze.py file. The whole thing
-	is no longer a class, but instead a collection of functions.
-	To exchange information between these functions, a new class
-	called `information` has been created.
-	- Removed the common.py file, merging its content (lockfile
-	system) with io_mp.py. Note that the lockfile is still being
-	tested (works on our machine)
-	- Transfered the log_flag from being an indendent quantity
-	being exchanged between data and likelihoods to a proper
-	attribute of the data class. Since no comparison is done
-	any-more, there was no reason to keep it this way anymore.
+v2.0.0: + Over sampling implemented: it helps running with likelihoods with a
+	  high number of varying nuisance parameters.
+	+ **Repackaging**: the whole folder now should behave more like a
+	  proper python package. This included renaming the `code` directory
+	  into `montepython`, and moving the `likelihoods` folder
+	  inside this new `montepython`. Also, considering a `lkl` likelihood,
+	  instead of following the previous structure:
+	  `likelihoods/lkl/lkl.py and .data, 
+	  you should now use:
+	  `montepython/likelihoods/lkl/__init__.py and lkl.data`.
+	+ Wrapping of the Cosmo Hammer within Monte Python. This
+	  should allow runs being able to scale on the biggest
+	  available clusters (big thanks to Joel Akeret and Sebastian
+	  Seehars for the help in implementation).
+	+ Wrapping of MultiNest within Monte Python, thanks to the
+	  already existing Python wrapper written by Johannes Buchner
+	  (big thanks to Jesus Torrado for coding most of the
+	  communication between MP and PyNS).
+	+ Experimental feature: automated separating in subfolders a
+	  run that was found by MultiNest to be multimodal (Jesus
+	  Torrado)
+	+ New WiggleZ analysis (Signe Riemer, David Parkinson)
+	+ First version of the test module, with basic functionalities
+	  being checked.
+	+ Convention of path changed to comply with Python standards
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+v1.2.5: + Compatible with CLASS v2.0.x
+v1.2.4: + Fixed behaviour for the -all option when analyzing folders.
+v1.2.3: + Tentative error message to catch a typical error appearing
+	  when running with a badly initialized log.param file. It now
+	  states that you should probably remove the folder entirely.
+	  It is not sure that this catches all types of situation, but
+	  it does catch some of them.
+v1.2.2: + Several bug fixes. One with analyze module, that failed when
+	  a file was not complete (wrong number of columns) - fixed.
+	  The two other were more serious, and detailed below:
+	+ When using as an input a covariance matrix containing less
+	  parameters than the current run, wrong numbers were used for
+	  the remaining proposal distribution - fixed
+	+ When running with *no* varying parameters, instead of using
+	  the values specified in the parameter file, the code would
+	  instead run with default Class values - fixed 
+v1.2.1: + Planck lensing is now working
+v1.2.0: + Added the Planck likelihoods (called Planck_highl,
+	  Planck_lowl, Planck_lensing and lowlike)
+	+ Added a Cholesky decomposition method to speed up sampling
+	  for likelihoods with a large number of nuisance parameters
+	  based on A.Lewis 1304.4473, which groups parameters by
+	  blocks of same speed.
+	+ Transfered the documentation to a sphinx-documentation. Most
+	  comments in the code have been replaced by docstrings,
+	  automatically extracted to create a web-site. You can now
+	  navigate the different functions, see the dependencies, see
+	  the source code in one convenient place.
+	+ Renamed both io.py and parser.py into io_mp.py and
+	  parser_mp.py (mp for Monte Python). It was conflicting with
+	  some installed packages of python, both being some very
+	  often used names.
+	+ Removed the comparison between input param and log.param:
+	  always choose the latest.
+	+ Changed the architecture of analyze.py file. The whole thing
+	  is no longer a class, but instead a collection of functions.
+	  To exchange information between these functions, a new class
+	  called `information` has been created.
+	+ Removed the common.py file, merging its content (lockfile
+	  system) with io_mp.py. Note that the lockfile is still being
+	  tested (works on our machine)
+	+ Transfered the log_flag from being an indendent quantity
+	  being exchanged between data and likelihoods to a proper
+	  attribute of the data class. Since no comparison is done
+	  any-more, there was no reason to keep it this way anymore.
 
 -----------------------------------------------------------------------
-v1.1.0: - Added the following likelihoods: SPT full data (called spt_2500 in
-	the likelihood directory), compilation of BAO scale data (called bao),
-	compilation of quasar time-delay data (called timedelay), timedelay, and
-	updated the value for hst (1103.2976)
-	- To speed up the production of plots, you can play with a new
-	extension defining the print-out format: use the command-line option
-	"-ext png", or eps, or pdf (from the fastest to the slowest format)
-	- Added a lockfile system, that should prevent a file from being
-	written simultaneously by two programs, when launching several
-	different runs at the same time.
-	- Changed a detail in the input file syntax, concerning parameter
-	prior edges. To leave the prior edge undefined, you can still use "-1"
-	as before, or "None". But if your prior edge is really minus one (for
-	instance for w), you can write "-1."
-	- Function cosmo_update_arguments() modified for better readability
-	and simpler use (this function allows to rename or remap input
-	parameters at each step before passing them to CLASS). The syntax
-	pattern "try, except" is not needed anymore
------------------------------------------------------------------------
+v1.1.0: + Added the following likelihoods: SPT full data (called spt_2500 in
+	  the likelihood directory), compilation of BAO scale data
+	  "bao", compilation of quasar time-delay data "timedelay"
+	  and updated the value for hst (1103.2976)
+	+ To speed up the production of plots, you can play with a new
+	  extension defining the print-out format: use the command-line
+	  option "-ext png", or eps, or pdf (from the fastest to the
+	  slowest format)
+	+ Added a lockfile system, that should prevent a file from
+	  being written simultaneously by two programs, when launching
+	  several different runs at the same time.
+	+ Changed a detail in the input file syntax, concerning
+	  parameter prior edges. To leave the prior edge undefined, you
+	  can still use "-1" as before, or "None". But if your prior
+	  edge is really minus one (for instance for w), you can write
+	  "-1."
+	+ Function cosmo_update_arguments() modified for better
+	  readability and simpler use (this function allows to rename or
+	  remap input parameters at each step before passing them to
+	  CLASS). The syntax pattern "try, except" is not needed anymore
 
-v1.0.1: - Removed the first and unwanted line of code/mcmc.py, that was
-	pointlessly trying to import again Class. This conflicted in case of a
-	non-installation of the Class wrapper.
-	- Modified '0.9' in '1.0' in a print statement in MontePython.py
-v1.0.0: Initial release
+-----------------------------------------------------------------------
+v1.0.1: + Removed the first and unwanted line of code/mcmc.py, that was
+	  pointlessly trying to import again Class. This conflicted in
+	  case of a non-installation of the Class wrapper.
+	+ Modified '0.9' in '1.0' in a print statement in
+	  MontePython.py
+v1.0.0: + Initial release

@@ -1,0 +1,20 @@
+#------Experiments to test (separated with commas)-----
+
+data.experiments=['test_gaussian']
+
+#------ Parameter list -------
+
+# data.parameters[class name] = [mean, min, max, 1-sigma, scale, role]
+# - if min max irrelevant, put to -1
+# - if fixed, put 1-sigma to 0
+# - if scale irrelevant, put to 1, otherwise to the appropriate factor
+# - role is either 'cosmo' or 'nuisance'
+
+data.parameters['H0']        = [ 67.5,    65,    73,   0.5,    1, 'cosmo']
+data.parameters['omega_b']   = [2.225, 2.150, 2.300,  0.01, 1e-2, 'cosmo']
+data.parameters['omega_cdm'] = [0.012, 0.006, 0.030, 0.005,    1, 'cosmo']
+
+#------ Mcmc parameters ----
+
+data.N=1000
+data.write_step=5

@@ -1,0 +1,35 @@
+#------Experiments to test (separated with commas)-----
+
+# valid options are (so far): acbar, bicep, boomerang, cbi,
+# hst, quad, sn, spt, fake_planck_bluebook,
+# euclid_pk, euclid_lensing
+# and clik_fake_planck (for Planck members)
+
+data.experiments=['hst', 'timedelay', 'test_nuisance1', 'test_nuisance2']
+
+#------ Parameter list -------
+# data.parameters[class name] = [mean, min, max, 1-sigma, scale, role]
+# - if min max irrelevant, put to -1 or None (if you want a boundary of -1, use -1.0)
+# - if fixed, put 1-sigma to 0
+# - if scale irrelevant, put to 1, otherwise to the appropriate factor
+# - role is either 'cosmo', 'nuisance' or 'derived'
+
+
+# Cosmological parameters list
+data.parameters['omega_b']   = [2.249,  1.8, 3, 0.016, 0.01, 'cosmo']
+data.parameters['h']         = [0.703,  0.6,0.8, 0.0065,1,   'cosmo']
+
+# Nuisance parameters
+data.parameters['amplitude'] = [0.1, -1., 1, 0.01, 1, 'nuisance']
+data.parameters['other']     = [0.1, -1., 1, 0.01, 1, 'nuisance']
+
+# Derived parameter list
+data.parameters['Omega_Lambda'] = [0,       -1, -1, 0,1,  'derived']
+
+
+#------ Mcmc parameters ----
+# Number of steps taken, by default (overwritten by the -N command)
+data.N=10
+# Number of accepted steps before writing to file the chain. Larger means less
+# access to disc, but this is not so much time consuming.
+data.write_step=5

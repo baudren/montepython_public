@@ -1,0 +1,39 @@
+#------Experiments to test (separated with commas)-----
+
+# valid options are (so far): acbar, bicep, boomerang, cbi,
+# hst, quad, sn, spt, fake_planck_bluebook,
+# euclid_pk, euclid_lensing
+# and clik_fake_planck (for Planck members)
+
+data.experiments=['fake_planck_bluebook']
+#data.experiments=['wmap','spt']
+
+#------ Parameter list -------
+# data.parameters[class name] = [mean, min, max, 1-sigma, scale, role]
+# - if min max irrelevant, put to -1 or None (if you want a boundary of -1, use -1.0)
+# - if fixed, put 1-sigma to 0
+# - if scale irrelevant, put to 1, otherwise to the appropriate factor
+# - role is either 'cosmo', 'nuisance' or 'derived'
+
+
+# Cosmological parameters list
+data.parameters['omega_b'] 	= [2.249,  1.8, 3, 0.016, 0.01,'cosmo']
+data.parameters['omega_cdm'] 	= [0.1120, 0.1,   0.2, 0.0016,1,   'cosmo']
+data.parameters['n_s']       	= [0.963,  0.9,1.1, 0.004, 1,   'cosmo']
+data.parameters['A_s']       	= [2.42,   1.8,3, 0.038, 1e-9,'cosmo']
+data.parameters['h']         	= [0.703,  0.6,0.8, 0.0065,1,   'cosmo']
+data.parameters['tau_reio']    	= [0.085,  0.04,0.12, 0.0044,1,   'cosmo']
+
+# Derived parameter list
+data.parameters['Omega_Lambda'] = [0,       -1, -1, 0,1,  'derived']
+
+# Other class parameters (fixed parameters, precision parameters, etc.)
+data.cosmo_arguments['sBBN file'] = data.path['cosmo']+'/bbn/sBBN.dat'
+
+
+#------ Mcmc parameters ----
+# Number of steps taken, by default (overwritten by the -N command)
+data.N=10
+# Number of accepted steps before writing to file the chain. Larger means less
+# access to disc, but this is not so much time consuming.
+data.write_step=5

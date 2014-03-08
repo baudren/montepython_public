@@ -1,0 +1,3 @@
+# Grab the clik version of CAMSpec
+
+Planck_actspt.path_clik = os.path.join(data.path['clik'], '../actspt_2013_01.clik')
