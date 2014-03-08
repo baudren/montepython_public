@@ -1,0 +1,6 @@
+# Gaussian likelihood for sigma8 *(Omega_m/Omega_m_ref)^Omega_m_index,
+# coming from the CFHTLens cosmic shear survey
+CFHTLens.Omega_m_ref    = 0.27
+CFHTLens.Omega_m_index  = 0.46
+CFHTLens.bestfit  	= 0.774
+CFHTLens.sigma  	= 0.040
