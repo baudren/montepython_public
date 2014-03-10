@@ -377,7 +377,7 @@ def from_NS_output_to_chains(folder):
             mode_subfolder = 'mode_'+str(i).zfill(len(str(n_modes)))
         else:
             mode_subfolder = ''
-        mode_subfolder = os.path.join(chain_name, mode_subfolder)
+        mode_subfolder = os.path.join(folder, '..', mode_subfolder)
         if not os.path.exists(mode_subfolder):
             os.makedirs(mode_subfolder)
 
