@@ -4,8 +4,6 @@
 .. moduleauthor:: Benjamin Audren <benjamin.audren@epfl.ch>
 
 """
-import sampler     # generic sampler that calls different
-                                    # sampling algorithms
 from initialise import initialise
 
 
@@ -31,6 +29,9 @@ def run(custom_command=''):
     # successful, or that it was simply an analysis call. The run should stop
     if not success:
         return
+
+    # Once that the initialisation phase is done, one can import the sampler
+    import sampler
 
     # Generic sampler call
     sampler.run(cosmo, data, command_line)

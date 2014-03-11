@@ -21,6 +21,7 @@ import numpy as np
 import sys
 
 import io_mp
+from classy import CosmoSevereError, CosmoComputationError
 
 
 def run(cosmo, data, command_line):
@@ -36,7 +37,6 @@ def run(cosmo, data, command_line):
 
     """
 
-    from classy import CosmoSevereError, CosmoComputationError
     if command_line.method == 'MH':
         import mcmc
         mcmc.chain(cosmo, data, command_line)
