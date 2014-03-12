@@ -28,6 +28,7 @@ import matplotlib.pyplot as plt
 import warnings
 import io_mp
 
+from time import time
 
 def analyze(command_line):
     """
@@ -109,7 +110,7 @@ def analyze(command_line):
             comp_chain = np.append(comp_chain, comp_spam[i+1], axis=0)
 
     # Total number of steps.
-    weight = sum(chain)[0]
+    weight = np.sum(chain[:, 0])
 
     # Covariance matrix computation (for the whole chain)
     info.mean = info.mean[0]
@@ -117,8 +118,8 @@ def analyze(command_line):
     info.covar = np.zeros((len(info.ref_names), len(info.ref_names)))
 
     print '--> Computing covariance matrix'
-    for i in range(len(info.ref_names)):
-        for j in range(i, len(info.ref_names)):
+    for i in xrange(len(info.ref_names)):
+        for j in xrange(i, len(info.ref_names)):
             info.covar[i, j] = np.sum(
                 chain[:, 0]*(
                     (chain[:, i+2]-info.mean[i]) *
@@ -253,7 +254,7 @@ def analyze(command_line):
             info.mean+info.bounds[:, 2, 1])
 
     info.bestfit = np.zeros(len(info.ref_names))
-    for i in range(len(info.ref_names)):
+    for i in xrange(len(info.ref_names)):
         info.bestfit[i] = chain[a[0], :][2+i]
 
     # Write vertical info file
@@ -261,7 +262,7 @@ def analyze(command_line):
         'param names', 'R-1', 'Best fit', 'mean', 'sigma', '1-sigma -',
         '1-sigma +', '2-sigma -', '2-sigma +', '1-sigma >', '1-sigma <',
         '2-sigma >', '2-sigma <'))
-    for i in range(len(info.v_info_names)):
+    for i in xrange(len(info.v_info_names)):
         name = info.v_info_names[i]
         #index = info.v_info_names.index(name)
         index = indices[i]
@@ -377,7 +378,7 @@ def prepare(info, files, is_main_chain=True):
             folder = './'
         else:
             folder = ''
-            for i in range(len(files[0].split('/')[:-1])):
+            for i in xrange(len(files[0].split('/')[:-1])):
                 folder += files[0].split('/')[i]+'/'
 
     # Remove too small files to potentially eliminate any problems of
@@ -548,7 +549,7 @@ def convergence(info, is_main_chain=True, files=None, param=None):
         # shape. Hence the following command will fail. To avoid that, the
         # error is catched.
         try:
-            max_lkl.append(min(cheese[:, 1]))
+            max_lkl.append(cheese[:, 1].min())
         except IndexError:
             index = 1
             raise io_mp.AnalyzeError(
@@ -581,7 +582,7 @@ def convergence(info, is_main_chain=True, files=None, param=None):
         # create an empty complementary string of this length
         index_slash = chain_file.rfind('/')
         complementary_string = ''
-        for j in range(index_slash+2):
+        for j in xrange(index_slash+2):
             complementary_string += ' '
         if i == 0:
             exec "print '--> Scanning file %-{0}s' % chain_file,".format(
@@ -593,7 +594,7 @@ def convergence(info, is_main_chain=True, files=None, param=None):
         # scanned
         cheese = (np.array([[float(elem) for elem in line.split()]
                             for line in open(chain_file, 'r')]))
-        local_max_lkl = min(cheese[:, 1])
+        local_max_lkl = cheese[:, 1].min()
         # beware, it is the min because we are talking about
         # '- log likelihood'
         line_count = 0
@@ -601,10 +602,10 @@ def convergence(info, is_main_chain=True, files=None, param=None):
             line_count += 1
         if is_main_chain:
             info.log.write("%s\t Number of steps:%d\tSteps accepted:%d\tacc = %.2g\tmin(-loglike) = %.2f " % (
-                chain_file, sum(cheese[:, 0]), line_count,
-                line_count*1.0/sum(cheese[:, 0]), local_max_lkl))
+                chain_file, cheese[:, 0].sum(), line_count,
+                line_count*1.0/cheese[:, 0].sum(), local_max_lkl))
             info.log.write("\n")
-            total_number_of_steps += sum(cheese[:, 0])
+            total_number_of_steps += cheese[:, 0].sum()
             total_number_of_accepted_steps += line_count
 
         # Removing burn-in
@@ -639,7 +640,7 @@ def convergence(info, is_main_chain=True, files=None, param=None):
     # Applying now new rules for scales
     for name in info.new_scales.iterkeys():
         index = ref_names.index(name)
-        for i in range(len(spam)):
+        for i in xrange(len(spam)):
             spam[i][:, index+2] *= 1./scales[index, index]
 
     # Now that the list spam contains all the different chains removed of
@@ -661,22 +662,22 @@ def convergence(info, is_main_chain=True, files=None, param=None):
 
     # Store the total number of points, and the total in each chain
     total = np.zeros(len(spam)+1)
-    for j in range(len(spam)):
-        total[j+1] = np.sum(spam[j][:, 0])
-    total[0] = np.sum(total[1:])
+    for j in xrange(len(spam)):
+        total[j+1] = spam[j][:, 0].sum()
+    total[0] = total[1:].sum()
 
     # Compute mean and variance for each chain
     print '--> Computing mean values'
-    for i in range(np.shape(mean)[1]):
-        for j in range(len(spam)):
+    for i in xrange(np.shape(mean)[1]):
+        for j in xrange(len(spam)):
             submean = np.sum(spam[j][:, 0]*spam[j][:, i+2])
             mean[j+1, i] = submean / total[j+1]
             mean[0, i] += submean
         mean[0, i] /= total[0]
 
     print '--> Computing variance'
-    for i in range(np.shape(mean)[1]):
-        for j in range(len(spam)):
+    for i in xrange(np.shape(mean)[1]):
+        for j in xrange(len(spam)):
             var[0, i] += np.sum(
                 spam[j][:, 0]*(spam[j][:, i+2]-mean[0, i])**2)
             var[j+1, i] = np.sum(
@@ -697,8 +698,8 @@ def convergence(info, is_main_chain=True, files=None, param=None):
     between = 0
 
     print '--> Computing convergence'
-    for i in range(np.shape(mean)[1]):
-        for j in range(len(spam)):
+    for i in xrange(np.shape(mean)[1]):
+        for j in xrange(len(spam)):
             within += total[j+1]*var[j+1, i]
             between += total[j+1]*(mean[j+1, i]-mean[0, i])**2
         within /= total[0]
@@ -785,12 +786,7 @@ def plot_triangle(
         else:
             fig2d = plt.figure(1, figsize=aspect)
 
-    exps = ''
-    for exp in info.experiments:
-        exps += exp
-        exps += ', '
-    exps = exps[:-2].replace('_', ' ')
-
+    #exps = ', '.join([elem.replace('_', ' ') for elem in info.experiments])
     #plt.figtext(0.4,0.95,'Experiments: '+exps,fontsize=40,alpha=0.6)
     #plt.figtext(0.9, 0.7,'Monte Python',fontsize=70,\
     #rotation=90,alpha=0.15)
@@ -869,7 +865,7 @@ def plot_triangle(
         #print 'comp_tex_names is',comp_tex_names
         #print 'comp_plotted_parameters is',comp_plotted_parameters
 
-        for i in range(len(info.plotted_parameters)):
+        for i in xrange(len(info.plotted_parameters)):
             if info.plotted_parameters[i] in comp_plotted_parameters:
                 comp_plotted_parameters.remove(info.plotted_parameters[i])
 
@@ -889,7 +885,7 @@ def plot_triangle(
 
     # Actual plotting
     print '-----------------------------------------------'
-    for i in range(len(info.plotted_parameters)):
+    for i in xrange(len(info.plotted_parameters)):
 
         print ' -> Computing histograms for ',\
             info.plotted_parameters[i]
@@ -931,7 +927,7 @@ def plot_triangle(
                     comp_bin_edges[1:]+comp_bin_edges[:-1])
                 interp_comp_hist, interp_comp_grid = \
                     cubic_interpolation(info, comp_hist, comp_bincenters)
-                interp_comp_hist /= np.max(interp_comp_hist)
+                interp_comp_hist /= interp_comp_hist.max()
                 comp_done = True
             except ValueError:
                 # If the name was not found, return the error. This will be
@@ -1029,7 +1025,7 @@ def plot_triangle(
                     bins=bin_edges,
                     normed=False,
                     weights=np.exp(-chain[:, 1])*chain[:, 0])
-                lkl_mean /= max(lkl_mean)
+                lkl_mean /= lkl_mean.max()
                 interp_lkl_mean, interp_grid = cubic_interpolation(
                     info, lkl_mean, bincenters)
                 ax2d.plot(interp_grid, interp_lkl_mean, color='red',
@@ -1058,7 +1054,7 @@ def plot_triangle(
 
         # Now do the rest of the triangle plot
         if plot_2d:
-            for j in range(i):
+            for j in xrange(i):
                 second_index = info.ref_names.index(
                     info.plotted_parameters[j])
                 ax2dsub = fig2d.add_subplot(
@@ -1184,7 +1180,7 @@ def plot_triangle(
     # folder
     if comp:
         #if len(info.plotted_parameters) == len(info.ref_names):
-        for i in range(
+        for i in xrange(
                 len(info.plotted_parameters),
                 len(info.plotted_parameters)+len(comp_plotted_parameters)):
 
@@ -1199,7 +1195,7 @@ def plot_triangle(
             comp_bincenters = 0.5*(comp_bin_edges[1:]+comp_bin_edges[:-1])
             interp_comp_hist, interp_comp_grid = cubic_interpolation(
                 info, comp_hist, comp_bincenters)
-            interp_comp_hist /= np.max(interp_comp_hist)
+            interp_comp_hist /= interp_comp_hist.max()
 
             comp_bounds = minimum_credible_intervals(
                 comp_hist, comp_bincenters, lvls)
@@ -1258,7 +1254,7 @@ def ctr_level(histogram2d, lvl, infinite=False):
     cum_hist /= cum_hist[-1]
 
     alvl = np.searchsorted(cum_hist, lvl)[::-1]
-    clist = [0]+[hist[-i] for i in alvl]+[np.max(hist)]
+    clist = [0]+[hist[-i] for i in alvl]+[hist.max()]
     if not infinite:
         return clist[1:]
     return clist
@@ -1271,16 +1267,16 @@ def minimum_credible_intervals(histogram, bincenters, levels):
     bounds = np.zeros((len(levels), 2))
     j = 0
     delta = bincenters[1]-bincenters[0]
-    left_edge = max(histogram[0] - 0.5*(histogram[1]-histogram[0]), 0.)
-    right_edge = max(histogram[-1] + 0.5*(histogram[-1]-histogram[-2]), 0.)
+    left_edge = np.max(histogram[0] - 0.5*(histogram[1]-histogram[0]), 0.)
+    right_edge = np.max(histogram[-1] + 0.5*(histogram[-1]-histogram[-2]), 0.)
     failed = False
     for level in levels:
         norm = float(
-            (sum(histogram)-0.5*(histogram[0]+histogram[-1]))*delta)
+            (np.sum(histogram)-0.5*(histogram[0]+histogram[-1]))*delta)
         norm += 0.25*(left_edge+histogram[0])*delta
         norm += 0.25*(right_edge+histogram[-1])*delta
-        water_level_up = max(histogram)*1.0
-        water_level_down = min(histogram)*1.0
+        water_level_up = np.max(histogram)*1.0
+        water_level_down = np.min(histogram)*1.0
         top = 0.
 
         iterations = 0
@@ -1297,7 +1293,7 @@ def minimum_credible_intervals(histogram, bincenters, levels):
                     "for this multimodal posterior")
                 failed = True
                 break
-            top = (sum(histogram[indices]) -
+            top = (np.sum(histogram[indices]) -
                    0.5*(histogram[indices[0]]+histogram[indices[-1]]))*(delta)
 
             # left
