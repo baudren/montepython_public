@@ -1022,7 +1022,7 @@ def plot_triangle(
                     chain[:, index+2],
                     bins=bin_edges,
                     normed=False,
-                    weights=np.exp(-chain[:, 1])*chain[:, 0])
+                    weights=np.exp(best_minus_lkl-chain[:, 1])*chain[:, 0])
                 lkl_mean /= lkl_mean.max()
                 interp_lkl_mean, interp_grid = cubic_interpolation(
                     info, lkl_mean, bincenters)
