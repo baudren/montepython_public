@@ -1027,8 +1027,8 @@ def plot_triangle(
                 lkl_mean, _ = np.histogram(
                     chain[:, index+2],
                     bins=bin_edges,
-                    normed=True,
-                    weights=chain[:, 1]*chain[:, 0])
+                    normed=False,
+                    weights=np.exp(-chain[:, 1])*chain[:, 0])
                 lkl_mean /= max(lkl_mean)
                 interp_lkl_mean, interp_grid = cubic_interpolation(
                     info, lkl_mean, bincenters)
