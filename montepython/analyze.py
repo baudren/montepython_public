@@ -117,12 +117,13 @@ def analyze(command_line):
     print '--> Computing covariance matrix'
     for i in xrange(len(info.ref_names)):
         for j in xrange(i, len(info.ref_names)):
-            info.covar[i, j] = np.sum(
+            info.covar[i, j] = (
                 chain[:, 0]*(
                     (chain[:, i+2]-info.mean[i]) *
-                    (chain[:, j+2]-info.mean[j])))/weight
+                    (chain[:, j+2]-info.mean[j]))).sum()
             if i != j:
                 info.covar[j, i] = info.covar[i, j]
+    info.covar /= weight
 
     # Writing it out in name_of_folder.covmat
     info.cov.write('# ')
@@ -1225,7 +1226,7 @@ def plot_triangle(
     if plot_2d:
         fig2d.savefig(
             info.folder+'plots/{0}_triangle.{1}'.format(
-                info.folder.split('/')[-2], info.extension), bbox_inches=0)
+                info.folder.split('/')[-2], info.extension), bbox_inches=0, )
     if comp:
         fig1d.savefig(
             info.folder+'plots/{0}-vs-{1}.{2}'.format(
