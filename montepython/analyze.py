@@ -28,7 +28,6 @@ import matplotlib.pyplot as plt
 import warnings
 import io_mp
 
-from time import time
 
 def analyze(command_line):
     """
@@ -87,9 +86,7 @@ def analyze(command_line):
 
     # Create the main chain, which consists in all elements of info.spam
     # put together. This will serve for the plotting.
-    chain = np.copy(info.spam[0])
-    for i in range(len(info.spam)-1):
-        chain = np.append(chain, info.spam[i+1], axis=0)
+    chain = np.vstack(info.spam)
 
     # In case of comparison, launch the prepare and convergence methods,
     # with an additional flag: is_main_chain=False. This will ensure that
@@ -110,7 +107,7 @@ def analyze(command_line):
             comp_chain = np.append(comp_chain, comp_spam[i+1], axis=0)
 
     # Total number of steps.
-    weight = np.sum(chain[:, 0])
+    weight = chain[:, 0].sum()
 
     # Covariance matrix computation (for the whole chain)
     info.mean = info.mean[0]
