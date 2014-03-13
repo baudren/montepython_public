@@ -545,7 +545,7 @@ def convergence(info, is_main_chain=True, files=None, param=None):
         # If the file contains a line with a different number of elements, the
         # previous array generation will fail, and will not have the correct
         # shape. Hence the following command will fail. To avoid that, the
-        # error is catched.
+        # error is caught.
         try:
             max_lkl.append(cheese[:, 1].min())
         except IndexError:
