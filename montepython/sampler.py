@@ -21,6 +21,7 @@ import numpy as np
 import sys
 
 import io_mp
+from classy import CosmoSevereError, CosmoComputationError
 
 
 def run(cosmo, data, command_line):
@@ -36,7 +37,6 @@ def run(cosmo, data, command_line):
 
     """
 
-    from classy import CosmoSevereError, CosmoComputationError
     if command_line.method == 'MH':
         import mcmc
         mcmc.chain(cosmo, data, command_line)
@@ -359,7 +359,7 @@ def compute_lkl(cosmo, data):
 
     # If the cosmological module has already been called once, and if the
     # cosmological parameters have changed, then clean up, and compute.
-    if cosmo.state is True and data.need_cosmo_update is True:
+    if cosmo.state and data.need_cosmo_update is True:
         cosmo.struct_cleanup()
 
     # If the data needs to change, then do a normal call to the cosmological

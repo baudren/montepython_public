@@ -109,10 +109,13 @@ def recover_local_path(command_line):
         for key, value in path.iteritems():
             path[key] = os.path.normpath(value)
     else:
-        raise io_mp.ConfigurationError(
-            "You must provide a .conf file (default.conf by default in your" +
-            " montepython directory that specifies the correct locations for" +
-            " your data folder, Class (, Clik), etc...")
+        # The error is ignored if reading from a log.param, because it is
+        # stored
+        if command_line.param.find('log.param') == -1:
+            raise io_mp.ConfigurationError(
+                "You must provide a .conf file (default.conf by default in" +
+                " your montepython directory that specifies the correct " +
+                "locations for your data folder, Class (, Clik), etc...")
 
     return path
 

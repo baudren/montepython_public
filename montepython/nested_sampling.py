@@ -312,7 +312,7 @@ def from_NS_output_to_chains(folder):
 
     # Extract the necessary information from the log.param file
     # Including line numbers of the parameters
-    with open(os.path.join(chain_name, name_logparam), 'r') as log_file:
+    with open(os.path.join(folder, '..', name_logparam), 'r') as log_file:
         log_lines = log_file.readlines()
     # Number of the lines to be changed
     param_names = []
@@ -377,7 +377,7 @@ def from_NS_output_to_chains(folder):
             mode_subfolder = 'mode_'+str(i).zfill(len(str(n_modes)))
         else:
             mode_subfolder = ''
-        mode_subfolder = os.path.join(chain_name, mode_subfolder)
+        mode_subfolder = os.path.join(folder, '..', mode_subfolder)
         if not os.path.exists(mode_subfolder):
             os.makedirs(mode_subfolder)
 
