@@ -1,10 +1,22 @@
-v2.0.0: + Over sampling implemented: it helps running with likelihoods with a
-	  high number of varying nuisance parameters.
-	+ **Repackaging**: the whole folder now should behave more like a
-	  proper python package. This included renaming the `code` directory
-	  into `montepython`, and moving the `likelihoods` folder
-	  inside this new `montepython`. Also, considering a `lkl` likelihood,
-	  instead of following the previous structure:
+v2.0.1: + Bug-fix from 2.0.0: the memory was not properly freed from
+	  CLASS calls. There was a problem with imports of the errors
+	  imported from the cosmological module.
+	+ Lots of optimization, improvements and fixing of the analyze
+	  module. It now runs much faster for heavy runs with
+	  hundreds of chains to analyze.
+	+ Fixed the routine in nested_sampling:
+	  `from_NS_output_to_chains()`, which was bugged. Now one can
+	  analyze properly the output from MultiNest, translate it to
+	  Monte Python format, and compute a covariance matrix.
+----------------------------------------------------------------------
+v2.0.0: + Over sampling implemented: it helps running with likelihoods
+	  with a high number of varying nuisance parameters.
+	+ **Repackaging**: the whole folder now should behave more
+	  like a proper python package. This included renaming the
+	  `code` directory into `montepython`, and moving the
+	  `likelihoods` folder inside this new `montepython`. Also,
+	  considering a `lkl` likelihood, instead of following the
+	  previous structure:
 	  `likelihoods/lkl/lkl.py and .data, 
 	  you should now use:
 	  `montepython/likelihoods/lkl/__init__.py and lkl.data`.
@@ -24,15 +36,19 @@ v2.0.0: + Over sampling implemented: it helps running with likelihoods with a
 	  being checked.
 	+ Convention of path changed to comply with Python standards
 
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=oOo=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-oOo-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
 v1.2.5: + Compatible with CLASS v2.0.x
+----------------------------------------------------------------------
 v1.2.4: + Fixed behaviour for the -all option when analyzing folders.
+----------------------------------------------------------------------
 v1.2.3: + Tentative error message to catch a typical error appearing
 	  when running with a badly initialized log.param file. It now
 	  states that you should probably remove the folder entirely.
 	  It is not sure that this catches all types of situation, but
 	  it does catch some of them.
+----------------------------------------------------------------------
 v1.2.2: + Several bug fixes. One with analyze module, that failed when
 	  a file was not complete (wrong number of columns) - fixed.
 	  The two other were more serious, and detailed below:
@@ -42,7 +58,9 @@ v1.2.2: + Several bug fixes. One with analyze module, that failed when
 	+ When running with *no* varying parameters, instead of using
 	  the values specified in the parameter file, the code would
 	  instead run with default Class values - fixed 
+----------------------------------------------------------------------
 v1.2.1: + Planck lensing is now working
+----------------------------------------------------------------------
 v1.2.0: + Added the Planck likelihoods (called Planck_highl,
 	  Planck_lowl, Planck_lensing and lowlike)
 	+ Added a Cholesky decomposition method to speed up sampling
@@ -72,32 +90,35 @@ v1.2.0: + Added the Planck likelihoods (called Planck_highl,
 	  attribute of the data class. Since no comparison is done
 	  any-more, there was no reason to keep it this way anymore.
 
------------------------------------------------------------------------
-v1.1.0: + Added the following likelihoods: SPT full data (called spt_2500 in
-	  the likelihood directory), compilation of BAO scale data
-	  "bao", compilation of quasar time-delay data "timedelay"
-	  and updated the value for hst (1103.2976)
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+v1.1.0: + Added the following likelihoods: SPT full data (called
+	  spt_2500 in the likelihood directory), compilation of BAO
+	  scale data "bao", compilation of quasar time-delay data
+	  "timedelay" and updated the value for hst (1103.2976)
 	+ To speed up the production of plots, you can play with a new
-	  extension defining the print-out format: use the command-line
-	  option "-ext png", or eps, or pdf (from the fastest to the
-	  slowest format)
+	  extension defining the print-out format: use the
+	  command-line option "-ext png", or eps, or pdf (from the
+	  fastest to the slowest format)
 	+ Added a lockfile system, that should prevent a file from
 	  being written simultaneously by two programs, when launching
 	  several different runs at the same time.
 	+ Changed a detail in the input file syntax, concerning
-	  parameter prior edges. To leave the prior edge undefined, you
-	  can still use "-1" as before, or "None". But if your prior
-	  edge is really minus one (for instance for w), you can write
-	  "-1."
+	  parameter prior edges. To leave the prior edge undefined,
+	  you can still use "-1" as before, or "None". But if your
+	  prior edge is really minus one (for instance for w), you can
+	  write "-1."
 	+ Function cosmo_update_arguments() modified for better
-	  readability and simpler use (this function allows to rename or
-	  remap input parameters at each step before passing them to
-	  CLASS). The syntax pattern "try, except" is not needed anymore
+	  readability and simpler use (this function allows to rename
+	  or remap input parameters at each step before passing them
+	  to CLASS). The syntax pattern "try, except" is not needed
+	  anymore
 
------------------------------------------------------------------------
-v1.0.1: + Removed the first and unwanted line of code/mcmc.py, that was
-	  pointlessly trying to import again Class. This conflicted in
-	  case of a non-installation of the Class wrapper.
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+v1.0.1: + Removed the first and unwanted line of code/mcmc.py, that
+	  was pointlessly trying to import again Class. This
+	  conflicted in case of a non-installation of the Class
+	  wrapper.
 	+ Modified '0.9' in '1.0' in a print statement in
 	  MontePython.py
+----------------------------------------------------------------------
 v1.0.0: + Initial release
