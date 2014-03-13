@@ -311,7 +311,7 @@ class Data(object):
                 io_mp.log_parameters(self, command_line)
                 self.log_flag = True
         if not os.path.exists(command_line.folder):
-            os.mkdir(command_line.folder)
+            os.makedirs(command_line.folder)
             # Logging of parameters
             io_mp.log_parameters(self, command_line)
             self.log_flag = True
