@@ -43,7 +43,7 @@ You can add the following line to your .bashrc file:
 
 .. code::
 
-    export PATH=/path/to/MontePython/code/:$PATH
+    export PATH=/path/to/MontePython/montepython/$PATH
 
 to be able to call the program from anywhere.
 
@@ -159,7 +159,7 @@ Now the code is installed. Go anywhere, and just call
 
 .. code::
 
-    $ python code/MontePython.py --help
+    $ python montepython/MontePython.py --help
 
 To see a list of all commands. There are two essential ones, without which
 the program will not start. At minimum, you should precise an output folder
@@ -170,7 +170,7 @@ A typical call would then be:
 
 .. code::
 
-    $ python code/MontePython.py -o test -p example.param
+    $ python montepython/MontePython.py -o test -p example.param
 
 If non existant, the `test/` folder will be created, and a run with the
 number of steps described in `example.param` will be started. To run a chain with
@@ -178,13 +178,13 @@ more steps, one can type:
 
 .. code::
 
-    $ python code/MontePython.py -o test -p example.param -N 100
+    $ python montepython/MontePython.py -o test -p example.param -N 100
 
 If you want to analyse the run, then just type
 
 .. code::
 
-    $ python code/MontePython.py -info test/
+    $ python montepython/MontePython.py -info test/
 
 
 Details and Examples
