@@ -49,7 +49,7 @@ to be able to call the program from anywhere.
 
 You will need to adapt only two files to your local configuration. The first
 is the main file of the code `code/MontePython.py`, and it will be the only
-time you will have to edit it, and it is simply to accomodate different
+time you will have to edit it, and it is simply to accommodate different
 possible configurations of your computer.
 
 Its first line reads
@@ -58,7 +58,7 @@ Its first line reads
 
     #!/usr/bin/python
 
-This should be changed to wherever is your prefered python distribution
+This should be changed to wherever is your preferred python distribution
 installed. For standard distribution, this should already be working. Now,
 you should be able to execute directly the file, i.e. instead of calling:
 
@@ -90,7 +90,7 @@ If this step fails, check that you have cython installed, numpy (a numerical
 package for python), python (well... did I say this code was in python ?) with
 a version > 2.6.  If this step fails again, kindly ask your sys.admin, (s)he
 is there for this, after all. Note that the installation (last command) is
-not stricly speaking mandatory.
+not strictly speaking mandatory.
 
 Remember that if you modify CLASS to implement some new physics, you will need to
 perform this part again for the new CLASS.
@@ -141,7 +141,7 @@ please make sure that the line, for instance,
   Planck_highl.path_clik = data.path['clik']+'../something.clik'
 
 points to the correct clik file. Do not forget to source your Planck
-likelihood everytime you want to use it:
+likelihood every time you want to use it:
 
 .. code::
 
@@ -172,7 +172,7 @@ A typical call would then be:
 
     $ python montepython/MontePython.py -o test -p example.param
 
-If non existant, the `test/` folder will be created, and a run with the
+If non existent, the `test/` folder will be created, and a run with the
 number of steps described in `example.param` will be started. To run a chain with
 more steps, one can type:
 
