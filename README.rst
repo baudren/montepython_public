@@ -43,7 +43,7 @@ You can add the following line to your .bashrc file:
 
 .. code::
 
-    export PATH=/path/to/MontePython/montepython/$PATH
+    export PATH=/path/to/MontePython/montepython/:$PATH
 
 to be able to call the program from anywhere.
 
