@@ -389,12 +389,14 @@ def compute_lkl(cosmo, data):
         # the choice of a new point.
         try:
             cosmo.compute(["lensing"])
-        except CosmoComputationError:
+        except CosmoComputationError as failure_message:
+            sys.stderr.write(str(failure_message)+'\n')
+            sys.stderr.flush()
             return data.boundary_loglike
-        except CosmoSevereError, message:
-            print str(message)
+        except CosmoSevereError as critical_message:
             raise io_mp.CosmologicalModuleError(
-                "Something went wrong when calling CLASS")
+                "Something went wrong when calling CLASS" +
+                str(critical_message))
         except KeyboardInterrupt:
             raise io_mp.CosmologicalModuleError(
                 "You interrupted execution")

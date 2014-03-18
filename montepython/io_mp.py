@@ -395,7 +395,7 @@ def lock(file, flags):
     import fcntl
     try:
         fcntl.flock(file.fileno(), flags)
-    except IOError, exc_value:
+    except IOError as exc_value:
         # The exception code varies on different systems so we'll catch
         # every IO error
         raise LockError(*exc_value)
