@@ -239,7 +239,10 @@ class Data(object):
                         ["git", "rev-parse", "--abbrev-ref", "HEAD"],
                         cwd=self.path['cosmo'],
                         stderr=nul_file).strip()
-            except sp.CalledProcessError:
+            except (sp.CalledProcessError, OSError):
+                # Note, OSError seems to be raised on some systems, instead of
+                # sp.CalledProcessError - which seems to be linked to the
+                # existence of os.devnull, so now both error are caught.
                 warnings.warn(
                     "Running CLASS from a non version-controlled repository")
                 self.git_version, self.git_branch = '', ''
