@@ -219,7 +219,7 @@ class Data(object):
         if self.cosmological_module_name == 'CLASS':
             # Official version number
             common_file_path = os.path.join(
-                self.path['cosmo'], os.path.join('include', 'common.h'))
+                self.path['cosmo'], 'include', 'common.h')
             with open(common_file_path, 'r') as common_file:
                 for line in common_file:
                     if line.find('_VERSION_') != -1:
@@ -341,7 +341,7 @@ class Data(object):
         for elem in self.experiments:
 
             folder = os.path.abspath(os.path.join(
-                path['MontePython'], os.path.join("likelihoods", "%s" % elem)))
+                path['MontePython'], "likelihoods", "%s" % elem))
             # add the folder of the likelihood to the path of libraries to...
             # ... import easily the likelihood.py program
             exec "from likelihoods.%s import %s" % (

@@ -98,9 +98,7 @@ def run(cosmo, data, command_line):
 
     # Define the file prefix
     chain_name = [a for a in command_line.folder.split(os.path.sep) if a][-1]
-    file_prefix = os.path.join(
-        command_line.folder,
-        os.path.join(CH_subfolder, chain_name))
+    file_prefix = os.path.join(command_line.folder, CH_subfolder, chain_name)
 
     # Recover the User options
     data.CH_arguments = {}
@@ -181,8 +179,7 @@ def from_CH_output_to_chains(folder):
     final = np.concatenate((ones, lkl, chains), axis=1)
     output_folder = os.path.abspath(
         [a for a in folder.split(os.path.sep) if a][-2])
-    output_chain_path = os.path.join(
-        output_folder, name_chain)
+    output_chain_path = os.path.join(output_folder, name_chain)
     np.savetxt(output_chain_path, final)
 
 

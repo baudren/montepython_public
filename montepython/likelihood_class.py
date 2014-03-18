@@ -43,7 +43,7 @@ class Likelihood(object):
 
         self.name = self.__class__.__name__
         self.folder = os.path.abspath(os.path.join(
-            data.path['MontePython'], os.path.join('likelihoods', self.name)))
+            data.path['MontePython'], 'likelihoods', self.name))
         if not data.log_flag:
             path = os.path.join(command_line.folder, 'log.param')
 
@@ -530,8 +530,7 @@ class Likelihood_newdat(Likelihood):
         self.win_max = np.zeros(self.num_points, 'int')
         for point in range(self.num_points):
             for line in open(os.path.join(
-                    self.data_directory,
-                    os.path.join('windows', window_name)) +
+                    self.data_directory, 'windows', window_name) +
                     str(used_index[point]+1), 'r'):
                 if any([float(line.split()[i]) != 0.
                         for i in range(1, len(line.split()))]):
@@ -564,8 +563,7 @@ class Likelihood_newdat(Likelihood):
         # actual W_l
         for point in range(self.num_points):
             for line in open(os.path.join(
-                    self.data_directory,
-                    os.path.join('windows', window_name)) +
+                    self.data_directory, 'windows', window_name) +
                     str(used_index[point]+1), 'r'):
                 l = int(line.split()[0])
                 if (((self.has_pol is False) and (len(line.split()) != 2))
