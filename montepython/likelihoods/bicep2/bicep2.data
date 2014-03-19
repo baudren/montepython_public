@@ -1,0 +1,3 @@
+# BICEP2 likelihood is provided 
+bicep2.data_directory  = data.path['data']
+bicep2.field = 'B'

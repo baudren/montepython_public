@@ -146,14 +146,14 @@ class Likelihood(object):
                 "]$ rm -rf %s \n " % command_line.folder +
                 "Be sure there is noting in it before doing this !")
 
-    def get_cl(self, cosmo):
+    def get_cl(self, cosmo, l_max=-1):
         """
         Return the :math:`C_{\ell}` from the cosmological code in
         :math:`\mu {\\rm K}^2`
 
         """
         # get C_l^XX from the cosmological code
-        cl = cosmo.lensed_cl()
+        cl = cosmo.lensed_cl(l_max)
 
         # convert dimensionless C_l's to C_l in muK**2
         T = cosmo.T_cmb()
