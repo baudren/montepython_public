@@ -36,13 +36,15 @@ class bicep2(Likelihood):
 
         # Read the desired max ell from the band power window function.
         self.l_max = self.bpwf_l[-1]
+        print self.l_max
 
         # Require tensor modes from Class
         arguments = {
             'output': 'tCl pCl lCl',
             'lensing': 'yes',
             'modes': 's, t',
-            'l_max_scalars': self.l_max}
+            'l_max_scalars': self.l_max,
+            'l_max_tensors': self.l_max,}
         self.need_cosmo_arguments(data, arguments)
 
     def loglkl(self, cosmo, data):
