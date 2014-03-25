@@ -146,71 +146,71 @@ def create_parser():
         description='Monte Python, a Monte Carlo code in Python')
 
     # -- number of steps (OPTIONAL)
-    parser.add_argument('-N', metavar='number of steps', type=int, dest='N')
+    parser.add_argument('-N', help='number of steps', type=int, dest='N')
     # -- output folder	(OBLIGATORY)
-    parser.add_argument('-o', metavar='output folder', type=str, dest='folder')
+    parser.add_argument('-o', help='output folder', type=str, dest='folder')
     # -- parameter file	(OBLIGATORY)
-    parser.add_argument('-p', metavar='input param file', type=str, dest='param')
+    parser.add_argument('-p', help='input param file', type=str, dest='param')
     # -- covariance matrix	(OPTIONAL)
-    parser.add_argument('-c', metavar='input cov matrix', type=str, dest='cov')
+    parser.add_argument('-c', help='input cov matrix', type=str, dest='cov')
     # -- jumping method	(OPTIONAL)
-    parser.add_argument('-j', metavar='jumping method', type=str,
+    parser.add_argument('-j', help='jumping method', type=str,
                         dest='jumping', default='global')
     # -- sampling method (OPTIONAL)
-    parser.add_argument('-m', metavar='sampling method', type=str,
+    parser.add_argument('-m', help='sampling method', type=str,
                         dest='method', default='MH')
     # -- jumping factor	(OPTIONAL)
-    parser.add_argument('-f', metavar='jumping factor', type=float,
+    parser.add_argument('-f', help='jumping factor', type=float,
                         dest='jumping_factor', default=2.4)
     # -- configuration file (OPTIONAL)
-    parser.add_argument('-conf', metavar='configuration file', type=str,
+    parser.add_argument('-conf', help='configuration file', type=str,
                         dest='config_file', default='default.conf')
     # -- arbitraty numbering of an output chain (OPTIONAL)
-    parser.add_argument('-chain_number', metavar='chain number', type=str,
+    parser.add_argument('-chain_number', help='chain number', type=str,
                         dest='chain_number', default=None)
 
     ###############
     # MCMC restart from chain or best fit file
-    parser.add_argument('-r', metavar='restart from chain', type=str,
+    parser.add_argument('-r', help='restart from chain', type=str,
                         dest='restart')
-    parser.add_argument('-bf', metavar='restart from best fit file', type=str,
+    parser.add_argument('-bf', help='restart from best fit file', type=str,
                         dest='bf')
 
     ###############
     # Information
     # -- folder to analyze
-    parser.add_argument('-info', metavar='compute information of desired file',
+    parser.add_argument('-info', help='compute information of desired file',
                         type=str, dest='files', nargs='*')
     # -- number of bins (defaulting to 20)
-    parser.add_argument('-bins', metavar='desired number of bins, default is 20',
+    parser.add_argument('-bins', help='desired number of bins, default is 20',
                         type=int, dest='bins', default=20)
     # -- to remove the mean-likelihood line
-    parser.add_argument('-no_mean', metavar='remove the mean likelihood plot',
+    parser.add_argument('-no_mean', help='remove the mean likelihood plot',
                         dest='mean_likelihood', action='store_const',
                         const=False, default=True)
     # -- possible comparison folder
-    parser.add_argument('-comp', metavar='comparison folder', type=str,
+    parser.add_argument('-comp', help='comparison folder', type=str,
                         dest='comp', nargs=1)
     # -- possible plot file describing custom commands
-    parser.add_argument('-extra', metavar='plot file for custom needs',
+    parser.add_argument('-extra', help='plot file for custom needs',
                         type=str, dest='optional_plot_file', nargs=1)
     # -- if you just want the covariance matrix, use this option
-    parser.add_argument('-noplot', metavar='ommit the plotting part',
+    parser.add_argument('-noplot', help='ommit the plotting part',
                         dest='plot', action='store_const',
                         const=False, default=True)
     # -- if you want to output every single subplots
     parser.add_argument(
-        '-all', metavar='plot every single subplot in a separate pdf file',
+        '-all', help='plot every single subplot in a separate pdf file',
         dest='subplot', action='store_const', const=True, default=False)
     # -- to change the extension used to output files (pdf is the default one, but
     # takes long, valid options are png and eps)
-    parser.add_argument('-ext', metavar='change extension for the output file',
+    parser.add_argument('-ext', help='change extension for the output file',
                         type=str, dest='extension', default='pdf')
     # -- fontsize of plots (defaulting to 15)
-    parser.add_argument('-fontsize', metavar='desired fontsize',
+    parser.add_argument('-fontsize', help='desired fontsize',
                         type=int, dest='fontsize', default=-1)
     # -- ticksize of plots (defaulting to 13)
-    parser.add_argument('-ticksize', metavar='desired ticksize',
+    parser.add_argument('-ticksize', help='desired ticksize',
                         type=int, dest='ticksize', default=-1)
 
     ###############
