@@ -136,6 +136,7 @@ def recover_cosmological_module(data):
     # relevant quantities
     if data.cosmological_module_name == 'CLASS':
         try:
+            classy_path = ''
             for elem in os.listdir(os.path.join(
                     data.path['cosmo'], "python", "build")):
                 if elem.find("lib.") != -1:
