@@ -344,8 +344,16 @@ class Data(object):
                 path['MontePython'], "likelihoods", "%s" % elem))
             # add the folder of the likelihood to the path of libraries to...
             # ... import easily the likelihood.py program
-            exec "from likelihoods.%s import %s" % (
-                elem, elem)
+            try:
+                exec "from likelihoods.%s import %s" % (
+                    elem, elem)
+            except:
+                raise io_mp.ConfigurationError(
+                    "Trying to import the %s likelihood" % elem +
+                    " as asked in the parameter file, and failed."
+                    " Please make sure it is in the `montepython/"
+                    "likelihoods` folder, and is a proper python "
+                    "module.")
             # Initialize the likelihoods. Depending on the values of
             # command_line and log_flag, the routine will call slightly
             # different things. If log_flag is True, the log.param will be

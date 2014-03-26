@@ -5,6 +5,7 @@
 
 """
 from initialise import initialise
+import io_mp
 
 
 def run(custom_command=''):
@@ -23,7 +24,21 @@ def run(custom_command=''):
             allows for testing the code
     """
     # Initialisation routine
-    cosmo, data, command_line, success = initialise(custom_command)
+    try:
+        cosmo, data, command_line, success = initialise(custom_command)
+    except io_mp.ConfigurationError as e:
+        print str(e)
+        raise io_mp.ConfigurationError(
+            "The initialisation was not successful, resulting in a "
+            "potentially half created `log.param`. Please see the "
+            "above error message. If you run the exact command, it will not "
+            "work. You should solve the problem, and try again.")
+    except KeyError:
+        raise io_mp.ConfigurationError(
+            "You are running in a folder that was created following "
+            "a non-successful initialisation (wrong parameter name, "
+            "wrong likelihood, etc...). If you have solved the issue, you "
+            "should remove completely the output folder, and try again.")
 
     # If success is False, it means either that the initialisation was not
     # successful, or that it was simply an analysis call. The run should stop
