@@ -13,6 +13,7 @@ import os
 import numpy as np
 import math
 import warnings
+import re
 
 import io_mp
 
@@ -49,6 +50,12 @@ class Likelihood(object):
 
         # Define some default fields
         self.data_directory = ''
+
+        # Recover the values potentially read in the input.param file.
+        if hasattr(data, self.name):
+            exec("attributes = [e for e in dir(data.%s) if e.find('__') == -1]" % self.name)
+            for elem in attributes:
+                exec("setattr(self, elem, getattr(data.%s, elem))" % self.name)
 
         # Read values from the data file
         self.read_from_file(path, data, command_line)
@@ -112,6 +119,12 @@ class Likelihood(object):
             This should be always true, but in case a run fails with the error
             message described below, think about it.
 
+        .. warning::
+
+            As of version 2.0.2, you can specify likelihood options in the
+            parameter file. They have complete priority over the ones specified
+            in the `likelihood.data` file, and it will be reflected in the
+            `log.param` file.
 
         """
 
@@ -125,14 +138,19 @@ class Likelihood(object):
             for line in data_file:
                 if line.find('#') == -1:
                     if line.find(self.name+'.') != -1:
-                        exec(line.replace(self.name+'.', 'self.'))
+                        # Recover the name and value from the .data file
+                        regexp = re.match(
+                            "%s\.(.*) = (.*)" % self.name,
+                            line)
+                        name, value = (elem.strip() for elem in regexp.groups())
+                        # If this name was already defined in the parameter
+                        # file, be sure to take this value instead
+                        try:
+                            value = getattr(self, name)
+                        except AttributeError:
+                            exec(line.replace(self.name+'.', 'self.'))
                         counter += 1
-                        # This part serves only to compare
-                        key = line.split('=')[0].strip(' ').\
-                            strip('\t').strip('\n').split('.')[1]
-                        value = line.split('=')[-1].strip(' ').\
-                            strip('\t').strip('\n')
-                        self.dictionary[key] = value
+                        self.dictionary[name] = value
             data_file.seek(0)
             data_file.close()
 

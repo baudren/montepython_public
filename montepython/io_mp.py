@@ -56,15 +56,25 @@ def log_parameters(data, command_line):
 
 
 def log_likelihood_parameters(likelihood, command_line):
-    """Write down the .data file of the input likelihood to log.param"""
-    log = open(os.path.join(command_line.folder, 'log.param'), 'a')
-    tolog = open(likelihood.path, 'r')
-    log.write("\n\n#-----Likelihood-{0}-----\n".format(likelihood.name))
-    for line in tolog:
-        log.write(line)
-    tolog.seek(0)
-    tolog.close()
-    log.close()
+    """
+    Write down the interpreted .data file of the input likelihood to log.param
+
+    .. warning::
+
+        Since version 2.0.2, the lines are not copied verbatim, they are first
+        interpreted, then copied. This allows for overriding of parameters from
+        the input.param file.
+    """
+    with open(os.path.join(command_line.folder, 'log.param'), 'a') as log:
+    #tolog = open(likelihood.path, 'r')
+        log.write("\n\n#-----Likelihood-{0}-----\n".format(likelihood.name))
+        for key, value in likelihood.dictionary.iteritems():
+            log.write("%s.%s = %s\n" % (
+                likelihood.name, key, value))
+    #for line in tolog:
+        #log.write(line)
+    #tolog.seek(0)
+    #tolog.close()
 
 
 def log_cosmo_arguments(data, command_line):
