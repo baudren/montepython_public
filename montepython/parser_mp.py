@@ -271,6 +271,13 @@ def parse(custom_command=''):
     # checking for existing folder
     if args.files is None:
 
+        # Check if the number of step is at least 1
+        if args.N is not None:
+            if args.N < 1:
+                raise io_mp.ConfigurationError(
+                    "You asked for a non-positive number of steps. "
+                    "I am not sure what to do, so I will exit. Sorry.")
+
         # If the user wants to start over from an existing chain, the program
         # will use automatically the same folder, and the log.param in it
         if args.restart is not None:
