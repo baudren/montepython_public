@@ -31,8 +31,8 @@ def run(custom_command=''):
         raise io_mp.ConfigurationError(
             "The initialisation was not successful, resulting in a "
             "potentially half created `log.param`. Please see the "
-            "above error message. If you run the exact command, it will not "
-            "work. You should solve the problem, and try again.")
+            "above error message. If you run the exact same command, it will "
+            "not work. You should solve the problem, and try again.")
     except KeyError:
         raise io_mp.ConfigurationError(
             "You are running in a folder that was created following "
