@@ -492,7 +492,8 @@ def convergence(info, is_main_chain=True, files=None, param=None):
                     else:
                         if name in info.to_plot:
                             plotted_parameters.append(name)
-                    temp = [float(elem) for elem in line.split(",")[1:3]]
+                    temp = [float(elem) if elem.strip() != 'None'
+                            else -1.0 for elem in line.split(",")[1:3]]
                     boundaries.append(temp)
                     ref_names.append(name)
                     scales.append(float(
