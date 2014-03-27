@@ -1,0 +1,26 @@
+#------Experiments to test (separated with commas)-----
+data.experiments=['bicep2']
+#------ Parameter list -------
+
+# data.parameters[class name] = [mean, min, max, 1-sigma, scale, role]
+# - if min max irrelevant, put to -1
+# - if fixed, put 1-sigma to 0
+# - if scale irrelevant, put to 1, otherwise to the appropriate factor
+# - role is either 'cosmo' or 'nuisance'
+
+# Cosmological parameters list
+data.parameters['r']         = [0.2,       0,-1, 0.05,      1,   'cosmo']
+
+# Other cosmo parameters (fixed parameters, precision parameters, etc.)
+data.cosmo_arguments['k_pivot'] = 0.002
+
+# Values used in the bicep2 paper
+data.cosmo_arguments['n_t'] = 0
+data.cosmo_arguments['alpha_t'] = 0
+
+#------ Likelihood parameters -----
+bicep2.fields = ['B', 'E']
+
+#------ Mcmc parameters ----
+data.N=10
+data.write_step=5

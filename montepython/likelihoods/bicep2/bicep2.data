@@ -1,0 +1,9 @@
+# BICEP2 likelihood is provided in the bicep_util.py file. It is a copy of
+# the official bicep_util.py file recovered from bicepkeck.org. The only
+# modification was to add a Keyword Argument 'root' to many functions, to allow
+# for searching in a different directory. None of the analysis was changed.
+bicep2.data_directory  = data.path['data']
+# You should specify here the field you want for the analysis.
+# The valid entries are:
+# B, E, T, (as of this version of their likelihood code, that is all).
+bicep2.fields = ['B','E']

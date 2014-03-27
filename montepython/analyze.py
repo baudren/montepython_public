@@ -314,7 +314,9 @@ def prepare(info, files, is_main_chain=True):
         from nested_sampling import NS_subfolder
         has_multinest = True
     except ImportError:
-        print 'No pymultinest installation found'
+        # The module multinest is not installed, so it can not analyze a NS
+        # subfolder
+        pass
 
     if has_multinest and os.path.isdir(files[0]):
         folder = os.path.join(
@@ -341,7 +343,9 @@ def prepare(info, files, is_main_chain=True):
         from cosmo_hammer import CH_subfolder
         has_cosmohammer = True
     except ImportError:
-        print 'No cosmohammer installation found'
+        # The module cosmohammer is not installed, so it can not analyze a CH
+        # subfolder
+        pass
 
     if has_cosmohammer and os.path.isdir(files[0]):
         folder = os.path.abspath(files[0])
@@ -492,7 +496,8 @@ def convergence(info, is_main_chain=True, files=None, param=None):
                     else:
                         if name in info.to_plot:
                             plotted_parameters.append(name)
-                    temp = [float(elem) for elem in line.split(",")[1:3]]
+                    temp = [float(elem) if elem.strip() != 'None'
+                            else -1.0 for elem in line.split(",")[1:3]]
                     boundaries.append(temp)
                     ref_names.append(name)
                     scales.append(float(

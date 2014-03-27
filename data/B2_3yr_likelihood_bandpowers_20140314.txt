@@ -1,0 +1,170 @@
+# BICEP2 2014 Data Release
+# The BICEP2 Collaboration, BICEP2 2014 I: DETECTION OF B-mode POLARIZATION AT DEGREE ANGULAR SCALES
+# http://bicepkeck.org/bicep2_2014_release/
+#
+# File: B2_3yr_likelihood_bandpowers_20140314.txt 
+# Date: 2014-03-14 
+# 
+# BICEP2 actual and simulated bandpowers necessary for Hamimeche-Lewis bandpower likelihood approximation.
+# See Section 9.1 of Barkats et al. (2014) for details.
+# Note that a separate file containing the likelihood for the tensor-to-scalar ratio, computed without this approximation, is available (B2_3yr_rlikelihood_20140314.txt).
+#
+# Bandpowers are organized into one matrix per ell bin.
+# Each matrix is symmetric 3x3:
+#         | TT  TE  TB |
+#         | TE  EE  EB |
+#         | TB  EB  BB |
+# However, for this release bandpowers TT, TE, and TB are not available because our constrained T simulations do not include appropriate sample variance. See Section 5.1.1 of BICEP2 2014 I for more details.
+# Note also that our polarization angle calibration removes any polarization rotation from the EB spectrum.
+# In all cases, bandpowers represent ell*(ell+1)C_{ell}/(2*pi).
+# Units are uK^2 CMB.
+
+# 1.
+# Fiducial model bandpowers D^f
+# Calculated as the ensemble average of signal+noise simulations.
+# Noise bias is included.
+
+# Bin 1 (ell~45.1)
+   NaN   NaN   NaN
+   NaN   9.5617e-02   3.5692e-04
+   NaN   3.5692e-04   5.3043e-03
+
+# Bin 2 (ell~73.9)
+   NaN   NaN   NaN
+   NaN   3.5677e-01   -1.4423e-04
+   NaN   -1.4423e-04   8.2475e-03
+
+# Bin 3 (ell~109.1)
+   NaN   NaN   NaN
+   NaN   8.3932e-01   5.7815e-05
+   NaN   5.7815e-05   1.6408e-02
+
+# Bin 4 (ell~144.2)
+   NaN   NaN   NaN
+   NaN   1.1652e+00   -1.0019e-05
+   NaN   -1.0019e-05   2.9111e-02
+
+# Bin 5 (ell~179.1)
+   NaN   NaN   NaN
+   NaN   9.3285e-01   -1.9071e-03
+   NaN   -1.9071e-03   4.9792e-02
+
+# Bin 6 (ell~213.7)
+   NaN   NaN   NaN
+   NaN   1.0038e+00   7.5299e-04
+   NaN   7.5299e-04   8.0567e-02
+
+# Bin 7 (ell~248.4)
+   NaN   NaN   NaN
+   NaN   2.4169e+00   -2.8519e-03
+   NaN   -2.8519e-03   1.3109e-01
+
+# Bin 8 (ell~283.1)
+   NaN   NaN   NaN
+   NaN   6.0171e+00   -1.2815e-03
+   NaN   -1.2815e-03   2.1434e-01
+
+# Bin 9 (ell~317.4)
+   NaN   NaN   NaN
+   NaN   1.1823e+01   4.1132e-03
+   NaN   4.1132e-03   3.5356e-01
+
+# 2.
+# Data bandpowers \hat{D}
+# Real data bandpowers from BICEP2 three-year result.
+# These differ from bandpowers displayed in Figure 2 of BICEP2 2014 I, because noise bias is included here.
+
+# Bin 1 (ell~45.1)
+   NaN   NaN   NaN
+   NaN   1.6192e-01   1.4340e-02
+   NaN   1.4340e-02   1.3266e-02
+
+# Bin 2 (ell~73.9)
+   NaN   NaN   NaN
+   NaN   5.1594e-01   2.9499e-03
+   NaN   2.9499e-03   1.9672e-02
+
+# Bin 3 (ell~109.1)
+   NaN   NaN   NaN
+   NaN   9.2978e-01   1.0768e-02
+   NaN   1.0768e-02   2.7545e-02
+
+# Bin 4 (ell~144.2)
+   NaN   NaN   NaN
+   NaN   1.0792e+00   2.7370e-03
+   NaN   2.7370e-03   3.6610e-02
+
+# Bin 5 (ell~179.1)
+   NaN   NaN   NaN
+   NaN   6.5833e-01   -3.1405e-03
+   NaN   -3.1405e-03   6.0254e-02
+
+# Bin 6 (ell~213.7)
+   NaN   NaN   NaN
+   NaN   1.0237e+00   5.8608e-02
+   NaN   5.8608e-02   9.9342e-02
+
+# Bin 7 (ell~248.4)
+   NaN   NaN   NaN
+   NaN   2.1939e+00   -3.8797e-02
+   NaN   -3.8797e-02   1.6139e-01
+
+# Bin 8 (ell~283.1)
+   NaN   NaN   NaN
+   NaN   6.7952e+00   -5.5790e-02
+   NaN   -5.5790e-02   2.2162e-01
+
+# Bin 9 (ell~317.4)
+   NaN   NaN   NaN
+   NaN   1.4033e+01   9.9068e-02
+   NaN   9.9068e-02   3.5396e-01
+
+# 3.
+# Noise bandpowers N, including instrumental noise and E->B leakage.
+# Calculated from the ensemble average of noise-only simulations (and signal-only simulations for E->B leakage).
+# Subtracting these bandpowers from the real data bandpowers listed above will recover the BICEP2 three-year bandpowers from Figure 2 of BICEP2 2014 I.
+
+# Bin 1 (ell~45.1)
+   NaN   NaN   NaN
+   NaN   5.8716e-03   -6.4317e-06
+   NaN   -6.4317e-06   4.6169e-03
+
+# Bin 2 (ell~73.9)
+   NaN   NaN   NaN
+   NaN   7.0994e-03   3.0775e-05
+   NaN   3.0775e-05   6.4091e-03
+
+# Bin 3 (ell~109.1)
+   NaN   NaN   NaN
+   NaN   1.3297e-02   6.2562e-06
+   NaN   6.2562e-06   1.2552e-02
+
+# Bin 4 (ell~144.2)
+   NaN   NaN   NaN
+   NaN   2.3873e-02   9.4600e-05
+   NaN   9.4600e-05   2.2729e-02
+
+# Bin 5 (ell~179.1)
+   NaN   NaN   NaN
+   NaN   4.1451e-02   -1.6565e-04
+   NaN   -1.6565e-04   3.9607e-02
+
+# Bin 6 (ell~213.7)
+   NaN   NaN   NaN
+   NaN   6.9775e-02   -1.7600e-04
+   NaN   -1.7600e-04   6.5596e-02
+
+# Bin 7 (ell~248.4)
+   NaN   NaN   NaN
+   NaN   1.1443e-01   -3.3520e-04
+   NaN   -3.3520e-04   1.1074e-01
+
+# Bin 8 (ell~283.1)
+   NaN   NaN   NaN
+   NaN   1.9510e-01   -2.7972e-04
+   NaN   -2.7972e-04   1.8816e-01
+
+# Bin 9 (ell~317.4)
+   NaN   NaN   NaN
+   NaN   3.2633e-01   -2.8851e-04
+   NaN   -2.8851e-04   3.2137e-01

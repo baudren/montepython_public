@@ -18,7 +18,6 @@ ascii-art for the exclamation mark sign.
 """
 
 import os
-import warnings
 import re  # Module to handle regular expressions
 from datetime import date
 import fcntl
@@ -56,15 +55,29 @@ def log_parameters(data, command_line):
 
 
 def log_likelihood_parameters(likelihood, command_line):
-    """Write down the .data file of the input likelihood to log.param"""
-    log = open(os.path.join(command_line.folder, 'log.param'), 'a')
-    tolog = open(likelihood.path, 'r')
-    log.write("\n\n#-----Likelihood-{0}-----\n".format(likelihood.name))
-    for line in tolog:
-        log.write(line)
-    tolog.seek(0)
-    tolog.close()
-    log.close()
+    """
+    Write down the interpreted .data file of the input likelihood to log.param
+
+    .. warning::
+
+        Since version 2.0.2, the lines are not copied verbatim, they are first
+        interpreted, then copied. This allows for overriding of parameters from
+        the input.param file.
+    """
+    with open(os.path.join(command_line.folder, 'log.param'), 'a') as log:
+    #tolog = open(likelihood.path, 'r')
+        log.write("\n\n#-----Likelihood-{0}-----\n".format(likelihood.name))
+        for key, value in likelihood.dictionary.iteritems():
+            if type(value) != type(''):
+                log.write("%s.%s = %s\n" % (
+                    likelihood.name, key, value))
+            else:
+                log.write("%s.%s = '%s'\n" % (
+                    likelihood.name, key, value))
+    #for line in tolog:
+        #log.write(line)
+    #tolog.seek(0)
+    #tolog.close()
 
 
 def log_cosmo_arguments(data, command_line):
@@ -227,12 +240,12 @@ def create_output_files(command_line, data):
                 suffix += 1
         data.out_name = os.path.join(
             command_line.folder, outname_base)+str(suffix)+'.txt'
-        warnings.warn('Creating %s\n' % data.out_name)
+        print 'Creating %s\n' % data.out_name
     else:
         data.out_name = os.path.join(
             command_line.folder, outname_base)+command_line.chain_number+'.txt'
         data.out = open(data.out_name, 'w')
-        warnings.warn('Creating %s\n' % data.out_name)
+        print 'Creating %s\n' % data.out_name
     # in case of a restart, copying the whole thing in the new file
     if command_line.restart is not None:
         for line in open(command_line.restart, 'r'):
@@ -395,7 +408,7 @@ def lock(file, flags):
     import fcntl
     try:
         fcntl.flock(file.fileno(), flags)
-    except IOError, exc_value:
+    except IOError as exc_value:
         # The exception code varies on different systems so we'll catch
         # every IO error
         raise LockError(*exc_value)

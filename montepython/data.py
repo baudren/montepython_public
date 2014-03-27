@@ -219,7 +219,7 @@ class Data(object):
         if self.cosmological_module_name == 'CLASS':
             # Official version number
             common_file_path = os.path.join(
-                self.path['cosmo'], os.path.join('include', 'common.h'))
+                self.path['cosmo'], 'include', 'common.h')
             with open(common_file_path, 'r') as common_file:
                 for line in common_file:
                     if line.find('_VERSION_') != -1:
@@ -239,7 +239,10 @@ class Data(object):
                         ["git", "rev-parse", "--abbrev-ref", "HEAD"],
                         cwd=self.path['cosmo'],
                         stderr=nul_file).strip()
-            except sp.CalledProcessError:
+            except (sp.CalledProcessError, OSError):
+                # Note, OSError seems to be raised on some systems, instead of
+                # sp.CalledProcessError - which seems to be linked to the
+                # existence of os.devnull, so now both error are caught.
                 warnings.warn(
                     "Running CLASS from a non version-controlled repository")
                 self.git_version, self.git_branch = '', ''
@@ -338,17 +341,25 @@ class Data(object):
         for elem in self.experiments:
 
             folder = os.path.abspath(os.path.join(
-                path['MontePython'], os.path.join("likelihoods", "%s" % elem)))
+                path['MontePython'], "likelihoods", "%s" % elem))
             # add the folder of the likelihood to the path of libraries to...
             # ... import easily the likelihood.py program
-            exec "from likelihoods.%s import %s" % (
-                elem, elem)
+            try:
+                exec "from likelihoods.%s import %s" % (
+                    elem, elem)
+            except:
+                raise io_mp.ConfigurationError(
+                    "Trying to import the %s likelihood" % elem +
+                    " as asked in the parameter file, and failed."
+                    " Please make sure it is in the `montepython/"
+                    "likelihoods` folder, and is a proper python "
+                    "module.")
             # Initialize the likelihoods. Depending on the values of
             # command_line and log_flag, the routine will call slightly
             # different things. If log_flag is True, the log.param will be
             # appended.
             exec "self.lkl['%s'] = %s('%s/%s.data',\
-                self,command_line)" % (
+                self, command_line)" % (
                 elem, elem, folder, elem)
 
         # Storing parameters by blocks of speed
@@ -382,19 +393,27 @@ class Data(object):
                 "Error in initializing the Data class, the parameter file " +
                 "{0} does not point to a proper file".format(self.param))
         # In case the parameter file is a log.param, scan first once the file
-        # to extract the path dictionnary.
+        # to extract only the path dictionnary.
         if self.param.find('log.param') != -1:
-            self.read_file(self.param_file, search_path=True)
-        self.read_file(self.param_file)
+            self.read_file(self.param, 'data', field='path')
+        self.read_file(self.param, 'data')
 
+        # Do the same for every experiments - but only if you are starting a
+        # new folder. Otherwise, this step will actually be done when
+        # initializing the likelihood.
+        if self.param.find('log.param') == -1:
+            for experiment in self.experiments:
+                self.read_file(self.param, experiment, separate=True)
+
+        # Finally create all the instances of the Parameter given the input.
         for key, value in self.parameters.iteritems():
             self.mcmc_parameters[key] = Parameter(value, key)
         """
-        Transform from parameters dictionnary to mcmc_parameters dictionary of
+        Transform from parameters dictionary to mcmc_parameters dictionary of
         instances from the class :class:`parameter` (inheriting from dict)
         """
 
-    def read_file(self, param_file, search_path=False):
+    def read_file(self, param, structure, field='', separate=False):
         """
         Execute all lines concerning the Data class from a parameter file
 
@@ -403,30 +422,55 @@ class Data(object):
 
         .. note::
 
-            A rstrip() was added at the end, because of an uncomprehensible bug
-            on some systems that imagined some unexistant characters at the end
+            A rstrip() was added at the end, because of an incomprehensible bug
+            on some systems that imagined some inexistent characters at the end
             of the line... Now should work
 
         .. note::
 
             A security should be added to protect from obvious attacks.
 
-        .. warning::
+        Parameters
+        ----------
+        param : str
+            Name of the parameter file
+        structure : str
+            Name of the class entries we want to execute (mainly, data, or any
+            other likelihood)
 
-            New in version 2.0.0, the file is read twice, because the path
-            dictionnary was unfortunately stored in the end of the file.
+        Keyword Arguments
+        -----------------
+        field : str
+            If nothing is specified, this routine will execute all the lines
+            corresponding to the `structure` parameters. If you specify a
+            specific field, like `path`, only this field will be read and
+            executed.
+        separate : bool
+            If this flag is set to True, a container class will be created for
+            the structure field, so instead of appending to the namespace of
+            the data instance, it will append to a sub-namespace named in the
+            same way that the desired structure. This is used to extract custom
+            values from the likelihoods.
+
         """
-        for line in param_file:
-            if line.find('#') == -1 and line:
-                lhs = line.split('=')[0]
-                if lhs.find('data.') != -1:
-                    if search_path:
-                        # Do not execute this line if the flag search_path is
-                        # set to True
-                        if lhs.find('data.path') == -1:
-                            continue
-                    exec(line.replace('data.', 'self.').rstrip())
-        param_file.seek(0)
+        if separate:
+            exec("self.%s = Container()" % structure)
+        with open(param, 'r') as param_file:
+            for line in param_file:
+                if line.find('#') == -1 and line:
+                    lhs = line.split('=')[0]
+                    if lhs.find(structure+'.') != -1:
+                        if field:
+                            # If field is not an empty string, you want to skip
+                            # the execution of the line (exec statement) if you
+                            # do not find the exact searched field
+                            if lhs.find('.'.join([structure, field])) == -1:
+                                continue
+                        if not separate:
+                            exec(line.replace(structure+'.', 'self.').rstrip())
+                        else:
+                            exec(line.replace(
+                                structure+'.', 'self.'+structure+'.').rstrip())
 
     def group_parameters_in_blocks(self):
         """
@@ -448,7 +492,7 @@ class Data(object):
         .. warning::
 
             It assumes that the nuisance parameters are already written
-            sequentially, and grouped together (not necessarilly in the order
+            sequentially, and grouped together (not necessarily in the order
             described in :attr:`experiments`). If you mix up the different
             nuisance parameters in the .param file, this routine will not
             method as intended. It also assumes that the cosmological
@@ -865,3 +909,8 @@ class Parameter(dict):
         else:
             self['status'] = 'varying'
         self['prior'] = prior.Prior(array)
+
+
+class Container(object):
+    """Dummy class to act as a namespace for data"""
+    pass

@@ -1,6 +1,10 @@
 # Files created by vim to backup
 *~
 *swp
+
+# Potential Makefile
+Makefile
+
 # Files created by mac
 *.DS_Store
 
@@ -12,6 +16,9 @@ chains/*
 
 # Custom configuration files
 *.conf
+
+# Custom parameter files
+*.param
 
 # Build files of sphinx-doc
 sphinx-documentation/_build/

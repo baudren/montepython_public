@@ -107,7 +107,7 @@ def recover_local_path(command_line):
         for line in open(conf_file):
             exec(line)
         for key, value in path.iteritems():
-            path[key] = os.path.normpath(value)
+            path[key] = os.path.normpath(os.path.expanduser(value))
     else:
         # The error is ignored if reading from a log.param, because it is
         # stored
@@ -136,14 +136,12 @@ def recover_cosmological_module(data):
     # relevant quantities
     if data.cosmological_module_name == 'CLASS':
         try:
+            classy_path = ''
             for elem in os.listdir(os.path.join(
-                    data.path['cosmo'], os.path.join(
-                    "python", "build"))):
+                    data.path['cosmo'], "python", "build")):
                 if elem.find("lib.") != -1:
                     classy_path = os.path.join(
-                        data.path['cosmo'],
-                        os.path.join("python",
-                                     os.path.join("build", elem)))
+                        data.path['cosmo'], "python", "build", elem)
                     break
         except OSError:
             raise io_mp.ConfigurationError(

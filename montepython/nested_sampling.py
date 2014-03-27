@@ -50,45 +50,45 @@ str2bool = lambda s: True if s.lower() == 'true' else False
 NS_user_arguments = {
     # General sampling options
     'n_live_points':
-        {'metavar': 'Number of live samples',
+        {'help': 'Number of live samples',
          'type': int},
     'importance_nested_sampling':
-        {'metavar': 'True or False',
+        {'help': 'True or False',
          'type': str2bool},
     'sampling_efficiency':
-        {'metavar': 'Sampling efficiency',
+        {'help': 'Sampling efficiency',
          'type': float},
     'const_efficiency_mode':
-        {'metavar': 'True or False',
+        {'help': 'True or False',
          'type': str2bool},
     'seed':
-        {'metavar': 'Random seed',
+        {'help': 'Random seed',
          'type': int},
     'log_zero':
-        {'metavar': 'Min. log-evidence to consider',
+        {'help': 'Min. log-evidence to consider',
          'type': float},
     'n_iter_before_update':
-        {'metavar': 'Number of iterations between updates',
+        {'help': 'Number of iterations between updates',
          'type': int},
     # Ending conditions
     'evidence_tolerance':
-        {'metavar': 'Evidence tolerance',
+        {'help': 'Evidence tolerance',
          'type': float},
     'max_iter':
-        {'metavar': 'Max. number of iterations',
+        {'help': 'Max. number of iterations',
          'type': int},
     # Multimodal sampling
     'multimodal':
-        {'metavar': 'True or False',
+        {'help': 'True or False',
          'type': str2bool},
     'max_modes':
-        {'metavar': 'Max. number of modes to consider',
+        {'help': 'Max. number of modes to consider',
          'type': int},
     'mode_tolerance':
-        {'metavar': 'Min. value of the log-evidence for a mode to be considered',
+        {'help': 'Min. value of the log-evidence for a mode to be considered',
          'type': float},
     'clustering_params':
-        {'metavar': 'Parameters to be used for mode separation',
+        {'help': 'Parameters to be used for mode separation',
          'type': str,
          'nargs': '+'}
     }
