@@ -1,3 +1,11 @@
+v2.0.2: + BICEP2 likelihood implemented.
+	+ Improved error messages, reading of the conf file now
+	  supports the tilde character.
+	+ You can now specify likelihood parameters directly in the
+	  parameter file. This overwrites any setting present in the
+	  .data file of the likelihood. Simply write:
+	  `mylkl.something = 'that'`.
+----------------------------------------------------------------------
 v2.0.1: + Bug-fix from 2.0.0: the memory was not properly freed from
 	  CLASS calls. There was a problem with imports of the errors
 	  imported from the cosmological module.
@@ -17,7 +25,7 @@ v2.0.0: + Over sampling implemented: it helps running with likelihoods
 	  `likelihoods` folder inside this new `montepython`. Also,
 	  considering a `lkl` likelihood, instead of following the
 	  previous structure:
-	  `likelihoods/lkl/lkl.py and .data, 
+	  `likelihoods/lkl/lkl.py and .data,
 	  you should now use:
 	  `montepython/likelihoods/lkl/__init__.py and lkl.data`.
 	+ Wrapping of the Cosmo Hammer within Monte Python. This
@@ -57,7 +65,7 @@ v1.2.2: + Several bug fixes. One with analyze module, that failed when
 	  the remaining proposal distribution - fixed
 	+ When running with *no* varying parameters, instead of using
 	  the values specified in the parameter file, the code would
-	  instead run with default Class values - fixed 
+	  instead run with default Class values - fixed
 ----------------------------------------------------------------------
 v1.2.1: + Planck lensing is now working
 ----------------------------------------------------------------------
