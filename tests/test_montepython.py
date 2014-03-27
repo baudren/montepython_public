@@ -141,7 +141,8 @@ class Test02Setup(TestMontePython):
                 exec(line)
         ## Compare with the one stored in data
         for key, value in path.iteritems():
-            self.assertEqual(os.path.abspath(value), self.data.path[key])
+            self.assertEqual(os.path.abspath(
+                os.path.expanduser(value)), self.data.path[key])
 
     def test_likelihood_data_recovered(self):
         """
