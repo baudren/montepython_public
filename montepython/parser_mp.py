@@ -145,6 +145,11 @@ def create_parser():
     parser = argparse.ArgumentParser(
         description='Monte Python, a Monte Carlo code in Python')
 
+    # -- version
+    with open("../VERSION", "r") as vf:
+        version=vf.readline()
+        parser.add_argument('--version', action='version', version=version)
+
     # -- number of steps (OPTIONAL)
     parser.add_argument('-N', help='number of steps', type=int, dest='N')
     # -- output folder	(OBLIGATORY)
