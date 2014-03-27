@@ -147,8 +147,10 @@ def create_parser():
             description='Monte Python, a Monte Carlo code in Python')
 
     # -- version
-    with open("../VERSION", "r") as vf:
-        version=vf.readline()
+    path_file = os.path.sep.join(
+        os.path.abspath(__file__).split(os.path.sep)[:-2])
+    with open(os.path.join(path_file, 'VERSION'), 'r') as version_file:
+        version=version_file.readline()
         parser.add_argument('--version', action='version', version=version)
 
     runparser = parser.add_argument_group(title="Run", 
