@@ -143,7 +143,8 @@ def create_parser():
 
     """
     parser = argparse.ArgumentParser(
-        description='Monte Python, a Monte Carlo code in Python')
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+            description='Monte Python, a Monte Carlo code in Python')
 
     # -- version
     with open("../VERSION", "r") as vf:
@@ -163,10 +164,11 @@ def create_parser():
     runparser.add_argument('-c', help='input cov matrix', type=str, dest='cov')
     # -- jumping method	(OPTIONAL)
     runparser.add_argument('-j', help='jumping method', type=str,
-                        dest='jumping', default='global')
+                        dest='jumping', default='global', choices=['global',
+                        'sequential'])
     # -- sampling method (OPTIONAL)
     runparser.add_argument('-m', help='sampling method', type=str,
-                        dest='method', default='MH')
+            dest='method', default='MH', choices=['MH', 'NS'])
     # -- jumping factor	(OPTIONAL)
     runparser.add_argument('-f', help='jumping factor', type=float,
                         dest='jumping_factor', default=2.4)
@@ -244,8 +246,9 @@ def create_parser():
         dest='subplot', action='store_const', const=True, default=False)
     # -- to change the extension used to output files (pdf is the default one, but
     # takes long, valid options are png and eps)
-    infoparser.add_argument('-ext', help='change extension for the output file',
-                        type=str, dest='extension', default='pdf')
+    infoparser.add_argument('-ext', help='''change extension for the output file.
+            Any extension handled by `matplotlib` can be used''',
+            type=str, dest='extension', default='pdf')
     # -- fontsize of plots (defaulting to 15)
     infoparser.add_argument('-fontsize', help='desired fontsize',
                         type=int, dest='fontsize', default=-1)
