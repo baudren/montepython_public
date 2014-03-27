@@ -388,7 +388,6 @@ class Data(object):
         # Read from the parameter file everything
         try:
             self.param_file = open(self.param, 'r')
-            #self.param_file.close()
         except IOError:
             raise io_mp.ConfigurationError(
                 "Error in initializing the Data class, the parameter file " +
