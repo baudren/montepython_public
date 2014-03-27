@@ -12,31 +12,38 @@ class bicep2(Likelihood):
 
         # Define a default value, empty, for which field to use with the
         # likelihood. The proper value should be initialised in the .data file.
-        self.field = ""
         Likelihood.__init__(self, path, data, command_line)
+
+        # Create arrays that will store the values for all the possibly tested
+        # fields.
+        self.C_l = []
+        self.C_l_hat = []
+        self.N_l = []
+        self.C_fl = []
+        self.M_inv = []
+        self.bpwf_l = []
+        self.bpwf_Cs_l = []
 
         # Recover all the relevant quantities for the likelihood computation
         # from the BICEP collaboration, which includes the band power window
         # functions (bpwf). It assumes that in the "root" directory, there is a
         # "windows" directory which contains the band power window functions
         # from BICEP2.
-        C_l, C_l_hat, N_l, C_fl, M_inv, bpwf_l, bpwf_Cs_l = bu.init(
-            "bicep2",
-            self.field,
-            self.data_directory)
-
-        # Store the useful quantities
-        self.C_l = C_l
-        self.C_l_hat = C_l_hat
-        self.N_l = N_l
-        self.C_fl = C_fl
-        self.M_inv = M_inv
-        self.bpwf_l = bpwf_l
-        self.bpwf_Cs_l = bpwf_Cs_l
+        for field in self.fields:
+            C_l, C_l_hat, N_l, C_fl, M_inv, bpwf_l, bpwf_Cs_l = bu.init(
+                "bicep2",
+                field,
+                self.data_directory)
+            self.C_l.append(C_l)
+            self.C_l_hat.append(C_l_hat)
+            self.N_l.append(N_l)
+            self.C_fl.append(C_fl)
+            self.M_inv.append(M_inv)
+            self.bpwf_l.append(bpwf_l)
+            self.bpwf_Cs_l.append(bpwf_Cs_l)
 
         # Read the desired max ell from the band power window function.
-        self.l_max = self.bpwf_l[-1]
-        print self.l_max
+        self.l_max = max([elem[-1] for elem in self.bpwf_l])
 
         # Require tensor modes from Class
         arguments = {
@@ -71,45 +78,49 @@ class bicep2(Likelihood):
         cosmo_Cls[:, 3] = ell*(ell+1)*dict_Cls['bb']/(2*math.pi)
         cosmo_Cls[:, 6] = ell*(ell+1)*dict_Cls['te']/(2*math.pi)
 
-        # Get the expectation value of the data considering this theoretical
-        # model
-        expectation_value = bu.calc_expvals(
-            ell, cosmo_Cls,
-            self.bpwf_l, self.bpwf_Cs_l)
+        # Now loop over all the fields
+        loglkl = 0
+        for index, field in enumerate(self.fields):
+            # Get the expectation value of the data considering this theoretical
+            # model, for all the required fields.
+            expectation_value = bu.calc_expvals(
+                ell, cosmo_Cls,
+                self.bpwf_l[index], self.bpwf_Cs_l[index])
 
-        # Fill the C_l matrix
-        if self.field == "T":
-            self.C_l[:, 0, 0] = expectation_value[:, 0]
-        elif self.field == 'E':
-            self.C_l[:, 0, 0] = expectation_value[:, 2]
-        elif self.field == 'B':
-            self.C_l[:, 0, 0] = expectation_value[:, 3]
-        elif self.field == "EB":
-            self.C_l[:, 0, 0] = expectation_value[:, 2]
-            self.C_l[:, 0, 1] = expectation_value[:, 5]
-            self.C_l[:, 1, 0] = expectation_value[:, 5]
-            self.C_l[:, 1, 1] = expectation_value[:, 3]
-        elif self.field == "TB":
-            self.C_l[:, 0, 0] = expectation_value[:, 0]
-            self.C_l[:, 0, 1] = expectation_value[:, 4]
-            self.C_l[:, 1, 0] = expectation_value[:, 5]
-            self.C_l[:, 1, 1] = expectation_value[:, 3]
-        elif self.field == "TE":
-            self.C_l[:, 0, 0] = expectation_value[:, 0]
-            self.C_l[:, 0, 1] = expectation_value[:, 1]
-            self.C_l[:, 1, 0] = expectation_value[:, 1]
-            self.C_l[:, 1, 1] = expectation_value[:, 2]
-        else:
-            raise io_mp.LikelihoodError(
-                "BICEP2 requires a field to compute the likelihood"
-                " which should so far be T, E or B, but was read to"
-                " be '%s'" % self.field)
+            # Fill the C_l matrix
+            if field == "T":
+                self.C_l[index][:, 0, 0] = expectation_value[:, 0]
+            elif field == 'E':
+                self.C_l[index][:, 0, 0] = expectation_value[:, 2]
+            elif field == 'B':
+                self.C_l[index][:, 0, 0] = expectation_value[:, 3]
+            elif field == "EB":
+                self.C_l[index][:, 0, 0] = expectation_value[:, 2]
+                self.C_l[index][:, 0, 1] = expectation_value[:, 5]
+                self.C_l[index][:, 1, 0] = expectation_value[:, 5]
+                self.C_l[index][:, 1, 1] = expectation_value[:, 3]
+            elif field == "TB":
+                self.C_l[index][:, 0, 0] = expectation_value[:, 0]
+                self.C_l[index][:, 0, 1] = expectation_value[:, 4]
+                self.C_l[index][:, 1, 0] = expectation_value[:, 5]
+                self.C_l[index][:, 1, 1] = expectation_value[:, 3]
+            elif field == "TE":
+                self.C_l[index][:, 0, 0] = expectation_value[:, 0]
+                self.C_l[index][:, 0, 1] = expectation_value[:, 1]
+                self.C_l[index][:, 1, 0] = expectation_value[:, 1]
+                self.C_l[index][:, 1, 1] = expectation_value[:, 2]
+            else:
+                raise io_mp.LikelihoodError(
+                    "BICEP2 requires a field to compute the likelihood"
+                    " which should so far be T, E or B, but was read to"
+                    " be '%s'" % field)
 
-        # Add the noise
-        self.C_l += self.N_l
+            # Add the noise
+            self.C_l[index] += self.N_l[index]
 
-        # Actually compute the likelihood
-        loglkl = bu.evaluateLikelihood(
-            self.C_l, self.C_l_hat, self.C_fl, self.M_inv)
+            # Actually compute the likelihood
+            loglkl += bu.evaluateLikelihood(
+                self.C_l[index], self.C_l_hat[index],
+                self.C_fl[index], self.M_inv[index])
 
         return loglkl
