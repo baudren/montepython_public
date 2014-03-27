@@ -18,7 +18,6 @@ ascii-art for the exclamation mark sign.
 """
 
 import os
-import warnings
 import re  # Module to handle regular expressions
 from datetime import date
 import fcntl
@@ -69,8 +68,12 @@ def log_likelihood_parameters(likelihood, command_line):
     #tolog = open(likelihood.path, 'r')
         log.write("\n\n#-----Likelihood-{0}-----\n".format(likelihood.name))
         for key, value in likelihood.dictionary.iteritems():
-            log.write("%s.%s = %s\n" % (
-                likelihood.name, key, value))
+            if type(value) != type(''):
+                log.write("%s.%s = %s\n" % (
+                    likelihood.name, key, value))
+            else:
+                log.write("%s.%s = '%s'\n" % (
+                    likelihood.name, key, value))
     #for line in tolog:
         #log.write(line)
     #tolog.seek(0)
