@@ -39,13 +39,13 @@ CH_prefix = 'CH_'
 # User-defined arguments for the Hammer
 CH_user_arguments = {
     'walkersRatio':
-    {'metavar': 'Number of walkers',
+    {'help': 'Number of walkers',
      'type': int},
     'burninIterations':
-    {'metavar': 'Number of burnin phase iterations',
+    {'help': 'Number of burnin phase iterations',
      'type': int},
     'sampleIterations':
-    {'metavar': 'Number of sample iterations',
+    {'help': 'Number of sample iterations',
      'type': int}}
 
 
