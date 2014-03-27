@@ -19,6 +19,13 @@ LIKELIHOODS = [
         if elem.find('montepython.likelihoods.') != -1]
 DATA_FILES = [('', ['VERSION']),
               ('', ['default.conf.template'])]
+
+# Add all files contained in the data/ folder
+for root, subfolders, files in os.walk('data'):
+    DATA_FILES.append((
+        root, [os.path.join(root, elem) for elem in files]))
+
+# Add all data files from likelihoods
 for likelihood in LIKELIHOODS:
     data = [
         os.path.join(likelihood, elem) for elem in os.listdir(likelihood) if
