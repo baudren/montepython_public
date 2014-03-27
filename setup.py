@@ -13,6 +13,18 @@ with open(VERSION_FILE_NAME, 'r') as version_file:
 
 PACKAGES = find_packages()
 
+# Recover all needed data files from the likelihoods packages
+LIKELIHOODS = [
+        elem.replace('.', '/') for elem in PACKAGES
+        if elem.find('montepython.likelihoods.') != -1]
+DATA_FILES = [('', ['VERSION']),
+              ('', ['default.conf.template'])]
+for likelihood in LIKELIHOODS:
+    data = [
+        os.path.join(likelihood, elem) for elem in os.listdir(likelihood) if
+        elem.find('.py') == -1]
+    DATA_FILES.append((likelihood, data))
+
 setup(name='montepython',
       version=VERSION,
       description='Cosmological Monte Carlo parameter extraction code',
@@ -21,6 +33,5 @@ setup(name='montepython',
       url='http://www.montepython.net/',
       packages=PACKAGES,
       install_requires=['argparse'],
-      data_files=[('', ['VERSION']),
-                  ('', ['default.conf.template'])],
+      data_files=DATA_FILES,
       )
