@@ -51,6 +51,9 @@ class Likelihood(object):
         # Define some default fields
         self.data_directory = ''
 
+        # Store all the default fields stored, for the method read_file.
+        self.default_values = ['data_directory']
+
         # Recover the values potentially read in the input.param file.
         if hasattr(data, self.name):
             exec("attributes = [e for e in dir(data.%s) if e.find('__') == -1]" % self.name)
@@ -144,11 +147,20 @@ class Likelihood(object):
                             line)
                         name, value = (elem.strip() for elem in regexp.groups())
                         # If this name was already defined in the parameter
-                        # file, be sure to take this value instead
-                        try:
-                            value = getattr(self, name)
-                        except AttributeError:
+                        # file, be sure to take this value instead. Beware,
+                        # there are a few parameters which are always
+                        # predefined, such as data_directory, which should be
+                        # ignored in this check.
+                        is_ignored = False
+                        if name not in self.default_values:
+                            try:
+                                value = getattr(self, name)
+                                is_ignored = True
+                            except AttributeError:
+                                pass
+                        if not is_ignored:
                             exec(line.replace(self.name+'.', 'self.'))
+                        value = getattr(self, name)
                         counter += 1
                         self.dictionary[name] = value
             data_file.seek(0)
