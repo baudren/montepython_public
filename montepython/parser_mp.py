@@ -221,7 +221,7 @@ def create_parser():
                 description="Run the MCMC chains using the CosmoHammer framework"
                 )
         for arg in CH_user_arguments:
-            runparser.add_argument('--'+CH_prefix+arg,
+            CHparser.add_argument('--'+CH_prefix+arg,
                                    default=-1,
                                    **CH_user_arguments[arg])
     except ImportError:
