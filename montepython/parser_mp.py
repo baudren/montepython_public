@@ -185,15 +185,14 @@ def create_parser():
     runparser.add_argument('-conf', help='configuration file', type=str,
                            dest='config_file', default='default.conf')
     # -- arbitraty numbering of an output chain (OPTIONAL)
-    runparser.add_argument('-chain_number', help='chain number', type=str,
-                           dest='chain_number', default=None)
+    runparser.add_argument('--chain-number', help='chain number', type=str,
+                           default=None)
 
     ###############
     # MCMC restart from chain or best fit file
     runparser.add_argument('-r', help='restart from chain', type=str,
                            dest='restart')
-    runparser.add_argument('-bf', help='restart from best fit file', type=str,
-                           dest='bf')
+    runparser.add_argument('--bf', help='restart from best fit file', type=str)
 
     ###############
     # MultiNest arguments (all OPTIONAL and ignored if not "-m=NS")
@@ -202,7 +201,6 @@ def create_parser():
         from nested_sampling import NS_prefix, NS_user_arguments
         for arg in NS_user_arguments:
             runparser.add_argument('--'+NS_prefix+arg,
-                                   dest=NS_prefix+arg,
                                    default=-1,
                                    **NS_user_arguments[arg])
     except ImportError:
@@ -216,7 +214,6 @@ def create_parser():
         from cosmo_hammer import CH_prefix, CH_user_arguments
         for arg in CH_user_arguments:
             runparser.add_argument('--'+CH_prefix+arg,
-                                   dest=CH_prefix+arg,
                                    default=-1,
                                    **CH_user_arguments[arg])
     except ImportError:
@@ -230,42 +227,39 @@ def create_parser():
     infoparser = parser.add_argument_group(title="Information",
             description="Run the analysis tools on the MCMC chains")
     # -- folder to analyze
-    infoparser.add_argument('-info', help='compute information of desired file',
-                            type=str, dest='files', nargs='*')
+    infoparser.add_argument('--info', help='compute information of desired file',
+                            type=str, dest='files', nargs='+')
     # -- number of bins (defaulting to 20)
-    infoparser.add_argument('-bins',
+    infoparser.add_argument('--bins',
                             help='desired number of bins, default is 20',
-                            type=int, dest='bins', default=20)
+                            type=int, default=20)
     # -- to remove the mean-likelihood line
-    infoparser.add_argument('-no_mean', help='remove the mean likelihood plot',
-                            dest='mean_likelihood', action='store_const',
-                            const=False, default=True)
+    infoparser.add_argument('--no-mean', help='remove the mean likelihood plot',
+                            dest='mean_likelihood', action='store_false',)
     # -- possible comparison folder
-    infoparser.add_argument('-comp', help='comparison folder', type=str,
-                            dest='comp', nargs=1)
+    infoparser.add_argument('--comp', help='comparison folder', type=str)
     # -- possible plot file describing custom commands
-    infoparser.add_argument('-extra', help='plot file for custom needs',
-                            type=str, dest='optional_plot_file', nargs=1)
+    infoparser.add_argument('--extra', help='plot file for custom needs',
+                            type=str, dest='optional_plot_file')
     # -- if you just want the covariance matrix, use this option
-    infoparser.add_argument('-noplot', help='ommit the plotting part',
-                            dest='plot', action='store_const',
-                            const=False, default=True)
+    infoparser.add_argument('--noplot', help='omit the plotting part',
+                            dest='plot', action='store_false')
     # -- if you want to output every single subplots
     infoparser.add_argument(
-        '-all', help='plot every single subplot in a separate pdf file',
-        dest='subplot', action='store_const', const=True, default=False)
+        '--all', help='plot every single subplot in a separate pdf file',
+        dest='subplot', action='store_true')
     # -- to change the extension used to output files (pdf is the default one,
     # but takes long, valid options are png and eps)
     infoparser.add_argument(
-            '-ext', help='''change extension for the output file.
+            '--ext', help='''change extension for the output file.
             Any extension handled by `matplotlib` can be used''',
             type=str, dest='extension', default='pdf')
     # -- fontsize of plots (defaulting to 15)
-    infoparser.add_argument('-fontsize', help='desired fontsize',
-                            type=int, dest='fontsize', default=-1)
+    infoparser.add_argument('--fontsize', help='desired font size',
+                            type=int, default=15)
     # -- ticksize of plots (defaulting to 13)
-    infoparser.add_argument('-ticksize', help='desired ticksize',
-                            type=int, dest='ticksize', default=-1)
+    infoparser.add_argument('--ticksize', help='desired tick size',
+                            type=int, default=13)
 
 
     return parser
