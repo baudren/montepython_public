@@ -1021,10 +1021,10 @@ def plot_triangle(
             ax1d.plot(
                 interp_comp_grid, interp_comp_hist, color='red',
                 linewidth=2, ls='-')
-	    if plot_2d:
-		ax2d.plot(
-		    interp_comp_grid, interp_comp_hist, color='blue',
-		    linewidth=2, ls='-')
+            if plot_2d:
+                ax2d.plot(
+                    interp_comp_grid, interp_comp_hist, color='blue',
+                    linewidth=2, ls='-')
 
         # mean likelihood (optional, if comparison, it will not be printed)
         if not comp and command_line.mean_likelihood:
@@ -1037,9 +1037,9 @@ def plot_triangle(
                 lkl_mean /= lkl_mean.max()
                 interp_lkl_mean, interp_grid = cubic_interpolation(
                     info, lkl_mean, bincenters)
-		if plot_2d:
-		  ax2d.plot(interp_grid, interp_lkl_mean, color='red',
-			    ls='--', lw=2)
+                if plot_2d:
+                    ax2d.plot(interp_grid, interp_lkl_mean, color='red',
+                        ls='--', lw=2)
                 ax1d.plot(interp_grid, interp_lkl_mean, color='red',
                           ls='--', lw=4)
             except:
@@ -1116,53 +1116,53 @@ def plot_triangle(
                             info.plotted_parameters[j]))
                     pass
 
-		if comp_done:
-		    # i.e. comp_index is valid
-		    try:
-			# For the names in common, the following line will not
-			# output an error. Then compute the comparative
-			# histogram
-			comp_second_index = comp_ref_names.index(
-			    info.plotted_parameters[j])
-			comp_n, comp_xedges, comp_yedges = np.histogram2d(
-			    comp_chain[:, comp_index+2], comp_chain[:, comp_second_index+2],
-			    weights=comp_chain[:, 0], bins=(bin_number, bin_number),
-			    normed=False)
-			comp_extent = [comp_x_range[comp_second_index][0],
-			    comp_x_range[comp_second_index][1],
-			    comp_x_range[comp_index][0], comp_x_range[comp_index][1]]
-			comp_x_centers = 0.5*(comp_xedges[1:]+comp_xedges[:-1])
-			comp_y_centers = 0.5*(comp_yedges[1:]+comp_yedges[:-1])
-			comp_done_other = True
-		    except ValueError:
-			# If the name was not found, return the error. This will be
-			# then plotted at the end
-			comp_done_other = False
+                if comp_done:
+                    # i.e. comp_index is valid
+                    try:
+                        # For the names in common, the following line will not
+                        # output an error. Then compute the comparative
+                        # histogram
+                        comp_second_index = comp_ref_names.index(
+                            info.plotted_parameters[j])
+                        comp_n, comp_xedges, comp_yedges = np.histogram2d(
+                            comp_chain[:, comp_index+2], comp_chain[:, comp_second_index+2],
+                            weights=comp_chain[:, 0], bins=(bin_number, bin_number),
+                            normed=False)
+                        comp_extent = [comp_x_range[comp_second_index][0],
+                            comp_x_range[comp_second_index][1],
+                            comp_x_range[comp_index][0], comp_x_range[comp_index][1]]
+                        comp_x_centers = 0.5*(comp_xedges[1:]+comp_xedges[:-1])
+                        comp_y_centers = 0.5*(comp_yedges[1:]+comp_yedges[:-1])
+                        comp_done_other = True
+                    except ValueError:
+                        # If the name was not found, return the error. This will be
+                        # then plotted at the end
+                        comp_done_other = False
 
-		    if comp_done_other:
-			try:
-			    if overplot_comp_contour:
-				contours = ax2dsub.contour(
-				    comp_y_centers, comp_x_centers, comp_n,
-				    extent=comp_extent, levels=ctr_level(comp_n, lvls[:2]),
-				    zorder=5, cmap=plt.cm.winter_r)
-			    else:
-				contours = ax2dsub.contourf(
-				    comp_y_centers, comp_x_centers, comp_n,
-				    extent=comp_extent, levels=ctr_level(comp_n, lvls[:2]),
-				    zorder=4, cmap=plt.cm.winter_r)
-			except Warning:
-			    warnings.warn(
-				"The routine could not find the contour of the " +
-				"'%s-%s' 2d-plot (using the comparison data)" % (
-				    info.plotted_parameters[i],
-				    info.plotted_parameters[j]))
-			    pass
-			ax2dsub.axis([x_range[second_index][0], x_range[second_index][1],
-			    x_range[index][0], x_range[index][1]])
+                    if comp_done_other:
+                        try:
+                            if overplot_comp_contour:
+                                contours = ax2dsub.contour(
+                                    comp_y_centers, comp_x_centers, comp_n,
+                                    extent=comp_extent, levels=ctr_level(comp_n, lvls[:2]),
+                                    zorder=5, cmap=plt.cm.winter_r)
+                            else:
+                                contours = ax2dsub.contourf(
+                                    comp_y_centers, comp_x_centers, comp_n,
+                                    extent=comp_extent, levels=ctr_level(comp_n, lvls[:2]),
+                                    zorder=4, cmap=plt.cm.winter_r)
+                        except Warning:
+                            warnings.warn(
+                                "The routine could not find the contour of the " +
+                                "'%s-%s' 2d-plot (using the comparison data)" % (
+                                info.plotted_parameters[i],
+                                info.plotted_parameters[j]))
+                            pass
+                        ax2dsub.axis([x_range[second_index][0], x_range[second_index][1],
+                            x_range[index][0], x_range[index][1]])
 
-		else:
-		    comp_done_other = False
+                else:
+                    comp_done_other = False
 
                 if command_line.subplot is True:
                     # Store the individual 2d plots
@@ -1205,34 +1205,34 @@ def plot_triangle(
                             info.ref_names[index],
                             info.ref_names[second_index], info.extension))
 
-		    if comp_done_other:
-			try:
-			    if overplot_comp_contour:
-				contours = ax_temp.contour(
-				    comp_y_centers, comp_x_centers, comp_n,
-				    extent=comp_extent, levels=ctr_level(comp_n, lvls[:2]),
-				    zorder=5, cmap=plt.cm.winter_r)
-			    else:
-				contours = ax_temp.contourf(
-				    comp_y_centers, comp_x_centers, comp_n,
-				    extent=comp_extent, levels=ctr_level(comp_n, lvls[:2]),
-				    zorder=4, cmap=plt.cm.winter_r)
-			except Warning:
-			    warnings.warn(
-				"The routine could not find the contour of the " +
-				"'%s-%s' 2d-plot (using the comparison data)" % (
-				    info.plotted_parameters[i],
-				    info.plotted_parameters[j]))
-			    pass
-			ax_temp.axis([x_range[second_index][0], x_range[second_index][1],
-			    x_range[index][0], x_range[index][1]])
+                    if comp_done_other:
+                        try:
+                            if overplot_comp_contour:
+                                contours = ax_temp.contour(
+                                    comp_y_centers, comp_x_centers, comp_n,
+                                    extent=comp_extent, levels=ctr_level(comp_n, lvls[:2]),
+                                    zorder=5, cmap=plt.cm.winter_r)
+                            else:
+                                contours = ax_temp.contourf(
+                                    comp_y_centers, comp_x_centers, comp_n,
+                                    extent=comp_extent, levels=ctr_level(comp_n, lvls[:2]),
+                                    zorder=4, cmap=plt.cm.winter_r)
+                        except Warning:
+                            warnings.warn(
+                                "The routine could not find the contour of the " +
+                                "'%s-%s' 2d-plot (using the comparison data)" % (
+                                info.plotted_parameters[i],
+                                info.plotted_parameters[j]))
+                            pass
+                        ax_temp.axis([x_range[second_index][0], x_range[second_index][1],
+                            x_range[index][0], x_range[index][1]])
 
-			fig_temp.savefig(
-			    info.folder+'plots/{0}-vs-{1}_2d_{2}-{3}.{4}'.format(
-				info.folder.split('/')[-2],
-				comp_folder.split('/')[-2],
-				info.ref_names[index],
-				info.ref_names[second_index], info.extension))
+                    fig_temp.savefig(
+                        info.folder+'plots/{0}-vs-{1}_2d_{2}-{3}.{4}'.format(
+                        info.folder.split('/')[-2],
+                        comp_folder.split('/')[-2],
+                        info.ref_names[index],
+                        info.ref_names[second_index], info.extension))
 
                     # store the coordinates of the points for further
                     # plotting.
@@ -1313,23 +1313,23 @@ def plot_triangle(
     print '-----------------------------------------------'
     print '--> Saving figures to .{0} files'.format(info.extension)
     if comp:
-	if plot_2d:
-	    fig2d.savefig(
-		info.folder+'plots/{0}-vs-{1}_triangle.{2}'.format(
-		    info.folder.split('/')[-2],
-		    comp_folder.split('/')[-2], info.extension),
-		bbox_inches=0, )
+        if plot_2d:
+            fig2d.savefig(
+                info.folder+'plots/{0}-vs-{1}_triangle.{2}'.format(
+                info.folder.split('/')[-2],
+                comp_folder.split('/')[-2], info.extension),
+                bbox_inches=0, )
         fig1d.savefig(
             info.folder+'plots/{0}-vs-{1}_1d.{2}'.format(
                 info.folder.split('/')[-2],
                 comp_folder.split('/')[-2], info.extension),
             bbox_inches=0)
     else:
-	if plot_2d:
-	    fig2d.savefig(
-		info.folder+'plots/{0}_triangle.{1}'.format(
-		    info.folder.split('/')[-2], info.extension),
-		bbox_inches=0, )
+        if plot_2d:
+            fig2d.savefig(
+                info.folder+'plots/{0}_triangle.{1}'.format(
+                info.folder.split('/')[-2], info.extension),
+                bbox_inches=0, )
         fig1d.savefig(
             info.folder+'plots/{0}_1d.{1}'.format(
                 info.folder.split('/')[-2], info.extension),
