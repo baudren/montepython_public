@@ -11,6 +11,21 @@ class bao_boss(Likelihood):
 
         Likelihood.__init__(self, path, data, command_line)
 
+        # exclude the isotropic CMASS experiment when the anisotrpic measurement is also used
+        exclude_isotropic_CMASS = False
+
+        conflicting_experiments = ['bao_boss_aniso', 'bao_boss_aniso_gauss_approx']
+        for experiment in conflicting_experiments:
+            if experiment in data.experiments:
+                exclude_isotropic_CMASS = True
+
+        if exclude_isotropic_CMASS:
+            warnings.warn("excluding isotropic CMASS measurement")
+            if not hasattr(self, 'exclude') or self.exclude == None:
+                self.exclude = ['CMASS']
+            else:
+                self.exclude.append('CMASS')
+
         # define array for values of z and data points
         self.z = np.array([], 'float64')
         self.data = np.array([], 'float64')
@@ -20,10 +35,14 @@ class bao_boss(Likelihood):
         # read redshifts and data points
         for line in open(os.path.join(self.data_directory, self.file), 'r'):
             if (line.find('#') == -1):
-                self.z = np.append(self.z, float(line.split()[0]))
-                self.data = np.append(self.data, float(line.split()[1]))
-                self.error = np.append(self.error, float(line.split()[2]))
-                self.type = np.append(self.type, int(line.split()[3]))
+                # the first entry of the line is the identifier
+                this_line = line.split()
+                # insert into array if this id is not manually excluded
+                if not this_line[0] in self.exclude:
+                    self.z = np.append(self.z, float(this_line[1]))
+                    self.data = np.append(self.data, float(this_line[2]))
+                    self.error = np.append(self.error, float(this_line[3]))
+                    self.type = np.append(self.type, int(this_line[4]))
 
         # number of data points
         self.num_points = np.shape(self.z)[0]

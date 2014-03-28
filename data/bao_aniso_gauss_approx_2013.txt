@@ -1,0 +1,3 @@
+# id, z, DA*r_d^fid/r_d/Mpc, sigma_DA, H*r_d/r_d^fid/(km/s/Mpc), sigma_H, cross corr, rd_fid/Mpc
+#BOSS CMASS DR10&11 Anderson et al. 1312.4877
+CMASS	0.57	1421	20	96.8	3.4	0.539	149.28

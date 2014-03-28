@@ -1,0 +1,4 @@
+# BAO data
+bao_boss_aniso_gauss_approx.data_directory      = data.path['data']
+bao_boss_aniso_gauss_approx.file                = 'bao_aniso_gauss_approx_2013.txt'
+bao_boss_aniso_gauss_approx.rs_rescale          = 1.

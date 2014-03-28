@@ -1,0 +1,8 @@
+# BAO data
+bao_boss_aniso.data_directory      = data.path['data']
+bao_boss_aniso.file                = 'bao_aniso_2013.dat'
+bao_boss_aniso.z                   = 0.57
+bao_boss_aniso.Hfid                = 93.5581
+bao_boss_aniso.Dafid               = 1359.7203
+bao_boss_aniso.rsfid               = 149.28
+bao_boss_aniso.rs_rescale          = 1.

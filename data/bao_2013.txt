@@ -1,11 +1,11 @@
 # z, Dv/rs, sigma, type (D_V/rs=3, Dv/Mpc=4, DA/rs=5, c/Hrs=6)
 #6DF
-0.106   456   27	4
+6DF	0.106   456   27	4
 #BOSS LOWZ DR10&11 (D_V in Mpc divided by r_s^fid in Mpc) Anderson et al. 1312.4877
-0.32	8.467	0.17	3
+LOWZ	0.32	8.467	0.17	3
 #BOSS CMASS DR10&11 (D_V in Mpc divided by r_s^fid in Mpc) Anderson et al. 1312.4877
-0.57	13.77	0.13	3
+CMASS	0.57	13.77	0.13	3
 #BOSS LyaQSO (DA/rs) Font-Ribera et al. 1311.1767
-2.36   10.8     0.4     5
+LyaQSO  2.36   10.8     0.4     5
 #BOSS LyaQSO c/(H rs) Font-Ribera et al. 1311.1767
-2.36    9.0     0.3     6
+LyaQSO	2.36    9.0     0.3     6
