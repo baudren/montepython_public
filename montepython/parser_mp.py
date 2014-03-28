@@ -199,8 +199,12 @@ def create_parser():
     # The default values of -1 mean to take the PyMultiNest default values
     try:
         from nested_sampling import NS_prefix, NS_user_arguments
+        NSparser = parser.add_argument_group(
+                title="MultiNest",
+                description="Run the MCMC chains using MultiNest"
+                )
         for arg in NS_user_arguments:
-            runparser.add_argument('--'+NS_prefix+arg,
+            NSparser.add_argument('--'+NS_prefix+arg,
                                    default=-1,
                                    **NS_user_arguments[arg])
     except ImportError:
@@ -212,6 +216,10 @@ def create_parser():
     # The default values of -1 mean to take the CosmoHammer default values
     try:
         from cosmo_hammer import CH_prefix, CH_user_arguments
+        CHparser = parser.add_argument_group(
+                title="CosmoHammer",
+                description="Run the MCMC chains using the CosmoHammer framework"
+                )
         for arg in CH_user_arguments:
             runparser.add_argument('--'+CH_prefix+arg,
                                    default=-1,
