@@ -1107,7 +1107,7 @@ def plot_triangle(
                     contours = ax2dsub.contourf(
                         y_centers, x_centers, n,
                         extent=extent, levels=ctr_level(n, lvls[:2]),
-                        zorder=5, cmap=plt.cm.autumn_r)
+                        zorder=5, cmap=plt.cm.autumn_r, alpha=0.8)
                 except Warning:
                     warnings.warn(
                         "The routine could not find the contour of the " +
@@ -1190,7 +1190,7 @@ def plot_triangle(
                         contours = ax_temp.contourf(
                             y_centers, x_centers, n, extent=extent,
                             levels=ctr_level(n, lvls[:2]),  # colors="k",
-                            zorder=5, cmap=plt.cm.autumn_r)
+                            zorder=5, cmap=plt.cm.autumn_r, alpha=0.8)
                     except Warning:
                         warnings.warn(
                             "The routine could not find the contour of the " +
