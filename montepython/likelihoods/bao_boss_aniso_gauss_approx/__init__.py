@@ -15,7 +15,8 @@ class bao_boss_aniso_gauss_approx(Likelihood):
 
         # are there conflicting experiments?
         if 'bao_boss_aniso' in data.experiments:
-            raise io_mp.LikelihoodError('conflicting bao_boss_aniso measurments')
+            raise io_mp.LikelihoodError(
+                'conflicting bao_boss_aniso measurments')
 
         # define array for values of z and data points
         self.z = np.array([], 'float64')
@@ -28,22 +29,30 @@ class bao_boss_aniso_gauss_approx(Likelihood):
 
         # read redshifts and data points
         i = 0
-        for line in open(os.path.join(self.data_directory, self.file), 'r'):
-            if (line.find('#') == -1):
-                this_line = line.split()
-                # this_line[0] is some identifier
-                self.z = np.append(self.z, float(this_line[1]))
-                self.DA_rdfid_by_rd_in_Mpc = np.append(self.DA_rdfid_by_rd_in_Mpc, float(this_line[2]))
-                self.DA_error = np.append(self.DA_error, float(this_line[3]))
-                self.H_rd_by_rdfid_in_km_per_s_per_Mpc = np.append(self.H_rd_by_rdfid_in_km_per_s_per_Mpc, float(this_line[4]))
-                self.H_error = np.append(self.H_error, float(this_line[5]))
-                self.cross_corr = np.append(self.cross_corr, float(this_line[6]))
-                self.rd_fid_in_Mpc = np.append(self.rd_fid_in_Mpc, float(this_line[7]))
+        with open(os.path.join(self.data_directory, self.file), 'r') as filein:
+            for i, line in enumerate(filein):
+                if line.find('#') == -1:
+                    this_line = line.split()
+                    # this_line[0] is some identifier
+                    self.z = np.append(self.z, float(this_line[1]))
+                    self.DA_rdfid_by_rd_in_Mpc = np.append(
+                        self.DA_rdfid_by_rd_in_Mpc, float(this_line[2]))
+                    self.DA_error = np.append(
+                        self.DA_error, float(this_line[3]))
+                    self.H_rd_by_rdfid_in_km_per_s_per_Mpc = np.append(
+                        self.H_rd_by_rdfid_in_km_per_s_per_Mpc, float(this_line[4]))
+                    self.H_error = np.append(
+                        self.H_error, float(this_line[5]))
+                    self.cross_corr = np.append(
+                        self.cross_corr, float(this_line[6]))
+                    self.rd_fid_in_Mpc = np.append(
+                        self.rd_fid_in_Mpc, float(this_line[7]))
 
-                # is the cross correlation coefficient valid
-                if self.cross_corr[i] < -1.0 or self.cross_corr[i] > 1.0:
-                    raise io_mp.LikelihoodError("invalid cross correlation coefficient in entry %d: %f"%(i, self.cross_corr[i]))
-                i = i + 1
+                    # is the cross correlation coefficient valid
+                    if self.cross_corr[i] < -1.0 or self.cross_corr[i] > 1.0:
+                        raise io_mp.LikelihoodError(
+                            "invalid cross correlation coefficient in entry "
+                            "%d: %f" % (i, self.cross_corr[i]))
 
         # number of data points
         self.num_points = np.shape(self.z)[0]

@@ -15,7 +15,8 @@ class bao_boss_aniso(Likelihood):
 
         # are there conflicting experiments?
         if 'bao_boss_aniso_gauss_approx' in data.experiments:
-            raise io_mp.LikelihoodError('conflicting bao_boss_aniso_gauss_approx measurments')
+            raise io_mp.LikelihoodError(
+                'conflicting bao_boss_aniso_gauss_approx measurments')
 
         # self.z, .hdif, .dafid, and .rsfid are read from the data file
 
@@ -26,7 +27,9 @@ class bao_boss_aniso(Likelihood):
         prob_dtype = [('alpha_perp', np.float64),
             ('alpha_para', np.float64),
             ('prob', np.float64)]
-        prob = np.loadtxt(filepath, delimiter=None, comments='#', skiprows=0, dtype=prob_dtype)
+        prob = np.loadtxt(
+            filepath, delimiter=None,
+            comments='#', skiprows=0, dtype=prob_dtype)
         size = np.sqrt(len(prob))
         x = prob['alpha_perp'].reshape(size, size)[:,0]
         y = prob['alpha_para'].reshape(size, size)[0,:]
@@ -51,7 +54,7 @@ class bao_boss_aniso(Likelihood):
         alpha_perp = Da / rs / (self.Dafid / self.rsfid)
         alpha_para = (self.Hfid * self.rsfid) / (H * rs)
 
-        bao_aniso_like = self.prob_interp(alpha_perp, alpha_para)[0,0]
+        bao_aniso_like = self.prob_interp(alpha_perp, alpha_para)[0, 0]
 
         # return ln(L)
         if bao_aniso_like > 0.0:
