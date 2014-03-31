@@ -138,6 +138,8 @@ def create_parser():
 
             - **-noplot** (`None`) - do not produce plot, and compute only the
               covariance matrix (flag)
+            - **-plot-2d** (`str`) - output triangle plot of 2d contours
+              (`no`, `not_if_comp` (default), `always`, `overplot_comp`)
             - **-all** (`None`) - output every subplot in a separate file
               (flag)
             - **-ext** (`str`) - specify the extension of the figures (`pdf`
@@ -250,6 +252,12 @@ def create_parser():
     infoparser.add_argument('-noplot', help='ommit the plotting part',
                             dest='plot', action='store_const',
                             const=False, default=True)
+    # -- if you want to output 2d contours plots (the 'triangle' plot)
+    # default: only as long as -comp is not specified
+    infoparser.add_argument(
+        '-plot-2d', help='plot the triangle plot of 2d contours',
+        dest='plot_2d', type=str, choices=['no', 'not_if_comp', 'always',
+	'overplot_comp'], default='not_if_comp')
     # -- if you want to output every single subplots
     infoparser.add_argument(
         '-all', help='plot every single subplot in a separate pdf file',
