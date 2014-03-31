@@ -126,7 +126,7 @@ class Test02Setup(TestMontePython):
 
     def test_configuration_file(self):
         """
-        Is the .conf recovered and used properly?
+        Is the default.conf recovered and used properly?
         """
         # assert that the default.conf exists
         self.assertTrue(
@@ -387,7 +387,7 @@ class Test06MetropolisHastingsBehaviour(TestMontePython):
         # Check that the sum of the first column adds up to the desired number
         self.assertEqual(np.sum(data[:, 0]), self.number)
         # Check that the analyze module works for this
-        custom_command = '-info %s' % self.folder
+        custom_command = '--info %s' % self.folder
         run(custom_command)
         ## verify that this command created the appropriate files
         expected_files = [
