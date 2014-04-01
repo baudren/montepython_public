@@ -138,6 +138,8 @@ def create_parser():
 
             - **-noplot** (`None`) - do not produce plot, and compute only the
               covariance matrix (flag)
+            - **-plot-2d** (`str`) - output triangle plot of 2d contours
+              (`no`, `not_if_comp` (default), `always`, `overplot_comp`)
             - **-all** (`None`) - output every subplot in a separate file
               (flag)
             - **-ext** (`str`) - specify the extension of the figures (`pdf`
@@ -163,14 +165,14 @@ def create_parser():
 
     # -- number of steps (OPTIONAL)
     runparser.add_argument('-N', help='number of steps', type=int, dest='N')
-    # -- output folder	(OBLIGATORY)
+    # -- output folder (OBLIGATORY)
     runparser.add_argument('-o', help='output folder', type=str, dest='folder')
-    # -- parameter file	(OBLIGATORY)
+    # -- parameter file (OBLIGATORY)
     runparser.add_argument('-p', help='input param file', type=str,
                            dest='param')
-    # -- covariance matrix	(OPTIONAL)
+    # -- covariance matrix (OPTIONAL)
     runparser.add_argument('-c', help='input cov matrix', type=str, dest='cov')
-    # -- jumping method	(OPTIONAL)
+    # -- jumping method (OPTIONAL)
     runparser.add_argument('-j', help='jumping method', type=str,
                            dest='jumping', default='global',
                            choices=['global', 'sequential', 'fast'])
@@ -178,7 +180,7 @@ def create_parser():
     runparser.add_argument('-m', help='sampling method', type=str,
                            dest='method', default='MH',
                            choices=['MH', 'NS', 'CH'])
-    # -- jumping factor	(OPTIONAL)
+    # -- jumping factor (OPTIONAL)
     runparser.add_argument('-f', help='jumping factor', type=float,
                            dest='jumping_factor', default=2.4)
     # -- configuration file (OPTIONAL)
@@ -250,6 +252,12 @@ def create_parser():
     infoparser.add_argument('-noplot', help='ommit the plotting part',
                             dest='plot', action='store_const',
                             const=False, default=True)
+    # -- if you want to output 2d contours plots (the 'triangle' plot)
+    # default: only as long as -comp is not specified
+    infoparser.add_argument(
+        '-plot-2d', help='plot the triangle plot of 2d contours',
+        dest='plot_2d', type=str, choices=['no', 'not_if_comp', 'always',
+        'overplot_comp'], default='not_if_comp')
     # -- if you want to output every single subplots
     infoparser.add_argument(
         '-all', help='plot every single subplot in a separate pdf file',
