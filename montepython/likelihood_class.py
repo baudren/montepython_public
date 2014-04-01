@@ -143,8 +143,7 @@ class Likelihood(object):
                     if line.find(self.name+'.') != -1:
                         # Recover the name and value from the .data file
                         regexp = re.match(
-                            "%s\.(.*) = (.*)" % self.name,
-                            line)
+                            "%s.(.*)\s*=\s*(.*)" % self.name, line)
                         name, value = (elem.strip() for elem in regexp.groups())
                         # If this name was already defined in the parameter
                         # file, be sure to take this value instead. Beware,
