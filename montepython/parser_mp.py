@@ -165,14 +165,14 @@ def create_parser():
 
     # -- number of steps (OPTIONAL)
     runparser.add_argument('-N', help='number of steps', type=int, dest='N')
-    # -- output folder	(OBLIGATORY)
+    # -- output folder (OBLIGATORY)
     runparser.add_argument('-o', help='output folder', type=str, dest='folder')
-    # -- parameter file	(OBLIGATORY)
+    # -- parameter file (OBLIGATORY)
     runparser.add_argument('-p', help='input param file', type=str,
                            dest='param')
-    # -- covariance matrix	(OPTIONAL)
+    # -- covariance matrix (OPTIONAL)
     runparser.add_argument('-c', help='input cov matrix', type=str, dest='cov')
-    # -- jumping method	(OPTIONAL)
+    # -- jumping method (OPTIONAL)
     runparser.add_argument('-j', help='jumping method', type=str,
                            dest='jumping', default='global',
                            choices=['global', 'sequential', 'fast'])
@@ -180,7 +180,7 @@ def create_parser():
     runparser.add_argument('-m', help='sampling method', type=str,
                            dest='method', default='MH',
                            choices=['MH', 'NS', 'CH'])
-    # -- jumping factor	(OPTIONAL)
+    # -- jumping factor (OPTIONAL)
     runparser.add_argument('-f', help='jumping factor', type=float,
                            dest='jumping_factor', default=2.4)
     # -- configuration file (OPTIONAL)
