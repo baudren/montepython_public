@@ -36,7 +36,6 @@ def positive_int(string):
         raise argparse.ArgumentTypeError(
             "You asked for a non-positive number of steps. "
             "I am not sure what to do, so I will exit. Sorry.")
-
 # -- check that the argument is an existing file
 def existing_file(fname):
     """
@@ -374,7 +373,7 @@ def parse(custom_command=''):
                     old_param = args.param
                     args.param = os.path.join(
                         args.folder, 'log.param')
-                    if args.param is not None:
+                    if old_param is not None:
                         warnings.warn(
                             "Appending to an existing folder: using the "
                             "log.param instead of %s" % old_param)
