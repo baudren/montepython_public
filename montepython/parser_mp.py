@@ -14,6 +14,46 @@ import warnings
 
 import io_mp
 
+# -- custom argparse types
+# -- check that the argument is a positive integer
+def positive_int(string):
+    """
+    Check if the input is integer positive
+    Parameters
+    ----------
+    string: string
+        string to parse
+
+    output: int
+        return the integer
+    """
+    try:
+        value = int(string)
+        if value <= 0:
+            raise ValueError
+        return value
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            "You asked for a non-positive number of steps. "
+            "I am not sure what to do, so I will exit. Sorry.")
+
+# -- check that the argument is an existing file
+def existing_file(fname):
+    """
+    Check if the file exists. If not raise an error
+    Parameters
+    ----------
+    fname: string
+        file name to parse
+
+    output: fname
+    """
+    try:
+        with open(fname, 'r') as f:
+            return fname
+    except IOError:
+        msg = "The file '{}' does not exist".format(fname)
+        raise ap.ArgumentTypeError()
 
 def create_parser():
     """
@@ -157,49 +197,55 @@ def create_parser():
         version = version_file.readline()
         parser.add_argument('--version', action='version', version=version)
 
-    runparser = parser.add_argument_group(
-        title="Run",
-        description="run the MCMC chains")
+
+    # -- add the subparsers
+    subparser = parser.add_subparsers(dest='subparser_name')
+
+    ###############
+    # run the MCMC
+    runparser = subparser.add_parser('run', help="run the MCMC chains")
 
     # -- number of steps (OPTIONAL)
-    runparser.add_argument('-N', help='number of steps', type=int, dest='N')
+    runparser.add_argument('-N', help='number of steps', 
+            type=positive_int, dest='N')
     # -- output folder	(OBLIGATORY)
     runparser.add_argument('-o', help='output folder', type=str, dest='folder')
     # -- parameter file	(OBLIGATORY)
-    runparser.add_argument('-p', help='input param file', type=str,
-                           dest='param')
+    runparser.add_argument('-p', help='input param file', 
+            type=existing_file, dest='param')
     # -- covariance matrix	(OPTIONAL)
-    runparser.add_argument('-c', help='input cov matrix', type=str, dest='cov')
+    runparser.add_argument('-c', help='input cov matrix', 
+            type=existing_file, dest='cov')
     # -- jumping method	(OPTIONAL)
-    runparser.add_argument('-j', help='jumping method', type=str,
+    runparser.add_argument('-j', help='jumping method',
                            dest='jumping', default='global',
                            choices=['global', 'sequential', 'fast'])
     # -- sampling method (OPTIONAL)
-    runparser.add_argument('-m', help='sampling method', type=str,
+    runparser.add_argument('-m', help='sampling method',
                            dest='method', default='MH',
                            choices=['MH', 'NS', 'CH'])
     # -- jumping factor	(OPTIONAL)
     runparser.add_argument('-f', help='jumping factor', type=float,
                            dest='jumping_factor', default=2.4)
     # -- configuration file (OPTIONAL)
-    runparser.add_argument('-conf', help='configuration file', type=str,
-                           dest='config_file', default='default.conf')
-    # -- arbitraty numbering of an output chain (OPTIONAL)
-    runparser.add_argument('--chain-number', help='chain number', type=str,
-                           default=None)
+    runparser.add_argument('-conf', help='configuration file',
+            type=existing_file, dest='config_file', default='default.conf')
+    # -- arbitrary numbering of an output chain (OPTIONAL)
+    runparser.add_argument('--chain-number', help='chain number')
 
     ###############
     # MCMC restart from chain or best fit file
-    runparser.add_argument('-r', help='restart from chain', type=str,
-                           dest='restart')
-    runparser.add_argument('--bf', help='restart from best fit file', type=str)
+    runparser.add_argument('-r', help='restart from chain', 
+                           type=existing_file, dest='restart')
+    runparser.add_argument('--bf', help='restart from best fit file', 
+                           type=existing_file)
 
     ###############
     # MultiNest arguments (all OPTIONAL and ignored if not "-m=NS")
     # The default values of -1 mean to take the PyMultiNest default values
     try:
         from nested_sampling import NS_prefix, NS_user_arguments
-        NSparser = parser.add_argument_group(
+        NSparser = runparser.add_argument_group(
                 title="MultiNest",
                 description="Run the MCMC chains using MultiNest"
                 )
@@ -216,7 +262,7 @@ def create_parser():
     # The default values of -1 mean to take the CosmoHammer default values
     try:
         from cosmo_hammer import CH_prefix, CH_user_arguments
-        CHparser = parser.add_argument_group(
+        CHparser = runparser.add_argument_group(
                 title="CosmoHammer",
                 description="Run the MCMC chains using the CosmoHammer framework"
                 )
@@ -231,12 +277,12 @@ def create_parser():
 
     ###############
     # Information
+    infoparser = subparser.add_parser('info', 
+            help="analyze the MCMC chains")
 
-    infoparser = parser.add_argument_group(title="Information",
-            description="Run the analysis tools on the MCMC chains")
     # -- folder to analyze
-    infoparser.add_argument('--info', help='compute information of desired file',
-                            type=str, dest='files', nargs='+')
+    infoparser.add_argument('files', help='compute information of desired file',
+                            nargs='+')
     # -- number of bins (defaulting to 20)
     infoparser.add_argument('--bins',
                             help='desired number of bins, default is 20',
@@ -245,10 +291,10 @@ def create_parser():
     infoparser.add_argument('--no-mean', help='remove the mean likelihood plot',
                             dest='mean_likelihood', action='store_false',)
     # -- possible comparison folder
-    infoparser.add_argument('--comp', help='comparison folder', type=str)
+    infoparser.add_argument('--comp', help='comparison folder')
     # -- possible plot file describing custom commands
     infoparser.add_argument('--extra', help='plot file for custom needs',
-                            type=str, dest='optional_plot_file')
+                            dest='optional_plot_file')
     # -- if you just want the covariance matrix, use this option
     infoparser.add_argument('--noplot', help='omit the plotting part',
                             dest='plot', action='store_false')
@@ -296,16 +342,9 @@ def parse(custom_command=''):
     else:
         args = parser.parse_args(custom_command.split(' '))
 
-    # First of all, if the analyze module is invoked, there is no point in
-    # checking for existing folder
-    if args.files is None:
 
-        # Check if the number of step is at least 1
-        if args.N is not None:
-            if args.N < 1:
-                raise io_mp.ConfigurationError(
-                    "You asked for a non-positive number of steps. "
-                    "I am not sure what to do, so I will exit. Sorry.")
+    # Some check to perform when running the MCMC chains is requested 
+    if args.subparser_name == "run":
 
         # If the user wants to start over from an existing chain, the program
         # will use automatically the same folder, and the log.param in it
