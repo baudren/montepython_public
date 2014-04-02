@@ -1,10 +1,7 @@
 #------Experiments to test (separated with commas)-----
-
-# valid options are (so far): acbar, bicep, boomerang, cbi,
-# hst, quad, sn, spt, fake_planck_bluebook,
-# euclid_pk, euclid_lensing
-# and clik_fake_planck (for Planck members)
-
+# To see all the available ones, please look in the
+# montepython/likelihoods folder. Every folder there is a valid likelihood to
+# test.
 data.experiments=['fake_planck_bluebook']
 #data.experiments=['wmap','spt']
 
