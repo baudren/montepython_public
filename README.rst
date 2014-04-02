@@ -160,17 +160,20 @@ Now the code is installed. Go anywhere, and just call
 .. code::
 
     $ python montepython/MontePython.py --help
+    $ python montepython/MontePython.py run --help
+    $ python montepython/MontePython.py info --help
 
-To see a list of all commands. There are two essential ones, without which
-the program will not start. At minimum, you should precise an output folder
-(`-o`) and a parameter file (`-p`). An example of parameter file is found in
-the main directory of MontePython (`test.param`, for instance).
+To see a list of all commands. For there `run` subcommand, there are two
+essential ones, without which the program will not start. At minimum, you should
+precise an output folder (`-o`) and a parameter file (`-p`). An example of
+parameter file is found in the main directory of MontePython (`test.param`, for
+instance).
 
 A typical call would then be:
 
 .. code::
 
-    $ python montepython/MontePython.py -o test -p example.param
+    $ python montepython/MontePython.py run -o test -p example.param
 
 If non existent, the `test/` folder will be created, and a run with the
 number of steps described in `example.param` will be started. To run a chain with
@@ -178,13 +181,13 @@ more steps, one can type:
 
 .. code::
 
-    $ python montepython/MontePython.py -o test -p example.param -N 100
+    $ python montepython/MontePython.py run -o test -p example.param -N 100
 
 If you want to analyse the run, then just type
 
 .. code::
 
-    $ python montepython/MontePython.py --info test/
+    $ python montepython/MontePython.py info test/
 
 
 Details and Examples
