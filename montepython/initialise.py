@@ -43,7 +43,7 @@ def initialise(custom_command=''):
     # be analysed with default procedure. If the argument is a .info file, then
     # it will extract information from it (plots to compute, chains to analyse,
     # etc...)
-    if command_line.files is not None:
+    if command_line.subparser_name == "info":
         from analyze import analyze  # only invoked when analyzing
         analyze(command_line)
         return None, None, command_line, False
