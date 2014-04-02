@@ -17,50 +17,44 @@ def run(custom_command=''):
     It recovers the initialised instances of cosmo Class, :class:`Data` and the
     NameSpace containing the command line arguments, feeding into the sampler.
 
-    .. note::
-        A possible parallelization would take place here.
-
     Parameters
     ----------
         custom_command: str
             allows for testing the code
     """
-    # MPI stuff
-    mpi_asked = False
-    try:
-        from mpi4py import MPI
-        comm = MPI.COMM_WORLD
-        nprocs = comm.Get_size()
-        if nprocs > 1:
-            mpi_asked = True
-    except ImportError:
-        pass
+    # Create all the instances of the needed classes to run the code. The safe
+    # initialisation handles the errors.
+    cosmo, data, command_line, success = safe_initialisation(
+        custom_command)
 
-    if mpi_asked:
-        mpi_run(custom_command)
+    # If success is False, it means either that the initialisation was not
+    # successful, or that it was simply an analysis call. The run should
+    # stop
+    if not success:
         return
 
-    # Initialisation routine for a normal openMP run
-    else:
-        cosmo, data, command_line, success = safe_initialisation(custom_command)
+    # Once that the initialisation phase is done, one can import the
+    # sampler
+    import sampler
 
-        # If success is False, it means either that the initialisation was not
-        # successful, or that it was simply an analysis call. The run should
-        # stop
-        if not success:
-            return
+    # Generic sampler call
+    sampler.run(cosmo, data, command_line)
 
-        # Once that the initialisation phase is done, one can import the sampler
-        import sampler
-
-        # Generic sampler call
-        sampler.run(cosmo, data, command_line)
-
-        return
+    return
 
 
 def mpi_run(custom_command=""):
-    """TODO"""
+    """
+    Launch a simple MPI run, with no communication of covariance matrix
+
+    It simply allows the first process to create the folder - so that the
+    log.param is properly written. A signal is then send to the other
+    processes, that contains the chain number of the parent run.
+
+    In order to be sure to have different chain numbers, it adds the rank of
+    the process and the initial job number - this should avoid conflict, but
+    can be subject of future improvements
+    """
 
     from mpi4py import MPI
 
@@ -72,10 +66,7 @@ def mpi_run(custom_command=""):
     if rank == 0:
         # First initialisation
         cosmo, data, command_line, success = safe_initialisation(
-            custom_command)
-
-        if not success:
-            return
+            custom_command, comm, nprocs)
 
         regexp = re.match(".*__(\w*).txt", data.out_name)
         suffix = regexp.groups()[0]
@@ -88,22 +79,40 @@ def mpi_run(custom_command=""):
         # "OK" message, which is immediatly discarded.
         suffix = comm.recv(source=0, tag=1)
 
+        # If a failed message was passed, exit the process
+        if suffix == 'failed':
+            return
+
         if not custom_command:
             custom_command = " ".join(sys.argv[1:])
-        custom_command += " -chain_number %s" % (int(suffix)+rank)
-        cosmo, data, command_line, success = safe_initialisation(
-            custom_command)
+        custom_command += " -chain_number %s" % str(int(suffix)+rank)
+        cosmo, data, command_line, success = initialise(custom_command)
 
     import sampler
     sampler.run(cosmo, data, command_line)
 
     return
 
-def safe_initialisation(custom_command=""):
-    """Wrapper around the init function to handle errors"""
+
+def safe_initialisation(custom_command="", comm=None, nprocs=1):
+    """
+    Wrapper around the init function to handle errors
+
+    KeyWord Arguments
+    -----------------
+    custom_command : str
+        testing purposes
+    comm : MPI.Intracomm
+        object that helps communicating between the processes
+    nprocs : int
+        number of processes
+    """
     try:
         cosmo, data, command_line, success = initialise(custom_command)
     except io_mp.ConfigurationError as message:
+        if comm:
+            for index in range(1, nprocs):
+                comm.send('failed', dest=index, tag=1)
         print str(message)
         raise io_mp.ConfigurationError(
             "The initialisation was not successful, resulting in a "
@@ -111,6 +120,9 @@ def safe_initialisation(custom_command=""):
             "above error message. If you run the exact same command, it"
             " will not work. You should solve the problem, and try again.")
     except KeyError:
+        if comm:
+            for index in range(1, nprocs):
+                comm.send('failed', dest=index, tag=1)
         raise io_mp.ConfigurationError(
             "You are running in a folder that was created following "
             "a non-successful initialisation (wrong parameter name, "
