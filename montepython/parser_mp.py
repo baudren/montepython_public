@@ -14,6 +14,19 @@ import warnings
 
 import io_mp
 
+# -- custom Argument Parser that throws an io_mp.ConfigurationError 
+# -- for unified look within montepython
+class MpArgumentParser(argparse.ArgumentParser):
+    def error(self, message):
+        """Override method to raise error
+        Parameters
+        ----------
+        message: string
+            error message
+        """
+        raise io_mp.ConfigurationError(message)
+
+
 # -- custom argparse types
 # -- check that the argument is a positive integer
 def positive_int(string):
@@ -52,7 +65,7 @@ def existing_file(fname):
             return fname
     except IOError:
         msg = "The file '{}' does not exist".format(fname)
-        raise ap.ArgumentTypeError()
+        raise argparse.ArgumentTypeError(msg)
 
 def create_parser():
     """
@@ -185,7 +198,8 @@ def create_parser():
             - **-ticksize** (`int`) - adjust ticksize (default to 13)
 
     """
-    parser = argparse.ArgumentParser(
+    #parser = argparse.ArgumentParser(
+    parser = MpArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description='Monte Python, a Monte Carlo code in Python')
 
@@ -227,7 +241,7 @@ def create_parser():
     runparser.add_argument('-f', help='jumping factor', type=float,
                            dest='jumping_factor', default=2.4)
     # -- configuration file (OPTIONAL)
-    runparser.add_argument('-conf', help='configuration file',
+    runparser.add_argument('--conf', help='configuration file',
             type=existing_file, dest='config_file', default='default.conf')
     # -- arbitrary numbering of an output chain (OPTIONAL)
     runparser.add_argument('--chain-number', help='chain number')
