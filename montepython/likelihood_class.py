@@ -862,6 +862,11 @@ class Likelihood_clik(Likelihood):
                 " can change this behaviour in all the "
                 "Planck_something.data, to reflect your local configuration, "
                 "or alternatively, move your .clik files to this place.")
+        except KeyError:
+            raise io_mp.LikelihoodError(
+                "In the %s.data file, the field 'clik' of the " % self.name +
+                "path dictionary is expected to be defined. Please make sure"
+                " it is the case in you configuration file")
 
         self.need_cosmo_arguments(
             data, {'l_max_scalars': self.l_max})

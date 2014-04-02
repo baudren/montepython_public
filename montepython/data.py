@@ -347,7 +347,7 @@ class Data(object):
             try:
                 exec "from likelihoods.%s import %s" % (
                     elem, elem)
-            except:
+            except ImportError:
                 raise io_mp.ConfigurationError(
                     "Trying to import the %s likelihood" % elem +
                     " as asked in the parameter file, and failed."
@@ -358,9 +358,14 @@ class Data(object):
             # command_line and log_flag, the routine will call slightly
             # different things. If log_flag is True, the log.param will be
             # appended.
-            exec "self.lkl['%s'] = %s('%s/%s.data',\
-                self, command_line)" % (
-                elem, elem, folder, elem)
+            try:
+                exec "self.lkl['%s'] = %s('%s/%s.data',\
+                    self, command_line)" % (
+                    elem, elem, folder, elem)
+            except KeyError:
+                raise io_mp.ConfigurationError(
+                    "You should provide a 'clik' entry in the dictionary "
+                    "path defined in the file default.conf")
 
         # Storing parameters by blocks of speed
         self.group_parameters_in_blocks()
