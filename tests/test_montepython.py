@@ -88,8 +88,10 @@ class Test02Setup(TestMontePython):
     """Input from known cosmology on one single point"""
     def setUp(self):
         self.date = str(datetime.date.today())
+        self.folder = os.path.join(
+            'tests', 'test02_%s' % self.date)
         self.custom_command = (
-            '-N 1 -p test.param -o tests/test_%s' % self.date)
+            '-N 1 -p test.param -o %s' % self.folder)
         try:
             self.cosmo, self.data, self.command_line, _ = initialise(
                 self.custom_command)
@@ -101,25 +103,24 @@ class Test02Setup(TestMontePython):
     def tearDown(self):
         del self.custom_command
         del self.cosmo, self.data, self.command_line
-        shutil.rmtree('tests/test_%s' % self.date)
+        shutil.rmtree(self.folder)
         del self.date
 
     def test_folder_created(self):
         """
         Is the initialisation creating a folder?
         """
-        assert os.path.exists(
-            'tests/test_%s' % self.date)
+        assert os.path.exists(self.folder)
 
     def test_log_param_written(self):
         """
         Is the log.param properly written?
         """
         assert os.path.exists(
-            'tests/test_%s/log.param' % self.date)
+            os.path.join(self.folder, 'log.param'))
 
         # Check if the CLASS version is written properly in the log.param
-        with open('tests/test_%s/log.param' % self.date, 'r') as log_param:
+        with open(os.path.join(self.folder, 'log.param'), 'r') as log_param:
             first_line = log_param.readline().strip()
             version = first_line.split()[1]
             assert re.match('v[0-9].[0-9].[0-9]', version) is not None
@@ -156,11 +157,18 @@ class Test02Setup(TestMontePython):
 class Test03NoDefaultConf(TestMontePython):
     """
     Try removing the default.conf, and not specifying any other conf file
+
+    .. warning::
+
+        this Test prevents nosetests to be ran with --processes different from
+        0
     """
     def setUp(self):
         self.date = str(datetime.date.today())
+        self.folder = os.path.join(
+            'tests', 'test03_%s' % self.date)
         self.custom_command = (
-            '-N 1 -p test.param -o tests/test_%s' % self.date)
+            '-N 1 -p test.param -o %s' % self.folder)
         try:
             shutil.move("default.conf", "default_%s.conf" % self.date)
         except IOError:
@@ -190,14 +198,16 @@ class Test04CosmologicalCodeWrapper(TestMontePython):
     """
     def setUp(self):
         self.date = str(datetime.date.today())
+        self.folder = os.path.join(
+            'tests', 'test04_%s' % self.date)
         self.custom_command = (
-            '-N 1 -p test.param -o tests/test_%s' % self.date)
+            '-N 1 -p test.param -o %s' % self.folder)
         self.cosmo, self.data, self.command_line, _ = initialise(
             self.custom_command)
 
     def tearDown(self):
-        shutil.rmtree('tests/test_%s' % self.date)
-        self.cosmo.cleanup()
+        shutil.rmtree(self.folder)
+        self.cosmo.struct_cleanup()
         del self.cosmo, self.data, self.command_line
 
     def test_has_all_attributes(self):
@@ -274,7 +284,7 @@ class Test05DataModule(TestMontePython):
     def setUp(self):
         self.date = str(datetime.date.today())
         self.folder = os.path.join(
-            'tests', 'test_%s' % self.date)
+            'tests', 'test05_%s' % self.date)
         self.number = 30
         self.custom_command = (
             '-N %d -p test.param -o %s -j fast' % (self.number, self.folder))
@@ -362,7 +372,7 @@ class Test06MetropolisHastingsBehaviour(TestMontePython):
     def setUp(self):
         self.date = str(datetime.date.today())
         self.folder = os.path.join(
-            'tests', 'test_%s' % self.date)
+            'tests', 'test06_%s' % self.date)
         self.number = 30
         self.custom_command = (
             '-N %d -p test.param -o %s' % (self.number, self.folder))
