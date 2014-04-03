@@ -58,7 +58,7 @@ class Test01CommandLineInputBehaviour(TestMontePython):
         self.assertRaises(
             io_mp.ConfigurationError,
             parser_mp.parse,
-            '-N 10')
+            'run -N 10')
 
     def test_inexistant_output_folder(self):
         """
@@ -70,7 +70,7 @@ class Test01CommandLineInputBehaviour(TestMontePython):
         self.assertRaises(
             io_mp.ConfigurationError,
             parser_mp.parse,
-            '-N 10 -o tests/test_config_%s' % self.date)
+            'run -N 10 -o tests/test_config_%s' % self.date)
 
     def test_no_log_param_in_output_folder(self):
         """
@@ -80,7 +80,7 @@ class Test01CommandLineInputBehaviour(TestMontePython):
         self.assertRaises(
             io_mp.ConfigurationError,
             parser_mp.parse,
-            '-N 10 -o tests/test_config_%s' % self.date)
+            'run -N 10 -o tests/test_config_%s' % self.date)
         os.rmdir(self.temp_folder_path)
 
 
@@ -91,7 +91,7 @@ class Test02Setup(TestMontePython):
         self.folder = os.path.join(
             'tests', 'test02_%s' % self.date)
         self.custom_command = (
-            '-N 1 -p test.param -o %s' % self.folder)
+            'run -N 1 -p test.param -o %s' % self.folder)
         try:
             self.cosmo, self.data, self.command_line, _ = initialise(
                 self.custom_command)
@@ -127,7 +127,7 @@ class Test02Setup(TestMontePython):
 
     def test_configuration_file(self):
         """
-        Is the .conf recovered and used properly?
+        Is the default.conf recovered and used properly?
         """
         # assert that the default.conf exists
         self.assertTrue(
@@ -168,7 +168,7 @@ class Test03NoDefaultConf(TestMontePython):
         self.folder = os.path.join(
             'tests', 'test03_%s' % self.date)
         self.custom_command = (
-            '-N 1 -p test.param -o %s' % self.folder)
+            'run -N 1 -p test.param -o %s' % self.folder)
         try:
             shutil.move("default.conf", "default_%s.conf" % self.date)
         except IOError:
@@ -201,7 +201,7 @@ class Test04CosmologicalCodeWrapper(TestMontePython):
         self.folder = os.path.join(
             'tests', 'test04_%s' % self.date)
         self.custom_command = (
-            '-N 1 -p test.param -o %s' % self.folder)
+            'run -N 1 -p test.param -o %s' % self.folder)
         self.cosmo, self.data, self.command_line, _ = initialise(
             self.custom_command)
 
@@ -287,7 +287,7 @@ class Test05DataModule(TestMontePython):
             'tests', 'test05_%s' % self.date)
         self.number = 30
         self.custom_command = (
-            '-N %d -p test.param -o %s -j fast' % (self.number, self.folder))
+            'run -N %d -p test.param -o %s -j fast' % (self.number, self.folder))
         self.cosmo, self.data, self.command_line, _ = initialise(
             self.custom_command)
 
@@ -375,7 +375,7 @@ class Test06MetropolisHastingsBehaviour(TestMontePython):
             'tests', 'test06_%s' % self.date)
         self.number = 30
         self.custom_command = (
-            '-N %d -p test.param -o %s' % (self.number, self.folder))
+            'run -N %d -p test.param -o %s' % (self.number, self.folder))
         self.cosmo, self.data, self.command_line, _ = initialise(
             self.custom_command)
         sampler.run(self.cosmo, self.data, self.command_line)
@@ -387,7 +387,7 @@ class Test06MetropolisHastingsBehaviour(TestMontePython):
         del self.cosmo, self.data, self.command_line
 
     def test_short_run(self):
-        """Are the MH sampler basic functionnalities working?"""
+        """Are the MH sampler basic functionalities working?"""
         # Check that a file with the proper name was created
         output_file = os.path.join(
             self.folder, self.date+'_%d__1.txt' % self.number)
@@ -397,7 +397,7 @@ class Test06MetropolisHastingsBehaviour(TestMontePython):
         # Check that the sum of the first column adds up to the desired number
         self.assertEqual(np.sum(data[:, 0]), self.number)
         # Check that the analyze module works for this
-        custom_command = '-info %s' % self.folder
+        custom_command = 'info %s' % self.folder
         run(custom_command)
         ## verify that this command created the appropriate files
         expected_files = [
@@ -424,7 +424,7 @@ class Test07CosmoHammerBehaviour(TestMontePython):
     def setUp(self):
         self.date = str(datetime.date.today())
         self.custom_command = (
-            '-N 1 -p test.param -o tests/test_%s' % self.date +
+            'run -N 1 -p test.param -o tests/test_%s' % self.date +
             ' -m CH')
         self.cosmo, self.data, self.command_line, _ = initialise(
             self.custom_command)

@@ -18,11 +18,11 @@ Prerequisites
   `ordereddict <http://code.activestate.com/recipes/576693/>`_ and 
   `argparse <https://pypi.python.org/pypi/argparse/1.2.1>`_).
 
-* Your python of choice must have numpy (version >= 1.4.1), and cython. The
+* Your python of choice must have `numpy` (version >= 1.4.1) and `cython`. The
   later is used to wrap CLASS in python.
 
 * *[optional]* If you want to use fully the plotting capabilities of Monte Python,
-  you also need the scipy module, with interpolate.
+  you also need the `scipy`, with interpolate, and `matplotlib` modules.
 
 * *[optional]* You can now use Multi Nest and the CosmoHammer with Monte
   Python, though you need to install them. Please refer to the documentation.
@@ -31,15 +31,15 @@ Prerequisites
 The MontePython part
 --------------------
 
-Move the .tar.bz2 file to the place of your convenience, untar its content
+Move the `.tar.bz2` file to the place of your convenience, untar its content
 
 .. code::
 
     $ bunzip2 montepython-vx.y.tar.bz2
     $ tar -xvf montepython-vx.y.tar
 
-This will create a directory named montepython into your current directory.
-You can add the following line to your .bashrc file:
+This will create a directory named `montepython` into your current directory.
+You can add the following line to your `.bashrc` file:
 
 .. code::
 
@@ -48,7 +48,7 @@ You can add the following line to your .bashrc file:
 to be able to call the program from anywhere.
 
 You will need to adapt only two files to your local configuration. The first
-is the main file of the code `code/MontePython.py`, and it will be the only
+is the main file of the code `montepython/MontePython.py`, and it will be the only
 time you will have to edit it, and it is simply to accommodate different
 possible configurations of your computer.
 
@@ -67,7 +67,7 @@ The second file to modify is located in the root directory of Monte Python :
 program, and will search for your cosmological code path, your data path, and
 your wmap wrapper path. You can alternatively create a second one, `my.conf`,
 containing your setup, and then run the code providing this file (with the flag
-`-conf`)
+`--conf`)
 
 
 The Class part
@@ -86,14 +86,14 @@ This will compile the file `classy.pyx`, which is the python wrapper for CLASS,
 into a library, `classy.so`, located in the `build/` subdirectory. This is the
 library called in Monte Python afterwards.
 
-If this step fails, check that you have cython installed, numpy (a numerical
+If this step fails, check that you have `cython` installed, `numpy` (a numerical
 package for python), python (well... did I say this code was in python ?) with
-a version > 2.6.  If this step fails again, kindly ask your sys.admin, (s)he
+a version > 2.6.  If this step fails again, kindly ask your system admin, (s)he
 is there for this, after all. Note that the installation (last command) is
 not strictly speaking mandatory.
 
-Remember that if you modify CLASS to implement some new physics, you will need to
-perform this part again for the new CLASS.
+Remember that if you modify `CLASS` to implement some new physics, you will need to
+perform this part again for the new `CLASS`.
 
 
 The Planck likelihood part
@@ -160,17 +160,20 @@ Now the code is installed. Go anywhere, and just call
 .. code::
 
     $ python montepython/MontePython.py --help
+    $ python montepython/MontePython.py run --help
+    $ python montepython/MontePython.py info --help
 
-To see a list of all commands. There are two essential ones, without which
-the program will not start. At minimum, you should precise an output folder
-('-o') and a parameter file ('-p'). An example of parameter file is found in
-the main directory of MontePython (test.param, for instance).
+To see a list of all commands. For there `run` subcommand, there are two
+essential ones, without which the program will not start. At minimum, you should
+precise an output folder (`-o`) and a parameter file (`-p`). An example of
+parameter file is found in the main directory of MontePython (`test.param`, for
+instance).
 
 A typical call would then be:
 
 .. code::
 
-    $ python montepython/MontePython.py -o test -p example.param
+    $ python montepython/MontePython.py run -o test -p example.param
 
 If non existent, the `test/` folder will be created, and a run with the
 number of steps described in `example.param` will be started. To run a chain with
@@ -178,13 +181,13 @@ more steps, one can type:
 
 .. code::
 
-    $ python montepython/MontePython.py -o test -p example.param -N 100
+    $ python montepython/MontePython.py run -o test -p example.param -N 100
 
 If you want to analyse the run, then just type
 
 .. code::
 
-    $ python montepython/MontePython.py -info test/
+    $ python montepython/MontePython.py info test/
 
 
 Details and Examples
