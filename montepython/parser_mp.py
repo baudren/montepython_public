@@ -9,6 +9,7 @@ with different possible configurations.
 
 """
 import os
+import sys
 import argparse  # Python module to handle command line arguments
 import warnings
 
@@ -18,6 +19,7 @@ import io_mp
 # -- custom Argument Parser that throws an io_mp.ConfigurationError
 # -- for unified look within montepython
 class MpArgumentParser(argparse.ArgumentParser):
+
     def error(self, message):
         """Override method to raise error
         Parameters
@@ -26,6 +28,34 @@ class MpArgumentParser(argparse.ArgumentParser):
             error message
         """
         raise io_mp.ConfigurationError(message)
+
+    def safe_parse_args(self, args=None):
+        """
+        Allows to set a default subparser
+
+        This trick is there to maintain the previous way of calling
+        MontePython.py
+        """
+        args = self.set_default_subparser('run', args)
+        return self.parse_args(args)
+
+    def set_default_subparser(self, default, args=None):
+        """
+        If no subparser option is found, add the default one
+
+        .. note::
+
+            This function relies on the fact that all calls to MontePython will
+            start with a `-`. If this came to change, this function should be
+            revisited
+
+        """
+        if not args:
+            args = sys.argv[1:]
+        if args[0] not in ['-h', '--help', '--version']:
+            if args[0].find('-') != -1:
+                args.insert(0, default)
+        return args
 
 
 # -- custom argparse types
@@ -363,11 +393,13 @@ def parse(custom_command=''):
     parser = create_parser()
 
     # Recover all command line arguments in the args dictionary, except for a
-    # test
+    # test, where the custom_command string is read.
+    # Note that the function safe_parse_args is read instead of parse_args. It
+    # is a function defined in this file to allow for a default subparser.
     if not custom_command:
-        args = parser.parse_args()
+        args = parser.safe_parse_args()
     else:
-        args = parser.parse_args(custom_command.split(' '))
+        args = parser.safe_parse_args(custom_command.split(' '))
 
     # Some check to perform when running the MCMC chains is requested
     if args.subparser_name == "run":
