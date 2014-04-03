@@ -15,6 +15,62 @@ import warnings
 import io_mp
 
 
+# -- custom Argument Parser that throws an io_mp.ConfigurationError
+# -- for unified look within montepython
+class MpArgumentParser(argparse.ArgumentParser):
+    def error(self, message):
+        """Override method to raise error
+        Parameters
+        ----------
+        message: string
+            error message
+        """
+        raise io_mp.ConfigurationError(message)
+
+
+# -- custom argparse types
+# -- check that the argument is a positive integer
+def positive_int(string):
+    """
+    Check if the input is integer positive
+    Parameters
+    ----------
+    string: string
+        string to parse
+
+    output: int
+        return the integer
+    """
+    try:
+        value = int(string)
+        if value <= 0:
+            raise ValueError
+        return value
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            "You asked for a non-positive number of steps. "
+            "I am not sure what to do, so I will exit. Sorry.")
+
+
+# -- check that the argument is an existing file
+def existing_file(fname):
+    """
+    Check if the file exists. If not raise an error
+    Parameters
+    ----------
+    fname: string
+        file name to parse
+
+    output: fname
+    """
+    try:
+        with open(fname, 'r') as f:
+            return fname
+    except IOError:
+        msg = "The file '{}' does not exist".format(fname)
+        raise argparse.ArgumentTypeError(msg)
+
+
 def create_parser():
     """
     Definition of the parser command line options
@@ -43,15 +99,16 @@ def create_parser():
               matrix is created when analyzing previous runs.
 
               .. note::
-                    The list of parameters in the input covariance matrix and in
-                    the run do not necessarily coincide.
+                    The list of parameters in the input covariance matrix and
+                    in the run do not necessarily coincide.
 
             - **-j** (`str`) - jumping method (`global` (default),
               `sequential` or `fast`) (*OPT*).
 
-              With the `global` method the code generates a new random direction
-              at each step, with the `sequential` one it cycles over the
-              eigenvectors of the proposal density (= input covariance matrix).
+              With the `global` method the code generates a new random
+              direction at each step, with the `sequential` one it cycles over
+              the eigenvectors of the proposal density (= input covariance
+              matrix).
 
               The `global` method the acceptance rate is usually lower but
               the points in the chains are less correlated. We recommend using
@@ -148,7 +205,8 @@ def create_parser():
             - **-ticksize** (`int`) - adjust ticksize (default to 13)
 
     """
-    parser = argparse.ArgumentParser(
+    # parser = argparse.ArgumentParser(
+    parser = MpArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description='Monte Python, a Monte Carlo code in Python')
 
@@ -159,52 +217,60 @@ def create_parser():
         version = version_file.readline()
         parser.add_argument('--version', action='version', version=version)
 
-    runparser = parser.add_argument_group(
-        title="Run",
-        description="run the MCMC chains")
+    # -- add the subparsers
+    subparser = parser.add_subparsers(dest='subparser_name')
+
+    ###############
+    # run the MCMC
+    runparser = subparser.add_parser('run', help="run the MCMC chains")
 
     # -- number of steps (OPTIONAL)
-    runparser.add_argument('-N', help='number of steps', type=int, dest='N')
+    runparser.add_argument('-N', help='number of steps',
+                           type=positive_int, dest='N')
     # -- output folder (OBLIGATORY)
     runparser.add_argument('-o', help='output folder', type=str, dest='folder')
     # -- parameter file (OBLIGATORY)
-    runparser.add_argument('-p', help='input param file', type=str,
-                           dest='param')
+    runparser.add_argument('-p', help='input param file',
+                           type=existing_file, dest='param')
     # -- covariance matrix (OPTIONAL)
-    runparser.add_argument('-c', help='input cov matrix', type=str, dest='cov')
+    runparser.add_argument('-c', help='input cov matrix',
+                           type=existing_file, dest='cov')
     # -- jumping method (OPTIONAL)
-    runparser.add_argument('-j', help='jumping method', type=str,
+    runparser.add_argument('-j', help='jumping method',
                            dest='jumping', default='global',
                            choices=['global', 'sequential', 'fast'])
     # -- sampling method (OPTIONAL)
-    runparser.add_argument('-m', help='sampling method', type=str,
+    runparser.add_argument('-m', help='sampling method',
                            dest='method', default='MH',
                            choices=['MH', 'NS', 'CH'])
     # -- jumping factor (OPTIONAL)
     runparser.add_argument('-f', help='jumping factor', type=float,
                            dest='jumping_factor', default=2.4)
     # -- configuration file (OPTIONAL)
-    runparser.add_argument('-conf', help='configuration file', type=str,
-                           dest='config_file', default='default.conf')
-    # -- arbitraty numbering of an output chain (OPTIONAL)
-    runparser.add_argument('-chain_number', help='chain number', type=str,
-                           dest='chain_number', default=None)
+    runparser.add_argument('--conf', help='configuration file',
+                           type=existing_file, dest='config_file',
+                           default='default.conf')
+    # -- arbitrary numbering of an output chain (OPTIONAL)
+    runparser.add_argument('--chain-number', help='chain number')
 
     ###############
     # MCMC restart from chain or best fit file
-    runparser.add_argument('-r', help='restart from chain', type=str,
-                           dest='restart')
-    runparser.add_argument('-bf', help='restart from best fit file', type=str,
-                           dest='bf')
+    runparser.add_argument('-r', help='restart from chain',
+                           type=existing_file, dest='restart')
+    runparser.add_argument('--bf', help='restart from best fit file',
+                           type=existing_file)
 
     ###############
     # MultiNest arguments (all OPTIONAL and ignored if not "-m=NS")
     # The default values of -1 mean to take the PyMultiNest default values
     try:
         from nested_sampling import NS_prefix, NS_user_arguments
+        NSparser = runparser.add_argument_group(
+                title="MultiNest",
+                description="Run the MCMC chains using MultiNest"
+                )
         for arg in NS_user_arguments:
-            runparser.add_argument('--'+NS_prefix+arg,
-                                   dest=NS_prefix+arg,
+            NSparser.add_argument('--'+NS_prefix+arg,
                                    default=-1,
                                    **NS_user_arguments[arg])
     except ImportError:
@@ -216,65 +282,66 @@ def create_parser():
     # The default values of -1 mean to take the CosmoHammer default values
     try:
         from cosmo_hammer import CH_prefix, CH_user_arguments
+        CHparser = runparser.add_argument_group(
+            title="CosmoHammer",
+            description="Run the MCMC chains using the CosmoHammer framework")
         for arg in CH_user_arguments:
-            runparser.add_argument('--'+CH_prefix+arg,
-                                   dest=CH_prefix+arg,
-                                   default=-1,
-                                   **CH_user_arguments[arg])
+            CHparser.add_argument('--'+CH_prefix+arg,
+                                  default=-1,
+                                  **CH_user_arguments[arg])
     except ImportError:
         # Not defined if not installed
         pass
 
-
     ###############
     # Information
+    infoparser = subparser.add_parser('info',
+                                      help="analyze the MCMC chains")
 
-    infoparser = parser.add_argument_group(title="Information",
-            description="Run the analysis tools on the MCMC chains")
     # -- folder to analyze
-    infoparser.add_argument('-info', help='compute information of desired file',
-                            type=str, dest='files', nargs='*')
+    infoparser.add_argument('files',
+                            help='compute information of desired file',
+                            nargs='+')
     # -- number of bins (defaulting to 20)
-    infoparser.add_argument('-bins',
+    infoparser.add_argument('--bins',
                             help='desired number of bins, default is 20',
-                            type=int, dest='bins', default=20)
+                            type=int, default=20)
     # -- to remove the mean-likelihood line
-    infoparser.add_argument('-no_mean', help='remove the mean likelihood plot',
-                            dest='mean_likelihood', action='store_const',
-                            const=False, default=True)
+    infoparser.add_argument('--no-mean',
+                            help='remove the mean likelihood plot',
+                            dest='mean_likelihood', action='store_false',)
     # -- possible comparison folder
-    infoparser.add_argument('-comp', help='comparison folder', type=str,
-                            dest='comp', nargs=1)
+    infoparser.add_argument('--comp', help='comparison folder')
     # -- possible plot file describing custom commands
-    infoparser.add_argument('-extra', help='plot file for custom needs',
-                            type=str, dest='optional_plot_file', nargs=1)
+    infoparser.add_argument('--extra', help='plot file for custom needs',
+                            dest='optional_plot_file')
     # -- if you just want the covariance matrix, use this option
-    infoparser.add_argument('-noplot', help='ommit the plotting part',
-                            dest='plot', action='store_const',
-                            const=False, default=True)
+    infoparser.add_argument('--noplot', help='omit the plotting part',
+                            dest='plot', action='store_false')
     # -- if you want to output 2d contours plots (the 'triangle' plot)
     # default: only as long as -comp is not specified
-    infoparser.add_argument(
-        '-plot-2d', help='plot the triangle plot of 2d contours',
-        dest='plot_2d', type=str, choices=['no', 'not_if_comp', 'always',
-        'overplot_comp'], default='not_if_comp')
+    infoparser.add_argument('--plot-2d',
+                            help='plot the triangle plot of 2d contours',
+                            dest='plot_2d', type=str,
+                            choices=['no', 'not_if_comp',
+                                     'always', 'overplot_comp'],
+                            default='not_if_comp')
     # -- if you want to output every single subplots
     infoparser.add_argument(
-        '-all', help='plot every single subplot in a separate pdf file',
-        dest='subplot', action='store_const', const=True, default=False)
+        '--all', help='plot every single subplot in a separate pdf file',
+        dest='subplot', action='store_true')
     # -- to change the extension used to output files (pdf is the default one,
     # but takes long, valid options are png and eps)
     infoparser.add_argument(
-            '-ext', help='''change extension for the output file.
-            Any extension handled by `matplotlib` can be used''',
-            type=str, dest='extension', default='pdf')
+        '--ext', help='''change extension for the output file.
+        Any extension handled by `matplotlib` can be used''',
+        type=str, dest='extension', default='pdf')
     # -- fontsize of plots (defaulting to 15)
-    infoparser.add_argument('-fontsize', help='desired fontsize',
-                            type=int, dest='fontsize', default=-1)
+    infoparser.add_argument('--fontsize', help='desired font size',
+                            type=int, default=15)
     # -- ticksize of plots (defaulting to 13)
-    infoparser.add_argument('-ticksize', help='desired ticksize',
-                            type=int, dest='ticksize', default=-1)
-
+    infoparser.add_argument('--ticksize', help='desired tick size',
+                            type=int, default=13)
 
     return parser
 
@@ -302,16 +369,8 @@ def parse(custom_command=''):
     else:
         args = parser.parse_args(custom_command.split(' '))
 
-    # First of all, if the analyze module is invoked, there is no point in
-    # checking for existing folder
-    if args.files is None:
-
-        # Check if the number of step is at least 1
-        if args.N is not None:
-            if args.N < 1:
-                raise io_mp.ConfigurationError(
-                    "You asked for a non-positive number of steps. "
-                    "I am not sure what to do, so I will exit. Sorry.")
+    # Some check to perform when running the MCMC chains is requested \
+    if args.subparser_name == "run":
 
         # If the user wants to start over from an existing chain, the program
         # will use automatically the same folder, and the log.param in it
@@ -341,7 +400,7 @@ def parse(custom_command=''):
                     old_param = args.param
                     args.param = os.path.join(
                         args.folder, 'log.param')
-                    if args.param is not None:
+                    if old_param is not None:
                         warnings.warn(
                             "Appending to an existing folder: using the "
                             "log.param instead of %s" % old_param)
