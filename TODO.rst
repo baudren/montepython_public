@@ -2,6 +2,7 @@ Problems to be addressed
 ========================
 
 
+- using git to recover the path: if git is not installed, it will fail!
 - Possibility to ask in input of the info module a sub-covariance matrix to be
   analysed, for a proper marginalised sub-covariance matrix.
 - if a chain number is provided, files might be erased. Prevent that.
