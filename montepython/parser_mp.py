@@ -193,16 +193,16 @@ def create_parser():
                 info.to_plot=['name1','name2','newname3',...]
                 info.new_scales={'name1':number1,'name2':number2,...}
 
-            - **-noplot** (`None`) - do not produce plot, and compute only the
+            - **--noplot** (`None`) - do not produce plot, and compute only the
               covariance matrix (flag)
-            - **-plot-2d** (`str`) - output triangle plot of 2d contours
+            - **--plot-2d** (`str`) - output triangle plot of 2d contours
               (`no`, `not_if_comp` (default), `always`, `overplot_comp`)
-            - **-all** (`None`) - output every subplot in a separate file
+            - **--all** (`None`) - output every subplot in a separate file
               (flag)
-            - **-ext** (`str`) - specify the extension of the figures (`pdf`
+            - **--ext** (`str`) - specify the extension of the figures (`pdf`
               (default), `png` (faster))
-            - **-fontsize** (`int`) - adjust fontsize (default to 15)
-            - **-ticksize** (`int`) - adjust ticksize (default to 13)
+            - **--fontsize** (`int`) - adjust fontsize (default to 15)
+            - **--ticksize** (`int`) - adjust ticksize (default to 13)
 
     """
     # parser = argparse.ArgumentParser(
@@ -369,7 +369,7 @@ def parse(custom_command=''):
     else:
         args = parser.parse_args(custom_command.split(' '))
 
-    # Some check to perform when running the MCMC chains is requested \
+    # Some check to perform when running the MCMC chains is requested
     if args.subparser_name == "run":
 
         # If the user wants to start over from an existing chain, the program
