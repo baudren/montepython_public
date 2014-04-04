@@ -229,6 +229,9 @@ def create_parser():
               covariance matrix (flag)
             - **--plot-2d** (`str`) - output triangle plot of 2d contours
               (`no`, `not_if_comp` (default), `always`, `overplot_comp`)
+            - **--alpha** (`float`) - transparency of the second 2d posterior
+              distribution in case of a comparison. Values accepted between 0
+              and 1 (default to 0.8).
             - **--all** (`None`) - output every subplot in a separate file
               (flag)
             - **--ext** (`str`) - specify the extension of the figures (`pdf`
@@ -358,6 +361,12 @@ def create_parser():
                             choices=['no', 'not_if_comp',
                                      'always', 'overplot_comp'],
                             default='not_if_comp')
+    # -- when comparing two folders, decide on the alpha setting of the second
+    # plot. Defaults to 0.8
+    infoparser.add_argument('--alpha',
+                            help='choose the transparency of the compared run',
+                            dest='alpha', type=float,
+                            default=0.8)
     # -- if you want to output every single subplots
     infoparser.add_argument(
         '--all', help='plot every single subplot in a separate pdf file',
