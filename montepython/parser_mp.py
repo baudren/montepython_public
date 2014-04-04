@@ -52,9 +52,11 @@ class MpArgumentParser(argparse.ArgumentParser):
         """
         if not args:
             args = sys.argv[1:]
-        if args[0] not in ['-h', '--help', '--version']:
+        if args[0] not in ['-h', '--help', '--version', '-info']:
             if args[0].find('-') != -1:
                 args.insert(0, default)
+        elif args[0] == '-info':
+            args[0] = 'info'
         return args
 
 
@@ -173,7 +175,7 @@ def create_parser():
             - **-conf** (`str`) - configuration file (default to
               `default.conf`) (*OPT*). This file contains the path to your
               cosmological module directory.
-            - **-chain_number** (`str`) - arbitrary numbering of the output
+            - **--chain_number** (`str`) - arbitrary numbering of the output
               chain, to overcome the automatic one (*OPT*).
 
               By default, the chains are named :code:`yyyy-mm-dd_N__i.txt` with

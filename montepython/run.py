@@ -24,6 +24,7 @@ def run(custom_command=''):
     """
     # Create all the instances of the needed classes to run the code. The safe
     # initialisation handles the errors.
+    print sys.argv
     cosmo, data, command_line, success = safe_initialisation(
         custom_command)
 
@@ -85,7 +86,7 @@ def mpi_run(custom_command=""):
 
         if not custom_command:
             custom_command = " ".join(sys.argv[1:])
-        custom_command += " -chain_number %s" % str(int(suffix)+rank)
+        custom_command += " --chain-number %s" % str(rank)+suffix
         cosmo, data, command_line, success = initialise(custom_command)
 
     import sampler
