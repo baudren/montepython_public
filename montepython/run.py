@@ -24,7 +24,6 @@ def run(custom_command=''):
     """
     # Create all the instances of the needed classes to run the code. The safe
     # initialisation handles the errors.
-    print sys.argv
     cosmo, data, command_line, success = safe_initialisation(
         custom_command)
 
