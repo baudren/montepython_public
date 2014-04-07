@@ -11,7 +11,13 @@ v2.0.3: + New BOSS BAO likelihoods - courtesy of the BOSS
 	  running and analyzing), to improve clarity of the help
 	  messages when asking `MontePython.py -h` (credits Francesco
 	  Montesano). Note that compatibility is maintained with the
-	  old way of calling things!
+	  old way of calling things! Note also that to obtain the help
+	  on the running, or information subcommands, you should call:
+	  `MontePython.py run -h` or `MontePython.py info -h`.
+	+ Tentative implementation of basic MPI support. With mpi, and
+	  mpi4py (the Python wrapper of MPI), you can now an arbitrary
+	  amount of chains on a cluster and prevent (normally) any
+	  name conflict.
 ----------------------------------------------------------------------
 v2.0.2: + BICEP2 likelihood implemented. You can specify which field
 	  you want to use ('B', 'E', or 'T' so far according to their

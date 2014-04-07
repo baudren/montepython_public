@@ -7,11 +7,26 @@ Welcome to Monte Python's documentation!
 ========================================
 
 The main page lives `here <http://www.montepython.net/>`_, from which
-you can download the code, see the changelog. 
+you can download the code, see the changelog. The Github page is available
+`there <https://github.com/baudren/montepython_public/>`_.
 
 All useful information concerning the installation, some tips on how
 to organize the folder, and the complete description of the code
 source is found below.
+
+For the list of command line arguments, please see the documentation of the
+:func:`create parser function <parser_mp.create_parser>`. You can also ask this
+same information interactively by asking:
+
+.. code::
+
+  python montepython/MontePython.py -h
+  python montepython/MontePython.py run -h
+  python montepython/MontePython.py info -h
+
+The first one gives you all the possible modes for running (:code:`run`, or
+:code:`info`), while the other two give you the information specific for each
+modes.
 
 Contents:
 
