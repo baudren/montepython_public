@@ -100,10 +100,10 @@ def recover_local_path(command_line):
 
     # the rest is important only when running the MCMC chains
     if command_line.subparser_name == 'run':
-        # Configuration file, defaulting to default.conf in your root directory.
-        # This can be changed with the command line option --conf. All changes will
-        # be stored into the log.param of your folder, and hence will be reused for
-        # an ulterior run in the same directory
+        # Configuration file, defaulting to default.conf in your root
+        # directory.  This can be changed with the command line option --conf.
+        # All changes will be stored into the log.param of your folder, and
+        # hence will be reused for an ulterior run in the same directory
         conf_file = os.path.abspath(command_line.config_file)
         if os.path.isfile(conf_file):
             for line in open(conf_file):
@@ -115,9 +115,10 @@ def recover_local_path(command_line):
             # stored
             if command_line.param.find('log.param') == -1:
                 raise io_mp.ConfigurationError(
-                    "You must provide a .conf file (default.conf by default in" +
-                    " your montepython directory that specifies the correct " +
-                    "locations for your data folder, Class (, Clik), etc...")
+                    "You must provide a valid  .conf file (I tried to read"
+                    "%s) " % os.path.abspath(command_line.config_file) +
+                    " that specifies the correct locations for your data "
+                    "folder, Class, (Clik), etc...")
 
     return path
 
