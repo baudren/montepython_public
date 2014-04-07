@@ -372,7 +372,7 @@ def create_parser():
     infoparser.add_argument('--noplot', help='omit the plotting part',
                             dest='plot', action='store_false')
     # -- if you want to output 2d contours plots (the 'triangle' plot)
-    # default: only as long as -comp is not specified
+    # default: only as long as --comp is not specified
     infoparser.add_argument('--plot-2d',
                             help='plot the triangle plot of 2d contours',
                             dest='plot_2d', type=str,
