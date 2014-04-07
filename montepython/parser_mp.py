@@ -10,6 +10,7 @@ with different possible configurations.
 """
 import os
 import sys
+import textwrap
 import argparse  # Python module to handle command line arguments
 import warnings
 
@@ -19,6 +20,7 @@ import io_mp
 # -- custom Argument Parser that throws an io_mp.ConfigurationError
 # -- for unified look within montepython
 class MpArgumentParser(argparse.ArgumentParser):
+    """Extension of the default ArgumentParser"""
 
     def error(self, message):
         """Override method to raise error
@@ -95,10 +97,9 @@ def existing_file(fname):
 
     output: fname
     """
-    try:
-        with open(fname, 'r') as f:
-            return fname
-    except IOError:
+    if os.path.isfile(fname):
+        return fname
+    else:
         msg = "The file '{}' does not exist".format(fname)
         raise argparse.ArgumentTypeError(msg)
 
@@ -107,9 +108,15 @@ def create_parser():
     """
     Definition of the parser command line options
 
-    All command line arguments are defined below. This will also create an
-    automatic help command, available through the call :code:`python
-    code/Montepython -h`, listing the parameters and their function.
+    The main parser has so far two subparsers, corresponding to the two main
+    modes of operating the code, namely `run` and `info`. If you simply call
+    :code:`python montepython/MontePython.py -h`, you will find only this piece
+    of information. To go further, and find the command line options specific
+    to these two submodes, one should then do: :code:`python
+    montepython/MontePython.py run -h`, or :code:`info -h`.
+
+    All command line arguments are defined below, for each of the two
+    subparsers. This function create the automatic help command.
 
     Each flag outputs the following argument to a destination variable,
     specified by the `dest` keyword argument in the source code. Please check
@@ -117,7 +124,7 @@ def create_parser():
 
     **Options**:
 
-        **MCMC**:
+        **run**:
 
             - **-N** (`int`) - number of steps in the chain (**OBL**). Note
               that when running on a cluster, your run might be stopped before
@@ -172,7 +179,7 @@ def create_parser():
 
               Using :code:`-f 0 -N 1` is a convenient way to get the likelihood
               exactly at the starting point passed in input.
-            - **-conf** (`str`) - configuration file (default to
+            - **--conf** (`str`) - configuration file (default to
               `default.conf`) (*OPT*). This file contains the path to your
               cosmological module directory.
             - **--chain_number** (`str`) - arbitrary numbering of the output
@@ -193,31 +200,32 @@ def create_parser():
 
               At the beginning of the run, the previous chain will be deleted,
               and its content transfered to the beginning of the new chain.
-            - **-bf** (`str`) - start a new chain from the bestfit computed in
+            - **-b** (`str`) - start a new chain from the bestfit computed in
               the given file (*OPT*)
 
-        **Information**:
+        **info**:
 
-            - **-info** (`str`) - compute the information of given file/folder.
+              Replaces the old **-info** command, which is deprecated but still
+              available.
 
               You can specify either single files, or a complete folder, for
               example :code:`-info chains/my-run/2012-10-26*`, or :code:`-info
               chains/my-run`
-            - **-bins** (`int`) - number of bins in the histograms used to
+            - **--bins** (`int`) - number of bins in the histograms used to
               derive posterior probabilities and credible intervals (default to
               20). Decrease this number for smoother plots at the expense of
               masking details.
-            - **-no_mean** (`None`) - by default, when plotting marginalised 1D
-              posteriors, the code also shows the mean likelihood per bin with
-              dashed lines; this flag switches off the dashed lines
-            - **-comp** (`str`) - pass the name of another folder (or another
+            - **--no_mean** (`None`) - by default, when plotting marginalised
+              1D posteriors, the code also shows the mean likelihood per bin
+              with dashed lines; this flag switches off the dashed lines
+            - **--comp** (`str`) - pass the name of another folder (or another
               set of chains, same syntax as -info) if you want to compare 1D
               posteriors on the same plot.
 
               The lists of parameters in the two folders to compare do not need
               to coincide. It is limited so far to two folders to compare in
               total.
-            - **-extra** (`str`) - extra file to customize the output plots.
+            - **--extra** (`str`) - extra file to customize the output plots.
 
             .. code::
 
@@ -240,10 +248,18 @@ def create_parser():
             - **--ticksize** (`int`) - adjust ticksize (default to 13)
 
     """
+    # Customized usage, for more verbosity concerning these subparsers options.
+    usage = """%(prog)s [-h] [--version] {run,info} ... """
+    usage += textwrap.dedent("""\n
+        From more help, type:
+        %(prog)s run -h
+        %(prog)s info -h""")
+
     # parser = argparse.ArgumentParser(
     parser = MpArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description='Monte Python, a Monte Carlo code in Python')
+        description='Monte Python, a Monte Carlo code in Python',
+        usage=usage)
 
     # -- version
     path_file = os.path.sep.join(
@@ -263,19 +279,20 @@ def create_parser():
     runparser.add_argument('-N', help='number of steps',
                            type=positive_int, dest='N')
     # -- output folder (OBLIGATORY)
-    runparser.add_argument('-o', help='output folder', type=str, dest='folder')
+    runparser.add_argument('-o', '--output', help='output folder',
+                           type=str, dest='folder')
     # -- parameter file (OBLIGATORY)
-    runparser.add_argument('-p', help='input param file',
+    runparser.add_argument('-p', '--param', help='input param file',
                            type=existing_file, dest='param')
     # -- covariance matrix (OPTIONAL)
-    runparser.add_argument('-c', help='input cov matrix',
+    runparser.add_argument('-c', '--covmat', help='input cov matrix',
                            type=existing_file, dest='cov')
     # -- jumping method (OPTIONAL)
-    runparser.add_argument('-j', help='jumping method',
+    runparser.add_argument('-j', '--jumping', help='jumping method',
                            dest='jumping', default='global',
                            choices=['global', 'sequential', 'fast'])
     # -- sampling method (OPTIONAL)
-    runparser.add_argument('-m', help='sampling method',
+    runparser.add_argument('-m', '--method', help='sampling method',
                            dest='method', default='MH',
                            choices=['MH', 'NS', 'CH'])
     # -- jumping factor (OPTIONAL)
@@ -283,7 +300,7 @@ def create_parser():
                            dest='jumping_factor', default=2.4)
     # -- configuration file (OPTIONAL)
     runparser.add_argument('--conf', help='configuration file',
-                           type=existing_file, dest='config_file',
+                           type=str, dest='config_file',
                            default='default.conf')
     # -- arbitrary numbering of an output chain (OPTIONAL)
     runparser.add_argument('--chain-number', help='chain number')
@@ -292,7 +309,8 @@ def create_parser():
     # MCMC restart from chain or best fit file
     runparser.add_argument('-r', help='restart from chain',
                            type=existing_file, dest='restart')
-    runparser.add_argument('--bf', help='restart from best fit file',
+    runparser.add_argument('-b', '--bestfit', dest='bf',
+                           help='restart from best fit file',
                            type=existing_file)
 
     ###############
@@ -301,13 +319,13 @@ def create_parser():
     try:
         from nested_sampling import NS_prefix, NS_user_arguments
         NSparser = runparser.add_argument_group(
-                title="MultiNest",
-                description="Run the MCMC chains using MultiNest"
-                )
+            title="MultiNest",
+            description="Run the MCMC chains using MultiNest"
+            )
         for arg in NS_user_arguments:
             NSparser.add_argument('--'+NS_prefix+arg,
-                                   default=-1,
-                                   **NS_user_arguments[arg])
+                                  default=-1,
+                                  **NS_user_arguments[arg])
     except ImportError:
         # Not defined if not installed
         pass
