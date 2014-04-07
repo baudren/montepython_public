@@ -231,14 +231,16 @@ class Data(object):
                 # This nul_file helps to get read of a potential useless error
                 # message
                 with open(os.devnull, "w") as nul_file:
-                    self.git_version = sp.check_output(
+                    self.git_version = sp.Popen(
                         ["git", "rev-parse", "HEAD"],
                         cwd=self.path['cosmo'],
-                        stderr=nul_file).strip()
-                    self.git_branch = sp.check_output(
+                        stdout=sp.PIPE,
+                        stderr=nul_file).communicate()[0].strip()
+                    self.git_branch = sp.Popen(
                         ["git", "rev-parse", "--abbrev-ref", "HEAD"],
                         cwd=self.path['cosmo'],
-                        stderr=nul_file).strip()
+                        stdout=sp.PIPE,
+                        stderr=nul_file).communicate()[0].strip()
             except (sp.CalledProcessError, OSError):
                 # Note, OSError seems to be raised on some systems, instead of
                 # sp.CalledProcessError - which seems to be linked to the
@@ -347,7 +349,7 @@ class Data(object):
             try:
                 exec "from likelihoods.%s import %s" % (
                     elem, elem)
-            except:
+            except ImportError:
                 raise io_mp.ConfigurationError(
                     "Trying to import the %s likelihood" % elem +
                     " as asked in the parameter file, and failed."
@@ -358,9 +360,14 @@ class Data(object):
             # command_line and log_flag, the routine will call slightly
             # different things. If log_flag is True, the log.param will be
             # appended.
-            exec "self.lkl['%s'] = %s('%s/%s.data',\
-                self, command_line)" % (
-                elem, elem, folder, elem)
+            try:
+                exec "self.lkl['%s'] = %s('%s/%s.data',\
+                    self, command_line)" % (
+                    elem, elem, folder, elem)
+            except KeyError:
+                raise io_mp.ConfigurationError(
+                    "You should provide a 'clik' entry in the dictionary "
+                    "path defined in the file default.conf")
 
         # Storing parameters by blocks of speed
         self.group_parameters_in_blocks()

@@ -143,8 +143,7 @@ class Likelihood(object):
                     if line.find(self.name+'.') != -1:
                         # Recover the name and value from the .data file
                         regexp = re.match(
-                            "%s\.(.*) = (.*)" % self.name,
-                            line)
+                            "%s.(.*)\s*=\s*(.*)" % self.name, line)
                         name, value = (elem.strip() for elem in regexp.groups())
                         # If this name was already defined in the parameter
                         # file, be sure to take this value instead. Beware,
@@ -847,12 +846,27 @@ class Likelihood_clik(Likelihood):
         else:
             self.lensing = False
 
-        if self.lensing:
-            self.clik = clik.clik_lensing(self.path_clik)
-            self.l_max = self.clik.get_lmax()
-        else:
-            self.clik = clik.clik(self.path_clik)
-            self.l_max = max(self.clik.get_lmax())
+        try:
+            if self.lensing:
+                self.clik = clik.clik_lensing(self.path_clik)
+                self.l_max = self.clik.get_lmax()
+            else:
+                self.clik = clik.clik(self.path_clik)
+                self.l_max = max(self.clik.get_lmax())
+        except clik.lkl.CError:
+            raise io_mp.LikelihoodError(
+                "The path to the .clik file for the likelihood "
+                "%s was not found where indicated." % self.name +
+                " Note that the default path to search for it is"
+                " one directory above the path['clik'] field. You"
+                " can change this behaviour in all the "
+                "Planck_something.data, to reflect your local configuration, "
+                "or alternatively, move your .clik files to this place.")
+        except KeyError:
+            raise io_mp.LikelihoodError(
+                "In the %s.data file, the field 'clik' of the " % self.name +
+                "path dictionary is expected to be defined. Please make sure"
+                " it is the case in you configuration file")
 
         self.need_cosmo_arguments(
             data, {'l_max_scalars': self.l_max})

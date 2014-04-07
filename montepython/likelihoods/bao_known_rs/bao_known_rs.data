@@ -1,6 +1,6 @@
 # BAO data
-bao_known_rs.data_directory	= data.path['data']
-bao_known_rs.file 		= 'bao_2012.txt'
-bao_known_rs.rs_rescale         = 153.017/149.0808
-bao_known_rs.known_rs		= 148.1
-bao_known_rs.rs_error		= 0.8
+bao_known_rs.data_directory = data.path['data']
+bao_known_rs.file           = 'bao_2012.txt'
+bao_known_rs.rs_rescale     = 153.017/149.0808
+bao_known_rs.known_rs       = 148.1
+bao_known_rs.rs_error       = 0.8

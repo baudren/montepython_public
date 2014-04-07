@@ -1,8 +1,29 @@
+v2.0.3: + New BOSS BAO likelihoods - courtesy of the BOSS
+	  collaboration via Jan Grieb. There are now two
+	  possibilities, isotropic and anisotropic measurements. See
+	  https://github.com/baudren/montepython_public/pull/9 for
+	  more details.
+	+ There are now options to also plot the comparison between
+	  two experiments (folders), not only on the 1d posterior
+	  distributions, but also the 2d posterior distributions
+	  (credits to Jan Grieb)
+	+ Separated the different way of calling MontePython (for
+	  running and analyzing), to improve clarity of the help
+	  messages when asking `MontePython.py -h` (credits Francesco
+	  Montesano). Note that compatibility is maintained with the
+	  old way of calling things! Note also that to obtain the help
+	  on the running, or information subcommands, you should call:
+	  `MontePython.py run -h` or `MontePython.py info -h`.
+	+ Tentative implementation of basic MPI support. With mpi, and
+	  mpi4py (the Python wrapper of MPI), you can now an arbitrary
+	  amount of chains on a cluster and prevent (normally) any
+	  name conflict.
+----------------------------------------------------------------------
 v2.0.2: + BICEP2 likelihood implemented. You can specify which field
 	  you want to use ('B', 'E', or 'T' so far according to their
 	  documentation), with the line:
 	  bicep2.fields = ['B', 'E']
-	  See the bicep2.param for reference. 
+	  See the bicep2.param for reference.
 	+ You can now specify likelihood parameters directly in the
 	  parameter file. This overwrites any setting present in the
 	  .data file of the likelihood. Simply write:

@@ -368,6 +368,18 @@ def chain(cosmo, data, command_line):
     sys.stdout.write('\n#  {0} steps done, acceptance rate: {1}\n'.
                      format(command_line.N, rate))
 
+    # In case the acceptance rate is too low, or too high, print a warning
+    if rate < 0.05:
+        warnings.warn("The acceptance rate is below 0.05. You might want to "
+                      "set the jumping factor to a lower value than the "
+                      "default (2.4), with the option `-f 1.5` for instance.")
+    elif rate > 0.6:
+        warnings.warn("The acceptance rate is above 0.6, which means you might"
+                      " have difficulties exploring the entire parameter space"
+                      ". Try analysing these chains, and use the output "
+                      "covariance matrix to decrease the acceptance rate to a "
+                      "value between 0.2 and 0.4 (roughly).")
+
     # For a restart, erase the starting point to keep only the new, longer
     # chain.
     if command_line.restart is not None:

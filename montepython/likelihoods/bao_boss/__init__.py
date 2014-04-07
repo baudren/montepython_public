@@ -1,6 +1,8 @@
 import os
 import numpy as np
 from montepython.likelihood_class import Likelihood
+import montepython.io_mp as io_mp
+import warnings
 
 
 class bao_boss(Likelihood):
@@ -11,6 +13,23 @@ class bao_boss(Likelihood):
 
         Likelihood.__init__(self, path, data, command_line)
 
+        # exclude the isotropic CMASS experiment when the anisotrpic
+        # measurement is also used
+        exclude_isotropic_CMASS = False
+
+        conflicting_experiments = [
+            'bao_boss_aniso', 'bao_boss_aniso_gauss_approx']
+        for experiment in conflicting_experiments:
+            if experiment in data.experiments:
+                exclude_isotropic_CMASS = True
+
+        if exclude_isotropic_CMASS:
+            warnings.warn("excluding isotropic CMASS measurement")
+            if not hasattr(self, 'exclude') or self.exclude == None:
+                self.exclude = ['CMASS']
+            else:
+                self.exclude.append('CMASS')
+
         # define array for values of z and data points
         self.z = np.array([], 'float64')
         self.data = np.array([], 'float64')
@@ -18,12 +37,17 @@ class bao_boss(Likelihood):
         self.type = np.array([], 'int')
 
         # read redshifts and data points
-        for line in open(os.path.join(self.data_directory, self.file), 'r'):
-            if (line.find('#') == -1):
-                self.z = np.append(self.z, float(line.split()[0]))
-                self.data = np.append(self.data, float(line.split()[1]))
-                self.error = np.append(self.error, float(line.split()[2]))
-                self.type = np.append(self.type, int(line.split()[3]))
+        with open(os.path.join(self.data_directory, self.file), 'r') as filein: 
+            for line in filein:
+                if line.find('#') == -1:
+                    # the first entry of the line is the identifier
+                    this_line = line.split()
+                    # insert into array if this id is not manually excluded
+                    if not this_line[0] in self.exclude:
+                        self.z = np.append(self.z, float(this_line[1]))
+                        self.data = np.append(self.data, float(this_line[2]))
+                        self.error = np.append(self.error, float(this_line[3]))
+                        self.type = np.append(self.type, int(this_line[4]))
 
         # number of data points
         self.num_points = np.shape(self.z)[0]
@@ -46,16 +70,16 @@ class bao_boss(Likelihood):
             dv = pow(da * da * (1 + self.z[i]) * (1 + self.z[i]) * dr, 1. / 3.)
             rs = cosmo.rs_drag()
 
-            if (self.type[i] == 3):
+            if self.type[i] == 3:
                 theo = dv / rs / self.rs_rescale
 
-            elif (self.type[i] == 4):
+            elif self.type[i] == 4:
                 theo = dv
 
-            elif (self.type[i] == 5):
+            elif self.type[i] == 5:
                 theo = da / rs
 
-            elif (self.type[i] == 6):
+            elif self.type[i] == 6:
                 theo = 1. / cosmo.Hubble(self.z[i]) / rs
 
             else:

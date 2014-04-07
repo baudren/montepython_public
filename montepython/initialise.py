@@ -37,13 +37,13 @@ def initialise(custom_command=''):
         path['root'], 'VERSION')
     with open(version_path, 'r') as version_file:
         version = version_file.readline()
-    print 'Running Monte Python v%s' % version
+    print('Running Monte Python v%s' % version)
 
     # If the info flag was used, read a potential chain (or set of chains) to
     # be analysed with default procedure. If the argument is a .info file, then
     # it will extract information from it (plots to compute, chains to analyse,
     # etc...)
-    if command_line.files is not None:
+    if command_line.subparser_name == "info":
         from analyze import analyze  # only invoked when analyzing
         analyze(command_line)
         return None, None, command_line, False
@@ -55,25 +55,25 @@ def initialise(custom_command=''):
     else:
         data = Data(command_line, path)
 
-    # Overwrite arguments from parameter file with the command line
-    if command_line.N is None:
-        try:
-            command_line.N = data.N
-        except AttributeError:
-            raise io_mp.ConfigurationError(
-                "You did not provide a number of steps, neither via " +
-                "command line, nor in %s" % command_line.param)
+        # Overwrite arguments from parameter file with the command line
+        if command_line.N is None:
+            try:
+                command_line.N = data.N
+            except AttributeError:
+                raise io_mp.ConfigurationError(
+                    "You did not provide a number of steps, neither via " +
+                    "command line, nor in %s" % command_line.param)
 
-    # Creating the file that will contain the chain, only with Metropolis
-    # Hastings
-    if command_line.method == 'MH':
-        io_mp.create_output_files(command_line, data)
+        # Creating the file that will contain the chain, only with Metropolis
+        # Hastings
+        if command_line.method == 'MH':
+            io_mp.create_output_files(command_line, data)
 
-    # Loading up the cosmological backbone. For the moment, only CLASS has been
-    # wrapped.
-    cosmo = recover_cosmological_module(data)
+        # Loading up the cosmological backbone. For the moment, only CLASS has been
+        # wrapped.
+        cosmo = recover_cosmological_module(data)
 
-    return cosmo, data, command_line, True
+        return cosmo, data, command_line, True
 
 
 def recover_local_path(command_line):
@@ -98,24 +98,27 @@ def recover_local_path(command_line):
     path['MontePython'] = os.path.join(path['root'], 'montepython')
     path['data'] = os.path.join(path['root'], 'data')
 
-    # Configuration file, defaulting to default.conf in your root directory.
-    # This can be changed with the command line option -conf. All changes will
-    # be stored into the log.param of your folder, and hence will be reused for
-    # an ulterior run in the same directory
-    conf_file = os.path.abspath(command_line.config_file)
-    if os.path.isfile(conf_file):
-        for line in open(conf_file):
-            exec(line)
-        for key, value in path.iteritems():
-            path[key] = os.path.normpath(os.path.expanduser(value))
-    else:
-        # The error is ignored if reading from a log.param, because it is
-        # stored
-        if command_line.param.find('log.param') == -1:
-            raise io_mp.ConfigurationError(
-                "You must provide a .conf file (default.conf by default in" +
-                " your montepython directory that specifies the correct " +
-                "locations for your data folder, Class (, Clik), etc...")
+    # the rest is important only when running the MCMC chains
+    if command_line.subparser_name == 'run':
+        # Configuration file, defaulting to default.conf in your root
+        # directory.  This can be changed with the command line option --conf.
+        # All changes will be stored into the log.param of your folder, and
+        # hence will be reused for an ulterior run in the same directory
+        conf_file = os.path.abspath(command_line.config_file)
+        if os.path.isfile(conf_file):
+            for line in open(conf_file):
+                exec(line)
+            for key, value in path.iteritems():
+                path[key] = os.path.normpath(os.path.expanduser(value))
+        else:
+            # The error is ignored if reading from a log.param, because it is
+            # stored
+            if command_line.param.find('log.param') == -1:
+                raise io_mp.ConfigurationError(
+                    "You must provide a valid  .conf file (I tried to read"
+                    "%s) " % os.path.abspath(command_line.config_file) +
+                    " that specifies the correct locations for your data "
+                    "folder, Class, (Clik), etc...")
 
     return path
 
