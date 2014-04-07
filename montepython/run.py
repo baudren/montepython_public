@@ -83,6 +83,8 @@ def mpi_run(custom_command=""):
         if suffix == 'failed':
             return
 
+        # Concatenate the rank to the suffix, and not the opposite, this should
+        # avoid any conflicting name
         if not custom_command:
             custom_command = " ".join(sys.argv[1:])
         custom_command += " --chain-number %s" % str(rank)+suffix
