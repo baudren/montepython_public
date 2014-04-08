@@ -864,11 +864,6 @@ def plot_triangle(
     # unique and thus require a simple treatment.
     if comp:
         backup_comp_names = np.copy(comp_plotted_parameters)
-        #print 'backup_comp_names is',backup_comp_names
-        #print 'comp_backup_names is',comp_backup_names
-        #print 'comp_ref_names is',comp_ref_names
-        #print 'comp_tex_names is',comp_tex_names
-        #print 'comp_plotted_parameters is',comp_plotted_parameters
 
         for i in xrange(len(info.plotted_parameters)):
             if info.plotted_parameters[i] in comp_plotted_parameters:
@@ -1039,7 +1034,7 @@ def plot_triangle(
                     info, lkl_mean, bincenters)
                 if plot_2d:
                     ax2d.plot(interp_grid, interp_lkl_mean, color='red',
-                        ls='--', lw=2)
+                              ls='--', lw=2)
                 ax1d.plot(interp_grid, interp_lkl_mean, color='red',
                           ls='--', lw=4)
             except:
@@ -1430,11 +1425,6 @@ def minimum_credible_intervals(histogram, bincenters, levels):
                     "taking too long to converge")
                 break
 
-        #print top,norm,abs(top/norm)
-        #print bincenters[indices]
-        #print histogram[indices],water_level
-        #print
-
         # min
         if indices[0] > 0:
             bounds[j][0] = bincenters[indices[0]] - delta*(histogram[indices[0]]-water_level)/(histogram[indices[0]]-histogram[indices[0]-1])
@@ -1457,7 +1447,6 @@ def minimum_credible_intervals(histogram, bincenters, levels):
 
         j += 1
 
-    #print
     return bounds
 
 

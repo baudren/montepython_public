@@ -395,12 +395,14 @@ def create_parser():
         '--ext', help='''change extension for the output file.
         Any extension handled by `matplotlib` can be used''',
         type=str, dest='extension', default='pdf')
-    # -- fontsize of plots (defaulting to 15)
+    # -- fontsize of plots (defaulting to -1, in which case a scaling relation
+    # will be applied
     infoparser.add_argument('--fontsize', help='desired font size',
-                            type=int, default=15)
-    # -- ticksize of plots (defaulting to 13)
+                            type=int, default=-1)
+    # -- ticksize of plots (defaulting to -1, in which case a scaling relation
+    # will be applied)
     infoparser.add_argument('--ticksize', help='desired tick size',
-                            type=int, default=13)
+                            type=int, default=-1)
 
     return parser
 
