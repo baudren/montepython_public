@@ -69,7 +69,7 @@ def analyze(command_line):
     # names, and number of paramaters plotted (can be let empty, all will
     # then be plotted).
     if command_line.optional_plot_file is not None:
-        for line in open(command_line.optional_plot_file[0], 'r'):
+        for line in open(command_line.optional_plot_file, 'r'):
             exec(line)
 
     # Prepare the files, according to the case, load the log.param, and

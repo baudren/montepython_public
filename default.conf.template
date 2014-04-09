@@ -2,7 +2,7 @@
 
 # Fill in the relevant path to your personal distribution. 
 # If you create a new file out of this one, please remember to call
-# MontePython.py with the option '-conf my.conf'
+# MontePython.py with the option '--conf my.conf'
 
 # At minimum, this file should contain one line:
 # ** path['cosmo'] =  path/to/your/class 
