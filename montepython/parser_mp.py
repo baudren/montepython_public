@@ -160,8 +160,11 @@ def create_parser():
               in http://arxiv.org/abs/1304.4473 by Antony Lewis.
             - **-m** (`string`) - sampling method used, by default 'MH' for
               Metropolis-Hastings, can be set to 'NS' for Nested Sampling
-              (using Multinest wrapper PyMultiNest) or 'CH' for Cosmo Hammer
-              (using the Cosmo Hammer wrapper to emcee algorithm).
+              (using Multinest wrapper PyMultiNest), 'CH' for Cosmo Hammer
+              (using the Cosmo Hammer wrapper to emcee algorithm), and finally
+              'IS' for importance sampling.
+              Note that when running with Importance sampling, you need to
+              specify a folder to start from.
             - **-f** (`float`) - jumping factor (>= 0, default to 2.4)
               (*OPT*).
 
@@ -209,7 +212,7 @@ def create_parser():
               available.
 
               You can specify either single files, or a complete folder, for
-              example :code:`-info chains/my-run/2012-10-26*`, or :code:`-info
+              example :code:`info chains/my-run/2012-10-26*`, or :code:`info
               chains/my-run`
             - **--bins** (`int`) - number of bins in the histograms used to
               derive posterior probabilities and credible intervals (default to
@@ -244,8 +247,10 @@ def create_parser():
               (flag)
             - **--ext** (`str`) - specify the extension of the figures (`pdf`
               (default), `png` (faster))
-            - **--fontsize** (`int`) - adjust fontsize (default to 15)
-            - **--ticksize** (`int`) - adjust ticksize (default to 13)
+            - **--fontsize** (`int`) - adjust fontsize (default to -1, meaning
+              a scaling relation will be used.)
+            - **--ticksize** (`int`) - adjust ticksize (default to -1, meaning
+              a scaling relation will be used.)
 
     """
     # Customized usage, for more verbosity concerning these subparsers options.
@@ -294,7 +299,7 @@ def create_parser():
     # -- sampling method (OPTIONAL)
     runparser.add_argument('-m', '--method', help='sampling method',
                            dest='method', default='MH',
-                           choices=['MH', 'NS', 'CH'])
+                           choices=['MH', 'NS', 'CH', 'IS'])
     # -- jumping factor (OPTIONAL)
     runparser.add_argument('-f', help='jumping factor', type=float,
                            dest='jumping_factor', default=2.4)
@@ -312,6 +317,13 @@ def create_parser():
     runparser.add_argument('-b', '--bestfit', dest='bf',
                            help='restart from best fit file',
                            type=existing_file)
+
+    ###############
+    # Importance Sampling Arguments
+    runparser.add_argument(
+        '--IS-starting-folder', dest='IS_starting_folder',
+        help='perform Importance Sampling from this folder',
+        type=str, default='', nargs='+')
 
     ###############
     # MultiNest arguments (all OPTIONAL and ignored if not "-m=NS")

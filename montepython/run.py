@@ -87,7 +87,7 @@ def mpi_run(custom_command=""):
         # avoid any conflicting name
         if not custom_command:
             custom_command = " ".join(sys.argv[1:])
-        custom_command += " --chain-number %s" % str(rank)+suffix
+        custom_command += " --chain-number %s" % str(int(suffix)+rank)
         cosmo, data, command_line, success = initialise(custom_command)
 
     import sampler

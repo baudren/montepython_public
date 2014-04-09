@@ -26,14 +26,13 @@ from classy import CosmoSevereError, CosmoComputationError
 
 def run(cosmo, data, command_line):
     """
-    First rudimentary implementation
+    Depending on the choice of sampler, dispatch the appropriate information
 
     The :mod:`mcmc` module is used as previously, except the call to
     :func:`mcmc.chain`, or :func:`nested_sampling.run` is now within
     this function, instead of from within :mod:`MontePython`.
 
-    In the long term, this function should contain any potential hybrid scheme,
-    and any chain communication (defining different roles, etc)
+    In the long term, this function should contain any potential hybrid scheme.
 
     """
 
@@ -47,6 +46,9 @@ def run(cosmo, data, command_line):
     elif command_line.method == 'CH':
         import cosmo_hammer as hammer
         hammer.run(cosmo, data, command_line)
+    elif command_line.method == 'IS':
+        import importance_sampling as ims
+        ims.run(cosmo, data, command_line)
     else:
         raise io_mp.ConfigurationError(
             "Sampling method %s not understood" % command_line.method)
