@@ -21,8 +21,33 @@ from data import Data
 
 def run(cosmo, data, command_line):
     """
-    Performing the importance sampling
+    Performing the Importance Sampling
 
+    The idea is to start from an existing run, constraining a certain model I,
+    given a set of experiments. The new run will constrain the same model I,
+    but adding one or several new experiments. In the case where it is expected
+    that the final posterior distribution should not differ too greatly between
+    the two parameter extractions, then using Importance Sampling can speed up
+    significantly the second one.
+
+    Instead of properly sampling randomly the parameter space, it instead reads
+    the chains from the previous run, recompute the cosmology at this point,
+    then adds the log-likelihood contributed by the new experiments to the
+    previous ones. As an input of the method, with the flag
+    `--IS-starting-folder`, you can thus specify either a folder containing a
+    Monte Python run, or a set of chains that you want to be converted.
+
+    The code will automatically compute the minimum amount of things. For
+    instance, if the first run had all the Planck likelihoods, and the second,
+    all the Planck likelihoods plus a prior on :math:`H_0`, it would be absurd
+    to recompute also the cosmological perturbations: the only needed quantity
+    is a background quantity.
+
+    The new chains will hence store the same points in parameter space, but
+    with a different value of the likelihood, and also of the multiplicity -
+    that will become non-integer. Indeed, the multiplicity is also a probe of
+    the posterior, and this new, higher likelihood should have had a higher
+    multiplicity.
     """
     # Check that the command_line "--IS-starting-folder" points to an existing
     # Monte Python folder run, or a subset of files, and store in any case all
@@ -87,7 +112,10 @@ def run(cosmo, data, command_line):
 
 
 def recover_new_experiments(data, command_line, starting_folder):
-    """Given the input, extract the additional likelihoods"""
+    """
+    Given the input, extract the additional likelihoods
+
+    """
     # Initialize the companion data structure, on a modified command line
     modified_command_line = copy(command_line)
     modified_command_line.folder = starting_folder
@@ -139,14 +167,13 @@ def translate_chain(data, cosmo, command_line,
                         float(params[2+index])
                 data.update_cosmo_arguments()
 
-                # Substract the value to the extracted one (remember, it is
-                # -loglkl)
                 newloglike = sampler.compute_lkl(cosmo, data)
 
-                weight = math.exp(newloglike)
+                weight = math.exp(-newloglike)
+                newloglike += loglike
                 # Accept the point
                 sampler.accept_step(data)
-                io_mp.print_vector([output_chain], N*weight, loglike, data)
+                io_mp.print_vector([output_chain], N*weight, newloglike, data)
     print output_path, 'written'
 
 

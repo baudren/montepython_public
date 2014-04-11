@@ -322,7 +322,7 @@ def create_parser():
     # Importance Sampling Arguments
     runparser.add_argument(
         '--IS-starting-folder', dest='IS_starting_folder',
-        help='perform Importance Sampling from this folder',
+        help='perform Importance Sampling from this folder or set of chains',
         type=str, default='', nargs='+')
 
     ###############
