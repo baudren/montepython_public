@@ -169,7 +169,7 @@ def translate_chain(data, cosmo, command_line,
 
                 newloglike = sampler.compute_lkl(cosmo, data)
 
-                weight = math.exp(-newloglike)
+                weight = math.exp(newloglike)
                 newloglike += loglike
                 # Accept the point
                 sampler.accept_step(data)
