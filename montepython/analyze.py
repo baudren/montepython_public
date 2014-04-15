@@ -1161,27 +1161,25 @@ def plot_triangle(
                     comp_done_other = False
 
                 if command_line.subplot is True:
-                    # Store the individual 2d plots
+                    # Store the individual 2d plots. Note that the tick and
+                    # fontsize are hardcoded here since they will always keep
+                    # the same size.
                     fig_temp = plt.figure(3, figsize=(6, 6))
                     fig_temp.clf()
                     ax_temp = fig_temp.add_subplot(111)
                     ax_temp.set_xticks(ticks[second_index])
                     ax_temp.set_yticks(ticks[index])
-                    #ax_temp.imshow(
-                        #n, extent=extent, aspect='auto',
-                        #interpolation='gaussian', origin='lower',
-                        #cmap=matplotlib.cm.Reds)
                     ax_temp.set_xticklabels(
                         ['%.3g' % s for s in ticks[second_index]],
-                        fontsize=ticksize2d)
+                        fontsize=16)
                     ax_temp.set_yticklabels(
                         ['%.3g' % s for s in ticks[index]],
-                        fontsize=ticksize2d)
+                        fontsize=16)
                     ax_temp.set_title(
                         '%s vs %s' % (
                             info.tex_names[index],
                             info.tex_names[second_index]),
-                        fontsize=fontsize1d)
+                        fontsize=16)
                     try:
                         contours = ax_temp.contourf(
                             y_centers, x_centers, n, extent=extent,
