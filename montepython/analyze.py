@@ -1141,13 +1141,11 @@ def plot_triangle(
                                 contours = ax2dsub.contour(
                                     comp_y_centers, comp_x_centers, comp_n,
                                     extent=comp_extent, levels=ctr_level(comp_n, lvls[:2]),
-                                    #zorder=5, cmap=plt.cm.winter_r)
                                     zorder=5, cmap=plt.cm.Blues)
                             else:
                                 contours = ax2dsub.contourf(
                                     comp_y_centers, comp_x_centers, comp_n,
                                     extent=comp_extent, levels=ctr_level(comp_n, lvls[:2]),
-                                    #zorder=4, cmap=plt.cm.winter_r)
                                     zorder=4, cmap=plt.cm.Blues)
                         except Warning:
                             warnings.warn(
@@ -1210,13 +1208,11 @@ def plot_triangle(
                                 contours = ax_temp.contour(
                                     comp_y_centers, comp_x_centers, comp_n,
                                     extent=comp_extent, levels=ctr_level(comp_n, lvls[:2]),
-                                    #zorder=5, cmap=plt.cm.winter_r)
                                     zorder=5, cmap=plt.cm.Blues)
                             else:
                                 contours = ax_temp.contourf(
                                     comp_y_centers, comp_x_centers, comp_n,
                                     extent=comp_extent, levels=ctr_level(comp_n, lvls[:2]),
-                                    #zorder=4, cmap=plt.cm.winter_r)
                                     zorder=4, cmap=plt.cm.Blues)
                         except Warning:
                             warnings.warn(
@@ -1225,15 +1221,16 @@ def plot_triangle(
                                 info.plotted_parameters[i],
                                 info.plotted_parameters[j]))
                             pass
-                        ax_temp.axis([x_range[second_index][0], x_range[second_index][1],
-                            x_range[index][0], x_range[index][1]])
+                        ax_temp.axis([x_range[second_index][0],
+                                      x_range[second_index][1],
+                                      x_range[index][0], x_range[index][1]])
 
-                    fig_temp.savefig(
-                        info.folder+'plots/{0}-vs-{1}_2d_{2}-{3}.{4}'.format(
-                        info.folder.split('/')[-2],
-                        comp_folder.split('/')[-2],
-                        info.ref_names[index],
-                        info.ref_names[second_index], info.extension))
+                        fig_temp.savefig(
+                            info.folder+'plots/{0}-vs-{1}_2d_{2}-{3}.{4}'.format(
+                            info.folder.split('/')[-2],
+                            comp_folder.split('/')[-2],
+                            info.ref_names[index],
+                            info.ref_names[second_index], info.extension))
 
                     # store the coordinates of the points for further
                     # plotting.
