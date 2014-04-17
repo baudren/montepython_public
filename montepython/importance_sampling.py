@@ -73,10 +73,9 @@ def run(cosmo, data, command_line):
     new_experiments = recover_new_experiments(
         data, command_line, starting_folder)
     if not new_experiments:
-        raise io_mp.ConfigurationError(
-            "To use Importance Sampling, your new folder should have at least"
-            " one more likelihood than the previous one. Please ensure that "
-            "it is the case.")
+        # it means that some experiments that were used before are no longer
+        # used. In this case, one should recompute all the likelihoods.
+        new_experiments = data.experiments
 
     # resetting the needed cosmo arguments, and deleting the dictionary of
     # likelihoods, only if new_experiments is smaller than the old ones.
@@ -88,8 +87,8 @@ def run(cosmo, data, command_line):
     elif set(new_experiments) == set(data.experiments):
         warnings.warn(
             "All likelihoods were found to be different than ones fron the "
-            "starting folder. The previous value of the likelihood will be "
-            "discarded.")
+            "starting folder, or some were not used any longer. The previous "
+            "value of the likelihood will be discarded.")
     else:
         io_mp.ConfigurationError(
             "You probably tried to run Importance Sampling with less "
