@@ -178,7 +178,7 @@ def print_vector(out, N, loglkl, data):
     """
 
     for j in range(len(out)):
-        out[j].write('%d  %.6g\t' % (N, -loglkl))
+        out[j].write('%.4g  %.6g\t' % (N, -loglkl))
         for elem in data.get_mcmc_parameters(['varying']):
             out[j].write('%.6e\t' %
                          data.mcmc_parameters[elem]['last_accepted'])

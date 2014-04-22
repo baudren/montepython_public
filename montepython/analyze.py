@@ -69,7 +69,7 @@ def analyze(command_line):
     # names, and number of paramaters plotted (can be let empty, all will
     # then be plotted).
     if command_line.optional_plot_file is not None:
-        for line in open(command_line.optional_plot_file[0], 'r'):
+        for line in open(command_line.optional_plot_file, 'r'):
             exec(line)
 
     # Prepare the files, according to the case, load the log.param, and
@@ -864,11 +864,6 @@ def plot_triangle(
     # unique and thus require a simple treatment.
     if comp:
         backup_comp_names = np.copy(comp_plotted_parameters)
-        #print 'backup_comp_names is',backup_comp_names
-        #print 'comp_backup_names is',comp_backup_names
-        #print 'comp_ref_names is',comp_ref_names
-        #print 'comp_tex_names is',comp_tex_names
-        #print 'comp_plotted_parameters is',comp_plotted_parameters
 
         for i in xrange(len(info.plotted_parameters)):
             if info.plotted_parameters[i] in comp_plotted_parameters:
@@ -1039,7 +1034,7 @@ def plot_triangle(
                     info, lkl_mean, bincenters)
                 if plot_2d:
                     ax2d.plot(interp_grid, interp_lkl_mean, color='red',
-                        ls='--', lw=2)
+                              ls='--', lw=2)
                 ax1d.plot(interp_grid, interp_lkl_mean, color='red',
                           ls='--', lw=4)
             except:
@@ -1146,12 +1141,12 @@ def plot_triangle(
                                 contours = ax2dsub.contour(
                                     comp_y_centers, comp_x_centers, comp_n,
                                     extent=comp_extent, levels=ctr_level(comp_n, lvls[:2]),
-                                    zorder=5, cmap=plt.cm.winter_r)
+                                    zorder=5, cmap=plt.cm.Blues)
                             else:
                                 contours = ax2dsub.contourf(
                                     comp_y_centers, comp_x_centers, comp_n,
                                     extent=comp_extent, levels=ctr_level(comp_n, lvls[:2]),
-                                    zorder=4, cmap=plt.cm.winter_r)
+                                    zorder=4, cmap=plt.cm.Blues)
                         except Warning:
                             warnings.warn(
                                 "The routine could not find the contour of the " +
@@ -1166,27 +1161,25 @@ def plot_triangle(
                     comp_done_other = False
 
                 if command_line.subplot is True:
-                    # Store the individual 2d plots
+                    # Store the individual 2d plots. Note that the tick and
+                    # fontsize are hardcoded here since they will always keep
+                    # the same size.
                     fig_temp = plt.figure(3, figsize=(6, 6))
                     fig_temp.clf()
                     ax_temp = fig_temp.add_subplot(111)
                     ax_temp.set_xticks(ticks[second_index])
                     ax_temp.set_yticks(ticks[index])
-                    #ax_temp.imshow(
-                        #n, extent=extent, aspect='auto',
-                        #interpolation='gaussian', origin='lower',
-                        #cmap=matplotlib.cm.Reds)
                     ax_temp.set_xticklabels(
                         ['%.3g' % s for s in ticks[second_index]],
-                        fontsize=ticksize2d)
+                        fontsize=16)
                     ax_temp.set_yticklabels(
                         ['%.3g' % s for s in ticks[index]],
-                        fontsize=ticksize2d)
+                        fontsize=16)
                     ax_temp.set_title(
                         '%s vs %s' % (
                             info.tex_names[index],
                             info.tex_names[second_index]),
-                        fontsize=fontsize1d)
+                        fontsize=16)
                     try:
                         contours = ax_temp.contourf(
                             y_centers, x_centers, n, extent=extent,
@@ -1213,12 +1206,12 @@ def plot_triangle(
                                 contours = ax_temp.contour(
                                     comp_y_centers, comp_x_centers, comp_n,
                                     extent=comp_extent, levels=ctr_level(comp_n, lvls[:2]),
-                                    zorder=5, cmap=plt.cm.winter_r)
+                                    zorder=5, cmap=plt.cm.Blues)
                             else:
                                 contours = ax_temp.contourf(
                                     comp_y_centers, comp_x_centers, comp_n,
                                     extent=comp_extent, levels=ctr_level(comp_n, lvls[:2]),
-                                    zorder=4, cmap=plt.cm.winter_r)
+                                    zorder=4, cmap=plt.cm.Blues)
                         except Warning:
                             warnings.warn(
                                 "The routine could not find the contour of the " +
@@ -1226,15 +1219,16 @@ def plot_triangle(
                                 info.plotted_parameters[i],
                                 info.plotted_parameters[j]))
                             pass
-                        ax_temp.axis([x_range[second_index][0], x_range[second_index][1],
-                            x_range[index][0], x_range[index][1]])
+                        ax_temp.axis([x_range[second_index][0],
+                                      x_range[second_index][1],
+                                      x_range[index][0], x_range[index][1]])
 
-                    fig_temp.savefig(
-                        info.folder+'plots/{0}-vs-{1}_2d_{2}-{3}.{4}'.format(
-                        info.folder.split('/')[-2],
-                        comp_folder.split('/')[-2],
-                        info.ref_names[index],
-                        info.ref_names[second_index], info.extension))
+                        fig_temp.savefig(
+                            info.folder+'plots/{0}-vs-{1}_2d_{2}-{3}.{4}'.format(
+                            info.folder.split('/')[-2],
+                            comp_folder.split('/')[-2],
+                            info.ref_names[index],
+                            info.ref_names[second_index], info.extension))
 
                     # store the coordinates of the points for further
                     # plotting.
@@ -1430,11 +1424,6 @@ def minimum_credible_intervals(histogram, bincenters, levels):
                     "taking too long to converge")
                 break
 
-        #print top,norm,abs(top/norm)
-        #print bincenters[indices]
-        #print histogram[indices],water_level
-        #print
-
         # min
         if indices[0] > 0:
             bounds[j][0] = bincenters[indices[0]] - delta*(histogram[indices[0]]-water_level)/(histogram[indices[0]]-histogram[indices[0]-1])
@@ -1457,7 +1446,6 @@ def minimum_credible_intervals(histogram, bincenters, levels):
 
         j += 1
 
-    #print
     return bounds
 
 

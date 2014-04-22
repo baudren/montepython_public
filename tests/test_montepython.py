@@ -16,7 +16,7 @@ import warnings
 # the ones specifically asked by this code..)
 warnings.filterwarnings('ignore')
 
-#---- local imports -----#
+# ---- local imports -----#
 from montepython import io_mp
 from montepython import parser_mp
 from montepython import sampler
@@ -362,7 +362,7 @@ class Test05DataModule(TestMontePython):
             float(self.number)/10*5)
 
 
-class Test06MetropolisHastingsBehaviour(TestMontePython):
+class Test06MetropolisHastingsImportanceSampling(TestMontePython):
     """
     Check that the default sampling method is working
 
@@ -387,13 +387,13 @@ class Test06MetropolisHastingsBehaviour(TestMontePython):
         del self.cosmo, self.data, self.command_line
 
     def test_short_run(self):
-        """Are the MH sampler basic functionalities working?"""
+        """Are the MH and IS sampler basic functionalities working?"""
         # Check that a file with the proper name was created
-        output_file = os.path.join(
-            self.folder, self.date+'_%d__1.txt' % self.number)
-        self.assertTrue(os.path.exists(output_file))
+        output_chain = self.date+'_%d__1.txt' % self.number
+        self.assertTrue(os.path.exists(
+            os.path.join(self.folder, output_chain)))
         # Recover the data in it
-        data = np.loadtxt(output_file)
+        data = np.loadtxt(os.path.join(self.folder, output_chain))
         # Check that the sum of the first column adds up to the desired number
         self.assertEqual(np.sum(data[:, 0]), self.number)
         # Check that the analyze module works for this
@@ -415,6 +415,31 @@ class Test06MetropolisHastingsBehaviour(TestMontePython):
                 os.path.join(self.folder, 'plots')):
             self.assertTrue(
                 pdf_file.find('_triangle') != -1 or pdf_file.find('_1d') != -1)
+        ## Run an Importance sampling run on this data
+        is_folder = self.folder + '_is'
+        custom_command = (
+            'run -p test_is.param -o %s' % is_folder +
+            ' -m IS --IS-starting-folder %s' % self.folder)
+        run(custom_command)
+        # Check that the file has been copied, and that both the likelihood and
+        # the multiplicity has been changed
+        self.assertIn(output_chain, os.listdir(is_folder),
+                      "The IS did not create the right chain")
+        # Use these two runs to test the "--comp" option
+        custom_command = 'info %s --comp %s --plot-2d always' % (
+            self.folder, is_folder)
+        run(custom_command)
+        # Check that all expected files were created
+        short_folder = os.path.join(self.folder.split(os.path.sep)[-1])
+        short_is_folder = os.path.join(is_folder.split(os.path.sep)[-1])
+        expected_files = set([
+            '%s-vs-%s_triangle.pdf' % (short_folder, short_is_folder),
+            '%s-vs-%s_1d.pdf' % (short_folder, short_is_folder),
+            '%s_triangle.pdf' % short_folder,
+            '%s_1d.pdf' % short_folder])
+        self.assertSetEqual(expected_files, set(
+            os.listdir(os.path.join(self.folder, 'plots'))))
+        shutil.rmtree('%s' % is_folder)
 
 
 class Test07CosmoHammerBehaviour(TestMontePython):

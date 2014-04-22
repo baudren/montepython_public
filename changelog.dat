@@ -1,3 +1,14 @@
+v2.0.4: + Importance Sampling implemented. You can ask for this by
+	  specifying the method flag to IS, `-m IS`. It also requires
+	  a starting folder, `--IS-starting-folder something/` in
+	  order to work. The parameter file must be identical to the
+	  one in the starting folder, excepted at the level of the
+	  likelihoods. The method then reads the existing chains, and
+	  compute the new likelihood and multiplicity, and stores this
+	  in a new folder.
+	+ Bug-fix for the previously cleaned parser, notably in the
+	  analyze module.
+----------------------------------------------------------------------
 v2.0.3: + New BOSS BAO likelihoods - courtesy of the BOSS
 	  collaboration via Jan Grieb. There are now two
 	  possibilities, isotropic and anisotropic measurements. See

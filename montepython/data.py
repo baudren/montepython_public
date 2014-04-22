@@ -121,6 +121,9 @@ class Data(object):
         self.jumping = command_line.jumping
         self.jumping_factor = command_line.jumping_factor
 
+        # Store the rest of the command line
+        self.command_line = command_line
+
         # Initialise the path dictionnary.
         self.path = {}
 
@@ -321,53 +324,10 @@ class Data(object):
             io_mp.log_parameters(self, command_line)
             self.log_flag = True
 
-        self.lkl = od()
-
-        # adding the likelihood directory to the path, to import the module
-        # then, for each library, calling an instance of the likelihood.
-        # Beware, though, if you add new likelihoods, they should go to the
-        # folder likelihoods/yourlike/yourlike.py, and contain a yourlike.data,
-        # otherwise the following set of commands will not work anymore.
-
-        # For the logging if log_flag is True, each likelihood will log its
-        # parameters
-
         print '\nTesting likelihoods for:\n ->',
         print ', '.join(self.experiments)+'\n'
 
-        # Due to problems in relative import, this line must be there. Until a
-        # better solution is found. It adds the root folder of the MontePython
-        # used as the first element in the sys.path
-        sys.path.insert(0, self.path['root'])
-
-        for elem in self.experiments:
-
-            folder = os.path.abspath(os.path.join(
-                path['MontePython'], "likelihoods", "%s" % elem))
-            # add the folder of the likelihood to the path of libraries to...
-            # ... import easily the likelihood.py program
-            try:
-                exec "from likelihoods.%s import %s" % (
-                    elem, elem)
-            except ImportError:
-                raise io_mp.ConfigurationError(
-                    "Trying to import the %s likelihood" % elem +
-                    " as asked in the parameter file, and failed."
-                    " Please make sure it is in the `montepython/"
-                    "likelihoods` folder, and is a proper python "
-                    "module.")
-            # Initialize the likelihoods. Depending on the values of
-            # command_line and log_flag, the routine will call slightly
-            # different things. If log_flag is True, the log.param will be
-            # appended.
-            try:
-                exec "self.lkl['%s'] = %s('%s/%s.data',\
-                    self, command_line)" % (
-                    elem, elem, folder, elem)
-            except KeyError:
-                raise io_mp.ConfigurationError(
-                    "You should provide a 'clik' entry in the dictionary "
-                    "path defined in the file default.conf")
+        self.initialise_likelihoods(self.experiments)
 
         # Storing parameters by blocks of speed
         self.group_parameters_in_blocks()
@@ -419,6 +379,62 @@ class Data(object):
         Transform from parameters dictionary to mcmc_parameters dictionary of
         instances from the class :class:`parameter` (inheriting from dict)
         """
+
+    def initialise_likelihoods(self, experiments):
+        """
+        Given an array of experiments, return an ordered dict of instances
+
+        .. Note::
+
+            in the __init__ method, experiments is naturally self.experiments,
+            but it is useful to keep it as a parameter, for the case of
+            importance sampling.
+
+        """
+
+        self.lkl = od()
+        # adding the likelihood directory to the path, to import the module
+        # then, for each library, calling an instance of the likelihood.
+        # Beware, though, if you add new likelihoods, they should go to the
+        # folder likelihoods/yourlike/yourlike.py, and contain a yourlike.data,
+        # otherwise the following set of commands will not work anymore.
+
+        # For the logging if log_flag is True, each likelihood will log its
+        # parameters
+
+        # Due to problems in relative import, this line must be there. Until a
+        # better solution is found. It adds the root folder of the MontePython
+        # used as the first element in the sys.path
+        sys.path.insert(0, self.path['root'])
+
+        for elem in experiments:
+
+            folder = os.path.abspath(os.path.join(
+                self.path['MontePython'], "likelihoods", "%s" % elem))
+            # add the folder of the likelihood to the path of libraries to...
+            # ... import easily the likelihood.py program
+            try:
+                exec "from likelihoods.%s import %s" % (
+                    elem, elem)
+            except ImportError:
+                raise io_mp.ConfigurationError(
+                    "Trying to import the %s likelihood" % elem +
+                    " as asked in the parameter file, and failed."
+                    " Please make sure it is in the `montepython/"
+                    "likelihoods` folder, and is a proper python "
+                    "module.")
+            # Initialize the likelihoods. Depending on the values of
+            # command_line and log_flag, the routine will call slightly
+            # different things. If log_flag is True, the log.param will be
+            # appended.
+            try:
+                exec "self.lkl['%s'] = %s('%s/%s.data',\
+                    self, self.command_line)" % (
+                    elem, elem, folder, elem)
+            except KeyError:
+                raise io_mp.ConfigurationError(
+                    "You should provide a 'clik' entry in the dictionary "
+                    "path defined in the file default.conf")
 
     def read_file(self, param, structure, field='', separate=False):
         """
