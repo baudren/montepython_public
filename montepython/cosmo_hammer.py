@@ -131,6 +131,9 @@ def run(cosmo, data, command_line):
         params=params,
         likelihoodComputationChain=chain,
         filePrefix=file_prefix,
+        walkersRatio=50,
+        burninIterations=10,
+        sampleIterations=30,
         storageUtil=derived_util,
         threadCount=num_threads,
         **data.CH_arguments)
@@ -177,8 +180,7 @@ def from_CH_output_to_chains(folder):
 
     ## Concatenate everything and save to file
     final = np.concatenate((ones, lkl, chains), axis=1)
-    output_folder = os.path.abspath(
-        [a for a in folder.split(os.path.sep) if a][-2])
+    output_folder = os.path.join(folder, '..')
     output_chain_path = os.path.join(output_folder, name_chain)
     np.savetxt(output_chain_path, final)
 
