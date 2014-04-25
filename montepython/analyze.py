@@ -1245,6 +1245,13 @@ def plot_triangle(
                         for k in range(np.shape(points)[0]):
                             plot_file.write("%.8g\t %.8g\n" % (
                                 points[k, 0], points[k, 1]))
+                            # stop to not include the inner contours
+                            if k != 0:
+                                if all(points[k] == points[0]):
+                                    plot_file.write("\n")
+                                    print 'stopped'
+                                    break
+
                     plot_file.write("\n\n")
 
                     plot_file.write(
@@ -1255,6 +1262,11 @@ def plot_triangle(
                         for k in range(np.shape(points)[0]):
                             plot_file.write("%.8g\t %.8g\n" % (
                                 points[k, 0], points[k, 1]))
+                            if k != 0:
+                                if all(points[k] == points[0]):
+                                    plot_file.write("\n")
+                                    print 'stopped'
+                                    break
                     plot_file.write("\n\n")
 
                     plot_file.close()
