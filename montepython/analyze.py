@@ -1249,7 +1249,6 @@ def plot_triangle(
                             if k != 0:
                                 if all(points[k] == points[0]):
                                     plot_file.write("\n")
-                                    print 'stopped'
                                     break
 
                     plot_file.write("\n\n")
@@ -1265,11 +1264,39 @@ def plot_triangle(
                             if k != 0:
                                 if all(points[k] == points[0]):
                                     plot_file.write("\n")
-                                    print 'stopped'
                                     break
                     plot_file.write("\n\n")
-
                     plot_file.close()
+
+                    # Store also directly the histogram
+                    #contours = ax2dsub.contourf(
+                        #y_centers, x_centers, n,
+                        #extent=extent, levels=ctr_level(n, lvls[:2]),
+                        #zorder=5, cmap=plt.cm.autumn_r,
+                        #alpha=command_line.alpha)
+                    hist_file_name = os.path.join(
+                        info.folder, 'plots/{0}_2d_{1}-{2}.hist'.format(
+                            info.folder.split('/')[-2],
+                            info.ref_names[index],
+                            info.ref_names[second_index]))
+                    with open(hist_file_name, 'w') as hist_file:
+                        hist_file.write("# Interpolated histogram\n")
+                        hist_file.write("\n# x_centers\n")
+                        hist_file.write(", ".join(
+                            [str(elem) for elem in x_centers])+"\n")
+
+                        hist_file.write("\n# y_centers\n")
+                        hist_file.write(", ".join(
+                            [str(elem) for elem in y_centers])+"\n")
+
+                        hist_file.write("\n# Extent\n")
+                        hist_file.write(", ".join(
+                            [str(elem) for elem in extent])+"\n")
+
+                        hist_file.write("\n# Histogram\n")
+                        for line in n:
+                            hist_file.write(", ".join(
+                                [str(elem) for elem in line])+"\n")
 
     # Plot the remaining 1d diagram for the parameters only in the comp
     # folder
