@@ -1279,24 +1279,8 @@ def plot_triangle(
                             info.folder.split('/')[-2],
                             info.ref_names[index],
                             info.ref_names[second_index]))
-                    with open(hist_file_name, 'w') as hist_file:
-                        hist_file.write("# Interpolated histogram\n")
-                        hist_file.write("\n# x_centers\n")
-                        hist_file.write(", ".join(
-                            [str(elem) for elem in x_centers])+"\n")
-
-                        hist_file.write("\n# y_centers\n")
-                        hist_file.write(", ".join(
-                            [str(elem) for elem in y_centers])+"\n")
-
-                        hist_file.write("\n# Extent\n")
-                        hist_file.write(", ".join(
-                            [str(elem) for elem in extent])+"\n")
-
-                        hist_file.write("\n# Histogram\n")
-                        for line in n:
-                            hist_file.write(", ".join(
-                                [str(elem) for elem in line])+"\n")
+                    write_histogram(
+                        hist_file_name, x_centers, y_centers, extent, n)
 
     # Plot the remaining 1d diagram for the parameters only in the comp
     # folder
@@ -1561,6 +1545,75 @@ def get_fontsize(info, geometry, width=None):
                 "This routine expects a number of columns "
                 "for the 1d plot")
     return size, size
+
+
+def write_histogram(hist_file_name, x_centers, y_centers, extent, hist):
+    """
+    Store the histogram information to a file, to plot it later
+
+    """
+    with open(hist_file_name, 'w') as hist_file:
+        hist_file.write("# Interpolated histogram\n")
+        hist_file.write("\n# x_centers\n")
+        hist_file.write(", ".join(
+            [str(elem) for elem in x_centers])+"\n")
+
+        hist_file.write("\n# y_centers\n")
+        hist_file.write(", ".join(
+            [str(elem) for elem in y_centers])+"\n")
+
+        hist_file.write("\n# Extent\n")
+        hist_file.write(", ".join(
+            [str(elem) for elem in extent])+"\n")
+
+        hist_file.write("\n# Histogram\n")
+        for line in hist:
+            hist_file.write(", ".join(
+                [str(elem) for elem in line])+"\n")
+
+
+def read_histogram_from_file(histogram_path):
+    """
+    Read the histogram information that was stored in a file.
+
+    To use it, call something like this:
+
+    .. code::
+
+        x_centers, y_centers, extent, hist = read_histogram_from_file(path)
+        fig, ax = plt.subplots()
+        ax.contourf(
+            y_centers, x_centers, hist, extent=extent,
+            levels=ctr_level(hist, [0.68, 0.95]),
+            zorder=5, cma=plt.cm.autumn_r)
+        plt.show()
+
+    """
+    with open(histogram_path, 'r') as hist_file:
+        length = 0
+        for line in hist_file:
+            if line:
+                if line.find("# x_centers") != -1:
+                    x_centers = [float(elem) for elem in
+                                 hist_file.next().split(",")]
+                    length = len(x_centers)
+                elif line.find("# y_centers") != -1:
+                    y_centers = [float(elem) for elem in
+                                 hist_file.next().split(",")]
+                elif line.find("# Extent") != -1:
+                    extent = [float(elem) for elem in
+                              hist_file.next().split(",")]
+                elif line.find("# Histogram") != -1:
+                    hist = []
+                    for index in range(length):
+                        hist.append([float(elem) for elem in
+                                     hist_file.next().split(",")])
+    x_centers = np.array(x_centers)
+    y_centers = np.array(y_centers)
+    extent = np.array(extent)
+    hist = np.array(hist)
+
+    return x_centers, y_centers, extent, hist
 
 
 class Information(object):
