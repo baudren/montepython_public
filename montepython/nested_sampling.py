@@ -97,7 +97,8 @@ NS_auto_arguments = {
     'n_dims':   {'type': int},
     'n_params': {'type': int},
     'verbose':  {'type': str2bool},
-    'outputfiles_basename': {'type': str}
+    'outputfiles_basename': {'type': str},
+    'init_MPI': {'type': str2bool}
     }
 
 
