@@ -105,6 +105,7 @@ def initialise(cosmo, data, command_line):
     """
     Main call to prepare the information for the MultiNest run.
     """
+
     # Convenience variables
     varying_param_names = data.get_mcmc_parameters(['varying'])
     derived_param_names = data.get_mcmc_parameters(['derived'])
@@ -163,7 +164,8 @@ def initialise(cosmo, data, command_line):
     for param in varying_param_names:
         if not param in NS_param_names:
             NS_param_names.append(param)
-
+    data.NS_param_names = NS_param_names
+            
     # Caveat: multi-modal sampling OFF by default; if requested, INS disabled
     try:
         if data.NS_arguments['multimodal']:
@@ -172,6 +174,10 @@ def initialise(cosmo, data, command_line):
                           'so Importance Nested Sampling has been disabled')
     except KeyError:
         data.NS_arguments['multimodal'] = False
+
+    # MPI: don't initialise it inside MultiNest.
+    # Rather, it is either initialised by Monte Python (if MPI used) or ignored
+    data.NS_arguments['init_MPI']=False
 
     # Write the MultiNest arguments and parameter ordering
     with open(base_name+name_arguments, 'w') as afile:
@@ -234,6 +240,10 @@ def run(cosmo, data, command_line):
             so hidden in `*args`)
 
     """
+    # Convenience variables
+    derived_param_names = data.get_mcmc_parameters(['derived'])
+    NS_param_names      = data.NS_param_names
+
     # Function giving the prior probability
     def prior(cube, ndim, *args):
         """
