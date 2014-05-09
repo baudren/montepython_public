@@ -1,3 +1,12 @@
+v2.0.5: + Nested Sampling can now be used with MPI - see the
+	  documentation.
+	+ The histograms are now also stored in files if the '--all'
+	  flag is specified.
+	+ Improved the communication with the classy wrapper, notably
+	  on the derived parameters - now the function
+	  `get_current_derived_parameters` does not need to know how
+	  Monte Python works, which is better.
+----------------------------------------------------------------------
 v2.0.4: + Importance Sampling implemented. You can ask for this by
 	  specifying the method flag to IS, `-m IS`. It also requires
 	  a starting folder, `--IS-starting-folder something/` in
