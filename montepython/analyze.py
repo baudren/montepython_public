@@ -1056,6 +1056,13 @@ def plot_triangle(
                     info.folder.split('/')[-2],
                     info.plotted_parameters[i], info.extension),
                     bbox_inches=extent1d.expanded(1.1, 1.4))
+            # Store the function in a file
+            hist_file_name = os.path.join(
+                info.folder, 'plots/{0}_{1}.hist'.format(
+                    info.folder.split(os.path.sep)[-2],
+                    info.ref_names[index]))
+            print hist_file_name
+            write_histogram(hist_file_name, interp_grid, interp_hist)
 
         # Now do the rest of the triangle plot
         if plot_2d:
@@ -1279,7 +1286,7 @@ def plot_triangle(
                             info.folder.split('/')[-2],
                             info.ref_names[index],
                             info.ref_names[second_index]))
-                    write_histogram(
+                    write_histogram_2d(
                         hist_file_name, x_centers, y_centers, extent, n)
 
     # Plot the remaining 1d diagram for the parameters only in the comp
@@ -1547,7 +1554,43 @@ def get_fontsize(info, geometry, width=None):
     return size, size
 
 
-def write_histogram(hist_file_name, x_centers, y_centers, extent, hist):
+def write_histogram(hist_file_name, x_centers, hist):
+    """
+    Store the posterior distribution to a file
+
+    """
+    with open(hist_file_name, 'w') as hist_file:
+        hist_file.write("# 1d posterior distribution\n")
+        hist_file.write("\n# x_centers\n")
+        hist_file.write(", ".join(
+            [str(elem) for elem in x_centers])+"\n")
+        hist_file.write("\n# Histogram\n")
+        hist_file.write(", ".join(
+            [str(elem) for elem in hist])+"\n")
+    print 'wrote ', hist_file_name
+
+
+def read_histogram(histogram_path):
+    """
+    Recover a stored 1d posterior
+
+    """
+    with open(histogram_path, 'r') as hist_file:
+        for line in hist_file:
+            if line:
+                if line.find("# x_centers") != -1:
+                    x_centers = [float(elem) for elem in
+                                 hist_file.next().split(",")]
+                elif line.find("# Histogram") != -1:
+                    hist = [float(elem) for elem in
+                            hist_file.next().split(",")]
+    x_centers = np.array(x_centers)
+    hist = np.array(hist)
+
+    return x_centers, hist
+
+
+def write_histogram_2d(hist_file_name, x_centers, y_centers, extent, hist):
     """
     Store the histogram information to a file, to plot it later
 
@@ -1572,7 +1615,7 @@ def write_histogram(hist_file_name, x_centers, y_centers, extent, hist):
                 [str(elem) for elem in line])+"\n")
 
 
-def read_histogram_from_file(histogram_path):
+def read_histogram_2d(histogram_path):
     """
     Read the histogram information that was stored in a file.
 
@@ -1580,7 +1623,7 @@ def read_histogram_from_file(histogram_path):
 
     .. code::
 
-        x_centers, y_centers, extent, hist = read_histogram_from_file(path)
+        x_centers, y_centers, extent, hist = read_histogram_2d_from_file(path)
         fig, ax = plt.subplots()
         ax.contourf(
             y_centers, x_centers, hist, extent=extent,
