@@ -468,5 +468,37 @@ class Test07CosmoHammerBehaviour(TestMontePython):
                 self.data.lkl[experiment], 'computeLikelihood'))
 
 
+class Test08NestedSamplingBehaviour(TestMontePython):
+    """
+    Check if Nested Sampling works
+    """
+    def setUp(self):
+        self.date = str(datetime.date.today())
+        self.folder = os.path.join('tests', 'test_%s' % self.date)
+        self.custom_command = (
+            'run -N 1 -p test_gaussian.param -o %s' % self.folder +
+            ' -m NS --NS_n_live_points 30 --NS_max_iter 10')
+        self.cosmo, self.data, self.command_line, _ = initialise(
+            self.custom_command)
+
+    def tearDown(self):
+        shutil.rmtree(self.folder)
+        self.cosmo.empty()
+        del self.cosmo, self.data, self.command_line
+
+    def test_behaviour(self):
+        """Check Nested Sampling global behaviour"""
+        self.assertTrue(os.path.exists(
+            os.path.join(self.folder, 'NS')))
+        sampler.run(self.cosmo, self.data, self.command_line)
+
+
+class Test09MPI(TestMontePython):
+    """
+    Check the MPI behaviour
+    """
+    pass
+
+
 if __name__ == '__main__':
     nose.runmodule()

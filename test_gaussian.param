@@ -12,7 +12,7 @@ data.experiments=['test_gaussian']
 
 data.parameters['H0']        = [ 67.5,    65,    73,   0.5,    1, 'cosmo']
 data.parameters['omega_b']   = [2.225, 2.150, 2.300,  0.01, 1e-2, 'cosmo']
-data.parameters['omega_cdm'] = [0.012, 0.006, 0.030, 0.005,    1, 'cosmo']
+data.parameters['omega_cdm'] = [0.012, 0.006, 0.030, 0.002,    1, 'cosmo']
 
 #------ Mcmc parameters ----
 

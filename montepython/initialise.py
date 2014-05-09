@@ -64,15 +64,19 @@ def initialise(custom_command=''):
                     "You did not provide a number of steps, neither via " +
                     "command line, nor in %s" % command_line.param)
 
-        # Creating the file that will contain the chain, only with Metropolis
-        # Hastings
-        if command_line.method == 'MH':
-            io_mp.create_output_files(command_line, data)
-
         # Loading up the cosmological backbone. For the moment, only CLASS has been
         # wrapped.
         cosmo = recover_cosmological_module(data)
 
+        # Initialising the sampler
+        # MH: Creating the file that will contain the chain
+        if command_line.method == 'MH':
+            io_mp.create_output_files(command_line, data)
+        # NS: Creating the NS subfolder and the MultiNest arguments
+        elif command_line.method == 'NS':
+            from nested_sampling import initialise as initialise_ns
+            initialise_ns(cosmo, data, command_line)
+            
         return cosmo, data, command_line, True
 
 

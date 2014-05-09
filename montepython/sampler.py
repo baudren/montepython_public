@@ -427,8 +427,15 @@ def compute_lkl(cosmo, data):
     # Compute the derived parameters if relevant
     if data.get_mcmc_parameters(['derived']) != []:
         try:
+            derived = cosmo.get_current_derived_parameters(
+                data.get_mcmc_parameters(['derived']))
+            for name, value in derived.iteritems():
+                data.mcmc_parameters[name]['current'] = value
+        except AttributeError:
+            # This happens if the classy wrapper is still using the old
+            # convention, expecting data as the input parameter
             cosmo.get_current_derived_parameters(data)
-        except NameError:
+        except CosmoSevereError:
             raise io_mp.CosmologicalModuleError(
                 "Could not write the current derived parameters")
     for elem in data.get_mcmc_parameters(['derived']):

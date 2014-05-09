@@ -70,41 +70,42 @@ def mpi_run(custom_command=""):
         cosmo, data, command_line, success = safe_initialisation(
             custom_command, comm, nprocs)
 
-        # Check that the run asked is compatible with mpirun.
-        failed = False
+        # Check that the run asked is compatible with mpirun and prepare.
         if command_line.subparser_name == 'info':
             warnings.warn(
                 "Analyzing the chains is not supported in mpirun"
                 " so this will run on one core only.")
-            failed = True
-        elif command_line.method in ['NS', 'CH', 'IS']:
-            warnings.warn(
-                "The methods NS, CH and IS are not supported in mpirun"
-                " so this will run on one core only.")
-            failed = True
-
-        if failed:
-            suffix = 'failed'
-        else:
+            status = 'failed'
+        elif command_line.method == "MH":
             regexp = re.match(".*__(\w*).txt", data.out_name)
             suffix = regexp.groups()[0]
+            status = suffix
+        elif command_line.method == "NS":
+            status = 1
+        else:
+            warnings.warn(
+                "The method '%s' is not supported"%(command_line.method) +
+                " in mpirun so this will run on one core only.")
+            status = 'failed'
+
         # Send an "OK" signal to all the other processes, actually giving the
         # suffix of this master chain. All the other will add 1 to this number
         for index in range(1, nprocs):
-            comm.send(suffix, dest=index, tag=1)
+            comm.send(status, dest=index, tag=1)
     else:
         # If the rank is not 0, it is a slave process. It waits to receive the
         # "OK" message, which is immediatly discarded.
-        suffix = comm.recv(source=0, tag=1)
+        status = comm.recv(source=0, tag=1)
 
         # If a failed message was passed, exit the process
-        if suffix == 'failed':
+        if status == 'failed':
             success = False
         else:
             # Concatenate the rank to the suffix, and not the opposite, this
             # should avoid any conflicting name
             if not custom_command:
                 custom_command = " ".join(sys.argv[1:])
+            suffix = status
             custom_command += " --chain-number %s" % str(int(suffix)+rank)
             cosmo, data, command_line, success = initialise(custom_command)
 

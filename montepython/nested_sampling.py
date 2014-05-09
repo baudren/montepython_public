@@ -97,58 +97,16 @@ NS_auto_arguments = {
     'n_dims':   {'type': int},
     'n_params': {'type': int},
     'verbose':  {'type': str2bool},
-    'outputfiles_basename': {'type': str}
+    'outputfiles_basename': {'type': str},
+    'init_MPI': {'type': str2bool}
     }
 
 
-def run(cosmo, data, command_line):
+def initialise(cosmo, data, command_line):
     """
-    Main call to prepare the information for the MultiNest run, and to actually
-    run the MultiNest sampler.
-
-    Note the unusual set-up here, with the two following functions, `prior` and
-    `loglike` having their docstrings written in the encompassing function.
-    This trick was necessary as MultiNest required these two functions to be
-    defined with a given number of parameters, so we could not add `data`. By
-    defining them inside the run function, this problem was by-passed.
-
-    .. function:: prior
-
-        Generate the prior function for MultiNest
-
-        It should transform the input unit cube into the parameter cube. This
-        function actually wraps the method :func:`map_from_unit_interval()
-        <prior.Prior.map_from_unit_interval>` of the class :class:`Prior
-        <prior.Prior>`.
-
-        Parameters
-        ----------
-        cube : array
-            Contains the current point in unit parameter space that has been
-            selected within the MultiNest part.
-        ndim : int
-            Number of varying parameters
-        nparams : int
-            Total number of parameters, including the derived ones (not used,
-            so hidden in `*args`)
-
-
-    .. function:: loglike
-
-        Generate the Likelihood function for MultiNest
-
-        Parameters
-        ----------
-        cube : array
-            Contains the current point in the correct parameter space after
-            transformation from :func:`prior`.
-        ndim : int
-            Number of varying parameters
-        nparams : int
-            Total number of parameters, including the derived ones (not used,
-            so hidden in `*args`)
-
+    Main call to prepare the information for the MultiNest run.
     """
+
     # Convenience variables
     varying_param_names = data.get_mcmc_parameters(['varying'])
     derived_param_names = data.get_mcmc_parameters(['derived'])
@@ -207,7 +165,8 @@ def run(cosmo, data, command_line):
     for param in varying_param_names:
         if not param in NS_param_names:
             NS_param_names.append(param)
-
+    data.NS_param_names = NS_param_names
+            
     # Caveat: multi-modal sampling OFF by default; if requested, INS disabled
     try:
         if data.NS_arguments['multimodal']:
@@ -216,6 +175,10 @@ def run(cosmo, data, command_line):
                           'so Importance Nested Sampling has been disabled')
     except KeyError:
         data.NS_arguments['multimodal'] = False
+
+    # MPI: don't initialise it inside MultiNest.
+    # Rather, it is either initialised by Monte Python (if MPI used) or ignored
+    data.NS_arguments['init_MPI']=False
 
     # Write the MultiNest arguments and parameter ordering
     with open(base_name+name_arguments, 'w') as afile:
@@ -229,6 +192,58 @@ def run(cosmo, data, command_line):
             afile.write('\n')
     with open(base_name+name_paramnames, 'w') as pfile:
         pfile.write('\n'.join(NS_param_names+derived_param_names))
+
+
+def run(cosmo, data, command_line):
+    """
+    Main call to run the MultiNest sampler.
+
+    Note the unusual set-up here, with the two following functions, `prior` and
+    `loglike` having their docstrings written in the encompassing function.
+    This trick was necessary as MultiNest required these two functions to be
+    defined with a given number of parameters, so we could not add `data`. By
+    defining them inside the run function, this problem was by-passed.
+
+    .. function:: prior
+
+        Generate the prior function for MultiNest
+
+        It should transform the input unit cube into the parameter cube. This
+        function actually wraps the method :func:`map_from_unit_interval()
+        <prior.Prior.map_from_unit_interval>` of the class :class:`Prior
+        <prior.Prior>`.
+
+        Parameters
+        ----------
+        cube : array
+            Contains the current point in unit parameter space that has been
+            selected within the MultiNest part.
+        ndim : int
+            Number of varying parameters
+        nparams : int
+            Total number of parameters, including the derived ones (not used,
+            so hidden in `*args`)
+
+
+    .. function:: loglike
+
+        Generate the Likelihood function for MultiNest
+
+        Parameters
+        ----------
+        cube : array
+            Contains the current point in the correct parameter space after
+            transformation from :func:`prior`.
+        ndim : int
+            Number of varying parameters
+        nparams : int
+            Total number of parameters, including the derived ones (not used,
+            so hidden in `*args`)
+
+    """
+    # Convenience variables
+    derived_param_names = data.get_mcmc_parameters(['derived'])
+    NS_param_names      = data.NS_param_names
 
     # Function giving the prior probability
     def prior(cube, ndim, *args):
