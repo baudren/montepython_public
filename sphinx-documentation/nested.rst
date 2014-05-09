@@ -89,8 +89,12 @@ arguments and their values (see below).
    :code:`NS` subfolder (otherwise, the behaviour is not well defined).
 
 .. NOTE::
-   There is no support right now for MPI running of MultiNest. It will be
-   implemented soon. Help is welcome.
+   MultiNest can benefit greatly from being run in parallel with MPI. If it has
+   been correctly compiled with MPI (try to run the examples distributed with
+   the MultiNest code with MPI), it is possible to take advantage of it using
+   Monte Python: simply run the sampler :code:`python MontePython.py` preceded
+   by the appropriate MPI runner (:code:`mpirun` for Open MPI, :code:`mpiexec`
+   for MPICH, etc.).
 
 Once the sampling has finished, the output of it can be analised as in the MCMC
 case with :code:`MontePython.py -info [chain_folder]/NS` (notice that one must
@@ -116,7 +120,7 @@ The following parameters are defined automatically by the content of the
 -  :code:`root | outputfiles_basename` : prefix of the MultiNest output files: name of the chain plus a hyphen.
 -  :code:`outfile | write_output` : whether to write output files (yes, of course).
 -  :code:`resume | resume` : whether to allow for resuming a previously killed run, enabled by default.
--  :code:`initMPI | init_MPI` : try to use MPI (only if MultiNest was compiled with MPI on), enabled by default.
+-  :code:`initMPI | init_MPI` : initialise MPI within MultiNest (disabled: MPI, if requested, is initialised by Monte Python).
 -  :code:`feedback | verbose (True)` : print information periodically.
 
 Manually set parameters

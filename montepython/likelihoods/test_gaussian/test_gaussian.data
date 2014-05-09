@@ -4,16 +4,13 @@
 # The variables are, in order, H0, omega_b, omega_cdm
 
 # Mode 1
-test_gaussian.centre1 = 67.5, 2.225e-2, 0.0120
-test_gaussian.covmat1 = [[0.25, 1.2e-4, 7.5e-5], [ 1.2e-4, 9e-7, 1.4e-7], [ 7.5e-5, 1.4e-7, 9e-6]]
+test_gaussian.centre1 = 67.0, 2.225e-2, 0.0120
+test_gaussian.covmat1 = [[    0.1, 2e-5, 2e-4], [2e-5,   2e-7, 2.4e-7], [ 2e-4, 2.4e-7,   5e-6]]
 
 # Mode 2
-test_gaussian.centre2 = 69.5, 2.300e-2, 0.0120
-test_gaussian.covmat2 = [[0.16, 2e-5, 3.5e-4], [ 2e-5, 1e-7, 1.4e-7], [ 3.5e-4, 1.4e-7, 9e-6]]
+test_gaussian.centre2 = 69.5, 2.300e-2, 0.0170
+test_gaussian.covmat2 = [[0.3, 2e-5, 3.5e-4], [ 2e-5, 1.2e-7, 1.4e-7], [ 3.5e-4, 1.4e-7, 2e-6]]
 
 # Mode 3
-test_gaussian.centre3 = 70.5, 2.225e-2, 0.0150
-test_gaussian.covmat3 = [[0.09, 5.5e-5, 3e-4], [ 5.5e-5, 9e-7, 1.4e-6], [ 3e-4, 1.4e-6, 2.5e-5]]
-
-
-
+test_gaussian.centre3 = 71.5, 2.180e-2, 0.0100
+test_gaussian.covmat3 = [[0.2, 5.5e-5, 3e-4], [ 5.5e-5, 4e-7, 5e-7], [ 3e-4, 5e-7, 5e-6]]
