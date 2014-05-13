@@ -299,7 +299,7 @@ def create_parser():
     # -- sampling method (OPTIONAL)
     runparser.add_argument('-m', '--method', help='sampling method',
                            dest='method', default='MH',
-                           choices=['MH', 'NS', 'CH', 'IS'])
+                           choices=['MH', 'NS', 'CH', 'IS', 'Der'])
     # -- jumping factor (OPTIONAL)
     runparser.add_argument('-f', help='jumping factor', type=float,
                            dest='jumping_factor', default=2.4)
@@ -317,6 +317,13 @@ def create_parser():
     runparser.add_argument('-b', '--bestfit', dest='bf',
                            help='restart from best fit file',
                            type=existing_file)
+
+    ###############
+    # Adding new derived parameters to a run
+    runparser.add_argument(
+        '--Der-starting-folder', dest='Der_starting_folder',
+        help='Add additional derived params from this folder or set of chains',
+        type=str, default='', nargs='+')
 
     ###############
     # Importance Sampling Arguments

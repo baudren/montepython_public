@@ -49,6 +49,9 @@ def run(cosmo, data, command_line):
     elif command_line.method == 'IS':
         import importance_sampling as ims
         ims.run(cosmo, data, command_line)
+    elif command_line.method == 'Der':
+        import add_derived as der
+        der.run(cosmo, data, command_line)
     else:
         raise io_mp.ConfigurationError(
             "Sampling method %s not understood" % command_line.method)
