@@ -321,8 +321,12 @@ def create_parser():
     ###############
     # Adding new derived parameters to a run
     runparser.add_argument(
-        '--Der-starting-folder', dest='Der_starting_folder',
-        help='Add additional derived params from this folder or set of chains',
+        '--Der-target-folder', dest='Der_target_folder',
+        help='Add additional derived params to this folder',
+        type=str, default='')
+    runparser.add_argument(
+        '--Der-param-list', dest='derived_parameters',
+        help='Specify a number of derived parameters to be added',
         type=str, default='', nargs='+')
 
     ###############

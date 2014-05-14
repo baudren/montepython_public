@@ -15,6 +15,7 @@ import os
 import io_mp
 import sampler
 from data import Data
+from data import Parameter
 from classy import CosmoComputationError
 
 
@@ -26,43 +27,44 @@ def run(cosmo, data, command_line):
     model, and having some derived parameters, the idea is to recompute the
     cosmological code to follow additional derived parameters.
     """
-    starting_folder = command_line.Der_starting_folder
-    if not starting_folder:
-        raise io_mp.ConfigurationError(
-            "When running importance sampling, you should specify a folder or"
-            " a set of chains with the option '--IS-starting-folder'")
+    target_folder = command_line.Der_target_folder
+    # If it does not exist, create it
+    if not os.path.isdir(target_folder):
+        os.makedirs(target_folder)
+
+    starting_folder = command_line.folder
+    # Recover all chains in the starting folder
     chains = []
-    # If starting_folder is of length 1, it means it is either a whole folder,
-    # or just one chain. If it is a folder, we recover all chains within.
-    if len(starting_folder) == 1:
-        starting_folder = starting_folder[0]
-        if os.path.isdir(starting_folder):
-            for elem in os.listdir(starting_folder):
-                if elem.find("__") != -1:
-                    chains.append(elem)
-    # Else, it is a list of chains, of which we recover folder name, and store
-    # all of them in chains.
-    else:
-        chains = starting_folder
-        starting_folder = os.path.sep.join(chains[0].split(os.path.sep)[:-1])
-        chains = [elem.split(os.path.sep)[-1] for elem in chains]
+    #  If it exists, we recover all chains within.
+    if os.path.isdir(starting_folder):
+        for elem in os.listdir(starting_folder):
+            if elem.find("__") != -1:
+                chains.append(elem)
 
     # Read the additional derived parameter, remove the needs for output=mPk
     # except if sigma8 is there.
-    new_derived = recover_new_derived_parameters(
-        data, command_line, starting_folder)
+    new_derived = command_line.derived_parameters
     if not new_derived:
         raise io_mp.ConfigurationError(
-            "You asked to add new derived parameters to a folder, but "
-            "your new parameter file does not contain new derived "
-            "parameters. Please reconsider your intent.")
+            "You asked to add derived parameters, but did not specify a list "
+            "of new ones to consider. Please use the flag `--Der-param-list`.")
+    # Add them to the mcmc_parameters dict
+    for param in new_derived:
+        data.mcmc_parameters[param] = Parameter(
+            [0, None, None, 0, 1, 'derived'], param)
+    # Copy the log.param over from the starting folder, and add new lines
+    # concerning the new derived parameters, for analysis
+    copy_log_file(starting_folder, target_folder, new_derived)
+
+    # Reset the cosmo_arguments dict, and adapt it in case a derived parameter
+    # requires a particular CLASS behaviour.
     data.cosmo_arguments = {}
     if 'sigma8' in new_derived:
         data.cosmo_arguments.update({'output': 'mPk'})
 
     # Preparing the arguments for reading the files
     pool = Pool()
-    args = [(data, cosmo, command_line, starting_folder,
+    args = [(data, cosmo, command_line, target_folder,
              elem, new_derived) for elem in chains]
     # Note the use of translate_chain_star, and not translate_chain, because of
     # the limitations of the `map` function (it only takes one argument). The
@@ -74,35 +76,14 @@ def run(cosmo, data, command_line):
     pool.join()
 
 
-def recover_new_derived_parameters(data, command_line, starting_folder):
-    # Initialize the companion data structure, on a modified command line
-    modified_command_line = copy(command_line)
-    modified_command_line.folder = starting_folder
-    modified_command_line.param = os.path.join(starting_folder, 'log.param')
-
-    print 'Reading the starting folder'
-    print '---------------------------'
-    data2 = Data(modified_command_line, data.path)
-    print '---------------------------'
-    print 'Finished loading existing data'
-    print
-    new_derived = [elem for elem in data.get_mcmc_parameters(['derived'])
-                   if elem not in data2.get_mcmc_parameters(['derived'])]
-    print
-    print 'The new folder will follow the additional derived parameters:'
-    print ' ->' + ', '.join(new_derived)
-
-    return new_derived
-
-
-def extend_chain(data, cosmo, command_line, starting_folder, chain_name,
+def extend_chain(data, cosmo, command_line, target_folder, chain_name,
                  new_derived):
     """
     Reading the input point, and computing the new derived values
 
     """
-    input_path = os.path.join(starting_folder, chain_name)
-    output_path = os.path.join(command_line.folder, chain_name)
+    input_path = os.path.join(command_line.folder, chain_name)
+    output_path = os.path.join(target_folder, chain_name)
     print ' -> reading ', input_path
     # Put in parameter_names all the varying parameters, plus the derived ones
     # that are not part of new_derived
@@ -132,10 +113,10 @@ def extend_chain(data, cosmo, command_line, starting_folder, chain_name,
                     pass
                 # Recover all the derived parameters
                 derived = cosmo.get_current_derived_parameters(
-                    new_derived)
+                    data.get_mcmc_parameters(['derived']))
                 for name, value in derived.iteritems():
                     data.mcmc_parameters[name]['current'] = value
-                for elem in new_derived:
+                for name in derived.iterkeys():
                     data.mcmc_parameters[elem]['current'] /= \
                         data.mcmc_parameters[elem]['scale']
                 # Accept the point
@@ -147,3 +128,33 @@ def extend_chain(data, cosmo, command_line, starting_folder, chain_name,
 def extend_chain_star(args):
     """Trick function for multiprocessing"""
     return extend_chain(*args)
+
+
+def copy_log_file(starting_folder, target_folder, new_derived):
+    """
+    Copy and extend the log.param from the starting to the target folder
+
+    while adding new derived parameters
+    """
+    in_path = os.path.join(starting_folder, 'log.param')
+    out_path = os.path.join(target_folder, 'log.param')
+    with open(in_path, 'r') as input_log:
+        with open(out_path, 'w') as output_log:
+            # Read the whole file
+            text = input_log.readlines()
+            # Find the index of the last 'derived' line
+            last_derived_line = 0
+            for index, line in enumerate(text):
+                if line.find('derived') != -1:
+                    last_derived_line = index
+            # Write everything up to this point to the output
+            for index in range(last_derived_line+1):
+                output_log.write(text[index])
+            # Append lines for the new derived parameters
+            for name in new_derived:
+                output_log.write(
+                    "data.parameters['%s'] = [0,-1,-1,0,1,'derived']\n" % (
+                        name))
+            # Write the rest
+            for index in range(last_derived_line+1, len(text)):
+                output_log.write(text[index])
