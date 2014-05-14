@@ -8,7 +8,6 @@ try:
     from collections import OrderedDict as od
 except ImportError:
     from ordereddict import OrderedDict as od
-from copy import copy
 from multiprocessing import Pool
 import os
 
@@ -52,15 +51,15 @@ def run(cosmo, data, command_line):
     for param in new_derived:
         data.mcmc_parameters[param] = Parameter(
             [0, None, None, 0, 1, 'derived'], param)
-    # Copy the log.param over from the starting folder, and add new lines
-    # concerning the new derived parameters, for analysis
-    copy_log_file(starting_folder, target_folder, new_derived)
-
-    # Reset the cosmo_arguments dict, and adapt it in case a derived parameter
-    # requires a particular CLASS behaviour.
-    data.cosmo_arguments = {}
+    # Reset the cosmo_arguments dict output entry, and adapt it in case a
+    # derived parameter requires a particular CLASS behaviour.
+    data.cosmo_arguments.update({'output': ''})
     if 'sigma8' in new_derived:
         data.cosmo_arguments.update({'output': 'mPk'})
+
+    # Copy the log.param over from the starting folder, and add new lines
+    # concerning the new derived parameters, for analysis.
+    copy_log_file(starting_folder, target_folder, new_derived)
 
     # Preparing the arguments for reading the files
     pool = Pool()
