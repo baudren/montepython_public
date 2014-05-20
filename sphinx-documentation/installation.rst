@@ -185,7 +185,7 @@ command:
 .. code::
 
   python montepython/MontePython.py -o planck/ -p base.param -c covmat/base.covmat \
-  -bf bestfit/base.bestfit -conf default.conf -f 1.5
+  -bf bestfit/base.bestfit --conf default.conf -f 1.5
 
 .. note::
 
