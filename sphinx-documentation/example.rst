@@ -15,8 +15,6 @@ I can first create a few folders in order to keep my :code:`montepython` directo
   for storing all my input files
 :code:`$ mkdir scripts` 
   for storing all my scripts for running the code in batch mode
-:code:`$ mkdir plot_files` 
-  to store files used to customize plots
 
 I then copy :code:`example.param` in my input folder, with a name of my choice, e.g. :code:`lcdm.param`, and edit it if needed:
 
@@ -28,7 +26,7 @@ I then launch a short chain with
 
 .. code::
 
-  $ montepython/Montepython.py -conf my-conf.conf -p input/lcdm.param -o chains/planck/lcdm -N 5
+  $ montepython/Montepython.py run -p input/lcdm.param -o chains/planck/lcdm -N 5
 
 I can see on the screen the evolution of the initialization of the
 code. At the end I check that I have a chain and a :code:`log.param`
@@ -39,7 +37,7 @@ run again without the input file:
 
 .. code::
 
-  $ montepython/Montepython.py -o chains/planck/lcdm -N 5
+  $ montepython/Montepython.py run -o chains/planck/lcdm -N 5
 
 This works equally well because all information is taken from the :code:`log.param` file.
 
@@ -49,7 +47,7 @@ the one delivered with the |MP| package, in the :code:`covmat/` directory:
 
 .. code::
 
-  $ montepython/Montepython.py -conf my-conf.conf -p input/lcdm.param\
+  $ montepython/Montepython.py run -p input/lcdm.param\
           -o chains/planck/lcdm -c covmat/fake_planck_lcdm.covmat -N 5
 
 
@@ -58,26 +56,33 @@ would have run with
 
 .. code::
 
-  $ montepython/Montepython.py -conf my-conf.conf -p input/lcdm.param -o chains/planck/lcdm -c mycovmat.covmat -N 5
+  $ montepython/Montepython.py run -p input/lcdm.param -o chains/planck/lcdm -c mycovmat.covmat -N 5
 
 
-I now wish to launch longer runs on my cluster or powerful desktop.
-The syntax of the script depends on the cluster. In the simplest case
-it will only contain some general commands concerning the job name,
-wall time limit etc., and the command line above (I can use the one
-without input file, provided that I made already one short interactive
-run, and that the :code:`log.param` already exists; but I can now
-increase the number of steps, e.g. to 5000 or 10000). On some cluster,
-the chain file is created immediately in the output directory at start
-up. In this case, the automatic numbering of chains proposed by |MP|
-will be satisfactory. In other clusters, the chains are created on a
-temporary file, and then copied at the end to the output file. In this
-case, if I do nothing, there is a risk that chain names are identical
-and clash. I should then relate the chain name to the job number, with
-an additional command line :code:`-chain_number $JOBID`. Some
-clusters, :code:`$JOBID` is a string, but the job number can be
-extracted with a line like :code:`export JOBNUM="$(echo $PBS_JOBID|cut
--d'.' -f1)"`, and passed to |MP| as  :code:`-chain_number $JOBNUM`.
+I now wish to launch longer runs on my cluster or on a powerful desktop.
+The syntax of the script depends on the cluster. In the simplest case it
+will only contain some general commands concerning the job name, wall time
+limit etc., and the command line above (I can use the one without input
+file, provided that I made already one short interactive run, and that the
+:code:`log.param` already exists; but I can now increase the number of
+steps, e.g. to 5000 or 10000). On some cluster, the chain file is created
+immediately in the output directory at start up. In this case, the
+automatic numbering of chains proposed by |MP| will be satisfactory.
+
+.. warning::
+
+  On some clusters, the automatic numbering will conflict when the chains
+  are created too fast. Please look at the section on how to use
+  :code:`mpi_run` for guidance
+
+In other clusters, the chains are created on a temporary file, and
+then copied at the end to the output file. In this case, if I do
+nothing, there is a risk that chain names are identical and clash. I
+should then relate the chain name to the job number, with an
+additional command line :code:`--chain_number $JOBID`. Some clusters,
+:code:`$JOBID` is a string, but the job number can be extracted with a
+line like :code:`export JOBNUM="$(echo $PBS_JOBID|cut -d'.' -f1)"`,
+and passed to |MP| as  :code:`--chain_number $JOBNUM`.
 
 If I use in a future run the Planck likelihood, I should not forget to
 add in the script (before calling |MP|) the line
@@ -94,15 +99,27 @@ scripts/lcdm.sh`. I can launch many chains in one command with
 
   $ for i in {1..10}; do qsub scripts/lcdm.sh;done
 
-Advanced cluster users may even find ways to launch several serial
-runs appearing as a single job on the cluster with the :code:`mpirun`
-command.
+If you cluster creates the chains too fast, there might be conflicts in the
+chain names. One way to go around this issue is to run with :code:`mpi`, which is
+a parallelization process. The chains will be initialised one after the
+other, each one sending a **go** signal to the next in line.
+
+To launch a job with :code:`mpi`, the syntax is exactly the same than
+without, except that you will start the whole command with, depending on
+your installation, :code:`mpirun` or :code:`mpiexec`:
+
+.. code::
+
+  mpirun -np 4 python montepython/MontePython.py run -o chains/...
+
+will simply launch 4 chains, each using the environment variable
+:code:`$OMP_NUM_THREADS` for the number of cores to compute *Class*.
 
 When the runs have stopped, I can analyse them with
 
 .. code::
 
-  $ montepython/Montepython.py -info chains/planck/lcdm 
+  $ montepython/Montepython.py info chains/planck/lcdm 
 
 If I had been running without a covariance matrix, the results would probably
 be bad, with a very low acceptance rate and few points. It would have however
@@ -127,7 +144,7 @@ When this second run is finished, I analyse it with e.g.
 
 .. code::
 
-  montepython/Montepython.py -info chains/planck/lcdm/2012-10-27_5001*
+  montepython/Montepython.py info chains/planck/lcdm/2012-10-27_5001*
 
 If all R-1 numbers are small (typically :math:`<0.05`) and plots look nice, I am
 done. If not, there can be two reasons: the covariance matrix is still bad, or
