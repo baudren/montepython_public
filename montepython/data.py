@@ -706,6 +706,17 @@ class Data(object):
             can redefine its behaviour here. You will find in the source
             several such examples.
 
+        .. note::
+
+            For complex CLASS parameters, that expect a string of numbers
+            separated with commas, you can now use the name of the argument,
+            for instance :code:`m_ncdm`, then append a double underscore and a
+            number. So if you run with two cosmological parameters,
+            :code:`m_ncdm__1` and :code:`m_ncdm__2`, this function will
+            automatically concatenate the two and feed class :code:`m_ncdm`.
+            You still have to make sure that the other variables are properly
+            set, like :code:`N_ncdm` to 2, in this example.
+
         """
         # For all elements in any cosmological parameters
         for elem in self.get_mcmc_parameters(['cosmo']):
@@ -727,54 +738,49 @@ class Data(object):
                     (omega_b+omega_cdm) / (1.-Omega_Lambda))
                 del self.cosmo_arguments[elem]
             # infer omega_cdm from Omega_L and delete Omega_L
-            if elem == 'Omega_L':
+            elif elem == 'Omega_L':
                 omega_b = self.cosmo_arguments['omega_b']
                 h = self.cosmo_arguments['h']
                 Omega_L = self.cosmo_arguments['Omega_L']
                 self.cosmo_arguments['omega_cdm'] = (1.-Omega_L)*h*h-omega_b
                 del self.cosmo_arguments[elem]
-            if elem == 'ln10^{10}A_s':
+            elif elem == 'ln10^{10}A_s':
                 self.cosmo_arguments['A_s'] = math.exp(
                     self.cosmo_arguments[elem]) / 1.e10
                 del self.cosmo_arguments[elem]
-            if elem == 'exp_m_2_tau_As':
+            elif elem == 'exp_m_2_tau_As':
                 tau_reio = self.cosmo_arguments['tau_reio']
                 self.cosmo_arguments['A_s'] = self.cosmo_arguments[elem] * \
                     math.exp(2.*tau_reio)
                 del self.cosmo_arguments[elem]
-            if elem == 'f_cdi':
+            elif elem == 'f_cdi':
                 self.cosmo_arguments['n_cdi'] = self.cosmo_arguments['n_s']
-            if elem == 'beta':
+            elif elem == 'beta':
                 self.cosmo_arguments['alpha'] = 2.*self.cosmo_arguments['beta']
-            # We only do that on xe_1, for there is at least one of them.
-            if elem.find('xe_1') != -1:
-                # To pass this option, you must have set a number of
-                # cosmological settings reio_parametrization to reio_bins_tanh,
-                # binned_reio_z set, and binned_reio_num First, you need to set
-                # reio_parametrization to reio_bins_tanh
-                if (self.cosmo_arguments['reio_parametrization'] !=
-                        'reio_bins_tanh'):
-                    raise io_mp.CosmologicalModuleError(
-                        "You set binned_reio_xe to some values " +
-                        "without setting reio_parametrization to " +
-                        "reio_bins_tanh")
-                else:
-                    try:
-                        size = self.cosmo_arguments['binned_reio_num']
-                    except (KeyError):
-                        raise io_mp.CosmologicalModuleError(
-                            "You need to set reio_binnumber to the value" +
-                            " corresponding to the one in binned_reio_xe")
-                string = ''
-                for i in range(1, size+1):
-                    string += '%.4g' % self.cosmo_arguments['xe_%d' % i]
-                    del self.cosmo_arguments['xe_%d' % i]
-                    if i != size:
-                        string += ','
-                self.cosmo_arguments['binned_reio_xe'] = string
-            if elem == 'M_tot':
+            elif elem == 'M_tot':
                 self.cosmo_arguments['m_ncdm'] = self.cosmo_arguments['M_tot']/3.
                 del self.cosmo_arguments[elem]
+            # Finally, deal with all the parameters ending with __i, where i is
+            # an integer. Replace them all with their name without the trailing
+            # double underscore, concatenated with each other. The test is
+            # always on the one ending with __1, as it will be the first on the
+            # list, and deal with all the others.
+            elif re.search(r'__1', elem):
+                original_name = re.search(r'(.*)__1', elem).groups()[0]
+                # Recover the values of all the other elements
+                values = [self.cosmo_arguments[elem]]
+                for other_elem in self.get_mcmc_parameters(['cosmo']):
+                    match = re.search(r'%s__([2-9])' % original_name,
+                                      other_elem)
+                    if match:
+                        values.append(self.cosmo_arguments[other_elem])
+                # create the cosmo_argument
+                self.cosmo_arguments[original_name] = ', '.join(
+                    ['%g' % value for value in values])
+                # Delete the now obsolete entries of the dictionary
+                for index in range(1, len(values)+1):
+                    del self.cosmo_arguments[
+                        original_name + '__%i' % index]
 
     def __cmp__(self, other):
         """

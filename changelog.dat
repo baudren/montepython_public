@@ -1,3 +1,7 @@
+v2.0.6: + Unified scheme for handling complex parameters from CLASS.
+	  You can now specify for instance 'm_ncdm__1', 'm_ncdm__2' as
+	  running parameters, and they will be treated correctly.
+----------------------------------------------------------------------
 v2.0.5: + Nested Sampling can now be used with MPI - see the
 	  documentation.
 	+ The histograms are now also stored in files if the '--all'
