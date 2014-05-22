@@ -432,10 +432,14 @@ class Data(object):
                 exec "self.lkl['%s'] = %s('%s/%s.data',\
                     self, self.command_line)" % (
                     elem, elem, folder, elem)
-            except KeyError:
-                raise io_mp.ConfigurationError(
-                    "You should provide a 'clik' entry in the dictionary "
-                    "path defined in the file default.conf")
+            except KeyError as e:
+                if e.find('clik') != -1:
+                    raise io_mp.ConfigurationError(
+                        "You should provide a 'clik' entry in the dictionary "
+                        "path defined in the file default.conf")
+                else:
+                    raise io_mp.ConfigurationError(
+                        "The following key: '%s' was not found" % e)
 
     def read_file(self, param, structure, field='', separate=False):
         """
