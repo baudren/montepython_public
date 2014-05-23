@@ -478,7 +478,8 @@ class Data(object):
             the structure field, so instead of appending to the namespace of
             the data instance, it will append to a sub-namespace named in the
             same way that the desired structure. This is used to extract custom
-            values from the likelihoods.
+            values from the likelihoods, allowing to specify values for the
+            likelihood directly in the parameter file.
 
         """
         if separate:
@@ -628,13 +629,15 @@ class Data(object):
             List of strings whose role and status must be matched by a
             parameter. For instance,
 
-            >>> Data.get_mcmc_parameters(['varying'])
+            >>> data.get_mcmc_parameters(['varying'])
+            ['omega_b', 'h', 'amplitude', 'other']
 
             will return a list of all the varying parameters, both
             cosmological and nuisance ones (derived parameters being `fixed`,
             they wont be part of this list). Instead,
 
-            >>> Data.get_mcmc_parameters(['nuisance', 'varying'])
+            >>> data.get_mcmc_parameters(['nuisance', 'varying'])
+            ['amplitude', 'other']
 
             will only return the nuisance parameters that are being varied.
 
@@ -785,6 +788,38 @@ class Data(object):
                 for index in range(1, len(values)+1):
                     del self.cosmo_arguments[
                         original_name + '__%i' % index]
+
+    @staticmethod
+    def folder_is_initialised(folder):
+        """
+        Static method to call for checking if a folder was already initialised
+
+        This method can be used to speed up the mpi initialisation in
+        :mod:`run`. If a process finds that the folder is already a proper
+        Monte Python one, it sends directly a 'go' signal to its next in line.
+
+        .. warning::
+
+            This method assumes that the last lines of the log.param are the
+            path indication. If this would ever change, adjust this method
+            accordingly.
+
+        """
+        # If the folder is not there, easy answer: False!
+        if not os.path.isdir(folder):
+            return False
+        # Recover the log.param from the folder, and assert it exists
+        log_param_path = os.path.join(folder, 'log.param')
+        if not os.path.isfile(log_param_path):
+            return False
+        # Quickly load it to a string, and assert that the path has been
+        # written (which are the last lines)
+        with open(log_param_path, 'r') as log_param:
+            text = log_param.readlines()
+            if text[-1].find('path[') != -1:
+                return True
+            else:
+                return False
 
     def __cmp__(self, other):
         """
@@ -948,3 +983,13 @@ class Parameter(dict):
 class Container(object):
     """Dummy class to act as a namespace for data"""
     pass
+
+
+if __name__ == "__main__":
+    import doctest
+    import shutil
+    from initialise import initialise
+    folder = os.path.join('tests', 'doc')
+    cosmo, data, command_line, _ = initialise('-o %s -p test.param' % folder)
+    doctest.testmod(extraglobs={'data': data})
+    shutil.rmtree(folder)
