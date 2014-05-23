@@ -483,6 +483,7 @@ class Test08NestedSamplingBehaviour(TestMontePython):
 
     def tearDown(self):
         shutil.rmtree(self.folder)
+        self.cosmo.struct_cleanup()
         self.cosmo.empty()
         del self.cosmo, self.data, self.command_line
 
