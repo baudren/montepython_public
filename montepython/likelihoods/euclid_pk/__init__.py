@@ -10,7 +10,7 @@ class euclid_pk(Likelihood):
     Likelihood.__init__(self, path, data, command_line)
 
     self.need_cosmo_arguments(data, {'output':'mPk'})
-    
+
     #################
     # find number of galaxies for each mean redshift value
     #################
@@ -57,7 +57,7 @@ class euclid_pk(Likelihood):
     # Define the k values for the integration (from kmin to kmax), at which the
     # spectrum will be computed (and stored for the fiducial model)
     # k_size is deeply arbitrary here, TODO
-    
+
     self.k_fid = np.zeros(self.k_size,'float64')
     for i in range(self.k_size):
       self.k_fid[i] = exp( i*1.0 /(self.k_size-1) * log(self.kmax/self.kmin) + log(self.kmin))
@@ -98,7 +98,7 @@ class euclid_pk(Likelihood):
     self.fid_values_exist = False
     self.pk_nl_fid = np.zeros((self.k_size,2*self.nbin+1),'float64')
     self.H_fid       = np.zeros(2*self.nbin+1,'float64')
-    self.D_A_fid     = np.zeros(2*self.nbin+1,'float64') 
+    self.D_A_fid     = np.zeros(2*self.nbin+1,'float64')
     self.sigma_r_fid = np.zeros(self.nbin,'float64')
 
     if os.path.exists(self.data_directory+'/'+self.fiducial_file):
@@ -123,10 +123,10 @@ class euclid_pk(Likelihood):
 	line = fid_file.readline()
       fid_file.seek(0)
       fid_file.close()
-      
-    # Else the file will be created in the loglkl() function. 
+
+    # Else the file will be created in the loglkl() function.
     return
-  
+
   # Galaxy distribution, returns the function D(z) from the notes
   def galaxy_distribution(self,z):
 
@@ -134,14 +134,14 @@ class euclid_pk(Likelihood):
     z0 = zmean/1.412
 
     galaxy_dist = z**2*exp(-(z/z0)**(1.5))
-    
+
     return galaxy_dist
 
   def loglkl(self, cosmo, data):
     # First thing, recover the angular distance and Hubble factor for each
     # redshift
     H   = np.zeros(2*self.nbin+1,'float64')
-    D_A = np.zeros(2*self.nbin+1,'float64') 
+    D_A = np.zeros(2*self.nbin+1,'float64')
     r   = np.zeros(2*self.nbin+1,'float64')
 
     # H is incidentally also dz/dr
@@ -159,7 +159,7 @@ class euclid_pk(Likelihood):
     self.V_survey = np.zeros(self.nbin,'float64')
     for index_z in range(self.nbin):
       self.V_survey[index_z] = 4.*pi*self.fsky*(r[2*index_z+1]**2)*(1+self.z_mean[index_z])**(-3) *self.dz/H[2*index_z+1]
-    
+
     # Define the mu scale
     mu = np.zeros(self.mu_size,'float64')
     for index_mu in range(self.mu_size):
@@ -185,7 +185,7 @@ class euclid_pk(Likelihood):
 	fid_file.write('%.8g\n' % sigma_r[index_z])
       print '\n\n /|\  Writting fiducial model in {0}'.format(self.data_directory+self.fiducial_file)
       print '/_o_\ for {0} likelihood'.format(self.name)
-      return 1
+      return 1j
 
     # NOTE: Many following loops will be hidden in a very specific numpy
     # expression, for (a more than significant) speed-up. All the following
@@ -195,8 +195,8 @@ class euclid_pk(Likelihood):
 
     # Compute the beta_fid function, for observed spectrum,
     # beta_fid(k_fid,z) = 1/2b(z) * d log(P_nl_fid(k_fid,z))/d log a
-    #                   = -1/2b(z)* (1+z) d log(P_nl_fid(k_fid,z))/dz 
-    
+    #                   = -1/2b(z)* (1+z) d log(P_nl_fid(k_fid,z))/dz
+
     beta_fid = np.zeros((self.k_size,self.nbin),'float64')
     for index_z in range(self.nbin):
       beta_fid[:,index_z] = -1./(2.*self.b[index_z]) * (1.+self.z_mean[index_z]) * np.log(self.pk_nl_fid[:,2*index_z+2] / self.pk_nl_fid[:,2*index_z])/(self.dz)
@@ -209,7 +209,7 @@ class euclid_pk(Likelihood):
 
     ######################
     # TH PART
-    ###################### 
+    ######################
     # Compute values of k based on k_fid (ref in paper), with formula (33 has to be corrected):
     # k^2 = ( (1-mu^2) D_A_fid(z)^2/D_A(z)^2 + mu^2 H(z)^2/H_fid(z)^2) k_fid ^ 2
     # So k = k (k_ref,z,mu)
@@ -239,14 +239,14 @@ class euclid_pk(Likelihood):
       k_sigma = cosmo.nonlinear_scale(self.z,2*self.nbin+1)
 
     # Define the alpha function, that will characterize the theoretical
-    # uncertainty. 
+    # uncertainty.
     self.alpha = np.zeros((self.k_size,2*self.nbin+1,self.mu_size),'float64')
     for index_z in range(2*self.nbin+1):
       for index_mu in range(self.mu_size):
         self.alpha[:,index_z,index_mu] = np.log(1. + self.k[:,index_z,index_mu]/k_sigma[index_z]) / (1. + np.log(1.+ self.k[:,index_z,index_mu]/k_sigma[index_z]))*self.theoretical_error
 
     # recover the e_th part of the error function
-    e_th = self.coefficient_f_nu*cosmo.Omega_nu/cosmo.Omega_m
+    e_th = self.coefficient_f_nu*cosmo.Omega_nu/cosmo.Omega_m()
 
     # Compute the Error E_th function
     #E_th = np.zeros((self.k_size,2*self.nbin+1,self.mu_size),'float64')
@@ -271,15 +271,15 @@ class euclid_pk(Likelihood):
     #for index_k in range(self.k_size):
     #  print self.k[index_k,index_z,index_mu],pk_nl_th[index_k,index_z,index_mu]
 
-    # Compute the beta function for nl, 
+    # Compute the beta function for nl,
     # beta(k,z) = 1/2b(z) * d log(P_nl_th (k,z))/d log a
-    #   	= -1/2b(z) *(1+z) d log(P_nl_th (k,z))/dz 
+    #   	= -1/2b(z) *(1+z) d log(P_nl_th (k,z))/dz
     beta_th = np.zeros((self.k_size,self.nbin,self.mu_size),'float64')
     for index_k in range(self.k_size):
       for index_z in range(self.nbin):
 	  beta_th[index_k,index_z,:] = -1./(2.*self.b[index_z]) * (1.+self.z_mean[index_z]) * np.log(pk_nl_th[index_k,2*index_z+2,:]/pk_nl_th[index_k,2*index_z,:])/(self.dz)
 
-    # Approximate the beta function without the error, and create the \tilde P_th_correction 
+    # Approximate the beta function without the error, and create the \tilde P_th_correction
     #self.tilde_P_th_corr = np.zeros( (self.k_size,self.nbin,self.mu_size), 'float64')
     #for index_k in range(self.k_size):
     #  for index_z in range(self.nbin):
@@ -296,7 +296,7 @@ class euclid_pk(Likelihood):
     self.P_shot = np.zeros( (self.nbin),'float64')
     for index_z in range(self.nbin):
       self.P_shot[index_z] = self.H_fid[2*index_z+1]/(self.D_A_fid[2*index_z+1]**2*self.b[index_z]**2)*(data.mcmc_parameters['P_shot']['current']*data.mcmc_parameters['P_shot']['scale'] + 4.*pi*r[2*index_z+1]**2*(r[2*index_z+2]-r[2*index_z])/self.n_g[index_z])
-      
+
     #for index_z in range(self.nbin):
     #  for index_k in range(self.k_size):
     #    for index_mu in range(self.mu_size):
@@ -312,7 +312,7 @@ class euclid_pk(Likelihood):
     #for index_k in range(1,self.k_size):
     #  print self.k_fid[index_k],self.tilde_P_th[index_k,index_z,index_mu],self.P_shot[index_z],(self.tilde_P_th[index_k,index_z,index_mu] + self.P_shot[index_z])*2.*pi/sqrt(self.k_fid[index_k]**3*self.V_survey[index_z]*self.nbin*log(self.kmax/self.kmin)),self.alpha[index_k,2.*index_z+1,index_mu]*self.tilde_P_th[index_k,index_z,index_mu]
     #exit()
-      
+
     # finally compute chi2, for each z_mean
     chi2 = 0.0
 

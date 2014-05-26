@@ -1,7 +1,8 @@
 euclid_lensing.data_directory = data.path['data']
 euclid_lensing.fiducial_file  = "euclid_lensing_fiducial.dat"
 
-euclid_lensing.use_nuisance = ['epsilon']
+# Uncomment this line to use the theoretical error nuisance parameter
+#euclid_lensing.use_nuisance = ['epsilon']
 # number of l values used to compute C_l
 euclid_lensing.nlmax = 39		
 # logarithmic l step for C_l
@@ -21,9 +22,9 @@ euclid_lensing.dz    = 0.01
 # k_max in 1/Mpc
 euclid_lensing.k_max  = 40
 
-# precision of the halofit method
-euclid_lensing.coefficient_f_nu = 1
-euclid_lensing.theoretical_error = 0.05
+# precision of the halofit method (defaults to 0)
+euclid_lensing.coefficient_f_nu = 0
+euclid_lensing.theoretical_error = 0
 # noise computation
 euclid_lensing.rms_shear = 0.30
 # number of galaxies per square arcminutes
