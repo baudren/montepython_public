@@ -107,20 +107,20 @@ class euclid_pk(Likelihood):
           self.data_directory, self.fiducial_file),'r')
       line = fid_file.readline()
       while line.find('#')!=-1:
-	line = fid_file.readline()
+        line = fid_file.readline()
       while (line.find('\n')!=-1 and len(line)==1):
-	line = fid_file.readline()
+        line = fid_file.readline()
       for index_k in range(self.k_size):
-	for index_z in range(2*self.nbin+1):
-	  self.pk_nl_fid[index_k,index_z] = float(line)
-	  line = fid_file.readline()
+        for index_z in range(2*self.nbin+1):
+          self.pk_nl_fid[index_k,index_z] = float(line)
+          line = fid_file.readline()
       for index_z in range(2*self.nbin+1):
-	self.H_fid[index_z]   = float(line.split()[0])
-	self.D_A_fid[index_z] = float(line.split()[1])
-	line = fid_file.readline()
+        self.H_fid[index_z]   = float(line.split()[0])
+        self.D_A_fid[index_z] = float(line.split()[1])
+        line = fid_file.readline()
       for index_z in range(self.nbin):
-	self.sigma_r_fid[index_z] = float(line)
-	line = fid_file.readline()
+        self.sigma_r_fid[index_z] = float(line)
+        line = fid_file.readline()
       fid_file.seek(0)
       fid_file.close()
 
@@ -173,16 +173,16 @@ class euclid_pk(Likelihood):
           self.data_directory, self.fiducial_file),'w')
       fid_file.write('# Fiducial parameters')
       for key,value in data.mcmc_parameters.iteritems():
-	fid_file.write(', %s = %.5g' % (key,value['current']*value['scale']))
+        fid_file.write(', %s = %.5g' % (key,value['current']*value['scale']))
       fid_file.write('\n')
       for index_k in range(self.k_size):
-	for index_z in range(2*self.nbin+1):
-	  pk[index_k,index_z] = cosmo.pk(self.k_fid[index_k],self.z[index_z])
-	  fid_file.write('%.8g\n' % pk[index_k,index_z])
+        for index_z in range(2*self.nbin+1):
+          pk[index_k,index_z] = cosmo.pk(self.k_fid[index_k],self.z[index_z])
+          fid_file.write('%.8g\n' % pk[index_k,index_z])
       for index_z in range(2*self.nbin+1):
-	fid_file.write('%.8g %.8g\n' % (H[index_z],D_A[index_z]))
+        fid_file.write('%.8g %.8g\n' % (H[index_z],D_A[index_z]))
       for index_z in range(self.nbin):
-	fid_file.write('%.8g\n' % sigma_r[index_z])
+        fid_file.write('%.8g\n' % sigma_r[index_z])
       print '\n\n /|\  Writting fiducial model in {0}'.format(self.data_directory+self.fiducial_file)
       print '/_o_\ for {0} likelihood'.format(self.name)
       return 1j
@@ -273,11 +273,11 @@ class euclid_pk(Likelihood):
 
     # Compute the beta function for nl,
     # beta(k,z) = 1/2b(z) * d log(P_nl_th (k,z))/d log a
-    #   	= -1/2b(z) *(1+z) d log(P_nl_th (k,z))/dz
+    #           = -1/2b(z) *(1+z) d log(P_nl_th (k,z))/dz
     beta_th = np.zeros((self.k_size,self.nbin,self.mu_size),'float64')
     for index_k in range(self.k_size):
       for index_z in range(self.nbin):
-	  beta_th[index_k,index_z,:] = -1./(2.*self.b[index_z]) * (1.+self.z_mean[index_z]) * np.log(pk_nl_th[index_k,2*index_z+2,:]/pk_nl_th[index_k,2*index_z,:])/(self.dz)
+          beta_th[index_k,index_z,:] = -1./(2.*self.b[index_z]) * (1.+self.z_mean[index_z]) * np.log(pk_nl_th[index_k,2*index_z+2,:]/pk_nl_th[index_k,2*index_z,:])/(self.dz)
 
     # Approximate the beta function without the error, and create the \tilde P_th_correction
     #self.tilde_P_th_corr = np.zeros( (self.k_size,self.nbin,self.mu_size), 'float64')
@@ -323,11 +323,11 @@ class euclid_pk(Likelihood):
       k_integrand = self.integrand(index_z,0)
       mu_integrand_hi = np.sum((k_integrand[1:] + k_integrand[0:-1])*.5*(self.k_fid[1:] - self.k_fid[:-1]))
       for index_mu in range(1,self.mu_size):
-	mu_integrand_lo = mu_integrand_hi
-	mu_integrand_hi = 0
-	k_integrand = self.integrand(index_z,index_mu)
-	mu_integrand_hi = np.sum((k_integrand[1:] + k_integrand[0:-1])*.5*(self.k_fid[1:] - self.k_fid[:-1]))
-	chi2 += (mu_integrand_hi + mu_integrand_lo)/2.*(mu[index_mu] - mu[index_mu-1])
+        mu_integrand_lo = mu_integrand_hi
+        mu_integrand_hi = 0
+        k_integrand = self.integrand(index_z,index_mu)
+        mu_integrand_hi = np.sum((k_integrand[1:] + k_integrand[0:-1])*.5*(self.k_fid[1:] - self.k_fid[:-1]))
+        chi2 += (mu_integrand_hi + mu_integrand_lo)/2.*(mu[index_mu] - mu[index_mu-1])
 
     chi2 += (data.mcmc_parameters['epsilon']['current']*data.mcmc_parameters['epsilon']['scale'])**2
 
