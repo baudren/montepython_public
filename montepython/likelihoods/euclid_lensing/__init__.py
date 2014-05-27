@@ -1,9 +1,8 @@
 from montepython.likelihood_class import Likelihood
 import io_mp
 
-from pprint import pprint
-from time import time
 import scipy.integrate
+from scipy import interpolate as itp
 import os
 import numpy as np
 import math
@@ -73,7 +72,7 @@ class euclid_lensing(Likelihood):
                 integrand = gal*self.photo_z_distribution(z, self.z, True)
                 integrand = np.array([
                     elem if low <= self.z[index] <= hig else 0
-                    for elem, index in zip(integrand, range(self.nzmax))])
+                    for index, elem in enumerate(integrand)])
                 self.eta_z[nz, Bin] = scipy.integrate.trapz(
                     integrand,
                     self.z)
@@ -161,7 +160,6 @@ class euclid_lensing(Likelihood):
 
     def loglkl(self, cosmo, data):
 
-        t1 = time()
         # One wants to obtain here the relation between z and r, this is done
         # by asking the cosmological module with the function z_of_r
         self.r = np.zeros(self.nzmax, 'float64')
@@ -295,7 +293,7 @@ class euclid_lensing(Likelihood):
                     for Bin1 in range(self.nbin):
                         for Bin2 in range(self.nbin):
                             fid_file.write("%.8g\n" % Cl[nl, Bin1, Bin2])
-            print '\n\n /|\    Writting fiducial model in {0}'.format(
+            print '\n\n /|\    Writing fiducial model in {0}'.format(
                 fid_file_path)
             print '/_o_\ for {0} likelihood'.format(self.name)
             return 1j
@@ -304,81 +302,67 @@ class euclid_lensing(Likelihood):
         # Cl_fid (we create a new array, otherwise we would modify the
         # self.Cl_fid from one step to the other)
 
-        # Spline Cl[nl,Bin1,Bin2] along l TODO
-        ddCl = np.zeros((self.nlmax,self.nbin,self.nbin),'float64')
-        u_spline = np.zeros(self.nlmax,'float64')
-        for Bin1 in range(self.nbin):
-            for Bin2 in range(self.nbin):
-                for nl in range(1,self.nlmax-1):
-                    sig_spline = (self.l[nl]-self.l[nl-1]) / (self.l[nl+1] - self.l[nl])
-                    p_spline     = sig_spline*ddCl[nl-1,Bin1,Bin2]+2.
-                    ddCl[nl,Bin1,Bin2] = (sig_spline-1.)/p_spline
-                    u_spline[nl] = (6.*((Cl[nl+1,Bin1,Bin2] - Cl[nl,Bin1,Bin2])/(self.l[nl+1]-self.l[nl]) - (Cl[nl,Bin1,Bin2]-Cl[nl-1,Bin1,Bin2])/(self.l[nl]-self.l[nl-1]))/(self.l[nl+1]-self.l[nl-1]) - sig_spline*u_spline[nl-1])/p_spline
-                for nl in range(self.nlmax-2,-1,-1):
-                    ddCl[nl,Bin1,Bin2] = ddCl[nl,Bin1,Bin2]*ddCl[nl+1,Bin1,Bin2] + u_spline[nl]
+        # Spline Cl[nl,Bin1,Bin2] along l
+        spline_Cl = np.empty((self.nbin, self.nbin), dtype=(list, 3))
+        for Bin1 in xrange(self.nbin):
+            for Bin2 in xrange(Bin1, self.nbin):
+                spline_Cl[Bin1, Bin2] = list(itp.splrep(
+                    self.l, Cl[:, Bin1, Bin2]))
+                if Bin2 > Bin1:
+                    spline_Cl[Bin2, Bin1] = spline_Cl[Bin1, Bin2]
 
         # Spline El[nl,Bin1,Bin2] along l
         if self.theoretical_error != 0:
-            ddEl       = np.zeros((self.nlmax,self.nbin,self.nbin),'float64')
-            u_spline = np.zeros(self.nlmax,'float64')
-            for Bin1 in range(self.nbin):
-                for Bin2 in range(self.nbin):
-                    for nl in range(1,self.nlmax-1):
-                        sig_spline = (self.l[nl]-self.l[nl-1]) / (self.l[nl+1] - self.l[nl])
-                        p_spline     = sig_spline*ddEl[nl-1,Bin1,Bin2]+2.
-                        ddEl[nl,Bin1,Bin2] = (sig_spline-1.)/p_spline
-                        u_spline[nl] = (6.*((El[nl+1,Bin1,Bin2] - El[nl,Bin1,Bin2])/(self.l[nl+1]-self.l[nl]) - (El[nl,Bin1,Bin2]-El[nl-1,Bin1,Bin2])/(self.l[nl]-self.l[nl-1]))/(self.l[nl+1]-self.l[nl-1]) - sig_spline*u_spline[nl-1])/p_spline
-                    for nl in range(self.nlmax-2,-1,-1):
-                        ddEl[nl,Bin1,Bin2] = ddEl[nl,Bin1,Bin2]*ddEl[nl+1,Bin1,Bin2] + u_spline[nl]
+            spline_El = np.empty((self.nbin, self.nbin), dtype=(list, 3))
+            for Bin1 in xrange(self.nbin):
+                for Bin2 in xrange(Bin1, self.nbin):
+                    spline_El[Bin1, Bin2] = list(itp.splrep(
+                        self.l, El[:, Bin1, Bin2]))
+                    if Bin2 > Bin1:
+                        spline_El[Bin2, Bin1] = spline_El[Bin1, Bin2]
 
         # Spline Cl_fid[nl,Bin1,Bin2]    along l
-        ddCl_fid = np.zeros((self.nlmax,self.nbin,self.nbin),'float64')
-        for Bin1 in range(self.nbin):
-            for Bin2 in range(self.nbin):
-                for nl in range(1,self.nlmax-1):
-                    sig_spline = (self.l[nl]-self.l[nl-1]) / (self.l[nl+1] - self.l[nl])
-                    p_spline     = sig_spline*ddCl_fid[nl-1,Bin1,Bin2]+2.
-                    ddCl_fid[nl,Bin1,Bin2] = (sig_spline-1.)/p_spline
-                    u_spline[nl] = (6.*((self.Cl_fid[nl+1,Bin1,Bin2] - self.Cl_fid[nl,Bin1,Bin2])/(self.l[nl+1]-self.l[nl]) - (self.Cl_fid[nl,Bin1,Bin2]-self.Cl_fid[nl-1,Bin1,Bin2])/(self.l[nl]-self.l[nl-1]))/(self.l[nl+1]-self.l[nl-1]) - sig_spline*u_spline[nl-1])/p_spline
-                for nl in range(self.nlmax-2,-1,-1):
-                    ddCl_fid[nl,Bin1,Bin2] = ddCl_fid[nl,Bin1,Bin2]*ddCl_fid[nl+1,Bin1,Bin2] + u_spline[nl]
+        spline_Cl_fid = np.empty((self.nbin, self.nbin), dtype=(list, 3))
+        for Bin1 in xrange(self.nbin):
+            for Bin2 in xrange(Bin1, self.nbin):
+                spline_Cl_fid[Bin1, Bin2] = list(itp.splrep(
+                    self.l, self.Cl_fid[:, Bin1, Bin2]))
+                if Bin2 > Bin1:
+                    spline_Cl_fid[Bin2, Bin1] = spline_Cl_fid[Bin1, Bin2]
 
         # Compute likelihood
-        chi2 = 0.
-        Cov_theory = np.zeros((self.nbin, self.nbin), 'float64')
-        Cov_observ = np.zeros((self.nbin, self.nbin), 'float64')
-        Cov_error = np.zeros((self.nbin, self.nbin), 'float64')
 
         # Prepare interpolation for every integer value of l, from the array
         # self.l, to finally compute the likelihood (sum over all l's)
         dof = 1./(int(self.l[-1])-int(self.l[0])+1)
 
-        for lll in range(int(self.l[0]), int(self.l[-1])+1):
+        ells = range(int(self.l[0]), int(self.l[-1])+1)
 
-            # Determine the closest non integer value.
-            klo = 1
-            khi = self.nlmax
-            while (khi-klo > 1):
-                k = (khi+klo)/2
-                if (self.l[k] > lll):
-                    khi = k
-                else:
-                    klo = k
-            h = self.l[khi]-self.l[klo]
-            if (h == 0.):
-                print 'Problem: h=0 in splint of C[l,Bin]'
-                exit()
-            a = (self.l[khi] - lll)/h
-            b = (lll - self.l[klo])/h
+        # Define cov theory, observ and error on the whole integer range of ell
+        # values
+        Cov_theory = np.zeros((len(ells), self.nbin, self.nbin), 'float64')
+        Cov_observ = np.zeros((len(ells), self.nbin, self.nbin), 'float64')
+        Cov_error = np.zeros((len(ells), self.nbin, self.nbin), 'float64')
 
-            for Bin1 in range(self.nbin):
-                Cov_theory[Bin1,:] = a*Cl[klo,Bin1,:] + b*Cl[khi,Bin1,:] + ((a**3-a)*ddCl[klo,Bin1,:] + (b**3-b)*ddCl[khi,Bin1,:])*(h**2)/6.
-                Cov_observ[Bin1,:] = a*self.Cl_fid[klo,Bin1,:] + b*self.Cl_fid[khi,Bin1,:] + ((a**3-a)*ddCl_fid[klo,Bin1,:] + (b**3-b)*ddCl_fid[khi,Bin1,:])*(h**2)/6.
-                if self.theoretical_error != 0:
-                    Cov_error[Bin1,:]    = a*El[klo,Bin1,:] + b*El[khi,Bin1,:] + ((a**3-a)*ddEl[klo,Bin1,:] + (b**3-b)*ddEl[khi,Bin1,:])*(h**2)/6.
+        for Bin1 in xrange(self.nbin):
+            for Bin2 in xrange(Bin1, self.nbin):
+                Cov_theory[:, Bin1, Bin2] = itp.splev(
+                    ells, spline_Cl[Bin1, Bin2])
+                Cov_observ[:, Bin1, Bin2] = itp.splev(
+                    ells, spline_Cl_fid[Bin1, Bin2])
+                if self.theoretical_error > 0:
+                    Cov_error[:, Bin1, Bin2] = itp.splev(
+                        ells, spline_El[Bin1, Bin2])
+                if Bin2 > Bin1:
+                    Cov_theory[:, Bin2, Bin1] = Cov_theory[:, Bin1, Bin2]
+                    Cov_observ[:, Bin2, Bin1] = Cov_observ[:, Bin1, Bin2]
+                    Cov_error[:, Bin2, Bin1] = Cov_error[:, Bin1, Bin2]
 
-            det_theory = np.linalg.det(Cov_theory)
-            det_observ = np.linalg.det(Cov_observ)
+        chi2 = 0.
+        for index, ell in enumerate(ells):
+
+            det_theory = np.linalg.det(Cov_theory[index, :, :])
+            det_observ = np.linalg.det(Cov_observ[index, :, :])
 
             if (self.theoretical_error > 0):
                 det_cross_err = 0
@@ -411,7 +395,7 @@ class euclid_lensing(Likelihood):
                             newCov[:, i] = Cov_observ[:, i]
                             det_theory_plus_error_cross_obs += np.linalg.det(
                                 newCov)
-                        function_vector[k] = (2.*lll+1.)*self.fsky*(det_theory_plus_error_cross_obs/det_theory_plus_error + math.log(det_theory_plus_error/det_observ) - self.nbin ) + dof*vector[k]**2
+                        function_vector[k] = (2.*ell+1.)*self.fsky*(det_theory_plus_error_cross_obs/det_theory_plus_error + math.log(det_theory_plus_error/det_observ) - self.nbin ) + dof*vector[k]**2
 
                     # Computing first
                     first_d    = (function_vector[2]-function_vector[0]) / (vector[2]-vector[0])
@@ -432,16 +416,17 @@ class euclid_lensing(Likelihood):
                     newCov[:, i] = Cov_observ[:, i]
                     det_theory_plus_error_cross_obs += np.linalg.det(newCov)
 
-                chi2 += (2.*lll+1.)*self.fsky*(det_theory_plus_error_cross_obs/det_theory_plus_error + math.log(det_theory_plus_error/det_observ) - self.nbin ) + dof*epsilon_l**2
+                chi2 += (2.*ell+1.)*self.fsky*(det_theory_plus_error_cross_obs/det_theory_plus_error + math.log(det_theory_plus_error/det_observ) - self.nbin ) + dof*epsilon_l**2
 
             else:
                 det_cross = 0.
-                for i in range(self.nbin):
-                    newCov = np.copy(Cov_theory)
-                    newCov[:, i] = Cov_observ[:, i]
+                newCov = np.zeros((self.nbin, self.nbin), 'float64')
+                for i in xrange(self.nbin):
+                    newCov[:, :] = Cov_theory[index, :, :]
+                    newCov[:, i] = Cov_observ[index, :, i]
                     det_cross += np.linalg.det(newCov)
 
-                chi2 += (2.*lll+1.)*self.fsky*(det_cross/det_theory + math.log(det_theory/det_observ) - self.nbin)
+                chi2 += (2.*ell+1.)*self.fsky*(det_cross/det_theory + math.log(det_theory/det_observ) - self.nbin)
 
         # Finally adding a gaussian prior on the epsilon nuisance parameter, if
         # present
@@ -449,7 +434,5 @@ class euclid_lensing(Likelihood):
             epsilon = data.mcmc_parameters['epsilon']['current'] * \
                 data.mcmc_parameters['epsilon']['scale']
             chi2 += epsilon**2
-        t2 = time()
-        print 'it took', t2-t1
 
         return -chi2/2.
