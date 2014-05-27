@@ -359,6 +359,7 @@ class euclid_lensing(Likelihood):
                     Cov_error[:, Bin2, Bin1] = Cov_error[:, Bin1, Bin2]
 
         chi2 = 0.
+        # TODO parallelize this
         for index, ell in enumerate(ells):
 
             det_theory = np.linalg.det(Cov_theory[index, :, :])
@@ -420,9 +421,8 @@ class euclid_lensing(Likelihood):
 
             else:
                 det_cross = 0.
-                newCov = np.zeros((self.nbin, self.nbin), 'float64')
                 for i in xrange(self.nbin):
-                    newCov[:, :] = Cov_theory[index, :, :]
+                    newCov = np.copy(Cov_theory[index, :, :])
                     newCov[:, i] = Cov_observ[index, :, i]
                     det_cross += np.linalg.det(newCov)
 
@@ -434,5 +434,4 @@ class euclid_lensing(Likelihood):
             epsilon = data.mcmc_parameters['epsilon']['current'] * \
                 data.mcmc_parameters['epsilon']['scale']
             chi2 += epsilon**2
-
         return -chi2/2.
