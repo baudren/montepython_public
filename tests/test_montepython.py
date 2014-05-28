@@ -256,7 +256,7 @@ class Test04CosmologicalCodeWrapper(TestMontePython):
         self.assertTrue(self.cosmo.state)
         raw_cl = self.cosmo.raw_cl()
         self.assertIsInstance(raw_cl, dict)
-        expected_keys = ['tt', 'te', 'ee', 'bb', 'pp', 'tp']
+        expected_keys = ['ell', 'tt', 'te', 'ee', 'bb', 'pp', 'tp']
         for key in raw_cl.iterkeys():
             self.assertIn(key, expected_keys)
         self.cosmo.struct_cleanup()
@@ -264,12 +264,12 @@ class Test04CosmologicalCodeWrapper(TestMontePython):
 
     def test_lensed_cl_behaviour(self):
         """Are the lensed Cls well behaved?"""
-        self.cosmo.set({'output': 'lCl'})
+        self.cosmo.set({'output': 'lCl pCl'})
         self.cosmo.compute()
         self.assertTrue(self.cosmo.state)
         lensed_cl = self.cosmo.lensed_cl()
         self.assertIsInstance(lensed_cl, dict)
-        expected_keys = ['tt', 'te', 'ee', 'bb', 'pp', 'tp']
+        expected_keys = ['ell', 'tt', 'te', 'ee', 'bb', 'pp', 'tp']
         for key in lensed_cl.iterkeys():
             self.assertIn(key, expected_keys)
         self.cosmo.struct_cleanup()
