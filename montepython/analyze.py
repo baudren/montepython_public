@@ -1109,8 +1109,7 @@ def plot_triangle(
                     contours = ax2dsub.contourf(
                         y_centers, x_centers, n,
                         extent=extent, levels=ctr_level(n, lvls[:2]),
-                        zorder=5, cmap=plt.cm.autumn_r,
-                        alpha=command_line.alpha)
+                        zorder=4, cmap=plt.cm.autumn_r,)
                 except Warning:
                     warnings.warn(
                         "The routine could not find the contour of the " +
@@ -1153,7 +1152,8 @@ def plot_triangle(
                                 contours = ax2dsub.contourf(
                                     comp_y_centers, comp_x_centers, comp_n,
                                     extent=comp_extent, levels=ctr_level(comp_n, lvls[:2]),
-                                    zorder=4, cmap=plt.cm.Blues)
+                                    zorder=5, cmap=plt.cm.Blues,
+                                    alpha=command_line.alpha)
                         except Warning:
                             warnings.warn(
                                 "The routine could not find the contour of the " +
@@ -1191,8 +1191,7 @@ def plot_triangle(
                         contours = ax_temp.contourf(
                             y_centers, x_centers, n, extent=extent,
                             levels=ctr_level(n, lvls[:2]),  # colors="k",
-                            zorder=5, cmap=plt.cm.autumn_r,
-                            alpha=command_line.alpha)
+                            zorder=4, cmap=plt.cm.autumn_r,)
                     except Warning:
                         warnings.warn(
                             "The routine could not find the contour of the " +
@@ -1218,7 +1217,8 @@ def plot_triangle(
                                 contours = ax_temp.contourf(
                                     comp_y_centers, comp_x_centers, comp_n,
                                     extent=comp_extent, levels=ctr_level(comp_n, lvls[:2]),
-                                    zorder=4, cmap=plt.cm.Blues)
+                                    zorder=5, cmap=plt.cm.Blues,
+                                    alpha=command_line.alpha)
                         except Warning:
                             warnings.warn(
                                 "The routine could not find the contour of the " +
