@@ -530,7 +530,6 @@ def convergence(info, is_main_chain=True, files=None, param=None):
     length_of_largest_filename = 0
     print '--> Finding global maximum of likelihood'
     for chain_file in files:
-        i = files.index(chain_file)
         if len(chain_file.split('/')[-1]) > length_of_largest_filename:
             length_of_largest_filename = len(chain_file.split('/')[-1])
         # cheese will brutally contain everything in the file chain_file being
@@ -554,12 +553,12 @@ def convergence(info, is_main_chain=True, files=None, param=None):
         try:
             max_lkl.append(cheese[:, 1].min())
         except IndexError:
-            index = 1
             raise io_mp.AnalyzeError(
-                "Error while scanning %s. This file most probably contains " +
-                "an incomplete line, rendering the analysis impossible. " +
+                "Error while scanning %s." % chain_file +
+                " This file most probably contains "
+                "an incomplete line, rendering the analysis impossible. "
                 "I think that the following line(s) is(are) wrong:\n %s" % (
-                    chain_file, '\n '.join(
+                    '\n '.join(
                         ['-> %s' % line for line in
                          open(chain_file, 'r') if
                          len(line.split()) != len(backup_names)+2])))
