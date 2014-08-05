@@ -251,12 +251,17 @@ def create_parser():
               a scaling relation will be used.)
             - **--ticksize** (`int`) - adjust ticksize (default to -1, meaning
               a scaling relation will be used.)
+            - **--line-width** (`int`) - set line width (default to 4)
+            - **--decimal** (`int`) - number of decimal places on ticks
+            - **--ticks** (`int`) - number of ticks on each axis
+            - **--legend-style** (`str`) - specify the style of the legend, to
+              choose from `sides` or `top`.
 
     """
     # Customized usage, for more verbosity concerning these subparsers options.
     usage = """%(prog)s [-h] [--version] {run,info} ... """
     usage += textwrap.dedent("""\n
-        From more help, type:
+        From more help on each of the subcommands, type:
         %(prog)s run -h
         %(prog)s info -h""")
 
@@ -418,6 +423,8 @@ def create_parser():
         '--ext', help='''change extension for the output file.
         Any extension handled by `matplotlib` can be used''',
         type=str, dest='extension', default='pdf')
+    # -------------------------------------
+    # Further customization
     # -- fontsize of plots (defaulting to -1, in which case a scaling relation
     # will be applied
     infoparser.add_argument('--fontsize', help='desired font size',
@@ -426,6 +433,22 @@ def create_parser():
     # will be applied)
     infoparser.add_argument('--ticksize', help='desired tick size',
                             type=int, default=-1)
+    # -- linewidth of 1d plots (defaulting to 4, 2 being a bare minimum for
+    # legible graphs
+    infoparser.add_argument('--line-width', help='desired line width',
+                            type=int, default=4)
+    # -- number of decimal places that appear on the tick legend. If you want
+    # to increase the number of ticks, you should reduce this number
+    infoparser.add_argument('--decimal', help='decimal places on ticks',
+                            type=int, default=3)
+    # -- number of ticks that appear on the graph.
+    infoparser.add_argument('--ticks', help='number of ticks on each axe',
+                            type=int, default=3)
+    # -- legend type, to choose between top (previous style) to sides (new
+    # style). It modifies the place where the name of the variable appear.
+    infoparser.add_argument('--legend-style', help='style of the legend',
+                            type=str, choices=['sides', 'top'],
+                            default='sides')
 
     return parser
 

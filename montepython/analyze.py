@@ -26,6 +26,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 # Module to handle warnings from matplotlib
 import warnings
+import importlib
 import io_mp
 
 
@@ -56,26 +57,20 @@ def analyze(command_line):
             'No cubic interpolation done (no interpolate method found ' +
             'in scipy), only linear')
 
-    # At this points, `files` could contain either a list of files (that
-    # could be only one) or a folder. This is the reason why it is not yet
-    # copied to the info class.
-    files = command_line.files
-    binnumber = command_line.bins
-
-    # Save the extension to output files
+    # Save the extension of output files and the bin number
     info.extension = command_line.extension
+    info.binnumber = command_line.bins
 
     # Read a potential file describing changes to be done for the parameter
     # names, and number of paramaters plotted (can be let empty, all will
     # then be plotted).
     if command_line.optional_plot_file is not None:
-        for line in open(command_line.optional_plot_file, 'r'):
-            exec(line)
+        execfile(command_line.optional_plot_file)
 
     # Prepare the files, according to the case, load the log.param, and
     # prepare the output (plots folder, .covmat, .info and .log files).
     # After this step, info.files will contain all chains.
-    status = prepare(info, files)
+    status = prepare(command_line.files, info)
 
     if not status:
         return
@@ -88,13 +83,12 @@ def analyze(command_line):
     # put together. This will serve for the plotting.
     chain = np.vstack(info.spam)
 
-    # In case of comparison, launch the prepare and convergence methods,
-    # with an additional flag: is_main_chain=False. This will ensure that
-    # all the information will not be stored to info.files, info.covmat...
-    # but to the specified output, respectively comp_files, comp_spam...
+    # In case of comparison, launch the prepare and convergence methods, for
+    # the other folders
     if command_line.comp is not None:
-        comp_files, comp_folder, comp_param = \
-            prepare(info, command_line.comp, is_main_chain=False)
+        comp_info = Information()
+        prepare(command_line.comp, comp_info)
+        # TODO continue fixing
         comp_spam, comp_ref_names, comp_tex_names, comp_backup_names, \
             comp_plotted_parameters, comp_boundaries, comp_mean = \
             convergence(info, is_main_chain=False, files=comp_files,
@@ -177,10 +171,10 @@ def analyze(command_line):
         if command_line.comp is None:
             plot_triangle(
                 info, chain, command_line,
-                bin_number=binnumber, levels=info.lvls)
+                bin_number=info.binnumber, levels=info.lvls)
         else:
             plot_triangle(
-                info, chain, command_line, bin_number=binnumber,
+                info, chain, command_line, bin_number=info.binnumber,
                 levels=info.lvls,
                 comp_chain=comp_chain,
                 comp_ref_names=comp_ref_names,
@@ -280,7 +274,7 @@ def analyze(command_line):
     write_tex(info, indices)
 
 
-def prepare(info, files, is_main_chain=True):
+def prepare(files, info):
     """
     Scan the whole input folder, and include all chains in it.
 
@@ -305,100 +299,39 @@ def prepare(info, files, is_main_chain=True):
         if the run was complete, but only if the Nested Sampling run was killed
         before completion**.
 
+    Parameters
+    ----------
+    files : list
+        list of potentially only one element, containing the files to analyze.
+        This can be only one file, or the encompassing folder, files
+    info : Information instance
+        Used to store the result
+
     """
+    # First test if the folder is a Nested Sampling or CosmoHammer folder. If
+    # so, call the module's own routine through the clean conversion function,
+    # which will translate the output of this other sampling into MCMC chains
+    # that can then be analyzed.
+    modules = ['nested_sampling', 'cosmo_hammer']
+    tags = ['NS', 'CH']
+    for module_name, tag in zip(modules, tags):
+        action_done = clean_conversion(module_name, tag, files[0])
+        if action_done:
+            return False
 
-    has_multinest, has_cosmohammer = False, False
+    # If the input command was an entire folder, then grab everything in it.
+    # Too small files (below 600 octets) and subfolders are automatically
+    # removed.
+    folder, files = recover_folder_and_files(files)
 
-    # First test if the folder is a Nested Sampling folder
-    try:
-        from nested_sampling import NS_subfolder
-        has_multinest = True
-    except ImportError:
-        # The module multinest is not installed, so it can not analyze a NS
-        # subfolder
-        pass
-
-    if has_multinest and os.path.isdir(files[0]):
-        folder = os.path.join(
-            *[elem for elem in files[0].split(os.path.sep) if elem])
-        if folder.split(os.path.sep)[-1] == NS_subfolder:
-            try:
-                from nested_sampling import from_NS_output_to_chains as NS_output
-                NS_output(folder)
-            except IOError:
-                raise io_mp.AnalyzeError(
-                    "You asked to analyze a Nested Sampling folder which " +
-                    "seems to come from an unfinished run, or to be empty " +
-                    "or corrupt. Please make sure the run went smoothly " +
-                    "enough.")
-            else:
-                warnings.warn(
-                    "The content of the NS subfolder has been " +
-                    "translated for Monte Python. Please run an " +
-                    "analysis of the entire folder now.")
-                return False
-
-    # Or a CosmoHammer folder
-    try:
-        from cosmo_hammer import CH_subfolder
-        has_cosmohammer = True
-    except ImportError:
-        # The module cosmohammer is not installed, so it can not analyze a CH
-        # subfolder
-        pass
-
-    if has_cosmohammer and os.path.isdir(files[0]):
-        folder = os.path.abspath(files[0])
-        if folder.split(os.path.sep)[-1] == CH_subfolder:
-            try:
-                from cosmo_hammer import from_CH_output_to_chains as CH_output
-                CH_output(folder)
-            except IOError:
-                raise io_mp.AnalyzeError(
-                    "You asked to analyze a Cosmo Hammer run which appears "
-                    "empty - maybe the run did not finish?")
-            else:
-                warnings.warn(
-                    "The content of the CH subfolder has been "
-                    "translated for Monte Python. Please run an "
-                    "analysis of the entire folder now.")
-                return False
-
-    # If the input command was an entire folder, then grab everything in it
-    if os.path.isdir(files[0]):
-        if files[0][-1] != '/':
-            files[0] += '/'
-        folder = files[0]
-        files = [
-            folder+elem for elem in os.listdir(folder)
-            if elem.find('.txt') != -1 and elem.find('__') != -1]
-
-    # Else, one needs to recover the folder, depending on the case
-    else:
-        if (len(files[0].split('/')) == 0 or
-                (files[0].split('/')[0] == '.')):
-            folder = './'
-        else:
-            folder = ''
-            for i in xrange(len(files[0].split('/')[:-1])):
-                folder += files[0].split('/')[i]+'/'
-
-    # Remove too small files to potentially eliminate any problems of
-    # chains being too short, and sub-folders (as the ./plots/ one that
-    # will be created after the first run anyway
-    for elem in np.copy(files):
-        if os.path.isdir('{0}'.format(elem)) is True:
-            files.remove(elem)
-        # Note, this limit with the size is taylored for not too huge
-        # number of parameters. Be aware that it might not work when having
-        # more than, say, 20 free parameters.
-        elif os.path.getsize(elem) < 600:
-            files.remove(elem)
+    info.files = files
+    info.folder = folder
 
     # Check if the log.param file exists
-    if os.path.isfile(folder+'log.param') is True:
-        if os.path.getsize(folder+'log.param') > 0:
-            param = open(folder+'log.param', 'r')
+    parameter_file_path = os.path.join(folder, 'log.param')
+    if os.path.isfile(parameter_file_path):
+        if os.path.getsize(parameter_file_path) > 0:
+            param = open(parameter_file_path, 'r')
         else:
             raise io_mp.AnalyzeError(
                 "The log param file %s " % os.path.join(folder, 'log.param') +
@@ -410,37 +343,19 @@ def prepare(info, files, is_main_chain=True):
 
     # If the folder has no subdirectory, then go for a simple infoname,
     # otherwise, call it with the last name
-    if len(folder.split('/')) <= 2 and folder.split('/')[-1] == '':
-        v_infoname = folder+folder.rstrip('/')+'.v_info'
-        h_infoname = folder+folder.rstrip('/')+'.h_info'
-        texname = folder+folder.rstrip('/')+'.tex'
-        covname = folder+folder.rstrip('/')+'.covmat'
-        logname = folder+folder.rstrip('/')+'.log'
-        bfname = folder+folder.rstrip('/')+'.bestfit'
-    else:
-        v_infoname = folder+folder.split('/')[-2]+'.v_info'
-        h_infoname = folder+folder.split('/')[-2]+'.h_info'
-        texname = folder+folder.split('/')[-2]+'.tex'
-        covname = folder+folder.split('/')[-2]+'.covmat'
-        logname = folder+folder.split('/')[-2]+'.log'
-        bfname = folder+folder.split('/')[-2]+'.bestfit'
+    basename = (os.path.basename(folder) if os.path.basename(folder) != '.'
+                else os.path.basename(os.path.abspath(
+                    os.path.join(folder, '..'))))
 
-    # Distinction between the main chain and the comparative one, instead
-    # of storing everything into the class, return it
-    if is_main_chain:
-        info.v_info = open(v_infoname, 'w')
-        info.h_info = open(h_infoname, 'w')
-        info.tex = open(texname, 'w')
-        info.cov = open(covname, 'w')
-        info.log = open(logname, 'w')
-        info.best_fit = open(bfname, 'w')
-        info.param = param
+    info.v_info = open(os.path.join(folder, basename+'.v_info'), 'w')
+    info.h_info = open(os.path.join(folder, basename+'.h_info'), 'w')
+    info.tex = open(os.path.join(folder, basename+'.tex'), 'w')
+    info.cov = open(os.path.join(folder, basename+'.covmat'), 'w')
+    info.log = open(os.path.join(folder, basename+'.log'), 'w')
+    info.best_fit = open(os.path.join(folder, basename+'.bestfit'), 'w')
+    info.param = param
 
-        info.files = files
-        info.folder = folder
-        return True
-    else:
-        return files, folder, param
+    return True
 
 
 def convergence(info, is_main_chain=True, files=None, param=None):
@@ -1656,6 +1571,69 @@ def read_histogram_2d(histogram_path):
     hist = np.array(hist)
 
     return x_centers, y_centers, extent, hist
+
+
+def clean_conversion(module_name, tag, folder):
+    """
+    Execute the methods "convert" from the different sampling algorithms
+
+    Returns True if something was made, False otherwise
+    """
+    has_module = False
+    subfolder_name = tag+"_subfolder"
+    try:
+        module = importlib.import_module(module_name)
+        subfolder = getattr(module, subfolder_name)
+        has_module = True
+    except ImportError:
+        # The module is not installed, the conversion can not take place
+        pass
+
+    if has_module and os.path.isdir(folder):
+        # Remove any potential trailing slash
+        folder = os.path.join(
+            *[elem for elem in folder.split(os.path.sep) if elem])
+        if folder.split(os.path.sep)[-1] == subfolder:
+            try:
+                getattr(module, 'from_%s_output_to_chains' % tag)(folder)
+            except IOError:
+                raise io_mp.AnalyzeError(
+                    "You asked to analyze a %s folder which " % tag +
+                    "seems to come from an unfinished run, or to be empty " +
+                    "or corrupt. Please make sure the run went smoothly " +
+                    "enough.")
+            warnings.warn(
+                "The content of the %s subfolder has been " % tag +
+                "translated for Monte Python. Please run an "
+                "analysis of the entire folder now.")
+            return True
+    else:
+        return False
+
+
+def recover_folder_and_files(files):
+    """Distinguish the cases when analyze is called with files or folder"""
+    # The following list defines the substring that a chain should contain for
+    # the code to recognise it as a proper chain.
+    substrings = ['.txt', '__']
+    limit = 600
+    # If the first element is a folder, grab all chain files inside
+    if os.path.isdir(files[0]):
+        folder = os.path.normpath(files[0])
+        files = [os.path.join(folder, elem) for elem in os.listdir(folder)
+                 if not os.path.isdir(os.path.join(folder, elem))
+                 and not os.path.getsize(os.path.join(folder, elem)) < limit
+                 and all([x in elem for x in substrings])]
+    # Otherwise, extract the folder from the chain file-name.
+    else:
+        folder = os.path.relpath(
+            os.path.dirname(os.path.realpath(files[0])), os.path.curdir)
+        files = [os.path.join(folder, elem) for elem in os.listdir(folder)
+                 if os.path.join(folder, elem) in np.copy(files)
+                 and not os.path.isdir(os.path.join(folder, elem))
+                 and not os.path.getsize(os.path.join(folder, elem)) < limit
+                 and all([x in elem for x in substrings])]
+    return folder, files
 
 
 class Information(object):
