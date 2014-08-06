@@ -28,7 +28,11 @@ import matplotlib.pyplot as plt
 import warnings
 import importlib
 import io_mp
+from debug import timeit
 
+# Defined to remove the burnin for all the points that were produced before the
+# first time where log-likelihood >= max-log-likelihood-LOG_LKL_CUTOFF
+LOG_LKL_CUTOFF = 3
 
 def analyze(command_line):
     """
@@ -71,7 +75,8 @@ def analyze(command_line):
     # prepare the output (plots folder, .covmat, .info and .log files).
     # After this step, info.files will contain all chains.
     status = prepare(command_line.files, info)
-
+    # If the preparation step generated new files (for instance, translating
+    # from NS or CH to Markov Chains) this routine should stop now.
     if not status:
         return
 
@@ -85,27 +90,20 @@ def analyze(command_line):
 
     # In case of comparison, launch the prepare and convergence methods, for
     # the other folders
+    # TODO continue fixing by doing this over an arbitrary number of compared
+    # folders
     if command_line.comp is not None:
         comp_info = Information()
         prepare(command_line.comp, comp_info)
-        # TODO continue fixing
-        comp_spam, comp_ref_names, comp_tex_names, comp_backup_names, \
-            comp_plotted_parameters, comp_boundaries, comp_mean = \
-            convergence(info, is_main_chain=False, files=comp_files,
-                        param=comp_param)
-        comp_mean = comp_mean[0]
-
+        convergence(comp_info)
         # Create comp_chain
-        comp_chain = np.copy(comp_spam[0])
-        for i in range(len(comp_spam)-1):
-            comp_chain = np.append(comp_chain, comp_spam[i+1], axis=0)
+        comp_chain = np.vstack(comp_info.spam)
 
-    # Total number of steps.
+    # Total number of steps, after burnin
     weight = chain[:, 0].sum()
 
     # Covariance matrix computation (for the whole chain)
     info.mean = info.mean[0]
-    info.var = info.var[0]
     info.covar = np.zeros((len(info.ref_names), len(info.ref_names)))
 
     print '--> Computing covariance matrix'
@@ -119,28 +117,25 @@ def analyze(command_line):
                 info.covar[j, i] = info.covar[i, j]
     info.covar /= weight
 
-    # Writing it out in name_of_folder.covmat
-    info.cov.write('# ')
-    for i in range(len(info.ref_names)):
-        string = info.backup_names[i]
-        if i != len(info.ref_names)-1:
-            string += ','
-        info.cov.write('%-16s' % string)
-    info.cov.write('\n')
     # Removing scale factors in order to store true parameter covariance
     info.covar = np.dot(info.scales.T, np.dot(info.covar, info.scales))
-    for i in range(len(info.ref_names)):
-        for j in range(len(info.ref_names)):
-            if info.covar[i][j] > 0:
-                info.cov.write(' %.5e\t' % info.covar[i][j])
-            else:
-                info.cov.write('%.5e\t' % info.covar[i][j])
-        info.cov.write('\n')
+
+    # Writing it out in name_of_folder.covmat
+    with open(info.cov_path, 'w') as cov:
+        cov.write('# %s\n' % ', '.join(
+            ['%16s' % name for name in info.backup_names]))
+
+        for i in range(len(info.ref_names)):
+            for j in range(len(info.ref_names)):
+                if info.covar[i][j] > 0:
+                    cov.write(' %.5e\t' % info.covar[i][j])
+                else:
+                    cov.write('%.5e\t' % info.covar[i][j])
+            cov.write('\n')
 
     # Sorting by likelihood: a will hold the list of indices where the
     # points are sorted with increasing likelihood.
     a = chain[:, 1].argsort(0)
-    total = chain[:, 0].sum()
 
     # Writing the best-fit model in name_of_folder.bestfit
     info.best_fit.write('# ')
@@ -274,6 +269,7 @@ def analyze(command_line):
     write_tex(info, indices)
 
 
+@timeit
 def prepare(files, info):
     """
     Scan the whole input folder, and include all chains in it.
@@ -330,9 +326,7 @@ def prepare(files, info):
     # Check if the log.param file exists
     parameter_file_path = os.path.join(folder, 'log.param')
     if os.path.isfile(parameter_file_path):
-        if os.path.getsize(parameter_file_path) > 0:
-            param = open(parameter_file_path, 'r')
-        else:
+        if os.path.getsize(parameter_file_path) == 0:
             raise io_mp.AnalyzeError(
                 "The log param file %s " % os.path.join(folder, 'log.param') +
                 "seems empty")
@@ -347,235 +341,53 @@ def prepare(files, info):
                 else os.path.basename(os.path.abspath(
                     os.path.join(folder, '..'))))
 
-    info.v_info = open(os.path.join(folder, basename+'.v_info'), 'w')
-    info.h_info = open(os.path.join(folder, basename+'.h_info'), 'w')
-    info.tex = open(os.path.join(folder, basename+'.tex'), 'w')
-    info.cov = open(os.path.join(folder, basename+'.covmat'), 'w')
-    info.log = open(os.path.join(folder, basename+'.log'), 'w')
-    info.best_fit = open(os.path.join(folder, basename+'.bestfit'), 'w')
-    info.param = param
+    info.v_info_path = os.path.join(folder, basename+'.v_info')
+    info.h_info_path = os.path.join(folder, basename+'.h_info')
+    info.tex_path = os.path.join(folder, basename+'.tex')
+    info.cov_path = os.path.join(folder, basename+'.covmat')
+    info.log_path = os.path.join(folder, basename+'.log')
+    info.best_fit_path = os.path.join(folder, basename+'.bestfit')
+    info.param_path = parameter_file_path
 
     return True
 
 
-def convergence(info, is_main_chain=True, files=None, param=None):
+@timeit
+def convergence(info):
     """
-    Compute convergence for the desired chains
+    Compute convergence for the desired chains, using Gelman-Rubin diagnostic
 
-    Chains have been stored in the info instance of :class:`Information`. If
-    this function is called for another chain than the main one (with the
-    *comp* command line argument), it requires some extra keyword arguments.
+    Chains have been stored in the info instance of :class:`Information`. Note
+    that the G-R diagnostic can be computed for a single chain, albeit it will
+    most probably give absurd results. To do so, it separates the chain into
+    three subchains.
+
     """
-
-    # We have a list of files, that may be of length 1. If this
-    # happens, then we split the only file in 3 subchains, otherwise we
-    # compute normally the R coefficient.
-    spam = list()
-
-    # Recovering default ordering of parameters
-    ref_names = []
-    tex_names = []
-    boundaries = []
-    scales = []
-
-    # Backup names
-    backup_names = []
-
-    plotted_parameters = []
-
-    if is_main_chain:
-        files = info.files
-        param = info.param
-
     # Recovering parameter names and scales, creating tex names,
-    for line in param:
-        if line.find('#') == -1:
-            if line.find('data.experiments') != -1:
-                info.experiments = \
-                    line.split('=')[-1].replace('[', '').\
-                    replace(']', '').replace('\n', '').replace("'", "").\
-                    split(',')
-            if line.find('data.parameters') != -1:
-                name = line.split("'")[1]
-                backup = name
-                # Rename the names according the .extra file (opt)
-                if name in info.to_change.iterkeys():
-                    name = info.to_change[name]
-                if (float(line.split('=')[-1].split(',')[-3].replace(' ', '')) != 0 or
-                        str(line.split('=')[-1].split(',')[-1].replace(' ', '').replace(']', '').replace('\n', '').replace("'", "").replace("\t", '')) == 'derived'):
-                    # The real name is always kept, to have still the class
-                    # names in the covmat
-                    backup_names.append(backup)
-                    if info.to_plot == []:
-                        plotted_parameters.append(name)
-                    else:
-                        if name in info.to_plot:
-                            plotted_parameters.append(name)
-                    temp = [float(elem) if elem.strip() != 'None'
-                            else -1.0 for elem in line.split(",")[1:3]]
-                    boundaries.append(temp)
-                    ref_names.append(name)
-                    scales.append(float(
-                        line.split('=')[-1].split(",")[4].replace(' ', '')))
-                    if name in info.new_scales.iterkeys():
-                        scales[-1] = info.new_scales[name]
-                    number = 1./scales[-1]
-                    tex_names.append(
-                        io_mp.get_tex_name(name, number=number))
-    scales = np.diag(scales)
-    param.seek(0)
+    extract_parameter_names(info)
 
-    # Log param names for the main chain
-    if is_main_chain:
-        for elem in ref_names:
-            info.log.write("%s   " % elem)
-        info.log.write("\n")
-
-    # Total number of steps done:
-    total_number_of_steps = 0
-    total_number_of_accepted_steps = 0
-
-    # max_lkl will be appended with all the maximum likelihoods of files,
-    # then will be replaced by its own maximum. This way, the global
-    # maximum likelihood will be used as a reference, and not each chain's
-    # maximum.
-    max_lkl = []
-
-    # Circle through all files to find the maximum (and largest filename)
-    length_of_largest_filename = 0
+    # Circle through all files to find the global maximum of likelihood
     print '--> Finding global maximum of likelihood'
-    for chain_file in files:
-        if len(chain_file.split('/')[-1]) > length_of_largest_filename:
-            length_of_largest_filename = len(chain_file.split('/')[-1])
-        # cheese will brutally contain everything in the file chain_file being
-        # scanned. Small trick, to analyze CosmoMC files directly, since the
-        # convention of spacing is different, we have to test for the
-        # configuration of the line. If it starts with three blanck spaces, it
-        # will be a CosmoMC file, so every element will be separated with three
-        # spaces
-        if line.startswith("   "):
-            cheese = (np.array([[float(elem) for elem in line[4:].split()]
-                                for line in open(chain_file, 'r')]))
-        # else it is the normal Monte Python convention
-        else:
-            cheese = (np.array([[float(elem) for elem in line.split()]
-                                for line in open(chain_file, 'r')]))
+    find_maximum_of_likelihood(info)
 
-        # If the file contains a line with a different number of elements, the
-        # previous array generation will fail, and will not have the correct
-        # shape. Hence the following command will fail. To avoid that, the
-        # error is caught.
-        try:
-            max_lkl.append(cheese[:, 1].min())
-        except IndexError:
-            raise io_mp.AnalyzeError(
-                "Error while scanning %s." % chain_file +
-                " This file most probably contains "
-                "an incomplete line, rendering the analysis impossible. "
-                "I think that the following line(s) is(are) wrong:\n %s" % (
-                    '\n '.join(
-                        ['-> %s' % line for line in
-                         open(chain_file, 'r') if
-                         len(line.split()) != len(backup_names)+2])))
-
-    # beware, it is the min because we are talking about
-    # '- log likelihood'
-    # Selecting only the true maximum.
-    try:
-        max_lkl = min(max_lkl)
-    except ValueError:
-        raise io_mp.AnalyzeError(
-            "No decently sized chain was found in the desired folder. " +
-            "Please wait to have more accepted point before trying " +
-            "to analyze it.")
-
-    info.max_lkl = max_lkl
-
-    # Restarting the circling through files
-    for chain_file in files:
-        i = files.index(chain_file)
-        # To improve presentation, and print only once the full path of the
-        # analyzed folder, we recover the length of the path name, and
-        # create an empty complementary string of this length
-        index_slash = chain_file.rfind('/')
-        complementary_string = ''
-        for j in xrange(index_slash+2):
-            complementary_string += ' '
-        if i == 0:
-            exec "print '--> Scanning file %-{0}s' % chain_file,".format(
-                length_of_largest_filename)
-        else:
-            exec "print '                 %s%-{0}s' % (complementary_string,chain_file.split('/')[-1]),".format(
-                length_of_largest_filename)
-        # cheese will brutally contain everything in the chain chain_file being
-        # scanned
-        cheese = (np.array([[float(elem) for elem in line.split()]
-                            for line in open(chain_file, 'r')]))
-        local_max_lkl = cheese[:, 1].min()
-        # beware, it is the min because we are talking about
-        # '- log likelihood'
-        line_count = 0
-        for line in open(chain_file, 'r'):
-            line_count += 1
-        if is_main_chain:
-            info.log.write("%s\t Number of steps:%d\tSteps accepted:%d\tacc = %.2g\tmin(-loglike) = %.2f " % (
-                chain_file, cheese[:, 0].sum(), line_count,
-                line_count*1.0/cheese[:, 0].sum(), local_max_lkl))
-            info.log.write("\n")
-            total_number_of_steps += cheese[:, 0].sum()
-            total_number_of_accepted_steps += line_count
-
-        # Removing burn-in
-        start = 0
-        try:
-            while cheese[start, 1] > max_lkl+3:
-                start += 1
-            print '  \t: Removed {0}\t points of burn-in'.format(start)
-        except IndexError:
-            print '  \t: Removed everything: chain not converged'
-
-        # ham contains cheese without the burn-in, if there are any points
-        # left (more than 5)
-        if np.shape(cheese)[0] > start+5:
-            ham = np.copy(cheese[start::])
-
-            # Deal with single file case
-            if len(files) == 1:
-                warnings.warn("Convergence computed for a single file")
-                bacon = np.copy(cheese[::3, :])
-                egg = np.copy(cheese[1::3, :])
-                sausage = np.copy(cheese[2::3, :])
-
-                spam.append(bacon)
-                spam.append(egg)
-                spam.append(sausage)
-                continue
-
-            # Adding resulting table to spam
-            spam.append(ham)
-
-    # Applying now new rules for scales
-    for name in info.new_scales.iterkeys():
-        index = ref_names.index(name)
-        for i in xrange(len(spam)):
-            spam[i][:, index+2] *= 1./scales[index, index]
+    # Restarting the circling through files, this time removing the burnin,
+    # given the maximum of likelihood previously found and the global variable
+    # LOG_LKL_CUTOFF. spam now contains all the accepted points that were
+    # explored once the chain moved within max_lkl - LOG_LKL_CUTOFF
+    print '--> Removing burn-in'
+    spam = remove_burnin(info)
 
     # Now that the list spam contains all the different chains removed of
     # their respective burn-in, proceed to the convergence computation
 
-    # Test the length of the list
-    if len(spam) == 0:
-        raise io_mp.AnalyzeError(
-            "No decently sized chain was found. " +
-            "Please wait a bit to analyze this folder")
-
     # 2D arrays for mean and var, one column will contain the total (over
     # all chains) mean (resp. variance), and each other column the
     # respective chain mean (resp. chain variance). R only contains the
-    # values for each parameter
-    mean = np.zeros((len(spam)+1, np.shape(spam[0])[1]-2))
-    var = np.zeros((len(spam)+1, np.shape(spam[0])[1]-2))
-    R = np.zeros(np.shape(spam[0])[1]-2)
+    # values for each parameter. Therefore, mean and var will have len(spam)+1
+    # as a first dimension
+    mean = np.zeros((len(spam)+1, info.number_parameters))
+    var = np.zeros((len(spam)+1, info.number_parameters))
+    R = np.zeros(info.number_parameters)
 
     # Store the total number of points, and the total in each chain
     total = np.zeros(len(spam)+1)
@@ -585,36 +397,24 @@ def convergence(info, is_main_chain=True, files=None, param=None):
 
     # Compute mean and variance for each chain
     print '--> Computing mean values'
-    for i in xrange(np.shape(mean)[1]):
-        for j in xrange(len(spam)):
-            submean = np.sum(spam[j][:, 0]*spam[j][:, i+2])
-            mean[j+1, i] = submean / total[j+1]
-            mean[0, i] += submean
-        mean[0, i] /= total[0]
+    compute_mean(mean, spam, total)
 
     print '--> Computing variance'
-    for i in xrange(np.shape(mean)[1]):
-        for j in xrange(len(spam)):
-            var[0, i] += np.sum(
-                spam[j][:, 0]*(spam[j][:, i+2]-mean[0, i])**2)
-            var[j+1, i] = np.sum(
-                spam[j][:, 0]*(spam[j][:, i+2]-mean[j+1, i])**2) / \
-                (total[j+1]-1)
-        var[0, i] /= (total[0]-1)
+    compute_variance(var, mean, spam, total)
 
+    print '--> Computing convergence criterium (Gelman-Rubin)'
     # Gelman Rubin Diagnostic:
-    # Computes a quantity linked to the ratio of the mean of the variances
-    # of the different chains (within), and the variance of the means
-    # (between) Note: This is not strictly speaking the Gelman Rubin test,
-    # defined for same-length MC chains. Our quantity is defined without
-    # the square root, which should not change much the result: a small
-    # sqrt(R) will still be a small R. The same convention is used in
-    # CosmoMC, except for the weighted average: we decided to do the
-    # average taking into account that longer chains should count more
+    # Computes a quantity linked to the ratio of the mean of the variances of
+    # the different chains (within), and the variance of the means (between)
+    # Note: This is not strictly speaking the Gelman Rubin test, defined for
+    # same-length MC chains. Our quantity is defined without the square root,
+    # which should not change much the result: a small sqrt(R) will still be a
+    # small R. The same convention is used in CosmoMC, except for the weighted
+    # average: we decided to do the average taking into account that longer
+    # chains should count more
     within = 0
     between = 0
 
-    print '--> Computing convergence'
     for i in xrange(np.shape(mean)[1]):
         for j in xrange(len(spam)):
             within += total[j+1]*var[j+1, i]
@@ -623,45 +423,25 @@ def convergence(info, is_main_chain=True, files=None, param=None):
         between /= (total[0]-1)
 
         R[i] = between/within
-        #if i == 0:
-            #print ' -> R is ',R[i],'\tfor ',ref_names[i]
-        #else:
-            #print '         ',R[i],'\tfor ',ref_names[i]
         if i == 0:
-            print ' -> R is %.6f' % R[i], '\tfor ', ref_names[i]
+            print ' -> R is %.6f' % R[i], '\tfor ', info.ref_names[i]
         else:
-            print '         %.6f' % R[i], '\tfor ', ref_names[i]
+            print '         %.6f' % R[i], '\tfor ', info.ref_names[i]
 
     # Log finally the total number of steps, and absolute loglikelihood
-    info.log.write("--> Total    number    of    steps: %d\n" % (
-        total_number_of_steps))
-    info.log.write("--> Total number of accepted steps: %d\n" % (
-        total_number_of_accepted_steps))
-    info.log.write("--> Minimum of -logLike           : %.2f" % max_lkl)
+    with open(info.log_path, 'a') as log:
+        log.write("--> Total    number    of    steps: %d\n" % (
+            info.steps))
+        log.write("--> Total number of accepted steps: %d\n" % (
+            info.accepted_steps))
+        log.write("--> Minimum of -logLike           : %.2f" % info.max_lkl)
 
-    # If the analysis is done with the main folder (and not the comparison
-    # one), store all relevant quantities in the class.
-    if is_main_chain:
-        info.spam = spam
-
-        info.ref_names = ref_names
-        info.tex_names = tex_names
-        info.boundaries = boundaries
-
-        info.backup_names = backup_names
-
-        info.mean = mean
-        info.var = var
-        info.R = R
-
-        info.scales = scales
-
-        info.plotted_parameters = plotted_parameters
-
-        return True
-    else:
-        return spam, ref_names, tex_names, \
-            backup_names, plotted_parameters, boundaries, mean
+    # Store the remaining members in the info instance, for further writing to
+    # files.
+    info.spam = spam
+    info.mean = mean
+    info.R = R
+    info.total = total
 
 
 def plot_triangle(
@@ -719,9 +499,6 @@ def plot_triangle(
     if not scales:
         scales = np.ones(n)
     scales = np.array(scales)
-
-    #mean = info.mean*scales
-    #var = info.var*scales**2
 
     # 1D plot
     max_values = np.max(chain[:, 2:], axis=0)*scales
@@ -1412,10 +1189,6 @@ def write_tex(info, indices):
     Write a tex table containing the main results
 
     """
-
-    #info.tex.write("\documentclass{article}\n")
-    #info.tex.write("\\begin{document}\n")
-
     info.tex.write("\\begin{tabular}{|l|c|c|c|c|} \n \\hline \n")
     info.tex.write("Param & best-fit & mean$\pm\sigma$ & 95\% lower & 95\% upper \\\\ \\hline \n")
     for i in indices:
@@ -1429,8 +1202,6 @@ def write_tex(info, indices):
     info.tex.write(
         "$-\ln{\cal L}_\mathrm{min} =%.6g$, minimum $\chi^2=%.4g$ \\\\ \n" %
         (info.max_lkl, info.max_lkl*2.))
-    #info.tex.write("\\end{tabular}\n")
-    #info.tex.write("\\end{document}")
 
 
 def cubic_interpolation(info, hist, bincenters):
@@ -1634,6 +1405,289 @@ def recover_folder_and_files(files):
                  and not os.path.getsize(os.path.join(folder, elem)) < limit
                  and all([x in elem for x in substrings])]
     return folder, files
+
+
+def extract_array(line):
+    """
+    Return the array on the RHS of the line
+
+    >>> extract_array("toto = ['one', 'two']\n")
+    ['one', 'two']
+    >>> extract_array('toto = ["one", 0.2]\n')
+    ['one', 0.2]
+
+    """
+    # Recover RHS of the equal sign, and remove surrounding spaces
+    rhs = line.split('=')[-1].strip()
+    # Remove array signs
+    rhs = rhs.strip(']').lstrip('[')
+    # Recover each element of the list
+    sequence = [e.strip().strip('"').strip("'") for e in rhs.split(',')]
+    for index, elem in enumerate(sequence):
+        try:
+            sequence[index] = int(elem)
+        except ValueError:
+            try:
+                sequence[index] = float(elem)
+            except ValueError:
+                pass
+    return sequence
+
+
+def extract_dict(line):
+    """
+    Return the key and value of the dictionary element contained in line
+
+    >>> extract_dict("something['toto'] = [0, 1, 2, -2, 'cosmo']")
+    'toto', [0, 1, 2, -2, 'cosmo']
+
+    """
+    # recovering the array
+    sequence = extract_array(line)
+    # Recovering only the LHS
+    lhs = line.split('=')[0].strip()
+    # Recovering the name from the LHS
+    name = lhs.split('[')[-1].strip(']')
+    name = name.strip('"').strip("'")
+
+    return name, sequence
+
+
+def extract_parameter_names(info):
+    """
+    Reading the log.param, store in the Information instance the names
+    """
+    backup_names = []
+    plotted_parameters = []
+    boundaries = []
+    ref_names = []
+    tex_names = []
+    scales = []
+    with open(info.param_path, 'r') as param:
+        for line in param:
+            if line.find('#') == -1:
+                if line.find('data.experiments') != -1:
+                    info.experiments = extract_array(line)
+                if line.find('data.parameters') != -1:
+                    name, array = extract_dict(line)
+                    original = name
+                    # Rename the names according the .extra file (opt)
+                    if name in info.to_change.iterkeys():
+                        name = info.to_change[name]
+                    # If the name corresponds to a varying parameter (fourth
+                    # entry in the initial array being non-zero, or a derived
+                    # parameter (could be designed as fixed, it does not make
+                    # any difference)), then continue the process of analyzing.
+                    if array[3] != 0 or array[5] == 'derived':
+                        # The real name is always kept, to have still the class
+                        # names in the covmat
+                        backup_names.append(original)
+                        # With the list "to_plot", we can potentially restrict
+                        # the variables plotted. If it is empty, though, simply
+                        # all parameters will be plotted.
+                        if info.to_plot == []:
+                            plotted_parameters.append(name)
+                        else:
+                            if name in info.to_plot:
+                                plotted_parameters.append(name)
+
+                        # Append to the boundaries array
+                        boundaries.append([elem if elem != 'None' else -1
+                                           for elem in array[1:3]])
+
+                        ref_names.append(name)
+                        # Take care of the scales
+                        scale = array[4]
+                        if name in info.new_scales.iterkeys():
+                            scale = info.new_scales[name]
+                        scales.append(scale)
+
+                        # Given the scale, decide for the pretty tex name
+                        number = 1./scale
+                        tex_names.append(
+                            io_mp.get_tex_name(name, number=number))
+    scales = np.diag(scales)
+
+    info.ref_names = ref_names
+    info.tex_names = tex_names
+    info.boundaries = boundaries
+    info.plotted_parameters = plotted_parameters
+    info.number_parameters = len(plotted_parameters)
+    info.backup_names = backup_names
+    info.scales = scales
+
+
+@timeit
+def find_maximum_of_likelihood(info):
+    """
+    Finding the global maximum of likelihood
+
+    max_lkl will be appended with all the maximum likelihoods of files,
+    then will be replaced by its own maximum. This way, the global
+    maximum likelihood will be used as a reference, and not each chain's
+    maximum.
+    """
+    max_lkl = []
+    for chain_file in info.files:
+        # cheese will brutally contain everything (- log likelihood) in the
+        # file chain_file being scanned.
+        # This could potentially be faster with pandas, but is already quite
+        # fast TODO
+        cheese = (np.array([float(line.split()[1].strip())
+                            for line in open(chain_file, 'r')]))
+
+        max_lkl.append(cheese[:].min())
+
+    # beware, it is the min because we are talking about
+    # '- log likelihood'
+    # Selecting only the true maximum.
+    try:
+        max_lkl = min(max_lkl)
+    except ValueError:
+        raise io_mp.AnalyzeError(
+            "No decently sized chain was found in the desired folder. " +
+            "Please wait to have more accepted point before trying " +
+            "to analyze it.")
+
+    info.max_lkl = max_lkl
+
+
+@timeit
+def remove_burnin(info):
+    """
+    Create an array with all the points from the chains, after burnin
+
+    """
+    # spam will brutally contain all the chains with sufficient number of
+    # points, after the burn-in was removed.
+    spam = list()
+
+    # Recover the longest file name, for pleasing display
+    max_name_length = max([len(e) for e in info.files])
+
+    # Total number of steps done:
+    steps = 0
+    accepted_steps = 0
+
+    for index, chain_file in enumerate(info.files):
+        # To improve presentation, and print only once the full path of the
+        # analyzed folder, we recover the length of the path name, and
+        # TODO this could go in IO
+        # create an empty complementary string of this length
+        total_length = 18+max_name_length
+        empty_length = 18+len(os.path.dirname(chain_file))+1
+
+        basename = os.path.basename(chain_file)
+        if index == 0:
+            exec "print '--> Scanning file %-{0}s' % chain_file,".format(
+                max_name_length)
+        else:
+            exec "print '%{0}s%-{1}s' % ('', basename),".format(
+                empty_length, total_length-empty_length)
+        # cheese will brutally contain everything in the chain chain_file being
+        # scanned
+        cheese = (np.array([[float(elem) for elem in line.split()]
+                            for line in open(chain_file, 'r')]))
+        # If the file contains a broken line with a different number of
+        # elements, the previous array generation might fail, and will not have
+        # the correct shape. Hence the following command will fail. To avoid
+        # that, the error is caught.
+        try:
+            local_max_lkl = cheese[:, 1].min()
+        except IndexError:
+            raise io_mp.AnalyzeError(
+                "Error while scanning %s." % chain_file +
+                " This file most probably contains "
+                "an incomplete line, rendering the analysis impossible. "
+                "I think that the following line(s) is(are) wrong:\n %s" % (
+                    '\n '.join(
+                        ['-> %s' % line for line in
+                         open(chain_file, 'r') if
+                         len(line.split()) != len(info.backup_names)+2])))
+        line_count = float(sum(1 for line in open(chain_file, 'r')))
+
+        # Logging the information obtained until now.
+        with open(info.log_path, 'a') as log:
+            number_of_steps = cheese[:, 0].sum()
+            log.write("%s\t " % os.path.basename(chain_file))
+            log.write(" Number of steps:%d\t" % number_of_steps)
+            log.write(" Steps accepted:%d\t" % line_count)
+            log.write(" acc = %.2g\t" % (float(line_count)/number_of_steps))
+            log.write("min(-loglike) = %.2f\n" % local_max_lkl)
+            steps += number_of_steps
+            accepted_steps += line_count
+
+        # Removing burn-in
+        start = 0
+        try:
+            while cheese[start, 1] > info.max_lkl+LOG_LKL_CUTOFF:
+                start += 1
+            print ': Removed {0}\t points of burn-in'.format(start)
+        except IndexError:
+            print ': Removed everything: chain not converged'
+
+        # ham contains cheese without the burn-in, if there are any points
+        # left (more than 5)
+        if np.shape(cheese)[0] > start+5:
+            ham = np.copy(cheese[start::])
+
+            # Deal with single file case
+            if len(info.files) == 1:
+                warnings.warn("Convergence computed for a single file")
+                bacon = np.copy(cheese[::3, :])
+                egg = np.copy(cheese[1::3, :])
+                sausage = np.copy(cheese[2::3, :])
+
+                spam.append(bacon)
+                spam.append(egg)
+                spam.append(sausage)
+                continue
+
+            # Adding resulting table to spam
+            spam.append(ham)
+
+    # Test the length of the list
+    if len(spam) == 0:
+        raise io_mp.AnalyzeError(
+            "No decently sized chain was found. " +
+            "Please wait a bit to analyze this folder")
+
+    # Applying now new rules for scales
+    for name in info.new_scales.iterkeys():
+        index = info.ref_names.index(name)
+        for i in xrange(len(spam)):
+            spam[i][:, index+2] *= 1./info.scales[index, index]
+
+    info.steps = steps
+    info.accepted_steps = accepted_steps
+
+    return spam
+
+
+@timeit
+def compute_mean(mean, spam, total):
+    """
+    """
+    for i in xrange(np.shape(mean)[1]):
+        for j in xrange(len(spam)):
+            submean = np.sum(spam[j][:, 0]*spam[j][:, i+2])
+            mean[j+1, i] = submean / total[j+1]
+            mean[0, i] += submean
+        mean[0, i] /= total[0]
+
+
+@timeit
+def compute_variance(var, mean, spam, total):
+    """
+    """
+    for i in xrange(np.shape(var)[1]):
+        for j in xrange(len(spam)):
+            var[0, i] += np.sum(
+                spam[j][:, 0]*(spam[j][:, i+2]-mean[0, i])**2)
+            var[j+1, i] = np.sum(
+                spam[j][:, 0]*(spam[j][:, i+2]-mean[j+1, i])**2) / \
+                (total[j+1]-1)
+        var[0, i] /= (total[0]-1)
 
 
 class Information(object):
