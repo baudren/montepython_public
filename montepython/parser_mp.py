@@ -222,7 +222,7 @@ def create_parser():
               1D posteriors, the code also shows the mean likelihood per bin
               with dashed lines; this flag switches off the dashed lines
             - **--comp** (`str`) - pass the name of another folder (or another
-              set of chains, same syntax as -info) if you want to compare 1D
+              set of chains, same syntax as -info) if you want to compare the
               posteriors on the same plot.
 
               The lists of parameters in the two folders to compare do not need
@@ -238,8 +238,8 @@ def create_parser():
 
             - **--noplot** (`None`) - do not produce plot, and compute only the
               covariance matrix (flag)
-            - **--plot-2d** (`str`) - output triangle plot of 2d contours
-              (`no`, `not_if_comp` (default), `always`, `overplot_comp`)
+            - **--plot-2d** (`bool`) - output triangle plot of 2d contours
+              (`False`, `True` (default))
             - **--alpha** (`float`) - transparency of the second 2d posterior
               distribution in case of a comparison. Values accepted between 0
               and 1 (default to 0.8).
@@ -390,23 +390,20 @@ def create_parser():
     # -- to remove the mean-likelihood line
     infoparser.add_argument('--no-mean',
                             help='remove the mean likelihood plot',
-                            dest='mean_likelihood', action='store_false',)
+                            dest='mean_likelihood', action='store_false')
     # -- possible comparison folder
     infoparser.add_argument('--comp', help='comparison folder', nargs='+')
     # -- possible plot file describing custom commands
     infoparser.add_argument('--extra', help='plot file for custom needs',
-                            dest='optional_plot_file')
+                            dest='optional_plot_file', default='')
     # -- if you just want the covariance matrix, use this option
     infoparser.add_argument('--noplot', help='omit the plotting part',
                             dest='plot', action='store_false')
     # -- if you want to output 2d contours plots (the 'triangle' plot)
     # default: only as long as --comp is not specified
-    infoparser.add_argument('--plot-2d',
-                            help='plot the triangle plot of 2d contours',
-                            dest='plot_2d', type=str,
-                            choices=['no', 'not_if_comp',
-                                     'always', 'overplot_comp'],
-                            default='not_if_comp')
+    infoparser.add_argument('--noplot-2d',
+                            help='plot only the 1d posterior',
+                            dest='plot_2d', action='store_false')
     # -- when comparing two folders, decide on the alpha setting of the second
     # plot. Defaults to 0.8
     infoparser.add_argument('--alpha',

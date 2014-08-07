@@ -15,6 +15,7 @@ quantities, and shortens the argument passing between the functions.
     `CosmoPmc <http://www.cosmopmc.info>`_ code from Kilbinger et. al.
 
 """
+from time import time
 import os
 import math
 import numpy as np
@@ -34,6 +35,7 @@ from debug import timeit
 # first time where log-likelihood >= max-log-likelihood-LOG_LKL_CUTOFF
 LOG_LKL_CUTOFF = 3
 
+
 def analyze(command_line):
     """
     Main function, does the entire analysis.
@@ -47,7 +49,7 @@ def analyze(command_line):
     # Create an instance of the Information class, that will hold all relevant
     # information, and be used as a compact way of exchanging information
     # between functions
-    info = Information()
+    info = Information(command_line)
 
     # Check if the scipy module has the interpolate method correctly
     # installed (should be the case on every linux distribution with
@@ -61,16 +63,6 @@ def analyze(command_line):
             'No cubic interpolation done (no interpolate method found ' +
             'in scipy), only linear')
 
-    # Save the extension of output files and the bin number
-    info.extension = command_line.extension
-    info.binnumber = command_line.bins
-
-    # Read a potential file describing changes to be done for the parameter
-    # names, and number of paramaters plotted (can be let empty, all will
-    # then be plotted).
-    if command_line.optional_plot_file is not None:
-        execfile(command_line.optional_plot_file)
-
     # Prepare the files, according to the case, load the log.param, and
     # prepare the output (plots folder, .covmat, .info and .log files).
     # After this step, info.files will contain all chains.
@@ -81,12 +73,9 @@ def analyze(command_line):
         return
 
     # Compute the mean, maximum of likelihood, 1-sigma variance for this
-    # main folder. This will create the info.spam chain
+    # main folder. This will create the info.chain object, which contains all
+    # the points computed stacked in one big array.
     convergence(info)
-
-    # Create the main chain, which consists in all elements of info.spam
-    # put together. This will serve for the plotting.
-    chain = np.vstack(info.spam)
 
     # In case of comparison, launch the prepare and convergence methods, for
     # the other folders
@@ -97,93 +86,51 @@ def analyze(command_line):
         prepare(command_line.comp, comp_info)
         convergence(comp_info)
         # Create comp_chain
-        comp_chain = np.vstack(comp_info.spam)
+        comp_info.chain = np.vstack(comp_info.spam)
 
     # Total number of steps, after burnin
-    weight = chain[:, 0].sum()
+    info.total = info.total[0]
 
     # Covariance matrix computation (for the whole chain)
     info.mean = info.mean[0]
-    info.covar = np.zeros((len(info.ref_names), len(info.ref_names)))
 
     print '--> Computing covariance matrix'
-    for i in xrange(len(info.ref_names)):
-        for j in xrange(i, len(info.ref_names)):
-            info.covar[i, j] = (
-                chain[:, 0]*(
-                    (chain[:, i+2]-info.mean[i]) *
-                    (chain[:, j+2]-info.mean[j]))).sum()
-            if i != j:
-                info.covar[j, i] = info.covar[i, j]
-    info.covar /= weight
-
-    # Removing scale factors in order to store true parameter covariance
-    info.covar = np.dot(info.scales.T, np.dot(info.covar, info.scales))
+    info.covar = compute_covariance_matrix(info)
 
     # Writing it out in name_of_folder.covmat
-    with open(info.cov_path, 'w') as cov:
-        cov.write('# %s\n' % ', '.join(
-            ['%16s' % name for name in info.backup_names]))
+    io_mp.write_covariance_matrix(info.covar, info.backup_names, info.cov_path)
 
-        for i in range(len(info.ref_names)):
-            for j in range(len(info.ref_names)):
-                if info.covar[i][j] > 0:
-                    cov.write(' %.5e\t' % info.covar[i][j])
-                else:
-                    cov.write('%.5e\t' % info.covar[i][j])
-            cov.write('\n')
-
-    # Sorting by likelihood: a will hold the list of indices where the
-    # points are sorted with increasing likelihood.
-    a = chain[:, 1].argsort(0)
+    # Store an array, sorted_indices, containing the list of indices
+    # corresponding to the line with the highest likelihood as the first
+    # element, and then as decreasing likelihood
+    sorted_indices = info.chain[:, 1].argsort(0)
 
     # Writing the best-fit model in name_of_folder.bestfit
-    info.best_fit.write('# ')
-    for i in range(len(info.ref_names)):
-        string = info.backup_names[i]
-        if i != len(info.ref_names)-1:
-            string += ','
-        info.best_fit.write('%-16s' % string)
-    info.best_fit.write('\n')
-    # Removing scale factors in order to store true parameter values
-    for i in range(len(info.ref_names)):
-        bfvalue = chain[a[0], 2+i]*info.scales[i, i]
-        if bfvalue > 0:
-            info.best_fit.write(' %.5e\t' % bfvalue)
-        else:
-            info.best_fit.write('%.5e\t' % bfvalue)
-    info.best_fit.write('\n')
-
-    # Defining the sigma contours (1, 2 and 3-sigma)
-    info.lvls = (68.26, 95.4, 99.7)
+    bestfit_line = [elem*info.scales[i, i] for i, elem in
+                    enumerate(info.chain[sorted_indices[0], 2:])]
+    io_mp.write_bestfit_file(bestfit_line, info.backup_names,
+                             info.best_fit_path)
 
     # Computing 1,2 and 3-sigma errors, and plot. This will create the
     # triangle and 1d plot by default.  If you also specified a comparison
     # folder, it will create a versus plot with the 1d comparison of all
     # the common parameters, plus the 1d distibutions for the others.
-    info.bounds = np.zeros((len(info.ref_names), len(info.lvls), 2))
+    info.bounds = np.zeros((len(info.ref_names), len(info.levels), 2))
+
+    # Store in a list all the candidate Information instances that should be
+    # compared to the main one, info.
+    # FIXME
+    comparison = []
+    if command_line.comp is not None:
+        comparison.append(comp_info)
+
     if command_line.plot is True:
-        if command_line.comp is None:
-            plot_triangle(
-                info, chain, command_line,
-                bin_number=info.binnumber, levels=info.lvls)
-        else:
-            plot_triangle(
-                info, chain, command_line, bin_number=info.binnumber,
-                levels=info.lvls,
-                comp_chain=comp_chain,
-                comp_ref_names=comp_ref_names,
-                comp_tex_names=comp_tex_names,
-                comp_backup_names=comp_backup_names,
-                comp_plotted_parameters=comp_plotted_parameters,
-                comp_folder=comp_folder, comp_boundaries=comp_boundaries,
-                comp_mean=comp_mean)
+        plot_triangle(info, comparison)
 
     # Creating the array indices to hold the proper ordered list of plotted
     # parameters
-    indices = []
-    for i in range(len(info.plotted_parameters)):
-        indices.append(info.ref_names.index(info.plotted_parameters[i]))
+    indices = [info.ref_names.index(elem) for elem in info.plotted_parameters]
+    exit()
 
     print '--> Writing .info and .tex files'
     # Write down to the .h_info file all necessary information
@@ -438,35 +385,30 @@ def convergence(info):
 
     # Store the remaining members in the info instance, for further writing to
     # files.
-    info.spam = spam
     info.mean = mean
     info.R = R
     info.total = total
 
+    # Create the main chain, which consists in all elements of spam
+    # put together. This will serve for the plotting.
+    info.chain = np.vstack(spam)
 
-def plot_triangle(
-        info, chain, command_line, bin_number=20, scales=(),
-        levels=(68.26, 95.4, 99.7), aspect=(16, 16), fig=None,
-        tick_at_peak=False, comp_chain=None, comp_ref_names=None,
-        comp_tex_names=None, comp_backup_names=None,
-        comp_plotted_parameters=None, comp_folder=None,
-        comp_boundaries=None, comp_mean=None):
+
+def plot_triangle(info, comparison):
     """
-    Plotting routine, also computes the sigma errors.
-
-    Partly imported from Karim Benabed in CosmoPmc.
+    Plotting routine, computes the marginalized posterior distributions.
 
     """
-
+    aspect = (16, 16)
     # If comparison is asked, don't plot 2d levels
     # unless explicitely wanted by specifying `-plot-2d <mode>`
-    if command_line.comp is not None:
-        plot_2d = command_line.plot_2d == 'always' or command_line.plot_2d == 'overplot_comp'
-        overplot_comp_contour = command_line.plot_2d == 'overplot_comp'
+    if comparison:
+        plot_2d = info.plot_2d == 'always' or info.plot_2d == 'overplot_comp'
+        overplot_comp_contour = info.plot_2d == 'overplot_comp'
         comp = True
         comp_done = False
     else:
-        plot_2d = command_line.plot_2d != 'no'
+        plot_2d = info.plot_2d != 'no'
         comp = False
         comp_done = False
 
@@ -476,40 +418,30 @@ def plot_triangle(
     matplotlib.rc('font', size=11)
     matplotlib.rc('xtick', labelsize='8')
     matplotlib.rc('ytick', labelsize='8')
-    lvls = np.array(levels)/100.
 
     # Create the figures
     if plot_2d:
-        if fig:
-            fig2d = plt.figure(fig, aspect)
-        else:
-            fig2d = plt.figure(1, figsize=aspect)
+        fig2d = plt.figure(1, figsize=aspect)
 
-    #exps = ', '.join([elem.replace('_', ' ') for elem in info.experiments])
-    #plt.figtext(0.4,0.95,'Experiments: '+exps,fontsize=40,alpha=0.6)
-    #plt.figtext(0.9, 0.7,'Monte Python',fontsize=70,\
-    #rotation=90,alpha=0.15)
     fig1d = plt.figure(2, figsize=aspect)
 
     # clear figure
     plt.clf()
 
     # Recover the total number of parameters to potentially plot
-    n = np.shape(chain)[1]-2
-    if not scales:
-        scales = np.ones(n)
-    scales = np.array(scales)
+    n = np.shape(info.chain)[1]-2
 
     # 1D plot
-    max_values = np.max(chain[:, 2:], axis=0)*scales
-    min_values = np.min(chain[:, 2:], axis=0)*scales
+    max_values = info.chain[:, 2:].max(axis=0)
+    min_values = info.chain[:, 2:].min(axis=0)
+
     span = (max_values-min_values)
 
-    best_minus_lkl = np.min(chain[:, 1], axis=0)
+    best_minus_lkl = np.min(info.chain[:, 1], axis=0)
 
     if comp:
-        comp_max_values = np.max(comp_chain[:, 2:], axis=0)
-        comp_min_values = np.min(comp_chain[:, 2:], axis=0)
+        comp_max_values = np.max(comp_info.chain[:, 2:], axis=0)
+        comp_min_values = np.min(comp_info.chain[:, 2:], axis=0)
         comp_span = (comp_max_values-comp_min_values)
 
     # Define the place of ticks
@@ -631,7 +563,7 @@ def plot_triangle(
 
         # minimum credible interval (method by Jan Haman). Fails for
         # multimodal histograms
-        bounds = minimum_credible_intervals(hist, bincenters, lvls)
+        bounds = minimum_credible_intervals(hist, bincenters, info.levels)
         if bounds is False:
             # print out the faulty histogram (try reducing the binnumber to
             # avoir this)
@@ -644,7 +576,7 @@ def plot_triangle(
 
         if comp_done:
             comp_bounds = minimum_credible_intervals(
-                comp_hist, comp_bincenters, lvls)
+                comp_hist, comp_bincenters, comp_info.levels)
             if comp_bounds is False:
                 print comp_hist
             else:
@@ -795,11 +727,11 @@ def plot_triangle(
 
                 # plotting contours, using the ctr_level method (from Karim
                 # Benabed). Note that only the 1 and 2 sigma contours are
-                # displayed (due to the line with lvls[:2])
+                # displayed (due to the line with info.levels[:2])
                 try:
                     contours = ax2dsub.contourf(
                         y_centers, x_centers, n,
-                        extent=extent, levels=ctr_level(n, lvls[:2]),
+                        extent=extent, levels=ctr_level(n, info.levels[:2]),
                         zorder=4, cmap=plt.cm.autumn_r,)
                 except Warning:
                     warnings.warn(
@@ -1511,10 +1443,13 @@ def extract_parameter_names(info):
     info.ref_names = ref_names
     info.tex_names = tex_names
     info.boundaries = boundaries
-    info.plotted_parameters = plotted_parameters
-    info.number_parameters = len(plotted_parameters)
     info.backup_names = backup_names
     info.scales = scales
+    # Beware, the following two numbers are different. The first is the total
+    # number of parameters stored in the chain, whereas the second is for
+    # plotting purpose only.
+    info.number_parameters = len(ref_names)
+    info.plotted_parameters = plotted_parameters
 
 
 @timeit
@@ -1690,12 +1625,33 @@ def compute_variance(var, mean, spam, total):
         var[0, i] /= (total[0]-1)
 
 
+@timeit
+def compute_covariance_matrix(info):
+    """
+    """
+    covar = np.zeros((len(info.ref_names), len(info.ref_names)))
+    for i in xrange(len(info.ref_names)):
+        for j in xrange(i, len(info.ref_names)):
+            covar[i, j] = (
+                info.chain[:, 0]*(
+                    (info.chain[:, i+2]-info.mean[i]) *
+                    (info.chain[:, j+2]-info.mean[j]))).sum()
+            if i != j:
+                covar[j, i] = covar[i, j]
+    covar /= info.total
+
+    # Removing scale factors in order to store true parameter covariance
+    covar = np.dot(info.scales.T, np.dot(covar, info.scales))
+
+    return covar
+
+
 class Information(object):
     """
     Hold all information for analyzing runs
 
     """
-    def __init__(self):
+    def __init__(self, command_line):
         """
         The following initialization creates the three tables that can be
         customized in an extra plot_file (see :mod:`parser_mp`).
@@ -1723,10 +1679,24 @@ class Information(object):
         name, and the value its scale.
 
         """
+        # Defining the sigma contours (1, 2 and 3-sigma)
+        self.levels = np.array([68.26, 95.4, 99.7])/100.
 
         # Follows a bunch of initialisation to provide default members
         self.ref_names, self.backup_names = [], []
         self.scales, self.plotted_parameters = [], []
         self.spam = []
-        self.cov, self.v_info, self.h_info, self.R = None, None, None, None
-        self.best_fit = None
+
+        # Store directly all information from the command_line object into this
+        # instance, except the protected members (begin and end with __)
+        for elem in dir(command_line):
+            if elem.find('__') == -1:
+                setattr(self, elem, getattr(command_line, elem))
+
+        # Read a potential file describing changes to be done for the parameter
+        # names, and number of paramaters plotted (can be let empty, all will
+        # then be plotted), but also the style of the plot. Note that this
+        # overrides the command line options
+        if command_line.optional_plot_file:
+            plot_file_vars = {'info': self}
+            execfile(command_line.optional_plot_file, plot_file_vars)
