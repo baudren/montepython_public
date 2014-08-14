@@ -425,8 +425,8 @@ class Test06MetropolisHastingsImportanceSampling(TestMontePython):
         # the multiplicity has been changed
         self.assertIn(output_chain, os.listdir(is_folder),
                       "The IS did not create the right chain")
-        # Use these two runs to test the "--comp" option
-        custom_command = 'info %s --comp %s --plot-2d always' % (
+        # Use these two runs to test the several folders option
+        custom_command = 'info %s %s' % (
             self.folder, is_folder)
         run(custom_command)
         # Check that all expected files were created

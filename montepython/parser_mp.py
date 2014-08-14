@@ -213,7 +213,10 @@ def create_parser():
 
               You can specify either single files, or a complete folder, for
               example :code:`info chains/my-run/2012-10-26*`, or :code:`info
-              chains/my-run`
+              chains/my-run`.
+
+              If you specify several folders (or set of files), a comparison
+              will be performed.
             - **--bins** (`int`) - number of bins in the histograms used to
               derive posterior probabilities and credible intervals (default to
               20). Decrease this number for smoother plots at the expense of
@@ -221,13 +224,6 @@ def create_parser():
             - **--no_mean** (`None`) - by default, when plotting marginalised
               1D posteriors, the code also shows the mean likelihood per bin
               with dashed lines; this flag switches off the dashed lines
-            - **--comp** (`str`) - pass the name of another folder (or another
-              set of chains, same syntax as -info) if you want to compare the
-              posteriors on the same plot.
-
-              The lists of parameters in the two folders to compare do not need
-              to coincide. It is limited so far to two folders to compare in
-              total.
             - **--extra** (`str`) - extra file to customize the output plots.
 
             .. code::
@@ -236,13 +232,11 @@ def create_parser():
                 info.to_plot=['name1','name2','newname3',...]
                 info.new_scales={'name1':number1,'name2':number2,...}
 
-            - **--noplot** (`None`) - do not produce plot, and compute only the
+            - **--noplot** (`bool`) - do not produce plot, and compute only the
               covariance matrix (flag)
-            - **--plot-2d** (`bool`) - output triangle plot of 2d contours
-              (`False`, `True` (default))
-            - **--alpha** (`float`) - transparency of the second 2d posterior
-              distribution in case of a comparison. Values accepted between 0
-              and 1 (default to 0.8).
+            - **--noplot-2d** (`bool`) - produce only 1d posterior distribution
+            - **--contours-only** (`bool`) - do not fill the contours on the 2d
+              posterior distribution
             - **--all** (`None`) - output every subplot in a separate file
               (flag)
             - **--ext** (`str`) - specify the extension of the figures (`pdf`
@@ -253,7 +247,7 @@ def create_parser():
               a scaling relation will be used.)
             - **--line-width** (`int`) - set line width (default to 4)
             - **--decimal** (`int`) - number of decimal places on ticks
-            - **--ticks** (`int`) - number of ticks on each axis
+            - **--ticknumber** (`int`) - number of ticks on each axis
             - **--legend-style** (`str`) - specify the style of the legend, to
               choose from `sides` or `top`.
 
@@ -391,25 +385,21 @@ def create_parser():
     infoparser.add_argument('--no-mean',
                             help='remove the mean likelihood plot',
                             dest='mean_likelihood', action='store_false')
-    # -- possible comparison folder
-    infoparser.add_argument('--comp', help='comparison folder', nargs='+')
     # -- possible plot file describing custom commands
     infoparser.add_argument('--extra', help='plot file for custom needs',
                             dest='optional_plot_file', default='')
     # -- if you just want the covariance matrix, use this option
     infoparser.add_argument('--noplot', help='omit the plotting part',
                             dest='plot', action='store_false')
-    # -- if you want to output 2d contours plots (the 'triangle' plot)
-    # default: only as long as --comp is not specified
+    # -- if you just want to output 1d posterior distributions (faster)
     infoparser.add_argument('--noplot-2d',
                             help='plot only the 1d posterior',
                             dest='plot_2d', action='store_false')
-    # -- when comparing two folders, decide on the alpha setting of the second
-    # plot. Defaults to 0.8
-    infoparser.add_argument('--alpha',
-                            help='choose the transparency of the compared run',
-                            dest='alpha', type=float,
-                            default=0.8)
+    # -- when plotting 2d posterior distribution, use contours and not contours
+    # filled (might be useful when comparing several folders)
+    infoparser.add_argument('--contours-only',
+                            help='do not fill the contours in 2d plots',
+                            dest='contours_only', action='store_true')
     # -- if you want to output every single subplots
     infoparser.add_argument(
         '--all', help='plot every single subplot in a separate pdf file',
@@ -422,14 +412,12 @@ def create_parser():
         type=str, dest='extension', default='pdf')
     # -------------------------------------
     # Further customization
-    # -- fontsize of plots (defaulting to -1, in which case a scaling relation
-    # will be applied
+    # -- fontsize of plots (defaulting to 16)
     infoparser.add_argument('--fontsize', help='desired font size',
-                            type=int, default=-1)
-    # -- ticksize of plots (defaulting to -1, in which case a scaling relation
-    # will be applied)
+                            type=int, default=16)
+    # -- ticksize of plots (defaulting to 14)
     infoparser.add_argument('--ticksize', help='desired tick size',
-                            type=int, default=-1)
+                            type=int, default=14)
     # -- linewidth of 1d plots (defaulting to 4, 2 being a bare minimum for
     # legible graphs
     infoparser.add_argument('--line-width', help='desired line width',
@@ -439,7 +427,7 @@ def create_parser():
     infoparser.add_argument('--decimal', help='decimal places on ticks',
                             type=int, default=3)
     # -- number of ticks that appear on the graph.
-    infoparser.add_argument('--ticks', help='number of ticks on each axe',
+    infoparser.add_argument('--ticknumber', help='number of ticks on each axe',
                             type=int, default=3)
     # -- legend type, to choose between top (previous style) to sides (new
     # style). It modifies the place where the name of the variable appear.

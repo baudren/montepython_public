@@ -15,10 +15,10 @@ quantities, and shortens the argument passing between the functions.
     `CosmoPmc <http://www.cosmopmc.info>`_ code from Kilbinger et. al.
 
 """
-from time import time
 import os
 import math
 import numpy as np
+from itertools import count
 # The root plotting module, to change options like font sizes, etc...
 import matplotlib
 # The following line suppresses the need for an X server
@@ -29,11 +29,12 @@ import matplotlib.pyplot as plt
 import warnings
 import importlib
 import io_mp
-from debug import timeit
 
 # Defined to remove the burnin for all the points that were produced before the
-# first time where log-likelihood >= max-log-likelihood-LOG_LKL_CUTOFF
+# first time where -log-likelihood <= min-minus-log-likelihood+LOG_LKL_CUTOFF
 LOG_LKL_CUTOFF = 3
+
+NUM_COLORS = 4
 
 
 def analyze(command_line):
@@ -46,177 +47,73 @@ def analyze(command_line):
     appended by the other routines.
 
     """
-    # Create an instance of the Information class, that will hold all relevant
-    # information, and be used as a compact way of exchanging information
-    # between functions
-    info = Information(command_line)
-
     # Check if the scipy module has the interpolate method correctly
     # installed (should be the case on every linux distribution with
     # standard numpy)
     try:
         from scipy.interpolate import interp1d
-        info.has_interpolate_module = True
+        Information.has_interpolate_module = True
     except ImportError:
-        info.has_interpolate_module = False
+        Information.has_interpolate_module = False
         warnings.warn(
             'No cubic interpolation done (no interpolate method found ' +
             'in scipy), only linear')
 
-    # Prepare the files, according to the case, load the log.param, and
-    # prepare the output (plots folder, .covmat, .info and .log files).
-    # After this step, info.files will contain all chains.
-    status = prepare(command_line.files, info)
-    # If the preparation step generated new files (for instance, translating
-    # from NS or CH to Markov Chains) this routine should stop now.
-    if not status:
-        return
+    # Determine how many different folders are asked through the 'info'
+    # command, and create as many Information instances
+    files = separate_files(command_line.files)
 
-    # Compute the mean, maximum of likelihood, 1-sigma variance for this
-    # main folder. This will create the info.chain object, which contains all
-    # the points computed stacked in one big array.
-    convergence(info)
+    # Create an instance of the Information class for each subgroup found in
+    # the previous function. They will each hold all relevant information, and
+    # be used as a compact way of exchanging information between functions
+    information_instances = []
+    for item in files:
+        info = Information(command_line)
+        information_instances.append(info)
 
-    # In case of comparison, launch the prepare and convergence methods, for
-    # the other folders
-    # TODO continue fixing by doing this over an arbitrary number of compared
-    # folders
-    if command_line.comp is not None:
-        comp_info = Information()
-        prepare(command_line.comp, comp_info)
-        convergence(comp_info)
-        # Create comp_chain
-        comp_info.chain = np.vstack(comp_info.spam)
+        # Prepare the files, according to the case, load the log.param, and
+        # prepare the output (plots folder, .covmat, .info and .log files).
+        # After this step, info.files will contain all chains.
+        status = prepare(item, info)
+        # If the preparation step generated new files (for instance,
+        # translating from NS or CH to Markov Chains) this routine should stop
+        # now.
+        if not status:
+            return
 
-    # Total number of steps, after burnin
-    info.total = info.total[0]
+        # Compute the mean, maximum of likelihood, 1-sigma variance for this
+        # main folder. This will create the info.chain object, which contains
+        # all the points computed stacked in one big array.
+        convergence(info)
 
-    # Covariance matrix computation (for the whole chain)
-    info.mean = info.mean[0]
+        print '--> Computing covariance matrix'
+        info.covar = compute_covariance_matrix(info)
 
-    print '--> Computing covariance matrix'
-    info.covar = compute_covariance_matrix(info)
+        # Writing it out in name_of_folder.covmat
+        io_mp.write_covariance_matrix(
+            info.covar, info.backup_names, info.cov_path)
 
-    # Writing it out in name_of_folder.covmat
-    io_mp.write_covariance_matrix(info.covar, info.backup_names, info.cov_path)
+        # Store an array, sorted_indices, containing the list of indices
+        # corresponding to the line with the highest likelihood as the first
+        # element, and then as decreasing likelihood
+        info.sorted_indices = info.chain[:, 1].argsort(0)
 
-    # Store an array, sorted_indices, containing the list of indices
-    # corresponding to the line with the highest likelihood as the first
-    # element, and then as decreasing likelihood
-    sorted_indices = info.chain[:, 1].argsort(0)
-
-    # Writing the best-fit model in name_of_folder.bestfit
-    bestfit_line = [elem*info.scales[i, i] for i, elem in
-                    enumerate(info.chain[sorted_indices[0], 2:])]
-    io_mp.write_bestfit_file(bestfit_line, info.backup_names,
-                             info.best_fit_path)
+        # Writing the best-fit model in name_of_folder.bestfit
+        bestfit_line = [elem*info.scales[i, i] for i, elem in
+                        enumerate(info.chain[info.sorted_indices[0], 2:])]
+        io_mp.write_bestfit_file(bestfit_line, info.backup_names,
+                                 info.best_fit_path)
 
     # Computing 1,2 and 3-sigma errors, and plot. This will create the
-    # triangle and 1d plot by default.  If you also specified a comparison
-    # folder, it will create a versus plot with the 1d comparison of all
-    # the common parameters, plus the 1d distibutions for the others.
-    info.bounds = np.zeros((len(info.ref_names), len(info.levels), 2))
-
-    # Store in a list all the candidate Information instances that should be
-    # compared to the main one, info.
-    # FIXME
-    comparison = []
-    if command_line.comp is not None:
-        comparison.append(comp_info)
-
+    # triangle and 1d plot by default.
     if command_line.plot is True:
-        plot_triangle(info, comparison)
-
-    # Creating the array indices to hold the proper ordered list of plotted
-    # parameters
-    indices = [info.ref_names.index(elem) for elem in info.plotted_parameters]
-    exit()
+        plot_triangle(information_instances)
 
     print '--> Writing .info and .tex files'
-    # Write down to the .h_info file all necessary information
-    info.h_info.write(' param names\t:\t')
-    info.v_info_names = []
-    for i in indices:
-        if info.scales[i, i] != 1:
-            if (float(info.scales[i, i]) > 100. or
-                    (info.scales[i, i]) < 0.01):
-                string = ' %0.e%s' % (
-                    1./info.scales[i, i], info.ref_names[i])
-            elif float(info.scales[i, i]) < 1:
-                string = ' %2d%s' % (
-                    1./info.scales[i, i], info.ref_names[i])
-            else:
-                string = ' %2g%s' % (
-                    1./info.scales[i, i], info.ref_names[i])
-        else:
-            string = ' %s' % info.ref_names[i]
-        info.v_info_names.append(string)
-        info.h_info.write("%-16s" % string)
-
-    write_h(info.h_info, indices, 'R-1 values', '%.6f', info.R)
-    write_h(info.h_info, indices, 'Best Fit  ', '%.6e',
-            chain[a[0], 2:])
-    write_h(info.h_info, indices, 'mean      ', '%.6e', info.mean)
-    write_h(info.h_info, indices, 'sigma     ', '%.6e',
-            (info.bounds[:, 0, 1]-info.bounds[:, 0, 0])/2.)
-    info.h_info.write('\n')
-    write_h(info.h_info, indices, '1-sigma - ', '%.6e',
-            info.bounds[:, 0, 0])
-    write_h(info.h_info, indices, '1-sigma + ', '%.6e',
-            info.bounds[:, 0, 1])
-    write_h(info.h_info, indices, '2-sigma - ', '%.6e',
-            info.bounds[:, 1, 0])
-    write_h(info.h_info, indices, '2-sigma + ', '%.6e',
-            info.bounds[:, 1, 1])
-    write_h(info.h_info, indices, '3-sigma - ', '%.6e',
-            info.bounds[:, 2, 0])
-    write_h(info.h_info, indices, '3-sigma + ', '%.6e',
-            info.bounds[:, 2, 1])
-    # bounds
-    info.h_info.write('\n')
-    write_h(info.h_info, indices, '1-sigma > ', '%.6e',
-            info.mean+info.bounds[:, 0, 0])
-    write_h(info.h_info, indices, '1-sigma < ', '%.6e',
-            info.mean+info.bounds[:, 0, 1])
-    write_h(info.h_info, indices, '2-sigma > ', '%.6e',
-            info.mean+info.bounds[:, 1, 0])
-    write_h(info.h_info, indices, '2-sigma < ', '%.6e',
-            info.mean+info.bounds[:, 1, 1])
-    write_h(info.h_info, indices, '3-sigma > ', '%.6e',
-            info.mean+info.bounds[:, 2, 0])
-    write_h(info.h_info, indices, '3-sigma < ', '%.6e',
-            info.mean+info.bounds[:, 2, 1])
-
-    info.bestfit = np.zeros(len(info.ref_names))
-    for i in xrange(len(info.ref_names)):
-        info.bestfit[i] = chain[a[0], :][2+i]
-
-    # Write vertical info file
-    info.v_info.write('%-15s\t: %-6s %-10s %-10s %-10s %-11s %-10s %-11s %-10s %-10s %-10s %-10s %-10s' % (
-        'param names', 'R-1', 'Best fit', 'mean', 'sigma', '1-sigma -',
-        '1-sigma +', '2-sigma -', '2-sigma +', '1-sigma >', '1-sigma <',
-        '2-sigma >', '2-sigma <'))
-    for i in xrange(len(info.v_info_names)):
-        name = info.v_info_names[i]
-        #index = info.v_info_names.index(name)
-        index = indices[i]
-        info.v_info.write('\n%-15s\t: %.4f %.4e %.4e %.4e %.4e %.4e %.4e %.4e %.4e %.4e %.4e %.4e' % (
-            name, info.R[index], chain[a[0], 2:][index],
-            info.mean[index],
-            (info.bounds[:, 0, 1][index]-info.bounds[:, 0, 0][index])/2.,
-            info.bounds[:, 0, 0][index], info.bounds[:, 0, 1][index],
-            info.bounds[:, 1, 0][index], info.bounds[:, 1, 1][index],
-            info.mean[index]+info.bounds[:, 0, 0][index],
-            info.mean[index]+info.bounds[:, 0, 1][index],
-            info.mean[index]+info.bounds[:, 1, 0][index],
-            info.mean[index]+info.bounds[:, 1, 1][index]))
-
-    # Writing the .tex file that will have this table prepared to be
-    # imported in a tex document.
-    write_tex(info, indices)
+    for info in information_instances:
+        info.write_information_files()
 
 
-@timeit
 def prepare(files, info):
     """
     Scan the whole input folder, and include all chains in it.
@@ -265,10 +162,11 @@ def prepare(files, info):
     # If the input command was an entire folder, then grab everything in it.
     # Too small files (below 600 octets) and subfolders are automatically
     # removed.
-    folder, files = recover_folder_and_files(files)
+    folder, files, basename = recover_folder_and_files(files)
 
     info.files = files
     info.folder = folder
+    info.basename = basename
 
     # Check if the log.param file exists
     parameter_file_path = os.path.join(folder, 'log.param')
@@ -299,7 +197,6 @@ def prepare(files, info):
     return True
 
 
-@timeit
 def convergence(info):
     """
     Compute convergence for the desired chains, using Gelman-Rubin diagnostic
@@ -313,6 +210,10 @@ def convergence(info):
     # Recovering parameter names and scales, creating tex names,
     extract_parameter_names(info)
 
+    # Now that the number of parameters is known, the array containing bounds
+    # can be initialised
+    info.bounds = np.zeros((len(info.ref_names), len(info.levels), 2))
+
     # Circle through all files to find the global maximum of likelihood
     print '--> Finding global maximum of likelihood'
     find_maximum_of_likelihood(info)
@@ -320,7 +221,7 @@ def convergence(info):
     # Restarting the circling through files, this time removing the burnin,
     # given the maximum of likelihood previously found and the global variable
     # LOG_LKL_CUTOFF. spam now contains all the accepted points that were
-    # explored once the chain moved within max_lkl - LOG_LKL_CUTOFF
+    # explored once the chain moved within min_minus_lkl - LOG_LKL_CUTOFF
     print '--> Removing burn-in'
     spam = remove_burnin(info)
 
@@ -381,36 +282,36 @@ def convergence(info):
             info.steps))
         log.write("--> Total number of accepted steps: %d\n" % (
             info.accepted_steps))
-        log.write("--> Minimum of -logLike           : %.2f" % info.max_lkl)
+        log.write("--> Minimum of -logLike           : %.2f" % (
+            info.min_minus_lkl))
 
     # Store the remaining members in the info instance, for further writing to
-    # files.
-    info.mean = mean
+    # files, storing only the mean and total of all the chains taken together
+    info.mean = mean[0]
     info.R = R
-    info.total = total
+    info.total = total[0]
 
     # Create the main chain, which consists in all elements of spam
     # put together. This will serve for the plotting.
     info.chain = np.vstack(spam)
 
 
-def plot_triangle(info, comparison):
+def plot_triangle(information_instances):
     """
     Plotting routine, computes the marginalized posterior distributions.
 
+    Parameters
+    ----------
+    information_instances : list
+        list of information objects, initialised on the given folders, or list
+        of file, in input. For each of these instance, plot the 1d and 2d
+        posterior distribution, depending on the flags stored in the instances,
+        comming from command line arguments or read from a file.
     """
-    aspect = (16, 16)
-    # If comparison is asked, don't plot 2d levels
-    # unless explicitely wanted by specifying `-plot-2d <mode>`
-    if comparison:
-        plot_2d = info.plot_2d == 'always' or info.plot_2d == 'overplot_comp'
-        overplot_comp_contour = info.plot_2d == 'overplot_comp'
-        comp = True
-        comp_done = False
-    else:
-        plot_2d = info.plot_2d != 'no'
-        comp = False
-        comp_done = False
+    # For convenience, store as `conf` the first element of the list
+    # information_instances, since it will be called often to check for
+    # configuration parameters
+    conf = information_instances[0]
 
     # Pre configuration of the output, note that changes to the font size
     # will occur later on as well, to obtain a nice scaling.
@@ -419,570 +320,351 @@ def plot_triangle(info, comparison):
     matplotlib.rc('xtick', labelsize='8')
     matplotlib.rc('ytick', labelsize='8')
 
+    # Recover max and min values for each instance, defining the a priori place
+    # of ticks (in case of a comparison, this should change)
+    for info in information_instances:
+        info.define_ticks()
+        # If plots/ folder in output folder does not exist, create it
+        if os.path.isdir(os.path.join(info.folder, 'plots')) is False:
+            os.mkdir(os.path.join(info.folder, 'plots'))
+
+    # Determine the total number of parameters to plot, based on the list
+    # without duplicates of the plotted parameters of all information instances
+    plotted_parameters = []
+    # For printing not in latex
+    ref_names = []
+    for info in information_instances:
+        for index, name in enumerate(info.plotted_parameters):
+            if name not in plotted_parameters:
+                plotted_parameters.append(name)
+                ref_names.append(info.ref_names[index])
+
+    if len(plotted_parameters) == 0:
+        raise io_mp.AnalyzeError(
+            "You provided no parameters to analyze, probably by selecting"
+            " wrong parameters names in the '--extra' file.")
+    # Find the appropriate number of columns and lines for the 1d posterior
+    # plot
+    num_columns = int(round(math.sqrt(len(plotted_parameters))))
+    num_lines = int(math.ceil(len(plotted_parameters)*1.0/num_columns))
+
     # Create the figures
-    if plot_2d:
-        fig2d = plt.figure(1, figsize=aspect)
+    # which will be 3*3 inches per subplot, quickly growing!
+    if conf.plot:
+        fig1d = plt.figure(num=1, figsize=(
+            3*num_columns,
+            3*num_lines), dpi=80)
+    if conf.plot_2d:
+        fig2d = plt.figure(num=2, figsize=(
+            3*len(plotted_parameters),
+            3*len(plotted_parameters)), dpi=80)
 
-    fig1d = plt.figure(2, figsize=aspect)
+    # Create the name of the files, concatenating the basenames with
+    # underscores.
+    file_name = "_".join(
+        [info.basename for info in information_instances])
 
-    # clear figure
-    plt.clf()
-
-    # Recover the total number of parameters to potentially plot
-    n = np.shape(info.chain)[1]-2
-
-    # 1D plot
-    max_values = info.chain[:, 2:].max(axis=0)
-    min_values = info.chain[:, 2:].min(axis=0)
-
-    span = (max_values-min_values)
-
-    best_minus_lkl = np.min(info.chain[:, 1], axis=0)
-
-    if comp:
-        comp_max_values = np.max(comp_info.chain[:, 2:], axis=0)
-        comp_min_values = np.min(comp_info.chain[:, 2:], axis=0)
-        comp_span = (comp_max_values-comp_min_values)
-
-    # Define the place of ticks
-    if tick_at_peak:
-        pass
-    else:
-        ticks = np.array(
-            (min_values+span*0.1, (max_values+min_values)/2.,
-             max_values-span*0.1)).T
-        x_range = np.array((min_values, max_values)).T
-        if comp:
-            comp_ticks = np.array(
-                (comp_min_values+comp_span*0.1,
-                 (comp_max_values+comp_min_values)/2.,
-                 comp_max_values-comp_span*0.1)).T
-            comp_x_range = np.array((comp_min_values, comp_max_values)).T
-            for i in range(np.shape(comp_ticks)[0]):
-                if abs(comp_x_range[i][0]-comp_boundaries[i][0]) < \
-                        comp_span[i]/bin_number:
-                    comp_ticks[i][0] = comp_boundaries[i][0]
-                    comp_x_range[i][0] = comp_boundaries[i][0]
-                if abs(comp_x_range[i][1]-comp_boundaries[i][1]) < \
-                        comp_span[i]/bin_number:
-                    comp_ticks[i][2] = comp_boundaries[i][1]
-                    comp_x_range[i][1] = comp_boundaries[i][1]
-
-    for i in range(np.shape(ticks)[0]):
-        if abs(x_range[i][0]-info.boundaries[i][0]) < span[i]/bin_number:
-            ticks[i][0] = info.boundaries[i][0]
-            x_range[i][0] = info.boundaries[i][0]
-        if abs(x_range[i][1]-info.boundaries[i][1]) < span[i]/bin_number:
-            ticks[i][2] = info.boundaries[i][1]
-            x_range[i][1] = info.boundaries[i][1]
-
-    # Borders stuff, might need adjustement for printing on paper.
-    fig1d.subplots_adjust(
-        bottom=0.03, left=.07, right=0.98, top=0.93, hspace=.35)
-    if plot_2d:
-        fig2d.subplots_adjust(
-            bottom=0.03, left=.07, right=0.98, top=0.93, hspace=.35)
-
-    # In case of a comparison, figure out which names are shared, which are
-    # unique and thus require a simple treatment.
-    if comp:
-        backup_comp_names = np.copy(comp_plotted_parameters)
-
-        for i in xrange(len(info.plotted_parameters)):
-            if info.plotted_parameters[i] in comp_plotted_parameters:
-                comp_plotted_parameters.remove(info.plotted_parameters[i])
-
-        num_columns = int(round(math.sqrt(
-            len(info.plotted_parameters) + len(comp_plotted_parameters))))
-        num_lines = int(math.ceil(
-            (len(info.plotted_parameters)+len(comp_plotted_parameters)) *
-            1.0/num_columns))
-    else:
-        num_columns = int(round(math.sqrt(len(info.plotted_parameters))))
-        num_lines = int(math.ceil(
-            len(info.plotted_parameters)*1.0/num_columns))
-
-    # If plots/ folder in output folder does not exist, create it
-    if os.path.isdir(info.folder+'plots') is False:
-        os.mkdir(info.folder+'plots')
-
-    # Actual plotting
+    # Loop over all the plotted parameters
+    # There will be two indices at all time, the one running over the plotted
+    # parameters, `index`, and the one corresponding to the actual column in
+    # the actual file, `native_index`. For instance, if you try to plot only
+    # two columns of a several columns file, index will vary from 0 to 1, but
+    # the corresponding native indices might be anything.
+    # Obviously, since plotted parameters contain potentially names not
+    # contained in some files (in case of a comparison), native index might be
+    # undefined.
     print '-----------------------------------------------'
-    for i in xrange(len(info.plotted_parameters)):
+    for index, name in enumerate(plotted_parameters):
 
-        print ' -> Computing histograms for ',\
-            info.plotted_parameters[i]
-
-        index = info.ref_names.index(info.plotted_parameters[i])
-        # Adding the subplots to the respective figures, this will be the
-        # diagonal for the triangle plot.
-        if plot_2d:
+        # Adding the subplots to the respective figures, this will correspond
+        # to the diagonal on the triangle plot.
+        if conf.plot_2d:
             ax2d = fig2d.add_subplot(
-                len(info.plotted_parameters),
-                len(info.plotted_parameters),
-                i*(len(info.plotted_parameters)+1)+1,
+                len(plotted_parameters),
+                len(plotted_parameters),
+                index*(len(plotted_parameters)+1)+1,
                 yticks=[])
-        ax1d = fig1d.add_subplot(
-            num_lines, num_columns, i+1, yticks=[])
+            ax2d.set_color_cycle([conf.cm(1.*i/NUM_COLORS)
+                                  for i in range(NUM_COLORS)])
+        if conf.plot:
+            ax1d = fig1d.add_subplot(
+                num_lines, num_columns, index+1, yticks=[])
+            ax1d.set_color_cycle([conf.cm(1.*i/NUM_COLORS)
+                                  for i in range(NUM_COLORS)])
+
+        # check for each instance if the name is part of the list of plotted
+        # parameters, and if yes, store the native_index. If not, store a flag
+        # to ignore any further plotting or computing issues concerning this
+        # particular instance.
+        for info in information_instances:
+            try:
+                info.native_index = info.ref_names.index(name)
+                info.ignore_param = False
+            except ValueError:
+                info.ignore_param = True
+
+        adjust_ticks(name, information_instances)
 
         # normalized histogram
-        hist, bin_edges = np.histogram(
-            chain[:, index+2], bins=bin_number,
-            weights=chain[:, 0], normed=False)
-        bincenters = 0.5*(bin_edges[1:]+bin_edges[:-1])
+        print ' -> Computing histograms for ', name
+        for info in information_instances:
+            if not info.ignore_param:
+                info.hist, info.bin_edges = np.histogram(
+                    info.chain[:, info.native_index+2], bins=info.bins,
+                    weights=info.chain[:, 0], normed=False)
+                info.bincenters = 0.5*(info.bin_edges[1:]+info.bin_edges[:-1])
 
-        # interpolated histogram (if available)
-        interp_hist, interp_grid = cubic_interpolation(
-            info, hist, bincenters)
-        interp_hist /= np.max(interp_hist)
+                # interpolated histogram (if available)
+                info.interp_hist, info.interp_grid = cubic_interpolation(
+                    info, info.hist, info.bincenters)
+                info.interp_hist /= np.max(info.interp_hist)
 
-        if comp:
-            try:
-                # For the names in common, the following line will not
-                # output an error. Then compute the comparative
-                # histogram
-                comp_index = comp_ref_names.index(
-                    info.plotted_parameters[i])
-                comp_hist, comp_bin_edges = np.histogram(
-                    comp_chain[:, comp_index+2], bins=bin_number,
-                    weights=comp_chain[:, 0], normed=False)
-                comp_bincenters = 0.5*(
-                    comp_bin_edges[1:]+comp_bin_edges[:-1])
-                interp_comp_hist, interp_comp_grid = \
-                    cubic_interpolation(info, comp_hist, comp_bincenters)
-                interp_comp_hist /= interp_comp_hist.max()
-                comp_done = True
-            except ValueError:
-                # If the name was not found, return the error. This will be
-                # then plotted at the end
-                comp_done = False
-        if comp:
-            if not comp_done:
-                print('{0} was not found in the second folder'.format(
-                    info.plotted_parameters[i]))
-
-        # minimum credible interval (method by Jan Haman). Fails for
-        # multimodal histograms
-        bounds = minimum_credible_intervals(hist, bincenters, info.levels)
-        if bounds is False:
-            # print out the faulty histogram (try reducing the binnumber to
-            # avoir this)
-            print hist
-        else:
-            for elem in bounds:
-                for j in (0, 1):
-                    elem[j] -= info.mean[index]
-            info.bounds[index] = bounds
-
-        if comp_done:
-            comp_bounds = minimum_credible_intervals(
-                comp_hist, comp_bincenters, comp_info.levels)
-            if comp_bounds is False:
-                print comp_hist
-            else:
-                for elem in comp_bounds:
-                    for j in (0, 1):
-                        elem[j] -= comp_mean[comp_index]
+                # minimum credible interval (method by Jan Haman). Fails for
+                # multimodal histograms #FIXME
+                bounds = minimum_credible_intervals(info)
+                info.bounds[info.native_index] = bounds
 
         # plotting
-        if plot_2d:
-            ax2d.set_xticks(ticks[index])
-            # First, assign to it the default value
-            fontsize2d, ticksize2d = get_fontsize(info, '2d')
-            # Then potentially overwrite with provided command line arguments
-            if command_line.fontsize != -1:
-                fontsize2d = command_line.fontsize
-            if command_line.ticksize != -1:
-                ticksize2d = command_line.ticksize
-            ax2d.set_xticklabels(['%.3g' % s for s in ticks[index]],
-                                 fontsize=ticksize2d)
-            ax2d.set_title('%s= $%.3g^{+%.3g}_{%.3g}$' % (
-                info.tex_names[index], info.mean[index],
-                bounds[0][1], bounds[0][0]), fontsize=fontsize2d)
-            ax2d.plot(interp_grid, interp_hist, color='red',
-                      linewidth=2, ls='-')
-            ax2d.axis([x_range[index][0], x_range[index][1], 0, 1.05])
+        for info in information_instances:
+            if not info.ignore_param:
+                if conf.plot_2d:
+                    ax2d.plot(info.interp_grid, info.interp_hist,
+                              linewidth=info.line_width, ls='-')
 
-        fontsize1d, ticksize1d = get_fontsize(info, '1d', num_columns)
+                    ax2d.set_xticks(info.ticks[info.native_index])
+                    if conf.legend_style == 'top':
+                        ax2d.set_title(
+                            '%s=$%.{0}g^{{+%.{0}g}}_{{%.{0}g}}$'.format(
+                                info.decimal) % (
+                                info.tex_names[info.native_index],
+                                info.mean[info.native_index],
+                                info.bounds[info.native_index, 0, -1],
+                                info.bounds[info.native_index, 0, 0]),
+                            fontsize=info.fontsize)
+                        ax2d.set_xticklabels(
+                            info.ticks[info.native_index],
+                            fontsize=info.ticksize)
+                    elif conf.legend_style == 'sides':
+                        # Except for the last 1d plot (bottom line), don't
+                        # print ticks
+                        if index == len(plotted_parameters)-1:
+                            ax2d.set_xticklabels(
+                                info.ticks[info.native_index],
+                                fontsize=info.ticksize)
+                            ax2d.set_xlabel(
+                                info.tex_names[info.native_index],
+                                fontsize=info.fontsize)
+                        else:
+                            ax2d.set_xticklabels([])
+                    ax2d.axis([info.x_range[info.native_index][0],
+                               info.x_range[info.native_index][1],
+                               0, 1.05])
 
-        if command_line.fontsize != -1:
-            fontsize1d = command_line.fontsize
-        if command_line.ticksize != -1:
-            ticksize1d = command_line.ticksize
-        ax1d.set_title('%s= $%.3g^{+%.3g}_{%.3g}$' % (
-            info.tex_names[index], info.mean[index],
-            bounds[0][1], bounds[0][0]), fontsize=fontsize1d)
-        ax1d.set_xticks(ticks[index])
-        ax1d.set_xticklabels(['%.3g' % s for s in ticks[index]],
-                             fontsize=ticksize1d)
-        ax1d.axis([x_range[index][0], x_range[index][1], 0, 1.05])
+                if conf.plot:
+                    # Note the use of double curly brackets {{ }} to produce
+                    # the desired LaTeX output. This is necessary because the
+                    # format function would otherwise understand single
+                    # brackets as fields.
+                    ax1d.set_title(
+                        '%s=$%.{0}g^{{+%.{0}g}}_{{%.{0}g}}$'.format(
+                            info.decimal) % (
+                            info.tex_names[info.native_index],
+                            info.mean[info.native_index],
+                            info.bounds[info.native_index, 0, -1],
+                            info.bounds[info.native_index, 0, 0]),
+                        fontsize=info.fontsize)
+                    ax1d.set_xticks(info.ticks[info.native_index])
+                    ax1d.set_xticklabels(
+                        ['%.{0}g'.format(info.decimal) % s
+                         for s in info.ticks[info.native_index]],
+                        fontsize=info.ticksize)
+                    ax1d.axis([info.x_range[info.native_index][0],
+                               info.x_range[info.native_index][1],
+                               0, 1.05])
 
-        if comp_done:
-            # complex variation of intervals
-            comp_index = comp_ref_names.index(info.plotted_parameters[i])
-            if comp_x_range[comp_index][0] > x_range[index][0]:
-                comp_ticks[comp_index][0] = ticks[index][0]
-                comp_x_range[comp_index][0] = x_range[index][0]
-            if comp_x_range[comp_index][1] < x_range[index][1]:
-                comp_ticks[comp_index][2] = ticks[index][2]
-                comp_x_range[comp_index][1] = x_range[index][1]
-            comp_ticks[comp_index][1] = (
-                comp_x_range[comp_index][1]+comp_x_range[comp_index][0])/2.
-            ax1d.set_xticks(comp_ticks[comp_index])
-            ax1d.set_xticklabels(['%.3g' % s for s in comp_ticks[comp_index]],
-                                 fontsize=ticksize1d)
-            ax1d.axis([comp_x_range[comp_index][0], comp_x_range[comp_index][1], 0, 1.05])
-
-        ax1d.plot(
-            interp_grid, interp_hist, color='black', linewidth=2, ls='-')
-        if comp_done:
-            ax1d.plot(
-                interp_comp_grid, interp_comp_hist, color='red',
-                linewidth=2, ls='-')
-            if plot_2d:
-                ax2d.plot(
-                    interp_comp_grid, interp_comp_hist, color='blue',
-                    linewidth=2, ls='-')
+                    ax1d.plot(
+                        info.interp_grid, info.interp_hist,
+                        lw=info.line_width, ls='-')
 
         # mean likelihood (optional, if comparison, it will not be printed)
-        if not comp and command_line.mean_likelihood:
-            try:
-                lkl_mean, _ = np.histogram(
-                    chain[:, index+2],
-                    bins=bin_edges,
-                    normed=False,
-                    weights=np.exp(best_minus_lkl-chain[:, 1])*chain[:, 0])
-                lkl_mean /= lkl_mean.max()
-                interp_lkl_mean, interp_grid = cubic_interpolation(
-                    info, lkl_mean, bincenters)
-                if plot_2d:
-                    ax2d.plot(interp_grid, interp_lkl_mean, color='red',
-                              ls='--', lw=2)
-                ax1d.plot(interp_grid, interp_lkl_mean, color='red',
-                          ls='--', lw=4)
-            except:
-                print 'could not find likelihood contour for ',
-                print info.plotted_parameters[i]
+        # The color cycle has to be reset, before
+        if conf.plot_2d:
+            ax2d.set_color_cycle([conf.cm(1.*i/NUM_COLORS)
+                                  for i in range(NUM_COLORS)])
+        if conf.plot:
+            ax1d.set_color_cycle([conf.cm(1.*i/NUM_COLORS)
+                                  for i in range(NUM_COLORS)])
+        if conf.mean_likelihood:
+            for info in information_instances:
+                if not info.ignore_param:
+                    try:
+                        lkl_mean, _ = np.histogram(
+                            info.chain[:, info.native_index+2],
+                            bins=info.bin_edges,
+                            normed=False,
+                            weights=np.exp(
+                                conf.min_minus_lkl-info.chain[:, 1])*info.chain[:, 0])
+                        lkl_mean /= lkl_mean.max()
+                        interp_lkl_mean, interp_grid = cubic_interpolation(
+                            info, lkl_mean, info.bincenters)
+                        if conf.plot_2d:
+                            ax2d.plot(interp_grid, interp_lkl_mean,
+                                      ls='--', lw=conf.line_width)
+                        if conf.plot:
+                            ax1d.plot(interp_grid, interp_lkl_mean,
+                                      ls='--', lw=conf.line_width)
+                    except:
+                        print 'could not find likelihood contour for ',
+                        print info.ref_parameters[info.native_index]
 
-        if command_line.subplot is True:
-            if not comp:
+        if conf.subplot is True:
+            if conf.plot_2d:
                 extent2d = ax2d.get_window_extent().transformed(
                     fig2d.dpi_scale_trans.inverted())
-                fig2d.savefig(info.folder+'plots/{0}_{1}.{2}'.format(
-                    info.folder.split('/')[-2],
-                    info.plotted_parameters[i], info.extension),
+                fig2d.savefig(os.path.join(
+                    conf.folder, 'plots', file_name+'.'+conf.extension),
                     bbox_inches=extent2d.expanded(1.1, 1.4))
-            else:
+            if conf.plot:
                 extent1d = ax1d.get_window_extent().transformed(
                     fig1d.dpi_scale_trans.inverted())
-                fig1d.savefig(info.folder+'plots/{0}_{1}.{2}'.format(
-                    info.folder.split('/')[-2],
-                    info.plotted_parameters[i], info.extension),
+                fig1d.savefig(os.path.join(
+                    conf.folder, 'plots', file_name+'.'+conf.extension),
                     bbox_inches=extent1d.expanded(1.1, 1.4))
             # Store the function in a file
-            hist_file_name = os.path.join(
-                info.folder, 'plots/{0}_{1}.hist'.format(
-                    info.folder.split(os.path.sep)[-2],
-                    info.ref_names[index]))
-            print hist_file_name
-            write_histogram(hist_file_name, interp_grid, interp_hist)
+            for info in information_instances:
+                if not info.ignore_param:
+                    hist_file_name = os.path.join(
+                        info.folder, 'plots',
+                        info.basename+'_%s.hist' % (
+                            info.ref_names[info.native_index]))
+                    write_histogram(hist_file_name,
+                                    info.interp_grid, info.interp_hist)
 
         # Now do the rest of the triangle plot
-        if plot_2d:
-            for j in xrange(i):
-                second_index = info.ref_names.index(
-                    info.plotted_parameters[j])
-                ax2dsub = fig2d.add_subplot(
-                    len(info.plotted_parameters),
-                    len(info.plotted_parameters),
-                    (i)*len(info.plotted_parameters)+j+1)
-                n, xedges, yedges = np.histogram2d(
-                    chain[:, index+2], chain[:, second_index+2],
-                    weights=chain[:, 0], bins=(bin_number, bin_number),
-                    normed=False)
-                extent = [x_range[second_index][0],
-                          x_range[second_index][1],
-                          x_range[index][0], x_range[index][1]]
-                x_centers = 0.5*(xedges[1:]+xedges[:-1])
-                y_centers = 0.5*(yedges[1:]+yedges[:-1])
-
-                ax2dsub.set_xticks(ticks[second_index])
-                if i == len(info.plotted_parameters)-1:
-                    ax2dsub.set_xticklabels(
-                        ['%.3g' % s for s in ticks[second_index]],
-                        fontsize=ticksize2d)
-                else:
-                    ax2dsub.set_xticklabels([''])
-
-                ax2dsub.set_yticks(ticks[index])
-                if j == 0:
-                    ax2dsub.set_yticklabels(
-                        ['%.3g' % s for s in ticks[index]],
-                        fontsize=ticksize2d)
-                else:
-                    ax2dsub.set_yticklabels([''])
-                #ax2dsub.imshow(n, extent=extent,
-                               #aspect='auto', interpolation='gaussian',
-                               #origin='lower', cmap=matplotlib.cm.Reds)
-
-                # plotting contours, using the ctr_level method (from Karim
-                # Benabed). Note that only the 1 and 2 sigma contours are
-                # displayed (due to the line with info.levels[:2])
-                try:
-                    contours = ax2dsub.contourf(
-                        y_centers, x_centers, n,
-                        extent=extent, levels=ctr_level(n, info.levels[:2]),
-                        zorder=4, cmap=plt.cm.autumn_r,)
-                except Warning:
-                    warnings.warn(
-                        "The routine could not find the contour of the " +
-                        "'%s-%s' 2d-plot" % (
-                            info.plotted_parameters[i],
-                            info.plotted_parameters[j]))
-                    pass
-
-                if comp_done:
-                    # i.e. comp_index is valid
+        if conf.plot_2d:
+            for second_index in xrange(index):
+                for info in information_instances:
                     try:
-                        # For the names in common, the following line will not
-                        # output an error. Then compute the comparative
-                        # histogram
-                        comp_second_index = comp_ref_names.index(
-                            info.plotted_parameters[j])
-                        comp_n, comp_xedges, comp_yedges = np.histogram2d(
-                            comp_chain[:, comp_index+2], comp_chain[:, comp_second_index+2],
-                            weights=comp_chain[:, 0], bins=(bin_number, bin_number),
-                            normed=False)
-                        comp_extent = [comp_x_range[comp_second_index][0],
-                            comp_x_range[comp_second_index][1],
-                            comp_x_range[comp_index][0], comp_x_range[comp_index][1]]
-                        comp_x_centers = 0.5*(comp_xedges[1:]+comp_xedges[:-1])
-                        comp_y_centers = 0.5*(comp_yedges[1:]+comp_yedges[:-1])
-                        comp_done_other = True
+                        info.native_second_index = info.ref_names.index(
+                            plotted_parameters[second_index])
+                        info.has_second_param = True
                     except ValueError:
-                        # If the name was not found, return the error. This will be
-                        # then plotted at the end
-                        comp_done_other = False
+                        info.has_second_param = False
+                ax2dsub = fig2d.add_subplot(
+                    len(plotted_parameters),
+                    len(plotted_parameters),
+                    (index)*len(plotted_parameters)+second_index+1)
+                for info in information_instances:
+                    if info.has_second_param:
+                        info.n, info.xedges, info.yedges = np.histogram2d(
+                            info.chain[:, info.native_index+2],
+                            info.chain[:, info.native_second_index+2],
+                            weights=info.chain[:, 0],
+                            bins=(info.bins, info.bins),
+                            normed=False)
+                        info.extent = [
+                            info.x_range[info.native_second_index][0],
+                            info.x_range[info.native_second_index][1],
+                            info.x_range[info.native_index][0],
+                            info.x_range[info.native_index][1]]
+                        info.x_centers = 0.5*(info.xedges[1:]+info.xedges[:-1])
+                        info.y_centers = 0.5*(info.yedges[1:]+info.yedges[:-1])
 
-                    if comp_done_other:
+                        # plotting contours, using the ctr_level method (from Karim
+                        # Benabed). Note that only the 1 and 2 sigma contours are
+                        # displayed (due to the line with info.levels[:2])
                         try:
-                            if overplot_comp_contour:
-                                contours = ax2dsub.contour(
-                                    comp_y_centers, comp_x_centers, comp_n,
-                                    extent=comp_extent, levels=ctr_level(comp_n, lvls[:2]),
-                                    zorder=5, cmap=plt.cm.Blues)
-                            else:
-                                contours = ax2dsub.contourf(
-                                    comp_y_centers, comp_x_centers, comp_n,
-                                    extent=comp_extent, levels=ctr_level(comp_n, lvls[:2]),
-                                    zorder=5, cmap=plt.cm.Blues,
-                                    alpha=command_line.alpha)
+                            contours = ax2dsub.contourf(
+                                info.y_centers, info.x_centers, info.n,
+                                extent=info.extent, levels=ctr_level(
+                                    info.n, info.levels[:2]),
+                                zorder=4, cmap=info.cmaps[info.id],
+                                alpha=info.alphas[info.id])
                         except Warning:
                             warnings.warn(
                                 "The routine could not find the contour of the " +
-                                "'%s-%s' 2d-plot (using the comparison data)" % (
-                                info.plotted_parameters[i],
-                                info.plotted_parameters[j]))
-                            pass
-                        ax2dsub.axis([x_range[second_index][0], x_range[second_index][1],
-                            x_range[index][0], x_range[index][1]])
+                                "'%s-%s' 2d-plot" % (
+                                    info.plotted_parameters[info.native_index],
+                                    info.plotted_parameters[info.native_second_index]))
 
-                else:
-                    comp_done_other = False
+                        ax2dsub.set_xticks(info.ticks[info.native_second_index])
+                        if index == len(plotted_parameters)-1:
+                            ax2dsub.set_xticklabels(
+                                ['%.{0}g'.format(info.decimal) % s for s in
+                                 info.ticks[info.native_second_index]],
+                                fontsize=info.ticksize)
+                            if conf.legend_style == 'sides':
+                                ax2dsub.set_xlabel(
+                                    info.tex_names[info.native_second_index],
+                                    fontsize=info.fontsize)
+                        else:
+                            ax2dsub.set_xticklabels([''])
 
-                if command_line.subplot is True:
-                    # Store the individual 2d plots. Note that the tick and
-                    # fontsize are hardcoded here since they will always keep
-                    # the same size.
-                    fig_temp = plt.figure(3, figsize=(6, 6))
-                    fig_temp.clf()
-                    ax_temp = fig_temp.add_subplot(111)
-                    ax_temp.set_xticks(ticks[second_index])
-                    ax_temp.set_yticks(ticks[index])
-                    ax_temp.set_xticklabels(
-                        ['%.3g' % s for s in ticks[second_index]],
-                        fontsize=16)
-                    ax_temp.set_yticklabels(
-                        ['%.3g' % s for s in ticks[index]],
-                        fontsize=16)
-                    ax_temp.set_title(
-                        '%s vs %s' % (
-                            info.tex_names[index],
-                            info.tex_names[second_index]),
-                        fontsize=16)
-                    try:
-                        contours = ax_temp.contourf(
-                            y_centers, x_centers, n, extent=extent,
-                            levels=ctr_level(n, lvls[:2]),  # colors="k",
-                            zorder=4, cmap=plt.cm.autumn_r,)
-                    except Warning:
-                        warnings.warn(
-                            "The routine could not find the contour of the " +
-                            "'%s-%s' 2d-plot" % (
-                                info.plotted_parameters[i],
-                                info.plotted_parameters[j]))
-                        pass
+                        ax2dsub.set_yticks(info.ticks[info.native_index])
+                        if second_index == 0:
+                            ax2dsub.set_yticklabels(
+                                ['%.{0}g'.format(info.decimal) % s for s in
+                                 info.ticks[info.native_index]],
+                                fontsize=info.ticksize)
+                        else:
+                            ax2dsub.set_yticklabels([''])
 
-                    fig_temp.savefig(
-                        info.folder+'plots/{0}_2d_{1}-{2}.{3}'.format(
-                            info.folder.split('/')[-2],
-                            info.ref_names[index],
-                            info.ref_names[second_index], info.extension))
+                        if conf.legend_style == 'sides':
+                            if second_index == 0:
+                                ax2dsub.set_ylabel(
+                                    info.tex_names[info.native_index],
+                                    fontsize=info.fontsize)
 
-                    if comp_done_other:
-                        try:
-                            if overplot_comp_contour:
-                                contours = ax_temp.contour(
-                                    comp_y_centers, comp_x_centers, comp_n,
-                                    extent=comp_extent, levels=ctr_level(comp_n, lvls[:2]),
-                                    zorder=5, cmap=plt.cm.Blues)
-                            else:
-                                contours = ax_temp.contourf(
-                                    comp_y_centers, comp_x_centers, comp_n,
-                                    extent=comp_extent, levels=ctr_level(comp_n, lvls[:2]),
-                                    zorder=5, cmap=plt.cm.Blues,
-                                    alpha=command_line.alpha)
-                        except Warning:
-                            warnings.warn(
-                                "The routine could not find the contour of the " +
-                                "'%s-%s' 2d-plot (using the comparison data)" % (
-                                info.plotted_parameters[i],
-                                info.plotted_parameters[j]))
-                            pass
-                        ax_temp.axis([x_range[second_index][0],
-                                      x_range[second_index][1],
-                                      x_range[index][0], x_range[index][1]])
-
-                        fig_temp.savefig(
-                            info.folder+'plots/{0}-vs-{1}_2d_{2}-{3}.{4}'.format(
-                            info.folder.split('/')[-2],
-                            comp_folder.split('/')[-2],
-                            info.ref_names[index],
-                            info.ref_names[second_index], info.extension))
+                if conf.subplot is True:
+                    # Store the individual 2d plots.
+                    if conf.plot_2d:
+                        area = ax2dsub.get_window_extent().transformed(
+                            fig2d.dpi_scale_trans.inverted())
+                        # Pad the saved area by 10% in the x-direction and 20% in
+                        # the y-direction
+                        fig2d.savefig(os.path.join(
+                            conf.folder, 'plots',
+                            file_name+'_2d_%s-%s.%s' % (
+                                ref_names[index],
+                                ref_names[second_index], conf.extension)),
+                            bbox_inches=area.expanded(1.4, 1.4))
 
                     # store the coordinates of the points for further
                     # plotting.
-                    plot_file = open(
-                        info.folder+'plots/{0}_2d_{1}-{2}.dat'.format(
-                            info.folder.split('/')[-2],
-                            info.ref_names[index],
-                            info.ref_names[second_index]), 'w')
-                    plot_file.write(
-                        '# contour for confidence level {0}\n'.format(
-                            levels[1]))
-                    for elem in contours.collections[0].get_paths():
-                        points = elem.vertices
-                        for k in range(np.shape(points)[0]):
-                            plot_file.write("%.8g\t %.8g\n" % (
-                                points[k, 0], points[k, 1]))
-                            # stop to not include the inner contours
-                            if k != 0:
-                                if all(points[k] == points[0]):
-                                    plot_file.write("\n")
-                                    break
+                    store_contour_coordinates(
+                        conf, ref_names[index], ref_names[second_index],
+                        contours)
 
-                    plot_file.write("\n\n")
-
-                    plot_file.write(
-                        '# contour for confidence level {0}\n'.format(
-                            levels[0]))
-                    for elem in contours.collections[1].get_paths():
-                        points = elem.vertices
-                        for k in range(np.shape(points)[0]):
-                            plot_file.write("%.8g\t %.8g\n" % (
-                                points[k, 0], points[k, 1]))
-                            if k != 0:
-                                if all(points[k] == points[0]):
-                                    plot_file.write("\n")
-                                    break
-                    plot_file.write("\n\n")
-                    plot_file.close()
-
-                    # Store also directly the histogram
-                    #contours = ax2dsub.contourf(
-                        #y_centers, x_centers, n,
-                        #extent=extent, levels=ctr_level(n, lvls[:2]),
-                        #zorder=5, cmap=plt.cm.autumn_r,
-                        #alpha=command_line.alpha)
-                    hist_file_name = os.path.join(
-                        info.folder, 'plots/{0}_2d_{1}-{2}.hist'.format(
-                            info.folder.split('/')[-2],
-                            info.ref_names[index],
-                            info.ref_names[second_index]))
+                    for info in information_instances:
+                        if not info.ignore_param and info.has_second_param:
+                            info.hist_file_name = os.path.join(
+                                info.folder, 'plots',
+                                '_{0}_2d_{1}-{2}.hist'.format(
+                                    info.basename,
+                                    ref_names[index], ref_names[second_index]))
                     write_histogram_2d(
-                        hist_file_name, x_centers, y_centers, extent, n)
-
-    # Plot the remaining 1d diagram for the parameters only in the comp
-    # folder
-    if comp:
-        #if len(info.plotted_parameters) == len(info.ref_names):
-        for i in xrange(
-                len(info.plotted_parameters),
-                len(info.plotted_parameters)+len(comp_plotted_parameters)):
-
-            ax1d = fig1d.add_subplot(
-                num_lines, num_columns, i+1, yticks=[])
-            comp_index = comp_ref_names.index(
-                comp_plotted_parameters[i-len(info.plotted_parameters)])
-
-            comp_hist, comp_bin_edges = np.histogram(
-                comp_chain[:, comp_index+2], bins=bin_number,
-                weights=comp_chain[:, 0], normed=False)
-            comp_bincenters = 0.5*(comp_bin_edges[1:]+comp_bin_edges[:-1])
-            interp_comp_hist, interp_comp_grid = cubic_interpolation(
-                info, comp_hist, comp_bincenters)
-            interp_comp_hist /= interp_comp_hist.max()
-
-            comp_bounds = minimum_credible_intervals(
-                comp_hist, comp_bincenters, lvls)
-            if comp_bounds is False:
-                print comp_hist
-            else:
-                for elem in comp_bounds:
-                    for j in (0, 1):
-                        elem[j] -= comp_mean[comp_index]
-            ax1d.set_xticks(comp_ticks[comp_index])
-            ax1d.set_xticklabels(['%.3g' % s for s in comp_ticks[comp_index]],
-                                 fontsize=ticksize1d)
-            ax1d.axis([comp_x_range[comp_index][0], comp_x_range[comp_index][1], 0, 1.05])
-            ax1d.set_title(
-                '%s= $%.3g^{+%.3g}_{%.3g}$' % (
-                    comp_tex_names[comp_index], comp_mean[comp_index], comp_bounds[0][1],
-                    comp_bounds[0][0]), fontsize=fontsize1d)
-            ax1d.plot(interp_comp_grid, interp_comp_hist, color='red',
-                      linewidth=2, ls='-')
-            if command_line.subplot is True:
-                extent1d = ax1d.get_window_extent().transformed(
-                    fig1d.dpi_scale_trans.inverted())
-                fig1d.savefig(info.folder+'plots/{0}_{1}.{2}'.format(
-                    info.folder.split('/')[-2],
-                    info.ref_names[i], info.extension),
-                    bbox_inches=extent1d.expanded(1.1, 1.4))
+                        info.hist_file_name, info.x_centers, info.y_centers,
+                        info.extent, info.n)
 
     print '-----------------------------------------------'
     print '--> Saving figures to .{0} files'.format(info.extension)
-    if comp:
-        if plot_2d:
+    if conf.plot:
+        plot_name = '-vs-'.join([os.path.split(elem.folder)[-1]
+                                for elem in information_instances])
+        if conf.plot_2d:
+            fig2d.tight_layout()
             fig2d.savefig(
-                info.folder+'plots/{0}-vs-{1}_triangle.{2}'.format(
-                info.folder.split('/')[-2],
-                comp_folder.split('/')[-2], info.extension),
+                os.path.join(
+                    conf.folder, 'plots', '{0}_triangle.{1}'.format(
+                        plot_name, info.extension)),
                 bbox_inches=0, )
-        fig1d.savefig(
-            info.folder+'plots/{0}-vs-{1}_1d.{2}'.format(
-                info.folder.split('/')[-2],
-                comp_folder.split('/')[-2], info.extension),
-            bbox_inches=0)
-    else:
-        if plot_2d:
-            fig2d.savefig(
-                info.folder+'plots/{0}_triangle.{1}'.format(
-                info.folder.split('/')[-2], info.extension),
-                bbox_inches=0, )
-        fig1d.savefig(
-            info.folder+'plots/{0}_1d.{1}'.format(
-                info.folder.split('/')[-2], info.extension),
-            bbox_inches=0)
+        if conf.plot:
+            fig1d.tight_layout()
+            fig1d.savefig(
+                os.path.join(
+                    conf.folder, 'plots', '{0}_1d.{1}'.format(
+                        plot_name, info.extension)),
+                bbox_inches=0)
 
 
 def ctr_level(histogram2d, lvl, infinite=False):
@@ -1003,10 +685,14 @@ def ctr_level(histogram2d, lvl, infinite=False):
     return clist
 
 
-def minimum_credible_intervals(histogram, bincenters, levels):
+def minimum_credible_intervals(info):
     """
-    Extract minimum credible intervals (method from Jan Haman)
+    Extract minimum credible intervals (method from Jan Haman) FIXME
     """
+    histogram = info.hist
+    bincenters = info.bincenters
+    levels = info.levels
+
     bounds = np.zeros((len(levels), 2))
     j = 0
     delta = bincenters[1]-bincenters[0]
@@ -1099,6 +785,9 @@ def minimum_credible_intervals(histogram, bincenters, levels):
 
         j += 1
 
+    for elem in bounds:
+        for j in (0, 1):
+            elem[j] -= info.mean[info.native_index]
     return bounds
 
 
@@ -1107,33 +796,9 @@ def write_h(info_file, indices, name, string, quantity, modifiers=None):
     Write one horizontal line of output
 
     """
-    info_file.write('\n '+name+'\t:\t')
+    info_file.write('\n '+name+'\t: ')
     for i in indices:
-        if quantity[i] >= 0:
-            space_string = ' '
-        else:
-            space_string = ''
-        info_file.write(space_string+string % quantity[i]+'\t')
-
-
-def write_tex(info, indices):
-    """
-    Write a tex table containing the main results
-
-    """
-    info.tex.write("\\begin{tabular}{|l|c|c|c|c|} \n \\hline \n")
-    info.tex.write("Param & best-fit & mean$\pm\sigma$ & 95\% lower & 95\% upper \\\\ \\hline \n")
-    for i in indices:
-        info.tex.write("%s &" % info.tex_names[i])
-        info.tex.write("$%.4g$ & $%.4g_{%.2g}^{+%.2g}$ & $%.4g$ & $%.4g$ \\\\ \n" % (
-            info.bestfit[i], info.mean[i], info.bounds[:, 0, 0][i],
-            info.bounds[:, 0, 1][i], info.mean[i]+info.bounds[:, 1, 0][i],
-            info.mean[i]+info.bounds[:, 1, 1][i]))
-
-    info.tex.write("\\hline \n \\end{tabular} \\\\ \n")
-    info.tex.write(
-        "$-\ln{\cal L}_\mathrm{min} =%.6g$, minimum $\chi^2=%.4g$ \\\\ \n" %
-        (info.max_lkl, info.max_lkl*2.))
+        info_file.write(string % quantity[i]+'\t')
 
 
 def cubic_interpolation(info, hist, bincenters):
@@ -1150,25 +815,6 @@ def cubic_interpolation(info, hist, bincenters):
         return interp_hist, interp_grid
     else:
         return hist, bincenters
-
-
-def get_fontsize(info, geometry, width=None):
-    """
-    Empirical method to adjust font size on the plots to fit the number of
-    parameters. Feel free to modify to your needs.
-
-    """
-    # Approximate values to have roughly nice displays font size
-    if geometry == '2d':
-        size = 75./len(info.plotted_parameters)
-    if geometry == '1d':
-        if width:
-            size = 80./width
-        else:
-            raise io_mp.AnalyzeError(
-                "This routine expects a number of columns "
-                "for the 1d plot")
-    return size, size
 
 
 def write_histogram(hist_file_name, x_centers, hist):
@@ -1314,8 +960,39 @@ def clean_conversion(module_name, tag, folder):
         return False
 
 
+def separate_files(files):
+    """
+    Separate the input files in folder
+
+    Given all input arguments to the command line files entry, separate them in
+    a list of lists, grouping them by folders. The number of identified folders
+    will determine the number of information instances to create
+    """
+    final_list = []
+    temp = [files[0]]
+    folder = (os.path.dirname(files[0]) if os.path.isfile(files[0])
+              else files[0])
+    if len(files) > 1:
+        for elem in files[1:]:
+            new_folder = (os.path.dirname(elem) if os.path.isfile(elem)
+                          else elem)
+            if new_folder == folder:
+                temp.append(elem)
+            else:
+                folder = new_folder
+                final_list.append(temp)
+                temp = [elem]
+    final_list.append(temp)
+
+    return final_list
+
+
 def recover_folder_and_files(files):
-    """Distinguish the cases when analyze is called with files or folder"""
+    """
+    Distinguish the cases when analyze is called with files or folder
+
+    Note that this takes place chronologically after the function
+    `separate_files`"""
     # The following list defines the substring that a chain should contain for
     # the code to recognise it as a proper chain.
     substrings = ['.txt', '__']
@@ -1329,6 +1006,10 @@ def recover_folder_and_files(files):
                  and all([x in elem for x in substrings])]
     # Otherwise, extract the folder from the chain file-name.
     else:
+        # If the name is completely wrong, say it
+        if not os.path.exists(files[0]):
+            raise io_mp.AnalyzeError(
+                "You provided a non-existant folder/file to analyze")
         folder = os.path.relpath(
             os.path.dirname(os.path.realpath(files[0])), os.path.curdir)
         files = [os.path.join(folder, elem) for elem in os.listdir(folder)
@@ -1336,7 +1017,8 @@ def recover_folder_and_files(files):
                  and not os.path.isdir(os.path.join(folder, elem))
                  and not os.path.getsize(os.path.join(folder, elem)) < limit
                  and all([x in elem for x in substrings])]
-    return folder, files
+    basename = os.path.basename(folder)
+    return folder, files, basename
 
 
 def extract_array(line):
@@ -1424,8 +1106,9 @@ def extract_parameter_names(info):
                                 plotted_parameters.append(name)
 
                         # Append to the boundaries array
-                        boundaries.append([elem if elem != 'None' else -1
-                                           for elem in array[1:3]])
+                        boundaries.append([
+                            elem if not isinstance(elem, int) or elem != -1
+                            else None for elem in array[1:3]])
 
                         ref_names.append(name)
                         # Take care of the scales
@@ -1452,17 +1135,16 @@ def extract_parameter_names(info):
     info.plotted_parameters = plotted_parameters
 
 
-@timeit
 def find_maximum_of_likelihood(info):
     """
     Finding the global maximum of likelihood
 
-    max_lkl will be appended with all the maximum likelihoods of files,
+    min_minus_lkl will be appended with all the maximum likelihoods of files,
     then will be replaced by its own maximum. This way, the global
     maximum likelihood will be used as a reference, and not each chain's
     maximum.
     """
-    max_lkl = []
+    min_minus_lkl = []
     for chain_file in info.files:
         # cheese will brutally contain everything (- log likelihood) in the
         # file chain_file being scanned.
@@ -1471,23 +1153,22 @@ def find_maximum_of_likelihood(info):
         cheese = (np.array([float(line.split()[1].strip())
                             for line in open(chain_file, 'r')]))
 
-        max_lkl.append(cheese[:].min())
+        min_minus_lkl.append(cheese[:].min())
 
     # beware, it is the min because we are talking about
     # '- log likelihood'
     # Selecting only the true maximum.
     try:
-        max_lkl = min(max_lkl)
+        min_minus_lkl = min(min_minus_lkl)
     except ValueError:
         raise io_mp.AnalyzeError(
             "No decently sized chain was found in the desired folder. " +
             "Please wait to have more accepted point before trying " +
             "to analyze it.")
 
-    info.max_lkl = max_lkl
+    info.min_minus_lkl = min_minus_lkl
 
 
-@timeit
 def remove_burnin(info):
     """
     Create an array with all the points from the chains, after burnin
@@ -1503,6 +1184,9 @@ def remove_burnin(info):
     # Total number of steps done:
     steps = 0
     accepted_steps = 0
+
+    # Open the log file
+    log = open(info.log_path, 'w')
 
     for index, chain_file in enumerate(info.files):
         # To improve presentation, and print only once the full path of the
@@ -1528,7 +1212,7 @@ def remove_burnin(info):
         # the correct shape. Hence the following command will fail. To avoid
         # that, the error is caught.
         try:
-            local_max_lkl = cheese[:, 1].min()
+            local_min_minus_lkl = cheese[:, 1].min()
         except IndexError:
             raise io_mp.AnalyzeError(
                 "Error while scanning %s." % chain_file +
@@ -1542,20 +1226,19 @@ def remove_burnin(info):
         line_count = float(sum(1 for line in open(chain_file, 'r')))
 
         # Logging the information obtained until now.
-        with open(info.log_path, 'a') as log:
-            number_of_steps = cheese[:, 0].sum()
-            log.write("%s\t " % os.path.basename(chain_file))
-            log.write(" Number of steps:%d\t" % number_of_steps)
-            log.write(" Steps accepted:%d\t" % line_count)
-            log.write(" acc = %.2g\t" % (float(line_count)/number_of_steps))
-            log.write("min(-loglike) = %.2f\n" % local_max_lkl)
-            steps += number_of_steps
-            accepted_steps += line_count
+        number_of_steps = cheese[:, 0].sum()
+        log.write("%s\t " % os.path.basename(chain_file))
+        log.write(" Number of steps:%d\t" % number_of_steps)
+        log.write(" Steps accepted:%d\t" % line_count)
+        log.write(" acc = %.2g\t" % (float(line_count)/number_of_steps))
+        log.write("min(-loglike) = %.2f\n" % local_min_minus_lkl)
+        steps += number_of_steps
+        accepted_steps += line_count
 
         # Removing burn-in
         start = 0
         try:
-            while cheese[start, 1] > info.max_lkl+LOG_LKL_CUTOFF:
+            while cheese[start, 1] > info.min_minus_lkl+LOG_LKL_CUTOFF:
                 start += 1
             print ': Removed {0}\t points of burn-in'.format(start)
         except IndexError:
@@ -1599,7 +1282,6 @@ def remove_burnin(info):
     return spam
 
 
-@timeit
 def compute_mean(mean, spam, total):
     """
     """
@@ -1611,7 +1293,6 @@ def compute_mean(mean, spam, total):
         mean[0, i] /= total[0]
 
 
-@timeit
 def compute_variance(var, mean, spam, total):
     """
     """
@@ -1625,7 +1306,6 @@ def compute_variance(var, mean, spam, total):
         var[0, i] /= (total[0]-1)
 
 
-@timeit
 def compute_covariance_matrix(info):
     """
     """
@@ -1646,16 +1326,98 @@ def compute_covariance_matrix(info):
     return covar
 
 
+def adjust_ticks(param, information_instances):
+    """
+    """
+    if len(information_instances) == 1:
+        return
+    # Recovering all x_range and ticks entries from the concerned information
+    # instances
+    x_ranges = []
+    ticks = []
+    for info in information_instances:
+        if not info.ignore_param:
+            x_ranges.append(info.x_range[info.native_index])
+            ticks.append(info.ticks[info.native_index])
+
+    # The new x_range and tick should min/max all the existing ones
+    new_x_range = np.array(
+        [min([e[0] for e in x_ranges]), max([e[1] for e in x_ranges])])
+    temp_ticks = np.array(
+        [min([e[0] for e in ticks]), max([e[-1] for e in ticks])])
+
+    new_ticks = np.linspace(temp_ticks[0],
+                            temp_ticks[1],
+                            info.ticknumber)
+
+    for info in information_instances:
+        if not info.ignore_param:
+            info.x_range[info.native_index] = new_x_range
+            info.ticks[info.native_index] = new_ticks
+
+
+def store_contour_coordinates(info, name1, name2, contours):
+    """docstring"""
+    file_name = os.path.join(
+        info.folder, 'plots', '{0}_2d_{1}-{2}.dat'.format(
+            info.basename, name1, name2))
+
+    with open(file_name, 'w') as plot_file:
+        plot_file.write(
+            '# contour for confidence level {0}\n'.format(
+                info.levels[1]))
+        for elem in contours.collections[0].get_paths():
+            points = elem.vertices
+            for k in range(np.shape(points)[0]):
+                plot_file.write("%.8g\t %.8g\n" % (
+                    points[k, 0], points[k, 1]))
+                # stop to not include the inner contours
+                if k != 0:
+                    if all(points[k] == points[0]):
+                        plot_file.write("\n")
+                        break
+        plot_file.write("\n\n")
+        plot_file.write(
+            '# contour for confidence level {0}\n'.format(
+                info.levels[0]))
+        for elem in contours.collections[1].get_paths():
+            points = elem.vertices
+            for k in range(np.shape(points)[0]):
+                plot_file.write("%.8g\t %.8g\n" % (
+                    points[k, 0], points[k, 1]))
+                if k != 0:
+                    if all(points[k] == points[0]):
+                        plot_file.write("\n")
+                        break
+        plot_file.write("\n\n")
+
+
 class Information(object):
     """
     Hold all information for analyzing runs
 
     """
-    def __init__(self, command_line):
+    # Counting the number of instances, to choose the color map
+    _ids = count(0)
+    # Flag checking the absence or presence of the interp1d function
+    has_interpolate_module = False
+
+    # Global colormap for the 1d plots. Colours will get chosen from this.
+    cm = plt.get_cmap('CMRmap')
+
+    # Define colormaps for the contour plots
+    cmaps = [plt.cm.gray_r, plt.cm.Purples, plt.cm.Reds_r]
+    alphas = [1.0, 0.8, 0.6]
+
+    def __init__(self, command_line, other=None):
         """
         The following initialization creates the three tables that can be
         customized in an extra plot_file (see :mod:`parser_mp`).
 
+        Parameters
+        ----------
+        command_line : Namespace
+            it contains the initialised command line arguments
         """
         self.to_change = {}
         """
@@ -1679,6 +1441,9 @@ class Information(object):
         name, and the value its scale.
 
         """
+        # Assign a unique id to this instance
+        self.id = self._ids.next()
+
         # Defining the sigma contours (1, 2 and 3-sigma)
         self.levels = np.array([68.26, 95.4, 99.7])/100.
 
@@ -1700,3 +1465,140 @@ class Information(object):
         if command_line.optional_plot_file:
             plot_file_vars = {'info': self}
             execfile(command_line.optional_plot_file, plot_file_vars)
+
+    def define_ticks(self):
+        """
+        """
+        self.max_values = self.chain[:, 2:].max(axis=0)
+        self.min_values = self.chain[:, 2:].min(axis=0)
+        self.span = (self.max_values-self.min_values)
+        # Define the place of ticks, given the number of ticks desired, stored
+        # in conf.ticknumber
+        self.ticks = np.array(
+            [np.linspace(self.min_values[i]+self.span[i]*0.1,
+                         self.max_values[i]-self.span[i]*0.1,
+                         self.ticknumber) for i in range(len(self.span))])
+        # Define the x range (ticks start not exactly at the range boundary to
+        # avoid display issues)
+        self.x_range = np.array((self.min_values, self.max_values)).T
+
+        # In case the exploration hit a boundary (as defined in the parameter
+        # file), at the level of precision defined by the number of bins, the
+        # ticks and x_range should be altered in order to display this
+        # meaningful number instead.
+        for i in range(np.shape(self.ticks)[0]):
+            x_range = self.x_range[i]
+            bounds = self.boundaries[i]
+            # Left boundary
+            if bounds[0] is not None:
+                if abs(x_range[0]-bounds[0]) < self.span[i]/self.bins:
+                    self.ticks[i][0] = bounds[0]
+                    self.x_range[i][0] = bounds[0]
+            # Right boundary
+            if bounds[-1] is not None:
+                if abs(x_range[-1]-bounds[-1]) < self.span[i]/self.bins:
+                    self.ticks[i][-1] = bounds[-1]
+                    self.x_range[i][-1] = bounds[-1]
+
+    def write_information_files(self):
+
+        # Store in info_names only the tex_names that were plotted, for this
+        # instance, and in indices the corresponding list of indices. It also
+        # removes the $ signs, for clarity
+        self.info_names = [
+            name for index, name in enumerate(self.tex_names) if
+            self.ref_names[index] in self.plotted_parameters]
+        self.indices = [self.tex_names.index(name) for name in self.info_names]
+        self.info_names = [name.replace('$', '') for name in self.info_names]
+
+        # Define the bestfit array
+        self.bestfit = np.zeros(len(self.ref_names))
+        for i in xrange(len(self.ref_names)):
+            self.bestfit[i] = self.chain[self.sorted_indices[0], :][2+i]
+
+        # Write down to the .h_info file all necessary information
+        self.write_h_info()
+        self.write_v_info()
+        self.write_tex()
+
+    def write_h_info(self):
+
+        with open(self.h_info_path, 'w') as h_info:
+            h_info.write(' param names\t:  ')
+            for name in self.info_names:
+                h_info.write("%-14s" % name)
+
+            write_h(h_info, self.indices, 'R-1 values', '% .6f', self.R)
+            write_h(h_info, self.indices, 'Best Fit  ', '% .6e', self.bestfit)
+            write_h(h_info, self.indices, 'mean      ', '% .6e', self.mean)
+            write_h(h_info, self.indices, 'sigma     ', '% .6e',
+                    (self.bounds[:, 0, 1]-self.bounds[:, 0, 0])/2.)
+            h_info.write('\n')
+            write_h(h_info, self.indices, '1-sigma - ', '% .6e',
+                    self.bounds[:, 0, 0])
+            write_h(h_info, self.indices, '1-sigma + ', '% .6e',
+                    self.bounds[:, 0, 1])
+            write_h(h_info, self.indices, '2-sigma - ', '% .6e',
+                    self.bounds[:, 1, 0])
+            write_h(h_info, self.indices, '2-sigma + ', '% .6e',
+                    self.bounds[:, 1, 1])
+            write_h(h_info, self.indices, '3-sigma - ', '% .6e',
+                    self.bounds[:, 2, 0])
+            write_h(h_info, self.indices, '3-sigma + ', '% .6e',
+                    self.bounds[:, 2, 1])
+
+            # bounds
+            h_info.write('\n')
+            write_h(h_info, self.indices, '1-sigma > ', '% .6e',
+                    self.mean+self.bounds[:, 0, 0])
+            write_h(h_info, self.indices, '1-sigma < ', '% .6e',
+                    self.mean+self.bounds[:, 0, 1])
+            write_h(h_info, self.indices, '2-sigma > ', '% .6e',
+                    self.mean+self.bounds[:, 1, 0])
+            write_h(h_info, self.indices, '2-sigma < ', '% .6e',
+                    self.mean+self.bounds[:, 1, 1])
+            write_h(h_info, self.indices, '3-sigma > ', '% .6e',
+                    self.mean+self.bounds[:, 2, 0])
+            write_h(h_info, self.indices, '3-sigma < ', '% .6e',
+                    self.mean+self.bounds[:, 2, 1])
+
+    def write_v_info(self):
+        """Write vertical info file"""
+        with open(self.v_info_path, 'w') as v_info:
+            v_info.write('%-15s\t:  %-11s' % ('param names', 'R-1'))
+            v_info.write(' '.join(['%-11s' % elem for elem in [
+                'Best fit', 'mean', 'sigma', '1-sigma -', '1-sigma +',
+                '2-sigma -', '2-sigma +', '1-sigma >', '1-sigma <',
+                '2-sigma >', '2-sigma <']]))
+            for index, name in zip(self.indices, self.info_names):
+                v_info.write('\n%-15s\t: % .4e' % (name, self.R[index]))
+                v_info.write(' '.join(['% .4e' % elem for elem in [
+                    self.bestfit[index], self.mean[index],
+                    (self.bounds[index, 0, 1]-self.bounds[index, 0, 0])/2.,
+                    self.bounds[index, 0, 0], self.bounds[index, 0, 1],
+                    self.bounds[index, 1, 0], self.bounds[index, 1, 1],
+                    self.mean[index]+self.bounds[index, 0, 0],
+                    self.mean[index]+self.bounds[index, 0, 1],
+                    self.mean[index]+self.bounds[index, 1, 0],
+                    self.mean[index]+self.bounds[index, 1, 1]]]))
+
+    def write_tex(self):
+        """Write a tex table containing the main results """
+        with open(self.tex_path, 'w') as tex:
+            tex.write("\\begin{tabular}{|l|c|c|c|c|} \n \\hline \n")
+            tex.write("Param & best-fit & mean$\pm\sigma$ ")
+            tex.write("& 95\% lower & 95\% upper \\\\ \\hline \n")
+            for index, name in zip(self.indices, self.tex_names):
+                tex.write("%s &" % name)
+                tex.write("$%.4g$ & $%.4g_{%.2g}^{+%.2g}$ " % (
+                    self.bestfit[index], self.mean[index],
+                    self.bounds[index, 0, 0], self.bounds[index, 0, 1]))
+                tex.write("& $%.4g$ & $%.4g$ \\\\ \n" % (
+                    self.mean[index]+self.bounds[index, 1, 0],
+                    self.mean[index]+self.bounds[index, 1, 1]))
+
+            tex.write("\\hline \n \\end{tabular} \\\\ \n")
+            tex.write("$-\ln{\cal L}_\mathrm{min} =%.6g$, " % (
+                self.min_minus_lkl))
+            tex.write("minimum $\chi^2=%.4g$ \\\\ \n" % (
+                self.min_minus_lkl*2.))
