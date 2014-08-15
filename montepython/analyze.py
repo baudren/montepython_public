@@ -106,8 +106,7 @@ def analyze(command_line):
 
     # Computing 1,2 and 3-sigma errors, and plot. This will create the
     # triangle and 1d plot by default.
-    if command_line.plot is True:
-        plot_triangle(information_instances)
+    compute_posterior(information_instances)
 
     print '--> Writing .info and .tex files'
     for info in information_instances:
@@ -296,9 +295,10 @@ def convergence(info):
     info.chain = np.vstack(spam)
 
 
-def plot_triangle(information_instances):
+def compute_posterior(information_instances):
     """
-    Plotting routine, computes the marginalized posterior distributions.
+    computes the marginalized posterior distributions, and optionnally plots
+    them
 
     Parameters
     ----------
