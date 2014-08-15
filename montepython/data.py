@@ -366,6 +366,17 @@ class Data(object):
             self.read_file(self.param, 'data', field='path')
         self.read_file(self.param, 'data')
 
+        # Test here whether the number of parameters extracted correspond to
+        # the number of lines (to make sure no doublon is present)
+        number_of_parameters = sum(
+            [1 for l in open(self.param, 'r') if l and l.find('#') == -1
+             and l.find('data.parameters[') != -1])
+        if number_of_parameters != len(self.parameters):
+            raise io_mp.ConfigurationError(
+                "You probably have two lines in your parameter files with "
+                "the same parameter name. This is most probably an error, "
+                "which will cause problems down the line. Please fix this.")
+
         # Do the same for every experiments - but only if you are starting a
         # new folder. Otherwise, this step will actually be done when
         # initializing the likelihood.
