@@ -442,14 +442,16 @@ def plot_triangle(information_instances):
                                 info.bounds[info.native_index, 0, 0]),
                             fontsize=info.fontsize)
                         ax2d.set_xticklabels(
-                            info.ticks[info.native_index],
+                            ['%.{0}g'.format(info.decimal) % s
+                             for s in info.ticks[info.native_index]],
                             fontsize=info.ticksize)
                     elif conf.legend_style == 'sides':
                         # Except for the last 1d plot (bottom line), don't
                         # print ticks
                         if index == len(plotted_parameters)-1:
                             ax2d.set_xticklabels(
-                                info.ticks[info.native_index],
+                                ['%.{0}g'.format(info.decimal) % s
+                                 for s in info.ticks[info.native_index]],
                                 fontsize=info.ticksize)
                             ax2d.set_xlabel(
                                 info.tex_names[info.native_index],
