@@ -6,7 +6,10 @@ Monte Python, a Monte Carlo Markov Chain code (with Class!)
 
 
 If you are searching for specific examples of a work session, please refer to
-the pdf documentation.
+the pdf documentation. The code is under the MIT license. As an additional
+clause, you are also required to cite the original release paper when using it
+in a scientific publication: `Conservative Constraints on Early Cosmology` (see
+the tail of this document)
 
 
 Prerequisites
@@ -194,3 +197,28 @@ Details and Examples
 --------------------
 
 Please refer to the pdf or online documentation for further details.
+
+
+Bibtex entry
+------------
+
+.. code::
+
+    @article{Audren:2012wb,
+          author         = "Audren, Benjamin and Lesgourgues, Julien and Benabed,
+                            Karim and Prunet, Simon",
+          title          = "{Conservative Constraints on Early Cosmology: an
+                            illustration of the Monte Python cosmological parameter
+                            inference code}",
+          journal        = "JCAP",
+          volume         = "1302",
+          pages          = "001",
+          doi            = "10.1088/1475-7516/2013/02/001",
+          year           = "2013",
+          eprint         = "1210.7183",
+          archivePrefix  = "arXiv",
+          primaryClass   = "astro-ph.CO",
+          reportNumber   = "CERN-PH-TH-2012-290, LAPTH-048-12",
+          SLACcitation   = "%%CITATION = ARXIV:1210.7183;%%",
+    }
+
