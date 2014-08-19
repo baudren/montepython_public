@@ -384,13 +384,11 @@ def compute_posterior(information_instances):
                 len(plotted_parameters),
                 index*(len(plotted_parameters)+1)+1,
                 yticks=[])
-            ax2d.set_color_cycle([conf.cm(1.*i/NUM_COLORS)
-                                  for i in range(NUM_COLORS)])
+            ax2d.set_color_cycle(conf.cm)
         if conf.plot:
             ax1d = fig1d.add_subplot(
                 num_lines, num_columns, index+1, yticks=[])
-            ax1d.set_color_cycle([conf.cm(1.*i/NUM_COLORS)
-                                  for i in range(NUM_COLORS)])
+            ax1d.set_color_cycle(conf.cm)
 
         # check for each instance if the name is part of the list of plotted
         # parameters, and if yes, store the native_index. If not, store a flag
@@ -400,6 +398,7 @@ def compute_posterior(information_instances):
             try:
                 info.native_index = info.ref_names.index(name)
                 info.ignore_param = False
+                standard_name = info.backup_names[info.native_index]
             except ValueError:
                 info.ignore_param = True
 
@@ -491,11 +490,9 @@ def compute_posterior(information_instances):
         # mean likelihood (optional, if comparison, it will not be printed)
         # The color cycle has to be reset, before
         if conf.plot_2d:
-            ax2d.set_color_cycle([conf.cm(1.*i/NUM_COLORS)
-                                  for i in range(NUM_COLORS)])
+            ax2d.set_color_cycle(conf.cm)
         if conf.plot:
-            ax1d.set_color_cycle([conf.cm(1.*i/NUM_COLORS)
-                                  for i in range(NUM_COLORS)])
+            ax1d.set_color_cycle(conf.cm)
         if conf.mean_likelihood:
             for info in information_instances:
                 if not info.ignore_param:
@@ -538,19 +535,25 @@ def compute_posterior(information_instances):
                     hist_file_name = os.path.join(
                         info.folder, 'plots',
                         info.basename+'_%s.hist' % (
-                            info.ref_names[info.native_index]))
+                            standard_name))
                     write_histogram(hist_file_name,
                                     info.interp_grid, info.interp_hist)
 
         # Now do the rest of the triangle plot
         if conf.plot_2d:
             for second_index in xrange(index):
+                second_name = plotted_parameters[second_index]
                 for info in information_instances:
-                    try:
-                        info.native_second_index = info.ref_names.index(
-                            plotted_parameters[second_index])
-                        info.has_second_param = True
-                    except ValueError:
+                    if not info.ignore_param:
+                        try:
+                            info.native_second_index = info.ref_names.index(
+                                plotted_parameters[second_index])
+                            info.has_second_param = True
+                            second_standard_name = info.backup_names[
+                                info.native_second_index]
+                        except ValueError:
+                            info.has_second_param = False
+                    else:
                         info.has_second_param = False
                 ax2dsub = fig2d.add_subplot(
                     len(plotted_parameters),
@@ -627,23 +630,23 @@ def compute_posterior(information_instances):
                         fig2d.savefig(os.path.join(
                             conf.folder, 'plots',
                             file_name+'_2d_%s-%s.%s' % (
-                                ref_names[index],
-                                ref_names[second_index], conf.extension)),
+                                standard_name, second_standard_name,
+                                conf.extension)),
                             bbox_inches=area.expanded(1.4, 1.4))
 
                     # store the coordinates of the points for further
                     # plotting.
                     store_contour_coordinates(
-                        conf, ref_names[index], ref_names[second_index],
-                        contours)
+                        conf, standard_name, second_standard_name, contours)
 
                     for info in information_instances:
                         if not info.ignore_param and info.has_second_param:
                             info.hist_file_name = os.path.join(
                                 info.folder, 'plots',
-                                '_{0}_2d_{1}-{2}.hist'.format(
+                                '{0}_2d_{1}-{2}.hist'.format(
                                     info.basename,
-                                    ref_names[index], ref_names[second_index]))
+                                    standard_name,
+                                    second_standard_name))
                     write_histogram_2d(
                         info.hist_file_name, info.x_centers, info.y_centers,
                         info.extent, info.n)
@@ -1405,7 +1408,13 @@ class Information(object):
     has_interpolate_module = False
 
     # Global colormap for the 1d plots. Colours will get chosen from this.
-    cm = plt.get_cmap('CMRmap')
+    # Some old versions of matplotlib do not have CMRmap, so the colours will
+    # be harcoded
+    cm = [
+        (0.,      0.,      0.,      1.),
+        (0.30235, 0.15039, 0.74804, 1.),
+        (0.99843, 0.25392, 0.14765, 1.),
+        (0.90000, 0.75353, 0.10941, 1.)]
 
     # Define colormaps for the contour plots
     cmaps = [plt.cm.gray_r, plt.cm.Purples, plt.cm.Reds_r]
