@@ -159,7 +159,7 @@ class Likelihood(object):
                             except AttributeError:
                                 pass
                         if not is_ignored:
-                            exec(line.replace(self.name+'.', 'self.'))
+                            exec('self.'+name+' = '+value)
                         value = getattr(self, name)
                         counter += 1
                         self.dictionary[name] = value
