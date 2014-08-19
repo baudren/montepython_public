@@ -936,9 +936,9 @@ class Likelihood_clik(Likelihood):
                         if (i == 3):
                             tot[index+j] = cl['te'][j]
                         if (i == 4):
-                            tot[index+j] = cl['tb'][j]
+                            tot[index+j] = 0 #cl['tb'][j] class does not compute tb
                         if (i == 5):
-                            tot[index+j] = cl['eb'][j]
+                            tot[index+j] = 0 #cl['eb'][j] class does not compute eb
 
                     index += self.clik.get_lmax()[i]+1
 
