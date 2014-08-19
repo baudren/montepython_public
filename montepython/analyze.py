@@ -1107,11 +1107,13 @@ def extract_parameter_names(info):
                             if name in info.to_plot:
                                 plotted_parameters.append(name)
 
+                        print array[1:3]
                         # Append to the boundaries array
                         boundaries.append([
-                            elem if not isinstance(elem, int) or elem != -1
-                            else None for elem in array[1:3]])
-
+                            None if elem == 'None' or (isinstance(elem, int)
+                                                       and elem == -1)
+                            else elem for elem in array[1:3]])
+                        print boundaries[-1]
                         ref_names.append(name)
                         # Take care of the scales
                         scale = array[4]
