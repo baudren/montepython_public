@@ -1275,11 +1275,16 @@ def remove_burnin(info):
             "No decently sized chain was found. " +
             "Please wait a bit to analyze this folder")
 
-    # Applying now new rules for scales
+    # Applying now new rules for scales, if the name is contained in the
+    # referenced names
     for name in info.new_scales.iterkeys():
-        index = info.ref_names.index(name)
-        for i in xrange(len(spam)):
-            spam[i][:, index+2] *= 1./info.scales[index, index]
+        try:
+            index = info.ref_names.index(name)
+            for i in xrange(len(spam)):
+                spam[i][:, index+2] *= 1./info.scales[index, index]
+        except ValueError:
+            # there is nothing to do if the name is not contained in ref_names
+            pass
 
     info.steps = steps
     info.accepted_steps = accepted_steps
