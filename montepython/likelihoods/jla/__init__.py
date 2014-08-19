@@ -221,7 +221,7 @@ class jla(Likelihood):
         # Whiten the residuals, in two steps
         # 1) Compute the Cholesky decomposition of the covariance matrix, in
         # place. This is a time expensive (0.015 seconds) part
-        la.cholesky(cov, lower=False, overwrite_a=True)
+        cov = la.cholesky(cov, lower=False, overwrite_a=True)
         # 2) Solve the triangular system, also time expensive (0.02 seconds)
         residuals = la.solve_triangular(cov, residuals, check_finite=False)
 
