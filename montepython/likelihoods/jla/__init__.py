@@ -183,8 +183,8 @@ class jla(Likelihood):
                 data.mcmc_parameters['beta']['scale'])
         M = (data.mcmc_parameters['M']['current'] *
              data.mcmc_parameters['M']['scale'])
-        delta_M = (data.mcmc_parameters['delta_M']['current'] *
-                   data.mcmc_parameters['delta_M']['scale'])
+        Delta_M = (data.mcmc_parameters['Delta_M']['current'] *
+                   data.mcmc_parameters['Delta_M']['scale'])
 
         # Compute the covariance matrix
         # The module numexpr is used for doing quickly the long multiplication
@@ -206,7 +206,7 @@ class jla(Likelihood):
         # This operation loops over all supernovae!
         # Compute the approximate moduli
         residuals = sn.mb - (
-            M - alpha*sn.x1 + beta*sn.color + delta_M*(
+            M - alpha*sn.x1 + beta*sn.color + Delta_M*(
                 sn.thirdvar > self.scriptmcut))
         # Remove from the approximate moduli the one computed from CLASS
         residuals -= moduli
