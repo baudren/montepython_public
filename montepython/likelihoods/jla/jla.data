@@ -1,4 +1,0 @@
-jla.data_directory = os.path.join(data.path['data'], 'jla')
-jla.settings       = 'jla.dataset'
-
-jla.use_nuisance = ['alpha', 'beta', 'M', 'Delta_M']

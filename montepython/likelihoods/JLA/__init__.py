@@ -1,5 +1,5 @@
 """
-.. module:: jla
+.. module:: JLA
     :synopsis: JLA likelihood from Betoule et al. 2014
 
 .. moduleauthor:: Benjamin Audren <benjamin.audren@gmail.com>
@@ -29,9 +29,15 @@ computations afterwards.
 """
 import os
 import numpy as np
-import numexpr as ne
 import scipy.linalg as la
 import montepython.io_mp as io_mp
+try:
+    import numexpr as ne
+except ImportError:
+    raise io_mp.MissingLibraryError(
+        "This likelihood has intensive array manipulations. You "
+        "have to install the numexpr Python package. Please type:\n"
+        "(sudo) pip install numexpr --user")
 try:
     from pandas import read_table
 except ImportError:
@@ -42,17 +48,17 @@ except ImportError:
 from montepython.likelihood_class import Likelihood
 
 
-class jla(Likelihood):
+class JLA(Likelihood):
 
     def __init__(self, path, data, command_line):
 
         Likelihood.__init__(self, path, data, command_line)
 
-        # check if jla_simple is also in experiments, in which case, complain
-        if 'jla_simple' in data.experiments:
+        # check if JLA_simple is also in experiments, in which case, complain
+        if 'JLA_simple' in data.experiments:
             raise io_mp.LikelihoodError(
-                'conflicting jla_simple measurements, you can only have'
-                ' either "jla" or "jla_simple" as an experiment, not both')
+                'conflicting JLA_simple measurements, you can only have'
+                ' either "JLA" or "JLA_simple" as an experiment, not both')
 
         # Read the configuration file. Note that we unfortunately can not
         # immediatly execute the file, as it is not formatted as strings.
