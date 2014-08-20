@@ -24,7 +24,10 @@ computations afterwards.
 
     Since there are a lot of file manipulation involved, the "pandas" library
     has to be installed -- it is an 8-fold improvement in speed over numpy, and
-    a 2-fold improvement over a fast Python implementation.
+    a 2-fold improvement over a fast Python implementation. The "numexpr"
+    library is also needed for doing the fast array manipulations, done with
+    blas daxpy function in the original c++ code. Both can be install with pip
+    (Python package manager) easily.
 
 """
 import os
@@ -45,24 +48,14 @@ except ImportError:
         "This likelihood has a lot of IO manipulation. You have "
         "to install the 'pandas' library to use it. Please type:\n"
         "`(sudo) pip install pandas --user`")
-from montepython.likelihood_class import Likelihood
+from montepython.likelihood_class import Likelihood_sn
 
 
-class JLA(Likelihood):
+class JLA(Likelihood_sn):
 
     def __init__(self, path, data, command_line):
 
-        Likelihood.__init__(self, path, data, command_line)
-
-        # check if JLA_simple is also in experiments, in which case, complain
-        if 'JLA_simple' in data.experiments:
-            raise io_mp.LikelihoodError(
-                'conflicting JLA_simple measurements, you can only have'
-                ' either "JLA" or "JLA_simple" as an experiment, not both')
-
-        # Read the configuration file. Note that we unfortunately can not
-        # immediatly execute the file, as it is not formatted as strings.
-        self.read_configuration_file()
+        Likelihood_sn.__init__(self, path, data, command_line)
 
         # Load matrices from text files, whose names were read in the
         # configuration file
@@ -76,89 +69,6 @@ class JLA(Likelihood):
         # Reading light-curve parameters from self.data_file (jla_lcparams.txt)
         self.light_curve_params = self.read_light_curve_parameters()
 
-    def read_configuration_file(self):
-        """
-        Extract Python variables from the configuration file
-
-        This routine performs the equivalent to the program "inih" used in the
-        original c++ library.
-        """
-        settings_path = os.path.join(self.data_directory, self.settings)
-        with open(settings_path, 'r') as config:
-            for line in config:
-                # Dismiss empty lines and commented lines
-                if line and line.find('#') == -1:
-                    lhs, rhs = [elem.strip() for elem in line.split('=')]
-                    # lhs will always be a string, so set the attribute to this
-                    # likelihood. The right hand side requires more work.
-                    # First case, if set to T or F for True or False
-                    if str(rhs) in ['T', 'F']:
-                        rhs = True if str(rhs) == 'T' else False
-                    # It can also be a path, starting with 'data/'. We remove
-                    # this leading folder path
-                    elif str(rhs).find('data/') != -1:
-                        rhs = rhs.replace('data/', '')
-                    else:
-                        # Try  to convert it to a float
-                        try:
-                            rhs = float(rhs)
-                        # If it fails, it is a string
-                        except ValueError:
-                            rhs = str(rhs)
-                    # Set finally rhs to be a parameter of the class
-                    setattr(self, lhs, rhs)
-
-    def read_matrix(self, path):
-        """
-        extract the matrix from the path
-
-        This routine uses the blazing fast pandas library (0.10 seconds to load
-        a 740x740 matrix). If not installed, it uses a custom routine that is
-        twice as slow (but still 4 times faster than the straightforward
-        numpy.loadtxt method)
-
-        .. note::
-
-            the length of the matrix is stored on the first line... then it has
-            to be unwrapped. The pandas routine read_table understands this
-            immediatly, though.
-
-        """
-        path = os.path.join(self.data_directory, path)
-        # The first line should contain the length.
-        with open(path, 'r') as text:
-            length = int(text.readline())
-
-        # Note that this function does not require to skiprows, as it
-        # understands the convention of writing the length in the first
-        # line
-        matrix = read_table(path).as_matrix().reshape((length, length))
-
-        return matrix
-
-    def read_light_curve_parameters(self):
-        """
-        Read the file jla_lcparams.txt containing the SN data
-
-        .. note::
-
-            the length of the resulting array should be equal to the length of
-            the covariance matrices stored in C00, etc...
-
-        """
-        path = os.path.join(self.data_directory, self.data_file)
-
-        # Recover the names of the columns. The names '3rdvar' and 'd3rdvar'
-        # will be changed, because 3rdvar is not a valid variable name
-        with open(path, 'r') as text:
-            names = [e.strip().replace('3rd', 'third')
-                     for e in text.readline()[1:].split()]
-
-        lc_parameters = read_table(
-            path, sep=' ', names=names, header=0)
-
-        return lc_parameters
-
     def loglkl(self, cosmo, data):
         """
         Compute negative log-likelihood (eq.15 Betoule et al. 2014)
@@ -167,7 +77,6 @@ class JLA(Likelihood):
         # Recover the distance moduli from CLASS (a size N vector of double
         # containing the predicted distance modulus for each SN in the JLA
         # sample, given the redshift of the supernova.)
-        # FIXME what is this number + 25?
         # luminosity_distance returns (comoving_distance(z_cmb) * (1+z_cmb)),
         # whereas the quantity needed for the computation is
         # (comoving_distance(z_cmb) * (1+z_h))

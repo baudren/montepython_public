@@ -1465,3 +1465,121 @@ class Likelihood_mpk(Likelihood):
             np.dot(W_P_th_large, cov_dat_large)**2/normV
 
         return -chisq/2
+
+
+class Likelihood_sn(Likelihood):
+
+    def __init__(self, path, data, command_line):
+
+        Likelihood.__init__(self, path, data, command_line)
+
+        # try and import pandas
+        try:
+            import pandas
+        except ImportError:
+            raise io_mp.MissingLibraryError(
+                "This likelihood has a lot of IO manipulation. You have "
+                "to install the 'pandas' library to use it. Please type:\n"
+                "`(sudo) pip install pandas --user`")
+
+        # check that every conflicting experiments is not present in the list
+        # of tested experiments, in which case, complain
+        if hasattr(self, 'conflicting_experiments'):
+            for conflict in self.conflicting_experiments:
+                if conflict in data.experiments:
+                    raise io_mp.LikelihoodError(
+                        'conflicting %s measurements, you can ' % conflict +
+                        ' have either %s or %s ' % (self.name, conflict) +
+                        'as an experiment, not both')
+
+        # Read the configuration file, supposed to be called self.settings.
+        # Note that we unfortunately can not
+        # immediatly execute the file, as it is not formatted as strings.
+        assert hasattr(self, 'settings') is True, (
+            "You need to provide a settings file")
+        self.read_configuration_file()
+
+    def read_configuration_file(self):
+        """
+        Extract Python variables from the configuration file
+
+        This routine performs the equivalent to the program "inih" used in the
+        original c++ library.
+        """
+        settings_path = os.path.join(self.data_directory, self.settings)
+        with open(settings_path, 'r') as config:
+            for line in config:
+                # Dismiss empty lines and commented lines
+                if line and line.find('#') == -1:
+                    lhs, rhs = [elem.strip() for elem in line.split('=')]
+                    # lhs will always be a string, so set the attribute to this
+                    # likelihood. The right hand side requires more work.
+                    # First case, if set to T or F for True or False
+                    if str(rhs) in ['T', 'F']:
+                        rhs = True if str(rhs) == 'T' else False
+                    # It can also be a path, starting with 'data/'. We remove
+                    # this leading folder path
+                    elif str(rhs).find('data/') != -1:
+                        rhs = rhs.replace('data/', '')
+                    else:
+                        # Try  to convert it to a float
+                        try:
+                            rhs = float(rhs)
+                        # If it fails, it is a string
+                        except ValueError:
+                            rhs = str(rhs)
+                    # Set finally rhs to be a parameter of the class
+                    setattr(self, lhs, rhs)
+
+    def read_matrix(self, path):
+        """
+        extract the matrix from the path
+
+        This routine uses the blazing fast pandas library (0.10 seconds to load
+        a 740x740 matrix). If not installed, it uses a custom routine that is
+        twice as slow (but still 4 times faster than the straightforward
+        numpy.loadtxt method)
+
+        .. note::
+
+            the length of the matrix is stored on the first line... then it has
+            to be unwrapped. The pandas routine read_table understands this
+            immediatly, though.
+
+        """
+        from pandas import read_table
+        path = os.path.join(self.data_directory, path)
+        # The first line should contain the length.
+        with open(path, 'r') as text:
+            length = int(text.readline())
+
+        # Note that this function does not require to skiprows, as it
+        # understands the convention of writing the length in the first
+        # line
+        matrix = read_table(path).as_matrix().reshape((length, length))
+
+        return matrix
+
+    def read_light_curve_parameters(self):
+        """
+        Read the file jla_lcparams.txt containing the SN data
+
+        .. note::
+
+            the length of the resulting array should be equal to the length of
+            the covariance matrices stored in C00, etc...
+
+        """
+        from pandas import read_table
+        path = os.path.join(self.data_directory, self.data_file)
+
+        # Recover the names of the columns. The names '3rdvar' and 'd3rdvar'
+        # will be changed, because 3rdvar is not a valid variable name
+        with open(path, 'r') as text:
+            clean_first_line = text.readline()[1:].strip()
+            names = [e.strip().replace('3rd', 'third')
+                     for e in clean_first_line.split()]
+
+        lc_parameters = read_table(
+            path, sep=' ', names=names, header=0, index_col=False)
+        return lc_parameters
