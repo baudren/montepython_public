@@ -54,6 +54,9 @@ def run(cosmo, data, command_line):
     # Reset the cosmo_arguments dict output entry, and adapt it in case a
     # derived parameter requires a particular CLASS behaviour.
     data.cosmo_arguments.update({'output': ''})
+    for key in ['lensing', 'l_max_scalars']:
+        if key in data.cosmo_arguments.keys():
+            data.cosmo_arguments.pop(key)
     if 'sigma8' in new_derived:
         data.cosmo_arguments.update({'output': 'mPk'})
 
