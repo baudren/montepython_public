@@ -190,7 +190,7 @@ class Likelihood(object):
         for key in cl.iterkeys():
             # All quantities need to be multiplied by this factor, except the
             # phi-phi term, that is already dimensionless
-            if key != 'pp':
+            if key not in ['pp', 'ell']:
                 cl[key] *= (T*1.e6)**2
 
         return cl
