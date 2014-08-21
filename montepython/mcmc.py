@@ -228,6 +228,12 @@ def chain(cosmo, data, command_line):
     ## Initialisation
     loglike = 0
 
+    # In case command_line.silent has been asked, outputs should only contain
+    # data.out. Otherwise, it will also contain sys.stdout
+    outputs = [data.out]
+    if not command_line.silent:
+        outputs.append(sys.stdout)
+
     # Recover the covariance matrix according to the input, if the varying set
     # of parameters is non-zero
     if (data.get_mcmc_parameters(['varying']) != []):
@@ -247,7 +253,7 @@ def chain(cosmo, data, command_line):
             "only one point and exit")
         data.update_cosmo_arguments()  # this fills in the fixed parameters
         loglike = sampler.compute_lkl(cosmo, data)
-        io_mp.print_vector([data.out, sys.stdout], 1, loglike, data)
+        io_mp.print_vector(outputs, 1, loglike, data)
         return 1, loglike
 
     # In the fast-slow method, one need the Cholesky decomposition of the
@@ -292,7 +298,7 @@ def chain(cosmo, data, command_line):
     # If the jumping factor is 0, the likelihood associated with this point is
     # displayed, and the code exits.
     if data.jumping_factor == 0:
-        io_mp.print_vector([data.out, sys.stdout], 1, loglike, data)
+        io_mp.print_vector(outputs, 1, loglike, data)
         return 1, loglike
 
     acc, rej = 0.0, 0.0  # acceptance and rejection number count
@@ -336,7 +342,7 @@ def chain(cosmo, data, command_line):
             # just computed ('current' flag), but really the previous one.)
             # with its proper multiplicity (number of times the system stayed
             # there).
-            io_mp.print_vector([data.out, sys.stdout], N, loglike, data)
+            io_mp.print_vector(outputs, N, loglike, data)
 
             # Report the 'current' point to the 'last_accepted'
             sampler.accept_step(data)
@@ -354,6 +360,8 @@ def chain(cosmo, data, command_line):
         # buffer to force to write on file.
         if acc % data.write_step == 0:
             io_mp.refresh_file(data)
+            # Update the outputs list
+            outputs[0] = data.out
         k += 1  # One iteration done
     # END OF WHILE LOOP
 
@@ -361,7 +369,7 @@ def chain(cosmo, data, command_line):
     # current point is not yet accepted, but it also mean that we did not print
     # out the last_accepted one yet. So we do.
     if N > 1:
-        io_mp.print_vector([data.out, sys.stdout], N-1, loglike, data)
+        io_mp.print_vector(outputs, N-1, loglike, data)
 
     # Print out some information on the finished chain
     rate = acc / (acc + rej)

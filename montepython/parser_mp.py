@@ -205,6 +205,8 @@ def create_parser():
               and its content transfered to the beginning of the new chain.
             - **-b** (`str`) - start a new chain from the bestfit computed in
               the given file (*OPT*)
+            - **--silent** (`None`) - remove the print to standard output
+              (useful when running on clusters)
 
         **info**:
 
@@ -317,6 +319,10 @@ def create_parser():
                            help='restart from best fit file',
                            type=existing_file)
 
+    ###############
+    # Silence the output (no print on the console)
+    runparser.add_argument('--silent', help="params not printed on screen",
+                           action='store_true')
     ###############
     # Adding new derived parameters to a run
     runparser.add_argument(
