@@ -224,6 +224,7 @@ def convergence(info):
     print '--> Removing burn-in'
     spam = remove_burnin(info)
 
+    info.remap_parameters(spam)
     # Now that the list spam contains all the different chains removed of
     # their respective burn-in, proceed to the convergence computation
 
@@ -1481,6 +1482,39 @@ class Information(object):
         if command_line.optional_plot_file:
             plot_file_vars = {'info': self}
             execfile(command_line.optional_plot_file, plot_file_vars)
+
+    def remap_parameters(self, spam):
+        """
+        Perform substitutions of parameters for analyzing
+
+        .. note::
+
+            for arbitrary combinations of parameters, the prior will not
+            necessarily be flat.
+
+        """
+        if hasattr(self, 'redefine'):
+            for key, value in self.redefine.iteritems():
+                # Check that the key was an original name
+                if key in self.backup_names:
+                    print ' /|\  Transforming', key, 'into', value
+                    # We recover the indices of the key
+                    index_to_change = self.backup_names.index(key)+2
+                    print('/_o_\ The new variable will be called ' +
+                          self.ref_names[self.backup_names.index(key)])
+                    # Recover all indices of all variables present in the
+                    # remapping
+                    variable_names = [elem for elem in self.backup_names if
+                                      value.find(elem) != -1]
+                    indices = [self.backup_names.index(name)+2 for name in
+                               variable_names]
+                    # Now loop over all files in spam
+                    for i in xrange(len(spam)):
+                        # Assign variables to their values
+                        for index, name in zip(indices, variable_names):
+                            exec("%s = spam[i][:, %i]" % (name, index))
+                        # Assign to the desired index the combination
+                        exec("spam[i][:, %i] = %s" % (index_to_change, value))
 
     def define_ticks(self):
         """
