@@ -1,0 +1,16 @@
+# POLARBEAR-1 First Data Release
+# The POLARBEAR Collaboration, A Measurement of the Cosmic Microwave Background B-Mode Polarization Power Spectrum at Sub-Degree Scales with POLARBEAR
+#
+# File: POLARBEAR_First_Data_Release_Bandpowers_2014-04-03.txt
+# Date: 2014-04-03
+# 
+# POLARBEAR bandpowers 
+# This text file contains the POLARBEAR BB bandpowers [ell*(ell+1)*C_{ell}/(2*pi)] and uncertainties. The units are uK^2. 
+# They correspond to Figure 12 and Table 8 of the paper.
+# Details on bandpower estimation and uncertainties are described in Sec.5.
+#
+# Columns: lmin lcenter lmax BB DeltaBB
+ 500  700  900 +9.303e-02 5.616e-02
+ 900 1100 1300 +1.487e-01 1.165e-01
+1300 1500 1700 -3.173e-01 2.355e-01
+1700 1900 2100 +4.874e-01 4.815e-01
