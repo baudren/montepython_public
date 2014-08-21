@@ -196,7 +196,7 @@ def safe_initialisation(custom_command="", comm=None, nprocs=1):
             "potentially half created `log.param`. Please see the "
             "above error message. If you run the exact same command, it"
             " will not work. You should solve the problem, and try again.")
-    except KeyError:
+    except KeyError as e:
         if comm:
             for index in range(1, nprocs):
                 comm.send('failed', dest=index, tag=1)
@@ -204,7 +204,8 @@ def safe_initialisation(custom_command="", comm=None, nprocs=1):
             "You are running in a folder that was created following "
             "a non-successful initialisation (wrong parameter name, "
             "wrong likelihood, etc...). If you have solved the issue, you "
-            "should remove completely the output folder, and try again.")
+            "should remove completely the output folder, and try again." +
+            " Alternatively, there could be a problem with "+e.message)
     return cosmo, data, command_line, success
 
 
