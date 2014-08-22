@@ -1155,7 +1155,7 @@ def find_maximum_of_likelihood(info):
         # cheese will brutally contain everything (- log likelihood) in the
         # file chain_file being scanned.
         # This could potentially be faster with pandas, but is already quite
-        # fast TODO
+        # fast
         cheese = (np.array([float(line.split()[1].strip())
                             for line in open(chain_file, 'r')]))
 
@@ -1197,7 +1197,6 @@ def remove_burnin(info):
     for index, chain_file in enumerate(info.files):
         # To improve presentation, and print only once the full path of the
         # analyzed folder, we recover the length of the path name, and
-        # TODO this could go in IO
         # create an empty complementary string of this length
         total_length = 18+max_name_length
         empty_length = 18+len(os.path.dirname(chain_file))+1

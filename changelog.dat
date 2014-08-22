@@ -1,16 +1,27 @@
-v2.1.0: + Major rewriting of the 'analyze' module. Now handles arbitrary number
+v2.1.0: + Implemented the POLARBEAR likelihood (measurement of the BB spectrum
+	  in four bins at large ell, see arXiv:1403.2369).
+        + Implemented the JLA new SuperNovae analysis (arXiv:1401.4064). There
+	  are two versions available, 'JLA' and 'JLA_simple' (the latter being
+	  a faster version of the former, so they are mutually exclusive).
+        + Euclid fiducial likelihoods have been cleaned, and adapted to the
+          latest version of the wrapper
+        + Major rewriting of the 'analyze' module. Now handles arbitrary number
           of folders/set of files. The '--comp' flag has been removed - you
           simply specify more elements to the 'info' call.
+	+ You can now combine parameters in 'analyze' (at your own risk, beware
+	  of the priors), using a new dictionary in the 'extra plot file'. See
+	  the example in 'plot_files/example.plot'
         + Unified scheme for handling complex parameters from CLASS.  You can
           now specify for instance 'm_ncdm__1', 'm_ncdm__2' as running
           parameters, and they will be treated correctly.
-        + Euclid fiducial likelihoods have been cleaned, and adapted to the
-          latest version of the wrapper
         + It is now possible to add derived parameters that were not chosen
           before the run began. Simply list the parameters to follow on an
-          existing folder with the flag '-m Der'
+          existing folder with the flag '-m Der', and the options
+	  '-Der-target-folder' and '-Der-param-list'.
         + 'mpi_run' method reinforced - should now work on more possible
           configurations.
+	+ added a '--silent' option to avoid printing on-screen the steps in
+	  parameter space.
         + Monte Python is now under the MIT License (permissive BSD-type
           license)
 

@@ -163,8 +163,6 @@ class Data(object):
         It is filled just before the run of the sampler.  Those parameters not
         defined will be set to the default value of PyMultiNest.
 
-        TODO: ADD PROPER REFERENCES TO DOCUMENTATION.
-
         :rtype: dict
         """
 
