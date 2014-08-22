@@ -13,7 +13,6 @@ class polarbear(Likelihood):
         # Read the four data points from the bandpower file
         self.bandpowers = np.loadtxt(os.path.join(
             self.data_directory, self.bandpower_file))
-        print self.bandpowers
 
         # Read the band power window function (bpwf hereafter... yes, but
         # sometimes, explicit is too much)
