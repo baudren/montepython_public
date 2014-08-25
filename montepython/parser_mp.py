@@ -2,10 +2,14 @@
 .. module:: parser_mp
     :synopsis: Definition of the command line options
 .. moduleauthor:: Benjamin Audren <benjamin.audren@epfl.ch>
+.. moduleauthor:: Francesco Montesano
 
 Defines the command line options and their help messages in
 :func:`create_parser` and read the input command line in :func:`parse`, dealing
 with different possible configurations.
+
+The fancy short/long help formatting, as well as the automatic help creation
+from docstrings is entirely due to Francesco Montesano.
 
 """
 import os
@@ -134,9 +138,11 @@ def parse_docstring(docstring, key_symbol="<**>", description_symbol="<++>"):
     description_symbol = re.escape(description_symbol)
 
     # define the regular expressions to match the key and the description
-    tomatch = r'{0}-{{0,2}}(.+?){0}'
-    re_key = re.compile(tomatch.format(key_symbol))
-    re_desc = re.compile(tomatch.format(description_symbol))
+    key_match = r'{0}-{{0,2}}(.+?){0}'
+    re_key = re.compile(key_match.format(key_symbol))
+
+    desc_match = r'({0}.+?{0}.+?{0})'
+    re_desc = re.compile(desc_match.format(description_symbol))
 
     # get all and check that the keys and descriptions have the same lenghts
     keys = re_key.findall(docstring)
@@ -149,6 +155,86 @@ def parse_docstring(docstring, key_symbol="<**>", description_symbol="<++>"):
 
     helpdict = {k: v for k, v in zip(keys, descriptions)}
     return helpdict
+
+
+def custom_help(split_string="<++>"):
+    """
+    Create a custom help action.
+
+    It expects *split_string* to appear in groups of three.
+    If the option string is '-h', then uses the short description
+    between the first two *split_string*.
+    If the option string is '-h', then uses all that is between
+    the first and the third *split_string*, stripping the first one.
+
+    Parameters
+    ----------
+    split_string: str
+        string to use to select the help string and how to select them.
+        They must appear in groups of *3*
+
+    output
+    ------
+    CustomHelp: class definition
+    """
+    class CustomHelp(ap._HelpAction):
+        def __call__(self, parser, namespace, values, option_string=None):
+
+            # create the help string and store it into a string
+            from StringIO import StringIO
+            fstr = StringIO()
+            try:
+                parser.print_help(file=fstr)
+                help_str = fstr.getvalue()
+            finally:
+                fstr.close()
+
+            # create the regular expression to match the desciption
+            descmatch = r'{0}(.+?){0}(.+?){0}'
+            # escape possible dangerous characters
+            esplit_string = re.escape(split_string)
+            re_desc = re.compile(descmatch.format(esplit_string),
+                                 flags=re.DOTALL)
+
+            # select the case according to which option_string is selected
+            if option_string == '-h':
+                to_sub = r'\1'
+            elif option_string == '--help':
+                to_sub = r'\1\2'
+
+            print(re_desc.sub(to_sub, help_str))
+            parser.exit()
+
+    return CustomHelp
+
+
+def add_subparser(sp, name, **kwargs):
+    """
+    Add a parser to the subparser *sp* with *name*.
+
+    All the logic common to all subparsers should go here
+
+    Parameters
+    ----------
+    sp: subparser instance
+    name: str
+        name of the subparser
+    kwargs: dict
+        keywords to pass to the subparser
+
+    output
+    ------
+    sparser: Argparse instance
+        new subparser
+    """
+    kwargs["add_help"] = False
+    kwargs['formatter_class'] = ap.ArgumentDefaultsHelpFormatter
+    sparser = sp.add_parser(name, **kwargs)
+
+    sparser.add_argument("-h", "--help", action=custom_help(),
+                         help="print the short or long help")
+
+    return sparser
 
 
 def get_dict_from_docstring(key_symbol="<**>", description_symbol="<++>"):
@@ -196,6 +282,33 @@ def get_dict_from_docstring(key_symbol="<**>", description_symbol="<++>"):
     return wrapper
 
 
+def initialise_parser(**kwargs):
+    """
+    Create the argument parser and returns it
+    Parameters
+    ----------
+    kwargs: dictionary
+        keyword to pass to the parser
+    output
+    ------
+    p: MpArgumentParser instance
+        parser with some keyword added
+    """
+    kwargs['formatter_class'] = ap.ArgumentDefaultsHelpFormatter
+    p = MpArgumentParser(**kwargs)
+
+    # -- version
+    path_file = os.path.sep.join(
+        os.path.abspath(__file__).split(os.path.sep)[:-2])
+    with open(os.path.join(path_file, 'VERSION'), 'r') as version_file:
+        version = version_file.readline()
+        p.add_argument('--version', action='version', version=version)
+
+    p.add_argument("-v", "--verbose", action="store_true", help="Verbose mode")
+
+    return p
+
+
 @get_dict_from_docstring()
 def create_parser():
     """
@@ -223,22 +336,20 @@ def create_parser():
         <**>-N<**> : int
             <++>number of steps in the chain<++> (**OBL**). Note that when
             running on a cluster, your run might be stopped before reaching
-            this number.
+            this number.<++>
         <**>-o<**> : str
             <++>output folder<++> (**OBL**). For instance :code:`-o
             chains/myexperiments/mymodel`. Note that in this example, the
-            folder :code:`chains/myexperiments` must already exist.
+            folder :code:`chains/myexperiments` must already exist.<++>
         <**>-p<**> : str
             <++>input parameter file<++> (**OBL**). For example :code:`-p
-            input/exoticmodel.param`.
+            input/exoticmodel.param`.<++>
         <**>-c<**> : str
             <++>input covariance matrix<++> (*OPT*). A covariance matrix is
             created when analyzing previous runs.
 
-            .. note::
-
-                The list of parameters in the input covariance matrix and in
-                the run do not necessarily coincide.
+            Note that the list of parameters in the input covariance matrix and
+            in the run do not necessarily coincide.<++>
 
         <**>-j<**> : str
             <++>jumping method<++> (`global` (default), `sequential` or `fast`)
@@ -256,7 +367,7 @@ def create_parser():
             jumping method.
 
             The `fast` method implements the Cholesky decomposition presented
-            in http://arxiv.org/abs/1304.4473 by Antony Lewis.
+            in http://arxiv.org/abs/1304.4473 by Antony Lewis.<++>
         <**>-m<**> : str
             <++>sampling method<++>, by default 'MH' for Metropolis-Hastings,
             can be set to 'NS' for Nested Sampling (using Multinest wrapper
@@ -264,7 +375,7 @@ def create_parser():
             to emcee algorithm), and finally 'IS' for importance sampling.
 
             Note that when running with Importance sampling, you need to
-            specify a folder to start from.
+            specify a folder to start from.<++>
         <**>-f<**> : float
             <++>jumping factor<++> (>= 0, default to 2.4) (*OPT*).
 
@@ -281,10 +392,11 @@ def create_parser():
             this factor for very non-gaussian posteriors.
 
             Using :code:`-f 0 -N 1` is a convenient way to get the likelihood
-            exactly at the starting point passed in input.
+            exactly at the starting point passed in input.<++>
         <**>--conf<**> : str
             <++>configuration file<++> (default to `default.conf`) (*OPT*).
-            This file contains the path to your cosmological module directory.
+            This file contains the path to your cosmological module
+            directory.<++>
         <**>--chain-number<**> : str
             arbitrary <++>number of the output chain<++>, to overcome the
             automatic one (*OPT*).
@@ -298,33 +410,33 @@ def create_parser():
 
             This option is a way to enforce a particular number :code:`i`.
             This can be useful when running on a cluster: for instance you may
-            ask your script to use the job number as :code:`i`.
+            ask your script to use the job number as :code:`i`.<++>
         <**>-r<**> : str
             <++>restart from last point in chain<++>, to avoid the burn-in
             stage (*OPT*).
 
             At the beginning of the run, the previous chain will be deleted,
-            and its content transfered to the beginning of the new chain.
+            and its content transfered to the beginning of the new chain.<++>
         <**>-b<**> : str
             <++>start a new chain from the bestfit file<++> computed with
-            analyze.  (*OPT*)
+            analyze.  (*OPT*)<++>
         <**>--silent<**> : None
             <++>silence the standard output<++> (useful when running on
-            clusters)
+            clusters)<++>
         <**>--Der-target-folder<**> : str
             <++>Add additional derived params to this folder<++>. It has to be
             used in conjunction with `Der-param-list`, and the method set to
-            Der: :code:`-m Der`. (*OPT*)
+            Der: :code:`-m Der`. (*OPT*)<++>
         <**>--Der-param-list<**> : str
             <++>Specify a number of derived parameters to be added<++>. A
             complete example would be to add Omega_Lambda as a derived
             parameter:
             :code:`python montepython/MontePython.py run -o existing_folder
             -m Der --Der-target-folder non_existing_folder --Der-param-list
-            Omega_Lambda`
+            Omega_Lambda`<++>
         <**>--IS-starting-folder<**> : str
             <++>Perform Importance Sampling from this folder or set of
-            chains<++> (*OPT*)
+            chains<++> (*OPT*)<++>
 
         For Nested Sampling and Cosmo Hammer arguments, see
         :mod:`nested_sampling` and :mod:`cosmo_hammer`.
@@ -340,16 +452,16 @@ def create_parser():
             chains/my-run`.
 
             If you specify several folders (or set of files), a comparison
-            will be performed.
+            will be performed.<++>
         <**>--bins<**> : int
             <++>number of bins in the histograms<++> used to derive posterior
             probabilities and credible intervals (default to 20). Decrease this
-            number for smoother plots at the expense of masking details.
+            number for smoother plots at the expense of masking details.<++>
         <**>--no-mean<**> : None
             <++>remove the mean likelihood from the plot<++>. By default, when
             plotting marginalised 1D posteriors, the code also shows the mean
             likelihood per bin with dashed lines; this flag switches off the
-            dashed lines
+            dashed lines.<++>
         <**>--extra<**> : str
             <++>extra file to customize the output plots<++>. You can actually
             set all the possible options in this file, including line-width,
@@ -359,35 +471,35 @@ def create_parser():
 
                 info.to_change={'oldname1':'newname1','oldname2':'newname2',...}
                 info.to_plot=['name1','name2','newname3',...]
-                info.new_scales={'name1':number1,'name2':number2,...}
+                info.new_scales={'name1':number1,'name2':number2,...}<++>
 
         <**>--noplot<**> : bool
             <++>do not produce any plot, simply compute the posterior<++>
-            (*OPT*) (flag)
+            (*OPT*) (flag)<++>
         <**>--noplot-2d<**> : bool
-            <++>produce only the 1d posterior plot<++> (*OPT*) (flag)
+            <++>produce only the 1d posterior plot<++> (*OPT*) (flag)<++>
         <**>--contours-only<**> : bool
-            <++>do not fill the contours on the 2d plots<++> (*OPT*) (flag)
+            <++>do not fill the contours on the 2d plots<++> (*OPT*) (flag)<++>
         <**>--all<**> : None
             <++>output every subplot and data in separate files<++> (*OPT*)
-            (flag)
+            (flag)<++>
         <**>--ext<**> : str
             <++>change the extension for the output file. Any extension handled
             by :code:`matplotlib` can be used<++>. (`pdf` (default), `png`
-            (faster))
+            (faster))<++>
         <**>--fontsize<**> : int
-            <++>desired fontsize<++> (default to 16)
+            <++>desired fontsize<++> (default to 16)<++>
         <**>--ticksize<**> : int
-            <++>desired ticksize<++> (default to 14)
+            <++>desired ticksize<++> (default to 14)<++>
         <**>--line-width<**> : int
-            <++>set line width<++> (default to 4)
+            <++>set line width<++> (default to 4)<++>
         <**>--decimal<**> : int
-            <++>number of decimal places on ticks<++>
+            <++>number of decimal places on ticks<++> (default to 3)<++>
         <**>--ticknumber<**> : int
-            <++>number of ticks on each axis<++>
+            <++>number of ticks on each axis<++> (default to 3)<++>
         <**>--legend-style<**> : str
             <++>specify the style of the legend<++>, to choose from `sides` or
-            `top`.
+            `top`.<++>
 
     Returns
     -------
@@ -404,24 +516,19 @@ def create_parser():
         %(prog)s info -h\n\n""")
 
     # parser = ap.ArgumentParser(
-    parser = MpArgumentParser(
-        formatter_class=ap.ArgumentDefaultsHelpFormatter,
-        description='Monte Python, a Monte Carlo code in Python',
-        usage=usage)
-
-    # -- version
-    path_file = os.path.sep.join(
-        os.path.abspath(__file__).split(os.path.sep)[:-2])
-    with open(os.path.join(path_file, 'VERSION'), 'r') as version_file:
-        version = version_file.readline()
-        parser.add_argument('--version', action='version', version=version)
+    #parser = MpArgumentParser(
+        #formatter_class=ap.ArgumentDefaultsHelpFormatter,
+        #description='Monte Python, a Monte Carlo code in Python',
+        #usage=usage)
+    parser = initialise_parser(
+        description='Monte Python, a Monte Carlo code in Python', usage=usage)
 
     # -- add the subparsers
     subparser = parser.add_subparsers(dest='subparser_name')
 
     ###############
     # run the MCMC
-    runparser = subparser.add_parser('run', help="run the MCMC chains")
+    runparser = add_subparser(subparser, 'run', help="run the MCMC chains")
 
     # -- number of steps (OPTIONAL)
     runparser.add_argument('-N', help=helpdict['N'], type=positive_int,
@@ -514,8 +621,8 @@ def create_parser():
 
     ###############
     # Information
-    infoparser = subparser.add_parser('info',
-                                      help="analyze the MCMC chains")
+    infoparser = add_subparser(subparser, 'info',
+                               help="analyze the MCMC chains")
 
     # -- folder to analyze
     infoparser.add_argument('files', help=helpdict['files'],
