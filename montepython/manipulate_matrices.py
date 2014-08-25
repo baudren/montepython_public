@@ -62,7 +62,7 @@ def merge_matrices(path1, path2):
     try:
         indices2 = extract_indices(answer, names2)
         print
-        print ' /!\ Keeping the following parameters from the first matrix:'
+        print ' /!\ Keeping the following parameters from the second matrix:'
         for index, name in enumerate(names2):
             if index in indices2:
                 print ' --> %s' % name
@@ -103,10 +103,10 @@ def merge_matrices(path1, path2):
 
     result = None
     while not result:
-        result = raw_input('writing the resulting covariance matrix to\n')
+        result = raw_input('writing the resulting covariance matrix to file:\n')
 
     with open(result, 'w') as output:
-        output.write('# '+', '.join(['%-16s' % e for e in final_list]))
+        output.write('# '+', '.join(['%16s' % e for e in final_list]))
         output.write('\n')
         for i in range(len(final_list)):
             for j in range(len(final_list)):
