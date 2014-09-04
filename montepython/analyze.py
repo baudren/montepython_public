@@ -1415,6 +1415,8 @@ class Information(object):
     # Global colormap for the 1d plots. Colours will get chosen from this.
     # Some old versions of matplotlib do not have CMRmap, so the colours will
     # be harcoded
+    # Note that, as with the other customisation options, you can specify new
+    # values for this in the extra plot_file.
     cm = [
         (0.,      0.,      0.,      1.),
         (0.30235, 0.15039, 0.74804, 1.),
@@ -1423,7 +1425,7 @@ class Information(object):
 
     # Define colormaps for the contour plots
     cmaps = [plt.cm.gray_r, plt.cm.Purples, plt.cm.Reds_r]
-    alphas = [1.0, 0.8, 0.6]
+    alphas = [1.0, 0.8, 0.6, 0.4]
 
     def __init__(self, command_line, other=None):
         """
