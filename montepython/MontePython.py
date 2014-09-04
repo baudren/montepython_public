@@ -20,20 +20,19 @@ if __name__ == '__main__':
 
     # MPI is tested for, and if a different than one number of cores is found,
     # it runs mpi_run instead of a simple run.
-    mpi_asked = False
+    MPI_ASKED = False
     try:
         from mpi4py import MPI
-        comm = MPI.COMM_WORLD
-        nprocs = comm.Get_size()
-        if nprocs > 1:
-            mpi_asked = True
+        NPROCS = MPI.COMM_WORLD.Get_size()
+        if NPROCS > 1:
+            MPI_ASKED = True
     # If the ImportError is raised, it only means that the Python wrapper for
     # MPI is not installed - the code should simply proceed with a non-parallel
     # execution.
     except ImportError:
         pass
 
-    if mpi_asked:
+    if MPI_ASKED:
         # This import has to be there in case MPI is not installed
         from run import mpi_run
         sys.exit(mpi_run())

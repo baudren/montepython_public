@@ -49,9 +49,12 @@ Class
 
 Next in line, you must compile the python wrapper of CLASS_. Download
 the latest version (:math:`\geq 1.5.0`), and follow the basic instruction.
-Instead of  :code:`make class`, type :code:`make`. This will also
-create an archiv `.ar` of the code, useful in the next step. After
-this, do:
+Instead of  :code:`make class`, type :code:`make -j`. If you are using a |CLASS|
+version :math:`\geq 2.3.0`, the wrapper will be installed by doing this step,
+so skip ahead.
+
+In case you are using an older version of |CLASS|, the compilation only created
+an archiv `.ar` of the code, useful in the next step. After this, do:
 
 .. code::
 
@@ -70,9 +73,13 @@ command:
 
 If the installation was successful, this should work within any
 directory. If you get no error message from this line, you know
-everything is fine. If the step :code:`python setup.py install --user` does not
-succeed, but that the :code:`build` is successful, then as far as |MP| is
-concerned, there are no issues. The code will be found nonetheless.
+everything is fine.
+
+.. note::
+
+  If the step :code:`python setup.py install --user` does not succeed, but that
+  the :code:`build` is successful, then as far as |MP| is concerned, there are
+  no issues. The code will be found nonetheless.
 
 If at some point you have several different coexisting versions of
 |CLASS| on the system, and you are worried that |MP| is not using the
@@ -99,27 +106,14 @@ Move the latest release of |MP| to one of your folders, called e.g.
   code]$ tar -xvf montepython-v1.0.0.tar
   code]$ cd montepython
 
-You will have to edit two files (the first, once for every new distribution of |MP|, and
-the second, once and for all). The first to edit is
-:code:`montepython/MontePython.py`. Its first line reads:
-
-.. code::
-
-  #!/usr/bin/python
-
-You should eventually replace this path with the one of your python 2.7 executable, if different.
-This modification is not crucial, it simply allows to run the code by simply typing :code:`montepython/Montepython.py`.
-If, instead, you run it through python (\emph{i.e.}: :code:`python`
-:code:`montepython/MontePython.py`), then this line will be disregarded.
-
-The second file to change, and this one is crucial, is
-:code:`default.conf.template`, in the root directory of the code. It is a
-template to help you create the file :code:`default.conf`, which will tell
-|MP|, where your other programs (in particular |CLASS|) are installed, and
-where you are storing the data for the likelihoods. It will be interpreted as a
-python file, so be careful to reproduce the syntax exactly. At minimum, {\bf
-default.conf} should contain one line, filled with the path of your
-:code:`class/` directory:
+You will have to create one file holding the path of the codes you want to use.
+There is a predefined template, :code:`default.conf.template`, in the root
+directory of the code. You should copy it to a new file called
+:code:`default.conf`, which will tell |MP|, where your other programs (in
+particular |CLASS|) are installed, and where you are storing the data for the
+likelihoods. It will be interpreted as a python file, so be careful to
+reproduce the syntax exactly. At minimum, **default.conf** should contain one
+line, filled with the path of your :code:`class/` directory:
 
 .. code::
 
