@@ -267,6 +267,11 @@ def get_tex_name(name, number=1):
         this case, please use an extra plot file with the command line option
         :code:`-extra plot_file`, or come up with a better function !
 
+    .. note::
+
+        This function returns immediatly with the unmodified name if it already
+        contains the LaTeX symbol for math, $.
+
     Parameters
     ----------
     name : str
@@ -278,6 +283,9 @@ def get_tex_name(name, number=1):
         Scale
 
     """
+    # First, if the name already contains $ signs, returns it unmodified
+    if name.find("$") != -1:
+        return name
     tex_greek = ['omega', 'tau', 'alpha', 'beta', 'delta', 'nu',
                  'Omega', 'Lambda', 'lambda']
     for elem in tex_greek:
