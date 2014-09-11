@@ -374,6 +374,11 @@ def compute_posterior(information_instances):
     # Obviously, since plotted parameters contain potentially names not
     # contained in some files (in case of a comparison), native index might be
     # undefined.
+    # Defined the legends object, which will store the plot style, to display
+    # at the level of the figure
+    legends = [None for _ in range(len(information_instances))]
+    legend_names = [info.basename.replace('_', ' ')
+                    for info in information_instances]
     print '-----------------------------------------------'
     for index, name in enumerate(plotted_parameters):
 
@@ -428,9 +433,10 @@ def compute_posterior(information_instances):
         for info in information_instances:
             if not info.ignore_param:
                 if conf.plot_2d:
-                    ax2d.plot(info.interp_grid, info.interp_hist,
-                              linewidth=info.line_width, ls='-')
-
+                    plot = ax2d.plot(
+                        info.interp_grid, info.interp_hist,
+                        linewidth=info.line_width, ls='-')
+                    legends[info.id] = plot[0]
                     ax2d.set_xticks(info.ticks[info.native_index])
                     if conf.legend_style == 'top':
                         ax2d.set_title(
@@ -658,6 +664,9 @@ def compute_posterior(information_instances):
         plot_name = '-vs-'.join([os.path.split(elem.folder)[-1]
                                 for elem in information_instances])
         if conf.plot_2d:
+            if len(legends) > 1:
+                fig2d.legend(legends, legend_names, 'upper right',
+                             fontsize=info.fontsize)
             fig2d.tight_layout()
             fig2d.savefig(
                 os.path.join(

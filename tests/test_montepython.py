@@ -11,6 +11,7 @@ import datetime
 import shutil
 import re
 import numpy as np
+from itertools import count
 import warnings
 # This discards warning messages (maybe this should be tuned to discard only
 # the ones specifically asked by this code..)
@@ -22,6 +23,7 @@ from montepython import parser_mp
 from montepython import sampler
 from montepython.initialise import initialise
 from montepython.run import run
+from montepython.analyze import Information
 
 
 class TestMontePython(unittest.TestCase):
@@ -103,6 +105,7 @@ class Test02Setup(TestMontePython):
     def tearDown(self):
         del self.custom_command
         del self.cosmo, self.data, self.command_line
+
         shutil.rmtree(self.folder)
         del self.date
 
@@ -415,6 +418,8 @@ class Test06MetropolisHastingsImportanceSampling(TestMontePython):
                 os.path.join(self.folder, 'plots')):
             self.assertTrue(
                 pdf_file.find('_triangle') != -1 or pdf_file.find('_1d') != -1)
+        # Reset the "Information._id"
+        Information._ids = count(0)
         ## Run an Importance sampling run on this data
         is_folder = self.folder + '_is'
         custom_command = (
