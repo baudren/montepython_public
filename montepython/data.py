@@ -157,7 +157,7 @@ class Data(object):
 
         # Arguments for PyMultiNest
         self.NS_param_names = []
-        self.NS_arguments   = {}
+        self.NS_arguments = {}
         """
         Dictionary containing the parameters needed by the PyMultiNest sampler.
         It is filled just before the run of the sampler.  Those parameters not
