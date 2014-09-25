@@ -26,8 +26,8 @@ computations afterwards.
     has to be installed -- it is an 8-fold improvement in speed over numpy, and
     a 2-fold improvement over a fast Python implementation. The "numexpr"
     library is also needed for doing the fast array manipulations, done with
-    blas daxpy function in the original c++ code. Both can be install with pip
-    (Python package manager) easily.
+    blas daxpy function in the original c++ code. Both can be installed with
+    pip (Python package manager) easily.
 
 """
 import os
@@ -55,7 +55,17 @@ class JLA(Likelihood_sn):
 
     def __init__(self, path, data, command_line):
 
-        Likelihood_sn.__init__(self, path, data, command_line)
+        # Unusual construction, since the data files are not distributed
+        # alongside JLA (size problems)
+        try:
+            Likelihood_sn.__init__(self, path, data, command_line)
+        except IOError:
+            raise io_mp.LikelihoodError(
+                "The JLA data files were not found. Please download the "
+                "following link "
+                "http://supernovae.in2p3.fr/sdss_snls_jla/jla_likelihood_v4.tgz"
+                ", extract it, and copy all files present in "
+                "`jla_likelihood_v4/data` to `montepython/data/JLA`")
 
         # Load matrices from text files, whose names were read in the
         # configuration file
