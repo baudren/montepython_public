@@ -122,8 +122,7 @@ class JLA(Likelihood_sn):
         C01, C02, C12 = self.C01, self.C02, self.C12
         cov = ne.evaluate(
             "(C00 + alpha**2*C11 + beta**2*C22"
-            "+2.*alpha*C01 -2.*beta*C02"
-            "-2.*alpha*beta*C12)")
+            "+2.*alpha*C01 -2.*beta*C02 -2.*alpha*beta*C12)")
 
         # Compute the residuals (estimate of distance moduli - exact moduli)
         residuals = np.empty((size,))
@@ -146,9 +145,10 @@ class JLA(Likelihood_sn):
         # Whiten the residuals, in two steps
         # 1) Compute the Cholesky decomposition of the covariance matrix, in
         # place. This is a time expensive (0.015 seconds) part
-        cov = la.cholesky(cov, lower=False, overwrite_a=True)
+        cov = la.cholesky(cov, lower=True, overwrite_a=True)
+
         # 2) Solve the triangular system, also time expensive (0.02 seconds)
-        residuals = la.solve_triangular(cov, residuals, check_finite=False)
+        residuals = la.solve_triangular(cov, residuals, lower=True, check_finite=False)
 
         # Finally, compute the chi2 as the sum of the squared residuals
         chi2 = (residuals**2).sum()

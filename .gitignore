@@ -31,3 +31,6 @@ montepython.png
 build/
 dist/
 *.egg-info/
+
+# Ignore the JLA files if present
+data/JLA/
