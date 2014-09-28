@@ -60,7 +60,7 @@ class JLA_simple(Likelihood_sn):
         residuals = sn.mu - (M+moduli)
 
         # Whiten the residuals
-        residuals = la.solve_triangular(self.C00, residuals,
+        residuals = la.solve_triangular(self.C00, residuals, lower=True,
                                         check_finite=False)
 
         chi2 = (residuals**2).sum()

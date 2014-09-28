@@ -87,17 +87,13 @@ class JLA(Likelihood_sn):
         # Recover the distance moduli from CLASS (a size N vector of double
         # containing the predicted distance modulus for each SN in the JLA
         # sample, given the redshift of the supernova.)
-        # luminosity_distance returns (comoving_distance(z_cmb) * (1+z_cmb)),
-        # whereas the quantity needed for the computation is
-        # (comoving_distance(z_cmb) * (1+z_h))
         redshifts = self.light_curve_params.zcmb
         size = redshifts.size
 
         moduli = np.empty((size, ))
         for index, row in self.light_curve_params.iterrows():
-            z_cmb, z_hel = row['zcmb'], row['zhel']
-            moduli[index] = cosmo.luminosity_distance(z_cmb)*(
-                1.+z_hel)/(1.+z_cmb)
+            z_cmb = row['zcmb']
+            moduli[index] = cosmo.luminosity_distance(z_cmb)
         moduli = 5 * np.log10(moduli) + 25
 
         # Convenience variables: store the nuisance parameters in short named
