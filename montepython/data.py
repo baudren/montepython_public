@@ -432,7 +432,9 @@ class Data(object):
                     " as asked in the parameter file, and failed."
                     " Please make sure it is in the `montepython/"
                     "likelihoods` folder, and is a proper python "
-                    "module.")
+                    "module. Check also that the name of the class"
+                    " defined in the __init__.py matches the name "
+                    "of the folder.")
             # Initialize the likelihoods. Depending on the values of
             # command_line and log_flag, the routine will call slightly
             # different things. If log_flag is True, the log.param will be
