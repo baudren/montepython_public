@@ -37,7 +37,7 @@ class bao_boss(Likelihood):
         self.type = np.array([], 'int')
 
         # read redshifts and data points
-        with open(os.path.join(self.data_directory, self.file), 'r') as filein: 
+        with open(os.path.join(self.data_directory, self.file), 'r') as filein:
             for line in filein:
                 if line.find('#') == -1:
                     # the first entry of the line is the identifier
@@ -82,6 +82,8 @@ class bao_boss(Likelihood):
             elif self.type[i] == 6:
                 theo = 1. / cosmo.Hubble(self.z[i]) / rs
 
+            elif self.type[i] == 7:
+                theo = rs * self.rs_rescale / dv
             else:
                 raise io_mp.LikelihoodError(
                     "In likelihood %s. " % self.name +
