@@ -1,10 +1,13 @@
 v2.1.0: + Implemented the JLA new SuperNovae analysis (arXiv:1401.4064). There
 	  are two versions available, 'JLA' and 'JLA_simple' (the latter being a
-	  faster version of the former, so they are mutually exclusive).
-	+ Implemented the POLARBEAR likelihood (measurement of the BB spectrum
-	  in four bins at large ell, see arXiv:1403.2369).
+	  faster version of the former, so they are mutually exclusive). Thanks
+	  to Martin Kunz, Stefano Foffa, Yves Dirian and Valeria Pettorino for
+	  their testing and help in debugging. The data being massive, you are
+	  asked to download it manually.
         + Euclid fiducial likelihoods have been cleaned, and adapted to the
           latest version of the wrapper
+	+ Implemented the POLARBEAR likelihood (measurement of the BB spectrum
+	  in four bins at large ell, see arXiv:1403.2369).
         + Major rewriting of the 'analyze' module. Now handles arbitrary number
           of folders/set of files. The '--comp' flag has been removed - you
           simply specify more elements to the 'info' call.
@@ -25,6 +28,8 @@ v2.1.0: + Implemented the JLA new SuperNovae analysis (arXiv:1401.4064). There
 	  Francesco Montesano.
 	+ added a '--silent' option to avoid printing on-screen the steps in
 	  parameter space.
+	+ Fixed bao_2013.txt data, it now uses the right sound horizon, thanks
+	  to Martin Kunz, Stefano Foffa and Yves Dirian for finding it.
         + Monte Python is now under the MIT License (permissive BSD-type
           license)
 
