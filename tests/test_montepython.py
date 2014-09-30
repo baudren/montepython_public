@@ -11,6 +11,7 @@ import datetime
 import shutil
 import re
 import numpy as np
+from itertools import count
 import warnings
 # This discards warning messages (maybe this should be tuned to discard only
 # the ones specifically asked by this code..)
@@ -22,6 +23,7 @@ from montepython import parser_mp
 from montepython import sampler
 from montepython.initialise import initialise
 from montepython.run import run
+from montepython.analyze import Information
 
 
 class TestMontePython(unittest.TestCase):
@@ -103,6 +105,7 @@ class Test02Setup(TestMontePython):
     def tearDown(self):
         del self.custom_command
         del self.cosmo, self.data, self.command_line
+
         shutil.rmtree(self.folder)
         del self.date
 
@@ -256,7 +259,7 @@ class Test04CosmologicalCodeWrapper(TestMontePython):
         self.assertTrue(self.cosmo.state)
         raw_cl = self.cosmo.raw_cl()
         self.assertIsInstance(raw_cl, dict)
-        expected_keys = ['tt', 'te', 'ee', 'bb', 'pp', 'tp']
+        expected_keys = ['ell', 'tt', 'te', 'ee', 'bb', 'pp', 'tp']
         for key in raw_cl.iterkeys():
             self.assertIn(key, expected_keys)
         self.cosmo.struct_cleanup()
@@ -264,12 +267,12 @@ class Test04CosmologicalCodeWrapper(TestMontePython):
 
     def test_lensed_cl_behaviour(self):
         """Are the lensed Cls well behaved?"""
-        self.cosmo.set({'output': 'lCl'})
+        self.cosmo.set({'output': 'lCl pCl', 'lensing': 'yes'})
         self.cosmo.compute()
         self.assertTrue(self.cosmo.state)
         lensed_cl = self.cosmo.lensed_cl()
         self.assertIsInstance(lensed_cl, dict)
-        expected_keys = ['tt', 'te', 'ee', 'bb', 'pp', 'tp']
+        expected_keys = ['ell', 'tt', 'te', 'ee', 'bb', 'pp', 'tp']
         for key in lensed_cl.iterkeys():
             self.assertIn(key, expected_keys)
         self.cosmo.struct_cleanup()
@@ -415,6 +418,8 @@ class Test06MetropolisHastingsImportanceSampling(TestMontePython):
                 os.path.join(self.folder, 'plots')):
             self.assertTrue(
                 pdf_file.find('_triangle') != -1 or pdf_file.find('_1d') != -1)
+        # Reset the "Information._id"
+        Information._ids = count(0)
         ## Run an Importance sampling run on this data
         is_folder = self.folder + '_is'
         custom_command = (
@@ -425,8 +430,8 @@ class Test06MetropolisHastingsImportanceSampling(TestMontePython):
         # the multiplicity has been changed
         self.assertIn(output_chain, os.listdir(is_folder),
                       "The IS did not create the right chain")
-        # Use these two runs to test the "--comp" option
-        custom_command = 'info %s --comp %s --plot-2d always' % (
+        # Use these two runs to test the several folders option
+        custom_command = 'info %s %s' % (
             self.folder, is_folder)
         run(custom_command)
         # Check that all expected files were created
@@ -483,6 +488,7 @@ class Test08NestedSamplingBehaviour(TestMontePython):
 
     def tearDown(self):
         shutil.rmtree(self.folder)
+        self.cosmo.struct_cleanup()
         self.cosmo.empty()
         del self.cosmo, self.data, self.command_line
 

@@ -5,6 +5,7 @@
 
 """
 from initialise import initialise
+from data import Data
 import io_mp
 import sys
 import warnings
@@ -49,13 +50,17 @@ def mpi_run(custom_command=""):
     """
     Launch a simple MPI run, with no communication of covariance matrix
 
-    It simply allows the first process to create the folder - so that the
-    log.param is properly written. A signal is then send to the other
-    processes, that contains the chain number of the parent run.
+    Each process will make sure to initialise the folder if needed. Then and
+    only then, it will send the signal to its next in line to proceed. This
+    allows for initialisation over an arbitrary cluster geometry (you can have
+    a single node with many cores, and all the chains living there, or many
+    nodes with few cores). The speed loss due to the time spend checking if the
+    folder is created should be negligible when running decently sized chains.
 
-    In order to be sure to have different chain numbers, it adds the rank of
-    the process and the initial job number - this should avoid conflict, but
-    can be subject of future improvements
+    Each process will send the number that it found to be the first available
+    to its friends, so that the gathering of information post-run is made
+    easier. If a chain number is specified, this will be used as the first
+    number, and then incremented afterwards with the rank of the process.
     """
 
     from mpi4py import MPI
@@ -63,57 +68,76 @@ def mpi_run(custom_command=""):
     comm = MPI.COMM_WORLD
     nprocs = comm.Get_size()
     rank = comm.Get_rank()
-    # this will be the master cpu. This guy will create - or append - a folder,
-    # being sure to be the first to do so.
-    if rank == 0:
-        # First initialisation
-        cosmo, data, command_line, success = safe_initialisation(
-            custom_command, comm, nprocs)
 
-        # Check that the run asked is compatible with mpirun and prepare.
-        if command_line.subparser_name == 'info':
-            warnings.warn(
-                "Analyzing the chains is not supported in mpirun"
-                " so this will run on one core only.")
-            status = 'failed'
-        elif command_line.method == "MH":
-            regexp = re.match(".*__(\w*).txt", data.out_name)
-            suffix = regexp.groups()[0]
-            status = suffix
-        elif command_line.method == "NS":
-            status = 1
-        else:
-            warnings.warn(
-                "The method '%s' is not supported"%(command_line.method) +
-                " in mpirun so this will run on one core only.")
-            status = 'failed'
+    success = True
+    folder = ''
 
-        # Send an "OK" signal to all the other processes, actually giving the
-        # suffix of this master chain. All the other will add 1 to this number
-        for index in range(1, nprocs):
-            comm.send(status, dest=index, tag=1)
-    else:
-        # If the rank is not 0, it is a slave process. It waits to receive the
-        # "OK" message, which is immediatly discarded.
-        status = comm.recv(source=0, tag=1)
-
-        # If a failed message was passed, exit the process
+    # If the process is not the zeroth one, then wait for a signal from your
+    # n-1 before initializing the folder
+    if rank != 0:
+        status = comm.recv(source=rank-1, tag=1)
+        folder = comm.recv(source=rank-1, tag=2)
         if status == 'failed':
             success = False
         else:
-            # Concatenate the rank to the suffix, and not the opposite, this
-            # should avoid any conflicting name
-            if not custom_command:
-                custom_command = " ".join(sys.argv[1:])
-            suffix = status
-            custom_command += " --chain-number %s" % str(int(suffix)+rank)
-            cosmo, data, command_line, success = initialise(custom_command)
+            number = status
+
+    if success:
+        if not custom_command:
+            custom_command = " ".join(sys.argv[1:])
+        if rank != 0:
+            custom_command += " --chain-number %s" % str(int(number)+1)
+
+        # First check if the folder is there
+        already_sent = False
+        if rank != 0 and rank < nprocs-1:
+            status = int(number)+1
+            if Data.folder_is_initialised(folder):
+                comm.send(status, dest=rank+1, tag=1)
+                comm.send(folder, dest=rank+1, tag=2)
+                already_sent = True
+
+        # Then, properly initialise
+        cosmo, data, command_line, success = safe_initialisation(
+            custom_command, comm, nprocs)
+
+        # The first initialisation should check a few more things
+        if rank == 0:
+            # Check that the run asked is compatible with mpirun and prepare.
+            if command_line.subparser_name == 'info':
+                warnings.warn(
+                    "Analyzing the chains is not supported in mpirun"
+                    " so this will run on one core only.")
+                status = 'failed'
+            elif command_line.method == "MH":
+                regexp = re.match(".*__(\w*).txt", data.out_name)
+                suffix = regexp.groups()[0]
+                status = suffix
+            elif command_line.method == "NS":
+                status = 1
+            else:
+                warnings.warn(
+                    "The method '%s' is not supported"%(command_line.method) +
+                    " in mpirun so this will run on one core only.")
+                status = 'failed'
+            folder = data.out_name
+        elif rank < nprocs-1:
+            status = int(number)+1
+        # Send an "OK" signal to the next in line, giving the its own chain
+        # number for the other to add 1
+        if rank < nprocs-1:
+            if not already_sent:
+                comm.send(status, dest=rank+1, tag=1)
+                comm.send(folder, dest=rank+1, tag=2)
+    else:
+        if rank < nprocs-1:
+            comm.send('failed', dest=rank+1, tag=1)
+            comm.send('', dest=rank+1, tag=2)
 
     if success:
         import sampler
         sampler.run(cosmo, data, command_line)
 
-    success = comm.gather(success, root=0)
     return
 
 
@@ -172,7 +196,7 @@ def safe_initialisation(custom_command="", comm=None, nprocs=1):
             "potentially half created `log.param`. Please see the "
             "above error message. If you run the exact same command, it"
             " will not work. You should solve the problem, and try again.")
-    except KeyError:
+    except KeyError as e:
         if comm:
             for index in range(1, nprocs):
                 comm.send('failed', dest=index, tag=1)
@@ -180,7 +204,8 @@ def safe_initialisation(custom_command="", comm=None, nprocs=1):
             "You are running in a folder that was created following "
             "a non-successful initialisation (wrong parameter name, "
             "wrong likelihood, etc...). If you have solved the issue, you "
-            "should remove completely the output folder, and try again.")
+            "should remove completely the output folder, and try again." +
+            " Alternatively, there could be a problem with "+e.message)
     return cosmo, data, command_line, success
 
 

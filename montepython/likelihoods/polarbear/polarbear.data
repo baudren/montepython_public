@@ -1,0 +1,5 @@
+# Data from http://arxiv.org/abs/1403.2369
+polarbear.data_directory = os.path.join(data.path['data'], 'polarbear')
+polarbear.bandpower_file = 'POLARBEAR_First_Data_Release_Bandpowers_2014-04-03.txt'
+# Band power window function
+polarbear.bpwf_file      = 'POLARBEAR_First_Data_Release_Band_Power_Window_Function_2014-04-03.txt'

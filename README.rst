@@ -3,10 +3,14 @@ Monte Python, a Monte Carlo Markov Chain code (with Class!)
 ===========================================================
 
 :Author: Benjamin Audren <benjamin.audren@epfl.ch>
+:License: MIT
 
 
 If you are searching for specific examples of a work session, please refer to
-the pdf documentation.
+the pdf documentation. The code is under the MIT license. As an additional
+clause, you are also required to cite the original release paper when using it
+in a scientific publication: `Conservative Constraints on Early Cosmology` (see
+the tail of this document)
 
 
 Prerequisites
@@ -163,11 +167,11 @@ Now the code is installed. Go anywhere, and just call
     $ python montepython/MontePython.py run --help
     $ python montepython/MontePython.py info --help
 
-To see a list of all commands. For there `run` subcommand, there are two
-essential ones, without which the program will not start. At minimum, you should
-precise an output folder (`-o`) and a parameter file (`-p`). An example of
-parameter file is found in the main directory of MontePython (`test.param`, for
-instance).
+To see a list of all commands. For the `run` subcommand, there are two
+essential ones, without which the program will not start. At minimum, you
+should precise an output folder (`-o`) and a parameter file (`-p`). An example
+of parameter file is found in the main directory of MontePython (`test.param`,
+for instance).
 
 A typical call would then be:
 
@@ -175,9 +179,9 @@ A typical call would then be:
 
     $ python montepython/MontePython.py run -o test -p example.param
 
-If non existent, the `test/` folder will be created, and a run with the
-number of steps described in `example.param` will be started. To run a chain with
-more steps, one can type:
+If non existent, the `test/` folder will be created, and a run with the number
+of steps described in `example.param` will be started. To run a chain with more
+steps, one can type:
 
 .. code::
 
@@ -189,8 +193,43 @@ If you want to analyse the run, then just type
 
     $ python montepython/MontePython.py info test/
 
+Note that you probably want more than a hundred points before analyzing a
+folder.
 
 Details and Examples
 --------------------
 
-Please refer to the pdf or online documentation for further details.
+Please refer to the pdf or online documentation for further details. The `wiki
+<https://github.com/baudren/montepython_public/wiki>`_ contains additional
+details on installation. The `forum
+<https://github.com/baudren/montepython_public/issues>`_ also contains a
+collection of already answered questions, and can be used to discuss the code.
+
+
+Bibtex entry
+------------
+
+When using *Monte Python* in a publication, please acknowledge the code by citing
+the following paper. If you used *Class*, *Nested Sampling* or *Cosmo Hammer*,
+you should also cite the original works.
+
+.. code::
+
+    @article{Audren:2012wb,
+          author         = "Audren, Benjamin and Lesgourgues, Julien and Benabed,
+                            Karim and Prunet, Simon",
+          title          = "{Conservative Constraints on Early Cosmology: an
+                            illustration of the Monte Python cosmological parameter
+                            inference code}",
+          journal        = "JCAP",
+          volume         = "1302",
+          pages          = "001",
+          doi            = "10.1088/1475-7516/2013/02/001",
+          year           = "2013",
+          eprint         = "1210.7183",
+          archivePrefix  = "arXiv",
+          primaryClass   = "astro-ph.CO",
+          reportNumber   = "CERN-PH-TH-2012-290, LAPTH-048-12",
+          SLACcitation   = "%%CITATION = ARXIV:1210.7183;%%",
+    }
+

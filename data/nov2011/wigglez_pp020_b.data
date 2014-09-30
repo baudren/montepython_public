@@ -1,0 +1,27 @@
+# Both quantities are in Mpc
+WiggleZ_b.d_angular_fid = 1134.87
+WiggleZ_b.d_radial_fid = 3511.96
+
+WiggleZ_b.Q_marge = False
+WiggleZ_b.Q_mid = 4.0
+WiggleZ_b.Q_sigma = 1.5
+WiggleZ_b.Ag = 1.4
+WiggleZ_b.Use_jennings = False
+WiggleZ_b.Use_simpledamp = False
+WiggleZ_b.sigmav = 308
+
+WiggleZ_b.giggleZ_fidpoly=[4.63079, -12.6293, 42.9265, -91.8068, 97.808, -37.633]
+WiggleZ_b.giggleZ_fidpk_file = 'gigglezfiducialmodel_matterpower_b.dat'
+WiggleZ_b.giggleZ_fidpk_size = 500
+
+WiggleZ_b.redshift = 0.41
+
+WiggleZ_b.has_regions = True
+# regions ordered like in WiggleZ data files:
+# 9-hr, 11-hr, 15-hr, 22-hr, 0-hr, 1-hr, 3-hr
+WiggleZ_b.used_region = [True, True, True, True, True, True, True]
+
+WiggleZ_b.windows_file = 'wigglez_nov11b_windows.txt'
+WiggleZ_b.kbands_file = 'wigglez_nov11_kbands.txt'
+WiggleZ_b.measurements_file = 'wigglez_nov11b_measurements.txt'
+WiggleZ_b.covmat_file = 'wigglez_nov11b_cov.txt'

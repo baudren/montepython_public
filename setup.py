@@ -39,6 +39,6 @@ setup(name='montepython',
       author_email='benjamin.audren@epfl.ch',
       url='http://www.montepython.net/',
       packages=PACKAGES,
-      install_requires=['argparse'],
+      install_requires=['argparse', 'numpy>=1.4.1', 'cython', 'scipy'],
       data_files=DATA_FILES,
       )

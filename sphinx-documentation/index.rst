@@ -20,13 +20,14 @@ same information interactively by asking:
 
 .. code::
 
-  python montepython/MontePython.py -h
+  python montepython/MontePython.py -h / --help
   python montepython/MontePython.py run -h
   python montepython/MontePython.py info -h
 
 The first one gives you all the possible modes for running (:code:`run`, or
 :code:`info`), while the other two give you the information specific for each
-modes.
+modes. Note that asking for :code:`-h` or :code:`--help` will result in using a
+short or long format for the help.
 
 Contents:
 

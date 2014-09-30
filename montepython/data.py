@@ -157,13 +157,11 @@ class Data(object):
 
         # Arguments for PyMultiNest
         self.NS_param_names = []
-        self.NS_arguments   = {}
+        self.NS_arguments = {}
         """
         Dictionary containing the parameters needed by the PyMultiNest sampler.
         It is filled just before the run of the sampler.  Those parameters not
         defined will be set to the default value of PyMultiNest.
-
-        TODO: ADD PROPER REFERENCES TO DOCUMENTATION.
 
         :rtype: dict
         """
@@ -366,6 +364,17 @@ class Data(object):
             self.read_file(self.param, 'data', field='path')
         self.read_file(self.param, 'data')
 
+        # Test here whether the number of parameters extracted correspond to
+        # the number of lines (to make sure no doublon is present)
+        number_of_parameters = sum(
+            [1 for l in open(self.param, 'r') if l and l.find('#') == -1
+             and l.find('data.parameters[') != -1])
+        if number_of_parameters != len(self.parameters):
+            raise io_mp.ConfigurationError(
+                "You probably have two lines in your parameter files with "
+                "the same parameter name. This is most probably an error, "
+                "which will cause problems down the line. Please fix this.")
+
         # Do the same for every experiments - but only if you are starting a
         # new folder. Otherwise, this step will actually be done when
         # initializing the likelihood.
@@ -417,13 +426,16 @@ class Data(object):
             try:
                 exec "from likelihoods.%s import %s" % (
                     elem, elem)
-            except ImportError:
+            except ImportError as message:
                 raise io_mp.ConfigurationError(
                     "Trying to import the %s likelihood" % elem +
                     " as asked in the parameter file, and failed."
                     " Please make sure it is in the `montepython/"
                     "likelihoods` folder, and is a proper python "
-                    "module.")
+                    "module. Check also that the name of the class"
+                    " defined in the __init__.py matches the name "
+                    "of the folder. In case this is not enough, "
+                    "here is the original message: %s\n" % message)
             # Initialize the likelihoods. Depending on the values of
             # command_line and log_flag, the routine will call slightly
             # different things. If log_flag is True, the log.param will be
@@ -432,10 +444,14 @@ class Data(object):
                 exec "self.lkl['%s'] = %s('%s/%s.data',\
                     self, self.command_line)" % (
                     elem, elem, folder, elem)
-            except KeyError:
-                raise io_mp.ConfigurationError(
-                    "You should provide a 'clik' entry in the dictionary "
-                    "path defined in the file default.conf")
+            except KeyError as e:
+                if e.find('clik') != -1:
+                    raise io_mp.ConfigurationError(
+                        "You should provide a 'clik' entry in the dictionary "
+                        "path defined in the file default.conf")
+                else:
+                    raise io_mp.ConfigurationError(
+                        "The following key: '%s' was not found" % e)
 
     def read_file(self, param, structure, field='', separate=False):
         """
@@ -474,7 +490,8 @@ class Data(object):
             the structure field, so instead of appending to the namespace of
             the data instance, it will append to a sub-namespace named in the
             same way that the desired structure. This is used to extract custom
-            values from the likelihoods.
+            values from the likelihoods, allowing to specify values for the
+            likelihood directly in the parameter file.
 
         """
         if separate:
@@ -624,13 +641,15 @@ class Data(object):
             List of strings whose role and status must be matched by a
             parameter. For instance,
 
-            >>> Data.get_mcmc_parameters(['varying'])
+            >>> data.get_mcmc_parameters(['varying'])
+            ['omega_b', 'h', 'amplitude', 'other']
 
             will return a list of all the varying parameters, both
             cosmological and nuisance ones (derived parameters being `fixed`,
             they wont be part of this list). Instead,
 
-            >>> Data.get_mcmc_parameters(['nuisance', 'varying'])
+            >>> data.get_mcmc_parameters(['nuisance', 'varying'])
+            ['amplitude', 'other']
 
             will only return the nuisance parameters that are being varied.
 
@@ -706,6 +725,17 @@ class Data(object):
             can redefine its behaviour here. You will find in the source
             several such examples.
 
+        .. note::
+
+            For complex CLASS parameters, that expect a string of numbers
+            separated with commas, you can now use the name of the argument,
+            for instance :code:`m_ncdm`, then append a double underscore and a
+            number. So if you run with two cosmological parameters,
+            :code:`m_ncdm__1` and :code:`m_ncdm__2`, this function will
+            automatically concatenate the two and feed class :code:`m_ncdm`.
+            You still have to make sure that the other variables are properly
+            set, like :code:`N_ncdm` to 2, in this example.
+
         """
         # For all elements in any cosmological parameters
         for elem in self.get_mcmc_parameters(['cosmo']):
@@ -727,54 +757,81 @@ class Data(object):
                     (omega_b+omega_cdm) / (1.-Omega_Lambda))
                 del self.cosmo_arguments[elem]
             # infer omega_cdm from Omega_L and delete Omega_L
-            if elem == 'Omega_L':
+            elif elem == 'Omega_L':
                 omega_b = self.cosmo_arguments['omega_b']
                 h = self.cosmo_arguments['h']
                 Omega_L = self.cosmo_arguments['Omega_L']
                 self.cosmo_arguments['omega_cdm'] = (1.-Omega_L)*h*h-omega_b
                 del self.cosmo_arguments[elem]
-            if elem == 'ln10^{10}A_s':
+            elif elem == 'ln10^{10}A_s':
                 self.cosmo_arguments['A_s'] = math.exp(
                     self.cosmo_arguments[elem]) / 1.e10
                 del self.cosmo_arguments[elem]
-            if elem == 'exp_m_2_tau_As':
+            elif elem == 'exp_m_2_tau_As':
                 tau_reio = self.cosmo_arguments['tau_reio']
                 self.cosmo_arguments['A_s'] = self.cosmo_arguments[elem] * \
                     math.exp(2.*tau_reio)
                 del self.cosmo_arguments[elem]
-            if elem == 'f_cdi':
+            elif elem == 'f_cdi':
                 self.cosmo_arguments['n_cdi'] = self.cosmo_arguments['n_s']
-            if elem == 'beta':
+            elif elem == 'beta':
                 self.cosmo_arguments['alpha'] = 2.*self.cosmo_arguments['beta']
-            # We only do that on xe_1, for there is at least one of them.
-            if elem.find('xe_1') != -1:
-                # To pass this option, you must have set a number of
-                # cosmological settings reio_parametrization to reio_bins_tanh,
-                # binned_reio_z set, and binned_reio_num First, you need to set
-                # reio_parametrization to reio_bins_tanh
-                if (self.cosmo_arguments['reio_parametrization'] !=
-                        'reio_bins_tanh'):
-                    raise io_mp.CosmologicalModuleError(
-                        "You set binned_reio_xe to some values " +
-                        "without setting reio_parametrization to " +
-                        "reio_bins_tanh")
-                else:
-                    try:
-                        size = self.cosmo_arguments['binned_reio_num']
-                    except (KeyError):
-                        raise io_mp.CosmologicalModuleError(
-                            "You need to set reio_binnumber to the value" +
-                            " corresponding to the one in binned_reio_xe")
-                string = ''
-                for i in range(1, size+1):
-                    string += '%.4g' % self.cosmo_arguments['xe_%d' % i]
-                    del self.cosmo_arguments['xe_%d' % i]
-                    if i != size:
-                        string += ','
-                self.cosmo_arguments['binned_reio_xe'] = string
-            if elem == 'M_tot':
+            elif elem == 'M_tot':
                 self.cosmo_arguments['m_ncdm'] = self.cosmo_arguments['M_tot']/3.
                 del self.cosmo_arguments[elem]
+            # Finally, deal with all the parameters ending with __i, where i is
+            # an integer. Replace them all with their name without the trailing
+            # double underscore, concatenated with each other. The test is
+            # always on the one ending with __1, as it will be the first on the
+            # list, and deal with all the others.
+            elif re.search(r'__1', elem):
+                original_name = re.search(r'(.*)__1', elem).groups()[0]
+                # Recover the values of all the other elements
+                values = [self.cosmo_arguments[elem]]
+                for other_elem in self.get_mcmc_parameters(['cosmo']):
+                    match = re.search(r'%s__([2-9])' % original_name,
+                                      other_elem)
+                    if match:
+                        values.append(self.cosmo_arguments[other_elem])
+                # create the cosmo_argument
+                self.cosmo_arguments[original_name] = ', '.join(
+                    ['%g' % value for value in values])
+                # Delete the now obsolete entries of the dictionary
+                for index in range(1, len(values)+1):
+                    del self.cosmo_arguments[
+                        original_name + '__%i' % index]
+
+    @staticmethod
+    def folder_is_initialised(folder):
+        """
+        Static method to call for checking if a folder was already initialised
+
+        This method can be used to speed up the mpi initialisation in
+        :mod:`run`. If a process finds that the folder is already a proper
+        Monte Python one, it sends directly a 'go' signal to its next in line.
+
+        .. warning::
+
+            This method assumes that the last lines of the log.param are the
+            path indication. If this would ever change, adjust this method
+            accordingly.
+
+        """
+        # If the folder is not there, easy answer: False!
+        if not os.path.isdir(folder):
+            return False
+        # Recover the log.param from the folder, and assert it exists
+        log_param_path = os.path.join(folder, 'log.param')
+        if not os.path.isfile(log_param_path):
+            return False
+        # Quickly load it to a string, and assert that the path has been
+        # written (which are the last lines)
+        with open(log_param_path, 'r') as log_param:
+            text = log_param.readlines()
+            if text[-1].find('path[') != -1:
+                return True
+            else:
+                return False
 
     def __cmp__(self, other):
         """
@@ -938,3 +995,13 @@ class Parameter(dict):
 class Container(object):
     """Dummy class to act as a namespace for data"""
     pass
+
+
+if __name__ == "__main__":
+    import doctest
+    import shutil
+    from initialise import initialise
+    folder = os.path.join('tests', 'doc')
+    cosmo, data, command_line, _ = initialise('-o %s -p test.param' % folder)
+    doctest.testmod(extraglobs={'data': data})
+    shutil.rmtree(folder)

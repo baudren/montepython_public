@@ -58,12 +58,16 @@ def run(cosmo, data, command_line):
             "When running importance sampling, you should specify a folder or"
             " a set of chains with the option '--IS-starting-folder'")
     chains = []
+    # If starting_folder is of length 1, it means it is either a whole folder,
+    # or just one chain. If it is a folder, we recover all chains within.
     if len(starting_folder) == 1:
         starting_folder = starting_folder[0]
         if os.path.isdir(starting_folder):
             for elem in os.listdir(starting_folder):
                 if elem.find("__") != -1:
                     chains.append(elem)
+    # Else, it is a list of chains, of which we recover folder name, and store
+    # all of them in chains.
     else:
         chains = starting_folder
         starting_folder = os.path.sep.join(chains[0].split(os.path.sep)[:-1])
@@ -86,7 +90,7 @@ def run(cosmo, data, command_line):
         ignore_likelihood = False
     elif set(new_experiments) == set(data.experiments):
         warnings.warn(
-            "All likelihoods were found to be different than ones fron the "
+            "All likelihoods were found to be different than ones from the "
             "starting folder, or some were not used any longer. The previous "
             "value of the likelihood will be discarded.")
     else:
@@ -94,7 +98,7 @@ def run(cosmo, data, command_line):
             "You probably tried to run Importance Sampling with less "
             "experiments than what you started with. This is not supported.")
 
-    # Multiprocessing part, to analyze all the chains in parralel. When not
+    # Multiprocessing part, to analyze all the chains in parallel. When not
     # specifying any 'processes' keyword argument to the Pool call, the system
     # uses as many as possible.
     pool = Pool()
@@ -141,7 +145,7 @@ def translate_chain(data, cosmo, command_line,
 
     .. note::
 
-        if the keyword argument `ignore_likelihood` is set to true, the
+        If the keyword argument `ignore_likelihood` is set to true, the
         previous value of the likelihood is discarded.
 
     """

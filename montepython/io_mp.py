@@ -267,6 +267,11 @@ def get_tex_name(name, number=1):
         this case, please use an extra plot file with the command line option
         :code:`-extra plot_file`, or come up with a better function !
 
+    .. note::
+
+        This function returns immediatly with the unmodified name if it already
+        contains the LaTeX symbol for math, $.
+
     Parameters
     ----------
     name : str
@@ -278,6 +283,9 @@ def get_tex_name(name, number=1):
         Scale
 
     """
+    # First, if the name already contains $ signs, returns it unmodified
+    if name.find("$") != -1:
+        return name
     tex_greek = ['omega', 'tau', 'alpha', 'beta', 'delta', 'nu',
                  'Omega', 'Lambda', 'lambda']
     for elem in tex_greek:
@@ -302,6 +310,39 @@ def get_tex_name(name, number=1):
             sign = '-'
         name = '$10^{'+sign+m.groups()[0]+'}'+m.groups()[1]
     return name
+
+
+def write_covariance_matrix(covariance_matrix, names, path):
+    """
+    Store the covariance matrix to a file
+    """
+    with open(path, 'w') as cov:
+        cov.write('# %s\n' % ', '.join(['%16s' % name for name in names]))
+
+        for i in range(len(names)):
+            for j in range(len(names)):
+                if covariance_matrix[i][j] > 0:
+                    cov.write(' %.5e\t' % covariance_matrix[i][j])
+                else:
+                    cov.write('%.5e\t' % covariance_matrix[i][j])
+            cov.write('\n')
+
+def write_bestfit_file(bestfit, names, path):
+    """
+    Store the bestfit parameters to a file
+    """
+    with open(path, 'w') as bestfit_file:
+        bestfit_file.write(
+            '# %s\n' % ', '.join(['%16s' % name for name in names]))
+        # Removing scale factors in order to store true parameter values
+        for i in range(len(names)):
+            #bfvalue = chain[a[0], 2+i]*info.scales[i, i]
+            bf_value = bestfit[i]
+            if bf_value > 0:
+                bestfit_file.write(' %.5e\t' % bf_value)
+            else:
+                bestfit_file.write('%.5e\t' % bf_value)
+        bestfit_file.write('\n')
 
 
 def pretty_print(string, status, return_string=False):

@@ -2,9 +2,6 @@
 *~
 *swp
 
-# Potential Makefile
-Makefile
-
 # Files created by mac
 *.DS_Store
 
@@ -34,3 +31,6 @@ montepython.png
 build/
 dist/
 *.egg-info/
+
+# Ignore the JLA files if present
+data/JLA/

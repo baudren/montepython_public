@@ -20,5 +20,6 @@ Contents:
    sampler
    mcmc
    nested_sampling
+   cosmo_hammer
    analyze
    io_mp

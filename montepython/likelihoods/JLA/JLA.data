@@ -1,0 +1,5 @@
+JLA.data_directory = os.path.join(data.path['data'], 'JLA')
+JLA.settings       = 'jla.dataset'
+JLA.conflicting_experiments = ['JLA_simple']
+
+JLA.use_nuisance = ['alpha', 'beta', 'M', 'Delta_M']

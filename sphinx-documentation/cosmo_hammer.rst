@@ -1,7 +1,7 @@
-Nested Sampling module
+Cosmo Hammer module
 ======================
 
-.. automodule:: nested_sampling
+.. automodule:: cosmo_hammer
     :members:
     :undoc-members:
     :show-inheritance:
