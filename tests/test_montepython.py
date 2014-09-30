@@ -267,7 +267,7 @@ class Test04CosmologicalCodeWrapper(TestMontePython):
 
     def test_lensed_cl_behaviour(self):
         """Are the lensed Cls well behaved?"""
-        self.cosmo.set({'output': 'lCl pCl'})
+        self.cosmo.set({'output': 'lCl pCl', 'lensing': 'yes'})
         self.cosmo.compute()
         self.assertTrue(self.cosmo.state)
         lensed_cl = self.cosmo.lensed_cl()

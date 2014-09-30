@@ -1,8 +1,8 @@
-v2.1.0: + Implemented the POLARBEAR likelihood (measurement of the BB spectrum
+v2.1.0: + Implemented the JLA new SuperNovae analysis (arXiv:1401.4064). There
+	  are two versions available, 'JLA' and 'JLA_simple' (the latter being a
+	  faster version of the former, so they are mutually exclusive).
+	+ Implemented the POLARBEAR likelihood (measurement of the BB spectrum
 	  in four bins at large ell, see arXiv:1403.2369).
-        + Implemented the JLA new SuperNovae analysis (arXiv:1401.4064). There
-	  are two versions available, 'JLA' and 'JLA_simple' (the latter being
-	  a faster version of the former, so they are mutually exclusive).
         + Euclid fiducial likelihoods have been cleaned, and adapted to the
           latest version of the wrapper
         + Major rewriting of the 'analyze' module. Now handles arbitrary number
@@ -17,9 +17,12 @@ v2.1.0: + Implemented the POLARBEAR likelihood (measurement of the BB spectrum
         + It is now possible to add derived parameters that were not chosen
           before the run began. Simply list the parameters to follow on an
           existing folder with the flag '-m Der', and the options
-	  '-Der-target-folder' and '-Der-param-list'.
+	  '--Der-target-folder' and '--Der-param-list'.
         + 'mpi_run' method reinforced - should now work on more possible
           configurations.
+	+ Rewriting of the '--help' method, with long information printed if
+	  '--help' is called, and short if '-h' is used instead. Credits to
+	  Francesco Montesano.
 	+ added a '--silent' option to avoid printing on-screen the steps in
 	  parameter space.
         + Monte Python is now under the MIT License (permissive BSD-type
@@ -35,11 +38,11 @@ v2.0.5: + Nested Sampling can now be used with MPI - see the documentation.
 ----------------------------------------------------------------------
 v2.0.4: + Importance Sampling implemented. You can ask for this by specifying
           the method flag to IS, `-m IS`. It also requires a starting folder,
-          `--IS-starting-folder something/` in order to work. The parameter file
-          must be identical to the one in the starting folder, excepted at the
-          level of the likelihoods. The method then reads the existing chains,
-          and compute the new likelihood and multiplicity, and stores this in a
-          new folder.
+	  `--IS-starting-folder something/` in order to work. The parameter file
+	  must be identical to the one in the starting folder, excepted at the
+	  level of the likelihoods. The method then reads the existing chains,
+	  and compute the new likelihood and multiplicity, and stores this in a
+	  new folder.
         + Bug-fix for the previously cleaned parser, notably in the analyze
           module.
 ----------------------------------------------------------------------
