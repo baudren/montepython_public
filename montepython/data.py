@@ -426,7 +426,7 @@ class Data(object):
             try:
                 exec "from likelihoods.%s import %s" % (
                     elem, elem)
-            except ImportError:
+            except ImportError as message:
                 raise io_mp.ConfigurationError(
                     "Trying to import the %s likelihood" % elem +
                     " as asked in the parameter file, and failed."
@@ -434,7 +434,8 @@ class Data(object):
                     "likelihoods` folder, and is a proper python "
                     "module. Check also that the name of the class"
                     " defined in the __init__.py matches the name "
-                    "of the folder.")
+                    "of the folder. In case this is not enough, "
+                    "here is the original message: %s\n" % message)
             # Initialize the likelihoods. Depending on the values of
             # command_line and log_flag, the routine will call slightly
             # different things. If log_flag is True, the log.param will be
