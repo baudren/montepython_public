@@ -30,7 +30,6 @@ computations afterwards.
     pip (Python package manager) easily.
 
 """
-import os
 import numpy as np
 import scipy.linalg as la
 import montepython.io_mp as io_mp
@@ -41,13 +40,6 @@ except ImportError:
         "This likelihood has intensive array manipulations. You "
         "have to install the numexpr Python package. Please type:\n"
         "(sudo) pip install numexpr --user")
-try:
-    from pandas import read_table
-except ImportError:
-    raise io_mp.MissingLibraryError(
-        "This likelihood has a lot of IO manipulation. You have "
-        "to install the 'pandas' library to use it. Please type:\n"
-        "`(sudo) pip install pandas --user`")
 from montepython.likelihood_class import Likelihood_sn
 
 
@@ -65,7 +57,7 @@ class JLA(Likelihood_sn):
                 "following link "
                 "http://supernovae.in2p3.fr/sdss_snls_jla/jla_likelihood_v4.tgz"
                 ", extract it, and copy all files present in "
-                "`jla_likelihood_v4/data` to `montepython/data/JLA`")
+                "`jla_likelihood_v4/data` to `your_montepython/data/JLA`")
 
         # Load matrices from text files, whose names were read in the
         # configuration file
