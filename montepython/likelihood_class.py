@@ -14,6 +14,7 @@ import numpy as np
 import math
 import warnings
 import re
+import scipy.constants as const
 
 import io_mp
 
@@ -1583,3 +1584,36 @@ class Likelihood_sn(Likelihood):
         lc_parameters = read_table(
             path, sep=' ', names=names, header=0, index_col=False)
         return lc_parameters
+
+
+class Likelihood_clocks(Likelihood):
+    """Base implementation of H(z) measurements"""
+
+    def __init__(self, path, data, command_line):
+
+        Likelihood.__init__(self, path, data, command_line)
+
+        # Read the content of the data file, containing z, Hz and error
+        total = np.loadtxt(
+            os.path.join(self.data_directory, self.data_file))
+
+        # Store the columns separately
+        self.z = total[:, 0]
+        self.Hz = total[:, 1]
+        self.err = total[:, 2]
+
+    def loglkl(self, cosmo, data):
+
+        # Store the speed of light in km/s
+        c_light_km_per_sec = const.c/1000.
+        chi2 = 0
+
+        # Loop over the redshifts
+        for index, z in enumerate(self.z):
+            # Query the cosmo module for the Hubble rate (in 1/Mpc), and
+            # convert it to km/s/Mpc
+            H_cosmo = cosmo.Hubble(z)*c_light_km_per_sec
+            # Add to the tota chi2
+            chi2 += (self.Hz[index]-H_cosmo)**2/self.err[index]**2
+
+        return -0.5 * chi2
