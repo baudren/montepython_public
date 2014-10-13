@@ -158,13 +158,12 @@ def get_new_position(data, eigv, U, k, Cholesky, Inverse_Cholesky, Rotation):
 
     # Check for boundaries problems
     flag = 0
-    for elem in parameter_names:
-        i = parameter_names.index(elem)
+    for i, elem in enumerate(parameter_names):
         value = data.mcmc_parameters[elem]['initial']
         if((str(value[1]) != str(-1) and value[1] is not None) and
                 (vector_new[i] < value[1])):
             flag += 1  # if a boundary value is reached, increment
-        elif((str(value[2]) != str(-1) and value[1] is not None) and
+        elif((str(value[2]) != str(-1) and value[2] is not None) and
                 vector_new[i] > value[2]):
             flag += 1  # same
 
@@ -182,9 +181,8 @@ def get_new_position(data, eigv, U, k, Cholesky, Inverse_Cholesky, Rotation):
 
     # If it is not the case, proceed with normal computation. The value of
     # new_vector is then put into the 'current' point in parameter space.
-    for elem in parameter_names:
-        i = parameter_names.index(elem)
-        data.mcmc_parameters[elem]['current'] = vector_new[i]
+    for index, elem in enumerate(parameter_names):
+        data.mcmc_parameters[elem]['current'] = vector_new[index]
 
     # Propagate the information towards the cosmo arguments
     data.update_cosmo_arguments()
