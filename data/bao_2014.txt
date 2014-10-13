@@ -1,0 +1,31 @@
+# z, quantity, sigma, type (D_V/rs=3, Dv/Mpc=4, DA/rs=5, c/Hrs=6, rs/D_v=7)
+# For a given type, the quantity correspond to the listed
+# possibilities above
+
+# 6DF
+# Note that for 6DF, the rs_rescale factor was divided directly
+# into the numbers for the mean value and sigma. The rs_rescale
+# used is 1.0268, coming from
+# rs_EH98 = 153.94      (Eisenstein Hu 98 approximated value)
+# rs_CAMB = 149.92     (CAMB or CLASS, exact integrated value)
+# given the fiducial cosmology of 1106.3366v1, a flat LCDM with
+# Omega_m = 0.27, h = 0.7, omega_b = 0.02227
+# Note that the reduction of the error bar still rounds up to 0.015
+6DF    0.106   0.327   0.015    7
+
+# BOSS LOWZ DR10&11 (D_V in Mpc divided by r_s^fid in Mpc) Anderson et al. 1312.4877
+# found in Section 8.2 (directly using the exact sound horizon)
+LOWZ    0.32    8.47    0.17    3
+
+# BOSS CMASS DR10&11 (D_V in Mpc divided by r_s^fid in Mpc) Anderson et al. 1312.4877
+# found in Section 8.2 (directly using the exact sound horizon)
+CMASS   0.57    13.77   0.13    3
+
+# BOSS LyaQSO (DA/rs) Font-Ribera et al. 1311.1767
+LyaQSO  2.36   10.8     0.4     5
+
+# BOSS LyaQSO c/(H rs) Font-Ribera et al. 1311.1767
+LyaQSO	2.36    9.0     0.3     6
+
+# SDSS DR7 MGS, Ross et al. 1409.3242v1
+MGS     0.15   4.47     0.16    3
