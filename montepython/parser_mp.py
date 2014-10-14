@@ -554,7 +554,7 @@ def create_parser():
     runparser.add_argument('-f', help=helpdict['f'], type=float,
                            dest='jumping_factor', default=2.4)
     # -- configuration file (OPTIONAL)
-    runparser.add_argument('--conf', help=helpdict['f'],
+    runparser.add_argument('--conf', help=helpdict['conf'],
                            type=str, dest='config_file',
                            default='default.conf')
     # -- arbitrary numbering of an output chain (OPTIONAL)

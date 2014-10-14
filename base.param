@@ -2,21 +2,34 @@
 
 data.experiments=['Planck_highl','Planck_lowl','lowlike']
 
-#------ Settings for the over-sampling. The first element will always be set to
-# 1, for it is the sampling of the cosmological parameters. The other numbers
-# describe the over sampling of the nuisance parameter space. This array must
-# have the same dimension as the number of blocks in your run (so, 1 for
-# cosmological parameters, and then 1 for each experiment with varying nuisance
-# parameters).
+#------ Settings for the over-sampling.
+# The first element will always be set to 1, for it is the sampling of the
+# cosmological parameters. The other numbers describe the over sampling of the
+# nuisance parameter space. This array must have the same dimension as the
+# number of blocks in your run (so, 1 for cosmological parameters, and then 1
+# for each experiment with varying nuisance parameters).
+# Note that when using Planck likelihoods, you definitely want to use [1, 4],
+# to oversample as much as possible the 14 nuisance parameters.
+# Remember to order manually the experiments from slowest to fastest (putting
+# Planck as the first set of experiments should be a safe bet, except if you
+# also have LSS experiments).
+# If you have experiments without nuisance, you do not need to specify an
+# additional entry in the over_sampling list (notice for instance that, out of
+# the three Planck likelihoods used, only Planck_highl requires nuisance
+# parameters, therefore over_sampling has a length of two (cosmology, plus one
+# set of nuisance).
 data.over_sampling=[1, 4]
 
 #------ Parameter list -------
 
 # data.parameters[class name] = [mean, min, max, 1-sigma, scale, role]
-# - if min max irrelevant, put to -1
+# - if min max irrelevant, put to None
 # - if fixed, put 1-sigma to 0
 # - if scale irrelevant, put to 1, otherwise to the appropriate factor
-# - role is either 'cosmo' or 'nuisance'
+# - role is either 'cosmo', 'nuisance' or 'derived'. You should put the derived
+# parameters at the end, and in case you are using the `-j fast` Cholesky
+# decomposition, you should order your nuisance parameters from slowest to
+# fastest.
 
 # Cosmological parameters list
 
