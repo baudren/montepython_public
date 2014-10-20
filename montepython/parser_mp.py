@@ -60,17 +60,18 @@ class MpArgumentParser(ap.ArgumentParser):
         if not args:
             args = sys.argv[1:]
         if args[0] not in ['-h', '--help', '--version', '-info']:
+            print args[0]
             if args[0].find('-') != -1:
                 msg = "Defaulting to the 'run' command. Please update the"
                 msg += " call of MontePython. For more info, see the help"
                 msg += " string and/or the documentation "
-                warnings.warn(msg, DeprecationWarning)
+                warnings.warn(msg)
                 args.insert(0, default)
         elif args[0] == '-info':
             msg = "The info option has been turned into a command. "
             msg += "Please substitute '-info' with 'info' when running "
             msg += "MontePython"
-            warnings.warn(msg, DeprecationWarning)
+            warnings.warn(msg)
             args[0] = 'info'
         return args
 
