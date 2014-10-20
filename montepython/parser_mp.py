@@ -2,7 +2,7 @@
 .. module:: parser_mp
     :synopsis: Definition of the command line options
 .. moduleauthor:: Benjamin Audren <benjamin.audren@epfl.ch>
-.. moduleauthor:: Francesco Montesano
+.. moduleauthor:: Francesco Montesano <franz.bergesund@gmail.com>
 
 Defines the command line options and their help messages in
 :func:`create_parser` and read the input command line in :func:`parse`, dealing
@@ -61,8 +61,16 @@ class MpArgumentParser(ap.ArgumentParser):
             args = sys.argv[1:]
         if args[0] not in ['-h', '--help', '--version', '-info']:
             if args[0].find('-') != -1:
+                msg = "Defaulting to the 'run' command. Please update the"
+                msg += " call of MontePython. For more info, see the help"
+                msg += " string and/or the documentation "
+                warnings.warn(msg, DeprecationWarning)
                 args.insert(0, default)
         elif args[0] == '-info':
+            msg = "The info option has been turned into a command. "
+            msg += "Please substitute '-info' with 'info' when running "
+            msg += "MontePython"
+            warnings.warn(msg, DeprecationWarning)
             args[0] = 'info'
         return args
 
