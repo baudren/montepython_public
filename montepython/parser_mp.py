@@ -474,13 +474,21 @@ def create_parser():
         <**>--extra<**> : str
             <++>extra file to customize the output plots<++>. You can actually
             set all the possible options in this file, including line-width,
-            ticknumber, ticksize, etc...
+            ticknumber, ticksize, etc... You can specify four fields,
+            `info.redefine` (dict with keys set to the previous variable, and
+            the value set to a numerical computation that should replace this
+            variable), `info.to_change` (dict with keys set to the old variable
+            name, and value set to the new variable name), `info.to_plot` (list
+            of variables with new names to plot), and `info.new_scales` (dict
+            with keys set to the new variable names, and values set to the
+            number by which it should be multiplied in the graph).<++> For
+            instance,
 
             .. code::
 
                 info.to_change={'oldname1':'newname1','oldname2':'newname2',...}
                 info.to_plot=['name1','name2','newname3',...]
-                info.new_scales={'name1':number1,'name2':number2,...}<++>
+                info.new_scales={'name1':number1,'name2':number2,...}
 
         <**>--noplot<**> : bool
             <++>do not produce any plot, simply compute the posterior<++>
