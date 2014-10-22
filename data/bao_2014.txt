@@ -26,3 +26,6 @@ LyaQSO  2.36   10.8     0.4     5
 
 # BOSS LyaQSO c/(H rs) Font-Ribera et al. 1311.1767
 LyaQSO	2.36    9.0     0.3     6
+
+# SDSS DR7 MGS, Ross et al. 1409.3242v1
+MGS     0.15   4.47     0.16    3

@@ -71,7 +71,7 @@ class bao_boss(Likelihood):
             rs = cosmo.rs_drag()
 
             if self.type[i] == 3:
-                theo = dv / rs / self.rs_rescale
+                theo = dv / rs
 
             elif self.type[i] == 4:
                 theo = dv
@@ -83,7 +83,7 @@ class bao_boss(Likelihood):
                 theo = 1. / cosmo.Hubble(self.z[i]) / rs
 
             elif self.type[i] == 7:
-                theo = rs * self.rs_rescale / dv
+                theo = rs / dv
             else:
                 raise io_mp.LikelihoodError(
                     "In likelihood %s. " % self.name +

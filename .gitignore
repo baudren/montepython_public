@@ -34,3 +34,7 @@ dist/
 
 # Ignore the JLA files if present
 data/JLA/
+
+# Ignore the coverage reports
+.coverage
+htmlcov/

@@ -1,5 +1,5 @@
 # Dictionary to hold common definition for all redshift bins
-WiggleZ.data_directory = os.path.join(data.path['data'], 'nov2011/')
+WiggleZ.data_directory = os.path.join(data.path['data'], 'WiggleZ', 'nov2011')
 
 WiggleZ.redshift_bins_files = ['wigglez_pp020_a.data', 'wigglez_pp020_b.data', 'wigglez_pp020_c.data', 'wigglez_pp020_d.data']
 

@@ -1,3 +1,16 @@
+v2.1.1: + Implemented a new observable, cosmic clocks, that measure the Hubble
+	  rate at different redshifts. Full information can be found in
+	  data/cosmic_clocks/README.txt (credits Licia Verde)
+	+ Implemented the BAO measurements from WiggleZ, from 1401.0358v2. Use
+	  the new likelihood, called WiggleZ_bao, in your parameter file.
+	+ Added a new BAO data point from Ross et. al. 2014, available in
+	  data/bao_2014.txt along with all the previous ones. Notice that all
+	  reference to the historical and unfortunate rs_rescale is now gone -
+	  all the data points are stored as if computed with the true value of
+	  the sound horizon, and not the Eisenstein and Hu 98 formula. Thanks
+	  to Antonio Cuesta for his help in annihilating this issue.
+	+ Fixed the ReadTheDocs website.
+----------------------------------------------------------------------
 v2.1.0: + Implemented the JLA new SuperNovae analysis (arXiv:1401.4064). There
 	  are two versions available, 'JLA' and 'JLA_simple' (the latter being a
 	  faster version of the former, so they are mutually exclusive). Thanks

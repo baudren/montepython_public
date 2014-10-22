@@ -76,7 +76,7 @@ def initialise(custom_command=''):
         elif command_line.method == 'NS':
             from nested_sampling import initialise as initialise_ns
             initialise_ns(cosmo, data, command_line)
-            
+
         return cosmo, data, command_line, True
 
 
@@ -158,7 +158,7 @@ def recover_cosmological_module(data):
 
         # Inserting the previously found path into the list of folders to
         # search for python modules.
-        sys.path.insert(0, classy_path)
+        sys.path.insert(1, classy_path)
         try:
             from classy import Class
         except ImportError:
