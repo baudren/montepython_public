@@ -1,3 +1,7 @@
+v2.1.1: + Implemented a new observable, cosmic clocks, that measure the Hubble
+	  rate at different redshifts. Full information can be found in
+	  data/cosmic_clocks/README.txt (credits Licia Verde)
+----------------------------------------------------------------------
 v2.1.0: + Implemented the JLA new SuperNovae analysis (arXiv:1401.4064). There
 	  are two versions available, 'JLA' and 'JLA_simple' (the latter being a
 	  faster version of the former, so they are mutually exclusive). Thanks

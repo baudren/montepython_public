@@ -1,10 +1,11 @@
 from montepython.likelihood_class import Likelihood
 from numpy import matrix, dot, exp, log
 
+
 class test_gaussian(Likelihood):
 
     def loglkl(self, cosmo, data):
-        H0, ob, oc  = (
+        H0, ob, oc = (
             data.mcmc_parameters[p]['current']*data.mcmc_parameters[p]['scale']
             for p in ['H0', 'omega_b', 'omega_cdm'])
         # Modes
@@ -15,4 +16,3 @@ class test_gaussian(Likelihood):
             minusHessian = matrix(covmat).I
             lkl += exp(-0.5 * (dot(diffvec, dot(minusHessian, diffvec.T))))
         return log(lkl)
-

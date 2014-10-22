@@ -2,7 +2,7 @@
 .. module:: parser_mp
     :synopsis: Definition of the command line options
 .. moduleauthor:: Benjamin Audren <benjamin.audren@epfl.ch>
-.. moduleauthor:: Francesco Montesano
+.. moduleauthor:: Francesco Montesano <franz.bergesund@gmail.com>
 
 Defines the command line options and their help messages in
 :func:`create_parser` and read the input command line in :func:`parse`, dealing
@@ -60,9 +60,18 @@ class MpArgumentParser(ap.ArgumentParser):
         if not args:
             args = sys.argv[1:]
         if args[0] not in ['-h', '--help', '--version', '-info']:
+            print args[0]
             if args[0].find('-') != -1:
+                msg = "Defaulting to the 'run' command. Please update the"
+                msg += " call of MontePython. For more info, see the help"
+                msg += " string and/or the documentation "
+                warnings.warn(msg)
                 args.insert(0, default)
         elif args[0] == '-info':
+            msg = "The info option has been turned into a command. "
+            msg += "Please substitute '-info' with 'info' when running "
+            msg += "MontePython"
+            warnings.warn(msg)
             args[0] = 'info'
         return args
 
@@ -465,13 +474,21 @@ def create_parser():
         <**>--extra<**> : str
             <++>extra file to customize the output plots<++>. You can actually
             set all the possible options in this file, including line-width,
-            ticknumber, ticksize, etc...
+            ticknumber, ticksize, etc... You can specify four fields,
+            `info.redefine` (dict with keys set to the previous variable, and
+            the value set to a numerical computation that should replace this
+            variable), `info.to_change` (dict with keys set to the old variable
+            name, and value set to the new variable name), `info.to_plot` (list
+            of variables with new names to plot), and `info.new_scales` (dict
+            with keys set to the new variable names, and values set to the
+            number by which it should be multiplied in the graph).<++> For
+            instance,
 
             .. code::
 
                 info.to_change={'oldname1':'newname1','oldname2':'newname2',...}
                 info.to_plot=['name1','name2','newname3',...]
-                info.new_scales={'name1':number1,'name2':number2,...}<++>
+                info.new_scales={'name1':number1,'name2':number2,...}
 
         <**>--noplot<**> : bool
             <++>do not produce any plot, simply compute the posterior<++>
@@ -554,7 +571,7 @@ def create_parser():
     runparser.add_argument('-f', help=helpdict['f'], type=float,
                            dest='jumping_factor', default=2.4)
     # -- configuration file (OPTIONAL)
-    runparser.add_argument('--conf', help=helpdict['f'],
+    runparser.add_argument('--conf', help=helpdict['conf'],
                            type=str, dest='config_file',
                            default='default.conf')
     # -- arbitrary numbering of an output chain (OPTIONAL)

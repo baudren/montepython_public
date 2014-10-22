@@ -28,7 +28,7 @@ class JLA_simple(Likelihood_sn):
                 "following link "
                 "http://supernovae.in2p3.fr/sdss_snls_jla/jla_likelihood_v4.tgz"
                 ", extract it, and copy all files present in "
-                "`jla_likelihood_v4/data` to `montepython/data/JLA`")
+                "`jla_likelihood_v4/data` to `your_montepython/data/JLA`")
 
         # read the only matrix
         self.C00 = self.read_matrix(self.mu_covmat_file)
