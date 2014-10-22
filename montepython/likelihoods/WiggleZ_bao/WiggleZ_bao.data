@@ -1,0 +1,7 @@
+WiggleZ_bao.data_directory = os.path.join(data.path['data'], 'WiggleZ', 'bao')
+
+WiggleZ_bao.file = 'measurements.dat'
+WiggleZ_bao.inverse_covmat_file = 'table_4.dat'
+
+# Value of the exact sound speed in the fiducial model, in Mpc
+WiggleZ_bao.rs_fiducial = 148.6

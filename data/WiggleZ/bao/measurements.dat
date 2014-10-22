@@ -1,0 +1,7 @@
+# Effective redshift of the survey slice, Dv (r_s^fid/r_s)
+# Note that r_s is computed numerically and is **not** the Einsenstein and Hu
+# approximation.
+# z_eff Dv (r_s^fid/r_s)
+  0.44  1716
+  0.60  2221
+  0.73  2516
