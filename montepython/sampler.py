@@ -130,7 +130,7 @@ def read_args_from_bestfit(data, bestfit):
             print data.mcmc_parameters[elem]['initial'][0]
 
 
-def get_covariance_matrix(data, command_line):
+def get_covariance_matrix(cosmo, data, command_line):
     """
     Compute the covariance matrix, from an input file or from an existing
     matrix.
@@ -157,138 +157,231 @@ def get_covariance_matrix(data, command_line):
     np.set_printoptions(precision=2, linewidth=150)
     parameter_names = data.get_mcmc_parameters(['varying'])
     i = 0
+    fisher_invert_success = 1
 
-    # if the user provides a .covmat file
+    # if the user provides a .covmat file or if user asks to compute a fisher matrix
     if command_line.cov is not None:
-        cov = open('{0}'.format(command_line.cov), 'r')
-        for line in cov:
-            if line.find('#') != -1:
-                # Extract the names from the first line
-                covnames = line.strip('#').replace(' ', '').\
-                    replace('\n', '').split(',')
-                # Initialize the matrices
-                matrix = np.zeros((len(covnames), len(covnames)), 'float64')
-                rot = np.zeros((len(covnames), len(covnames)))
-            else:
-                line = line.split()
-                for j in range(len(line)):
-                    matrix[i][j] = np.array(line[j], 'float64')
-                i += 1
 
-        # First print out
-        print('\nInput covariance matrix:')
-        print(covnames)
-        print(matrix)
-        # Deal with the all problematic cases.
-        # First, adjust the scales between stored parameters and the ones used
-        # in mcmc
-        scales = []
-        for elem in covnames:
-            if elem in parameter_names:
-                scales.append(data.mcmc_parameters[elem]['scale'])
-            else:
-                scales.append(1)
-        scales = np.diag(scales)
-        # Compute the inverse matrix, and assert that the computation was
-        # precise enough, by comparing the product to the identity matrix.
-        invscales = np.linalg.inv(scales)
-        np.testing.assert_array_almost_equal(
-            np.dot(scales, invscales), np.eye(np.shape(scales)[0]),
-            decimal=5)
+        # If the file name is not "invfisher", just read the covariance matrix
+        if command_line.cov is "invfisher":
+            # We will work out the fisher matrix for all the parameters and write it to a file
+            print "Fisher not implemented yet"
+            fisher_matrix = np.zeros((len(parameter_names), len(parameter_names)), 'float64')
+            
+            # Let us create a separate copy of data
+            from copy import deepcopy
 
-        # Apply the newly computed scales to the input matrix
-        matrix = np.dot(invscales.T, np.dot(matrix, invscales))
+            # Store unmodified parameter values for later
+            for k,elemk in enumerate(parameter_names):
+                kdiff = data.mcmc_parameters[elemk]['current']*0.01
+                if kdiff == 0.0 :
+                    kdiff = 0.01
+                for h,elemh in enumerate(parameter_names):
+                    hdiff = data.mcmc_parameters[elemh]['current']*0.01
+                    if hdiff == 0.0 :
+                        hdiff = 0.01
+                    if i > j :
+                        continue
+                    if  i!=j :
 
-        # Second print out, after having applied the scale factors
-        print('\nFirst treatment (scaling)')
-        print(covnames)
-        print(matrix)
+                        temp_data = deepcopy(data)
+                        temp_data.mcmc_parameters[elemk]['current'] = data.mcmc_parameters[elemk]['current']+kdiff
+                        temp_data.mcmc_parameters[elemh]['current'] = data.mcmc_parameters[elemh]['current']+hdiff
+                        temp_data.update_cosmo_arguments()
+                        loglik_1 = compute_lkl(cosmo,temp_data)
 
-        # Rotate matrix for the parameters to be well ordered, even if some
-        # names are missing or some are in extra.
-        # First, store the parameter names in temp_names that also appear in
-        # the covariance matrix, in the right ordering for the code (might be
-        # different from the input matri)
-        temp_names = [elem for elem in parameter_names if elem in covnames]
+                        temp_data=deepcopy(data)
+                        temp_data.mcmc_parameters[elemk]['current'] = data.mcmc_parameters[elemk]['current']+kdiff
+                        temp_data.mcmc_parameters[elemh]['current'] = data.mcmc_parameters[elemh]['current']-hdiff
+                        temp_data.update_cosmo_arguments()
+                        loglik_2 = compute_lkl(cosmo,temp_data)
 
-        # If parameter_names contains less things than covnames, we will do a
-        # small trick. Create a second temporary array, temp_names_2, that will
-        # have the same dimension as covnames, and containing:
-        # - the elements of temp_names, in the order of parameter_names (h
-        # index)
-        # - an empty string '' for the remaining unused parameters
-        temp_names_2 = []
-        h = 0
-        not_in = [elem for elem in covnames if elem not in temp_names]
-        for k in range(len(covnames)):
-            if covnames[k] not in not_in:
-                temp_names_2.append(temp_names[h])
-                h += 1
-            else:
-                temp_names_2.append('')
+                        temp_data = deepcopy(data)
+                        temp_data.mcmc_parameters[elemk]['current'] = data.mcmc_parameters[elemk]['current']-kdiff
+                        temp_data.mcmc_parameters[elemh]['current'] = data.mcmc_parameters[elemh]['current']+hdiff
+                        temp_data.update_cosmo_arguments()
+                        loglik_3 = compute_lkl(cosmo,temp_data)
 
-        # Create the rotation matrix, that will put the covariance matrix in
-        # the right order, and also assign zeros to the unused parameters from
-        # the input. These empty columns will be removed in the next step.
-        for k in range(len(covnames)):
-            for h in range(len(covnames)):
-                try:
-                    if covnames[k] == temp_names_2[h]:
-                        rot[h][k] = 1.
+                        temp_data = deepcopy(data)
+                        temp_data.mcmc_parameters[elemk]['current'] = data.mcmc_parameters[elemk]['current']-kdiff
+                        temp_data.mcmc_parameters[elemh]['current'] = data.mcmc_parameters[elemh]['current']-hdiff
+                        temp_data.update_cosmo_arguments()
+                        loglik_4 = compute_lkl(cosmo,temp_data)
+                         
+                        fisher_matrix[i][j] = -(loglik_1-loglik_2-loglik_3+loglik_4)/(4.*kdiff*hdiff)
+                        fisher_matrix[j][i] = fisher_matrix[i][j]
                     else:
+                        
+                        temp_data = deepcopy(data)
+                        temp_data.mcmc_parameters[elemk]['current'] = data.mcmc_parameters[elemk]['current']+kdiff
+                        temp_data.update_cosmo_arguments()
+                        loglik_1 = compute_lkl(cosmo,temp_data)
+
+                        temp_data = deepcopy(data)
+                        temp_data.update_cosmo_arguments()
+                        loglik_2 = compute_lkl(cosmo,temp_data)
+
+                        temp_data = deepcopy(data)
+                        temp_data.mcmc_parameters[elemk]['current'] = data.mcmc_parameters[elemk]['current']-kdiff
+                        temp_data.update_cosmo_arguments()
+                        loglik_3 = compute_lkl(cosmo,temp_data)
+                        
+                        fisher_matrix[i][i] = -(loglik_1-2.*loglik_2+loglik_3)/(kdiff*kdiff)
+
+            # Compute inverse of the fisher matrix, catch LinAlgError exception
+            try:
+                cov_matrix = np.linalg.inv(fisher_matrix)
+            except LinAlgError:
+                print "Could not find Fisher matrix, need to send some error messages to error management system"
+                fisher_invert_success = 0
+
+            # Write it to the file
+            if fisher_invert_success :
+                cov = open(os.path.join(command_line.folder, 'covariance_fisher.mat'), 'w')
+	        cov.write ("# ")
+                for elem in parameter_names:
+                    cov.write ("%s, "%(elem))
+	        cov.write ("\n")
+                cov.close()
+                cov = open(os.path.join(command_line.folder, 'covariance_fisher.mat'), 'r')
+            
+        else:
+            cov = open('{0}'.format(command_line.cov), 'r')
+
+        if fisher_invert_success :
+            for line in cov:
+                if line.find('#') != -1:
+                    # Extract the names from the first line
+                    covnames = line.strip('#').replace(' ', '').\
+                        replace('\n', '').split(',')
+                    # Initialize the matrices
+                    matrix = np.zeros((len(covnames), len(covnames)), 'float64')
+                    rot = np.zeros((len(covnames), len(covnames)))
+                else:
+                    line = line.split()
+                    for j in range(len(line)):
+                        matrix[i][j] = np.array(line[j], 'float64')
+                    i += 1
+
+            # First print out
+            print('\nInput covariance matrix:')
+            print(covnames)
+            print(matrix)
+            # Deal with the all problematic cases.
+            # First, adjust the scales between stored parameters and the ones used
+            # in mcmc
+            scales = []
+            for elem in covnames:
+                if elem in parameter_names:
+                    scales.append(data.mcmc_parameters[elem]['scale'])
+                else:
+                    scales.append(1)
+            scales = np.diag(scales)
+            # Compute the inverse matrix, and assert that the computation was
+            # precise enough, by comparing the product to the identity matrix.
+            invscales = np.linalg.inv(scales)
+            np.testing.assert_array_almost_equal(
+                np.dot(scales, invscales), np.eye(np.shape(scales)[0]),
+                decimal=5)
+
+            # Apply the newly computed scales to the input matrix
+            matrix = np.dot(invscales.T, np.dot(matrix, invscales))
+
+            # Second print out, after having applied the scale factors
+            print('\nFirst treatment (scaling)')
+            print(covnames)
+            print(matrix)
+
+            # Rotate matrix for the parameters to be well ordered, even if some
+            # names are missing or some are in extra.
+            # First, store the parameter names in temp_names that also appear in
+            # the covariance matrix, in the right ordering for the code (might be
+            # different from the input matri)
+            temp_names = [elem for elem in parameter_names if elem in covnames]
+
+            # If parameter_names contains less things than covnames, we will do a
+            # small trick. Create a second temporary array, temp_names_2, that will
+            # have the same dimension as covnames, and containing:
+            # - the elements of temp_names, in the order of parameter_names (h
+            # index)
+            # - an empty string '' for the remaining unused parameters
+            temp_names_2 = []
+            h = 0
+            not_in = [elem for elem in covnames if elem not in temp_names]
+            for k in range(len(covnames)):
+                if covnames[k] not in not_in:
+                    temp_names_2.append(temp_names[h])
+                    h += 1
+                else:
+                    temp_names_2.append('')
+
+            # Create the rotation matrix, that will put the covariance matrix in
+            # the right order, and also assign zeros to the unused parameters from
+            # the input. These empty columns will be removed in the next step.
+            for k in range(len(covnames)):
+                for h in range(len(covnames)):
+                    try:
+                        if covnames[k] == temp_names_2[h]:
+                            rot[h][k] = 1.
+                        else:
+                            rot[h][k] = 0.
+                    except IndexError:
+                        # The IndexError exception means that we are dealing with
+                        # an unused parameter. By enforcing the corresponding
+                        # rotation matrix element to 0, the resulting matrix will
+                        # still have the same size as the original, but with zeros
+                        # on the unused lines.
                         rot[h][k] = 0.
-                except IndexError:
-                    # The IndexError exception means that we are dealing with
-                    # an unused parameter. By enforcing the corresponding
-                    # rotation matrix element to 0, the resulting matrix will
-                    # still have the same size as the original, but with zeros
-                    # on the unused lines.
-                    rot[h][k] = 0.
-        matrix = np.dot(rot, np.dot(matrix, np.transpose(rot)))
+            matrix = np.dot(rot, np.dot(matrix, np.transpose(rot)))
 
-        # Third print out
-        print('\nSecond treatment (partial reordering and cleaning)')
-        print(temp_names_2)
-        print(matrix)
+            # Third print out
+            print('\nSecond treatment (partial reordering and cleaning)')
+            print(temp_names_2)
+            print(matrix)
 
-        # Final step, creating a temporary matrix, filled with 1, that will
-        # eventually contain the result.
-        matrix_temp = np.ones((len(parameter_names),
-                               len(parameter_names)), 'float64')
-        indices_final = np.zeros(len(parameter_names))
-        indices_initial = np.zeros(len(covnames))
-        # Remove names that are in parameter names but not in covnames, and
-        # set to zero the corresponding columns of the final result.
-        for k in range(len(parameter_names)):
-            if parameter_names[k] in covnames:
-                indices_final[k] = 1
-        for zeros in np.where(indices_final == 0)[0]:
-            matrix_temp[zeros, :] = 0
-            matrix_temp[:, zeros] = 0
-        # Remove names that are in covnames but not in param_names
-        for h in range(len(covnames)):
-            if covnames[h] in parameter_names:
-                indices_initial[h] = 1
-        # There, put a place holder number (we are using a pure imaginary
-        # number: i, to avoid any problem) in the initial matrix, so that the
-        # next step only copy the interesting part of the input to the final
-        # matrix.
-        max_value = np.finfo(np.float64).max
-        for zeros in np.where(indices_initial == 0)[0]:
-            matrix[zeros, :] = [max_value for _ in range(
-                len(matrix[zeros, :]))]
-            matrix[:, zeros] = [max_value for _ in range(
-                len(matrix[:, zeros]))]
-        # Now put in the temporary matrix, where the 1 were, the interesting
-        # quantities from the input (the one that are not equal to i).
-        matrix_temp[matrix_temp == 1] = matrix[matrix != max_value]
-        matrix = np.copy(matrix_temp)
-        # on all other lines, that contain 0, just use sigma^2
-        for zeros in np.where(indices_final == 0)[0]:
-            matrix[zeros, zeros] = np.array(
-                data.mcmc_parameters[parameter_names[zeros]]['initial'][3],
-                'float64')**2
-
+            # Final step, creating a temporary matrix, filled with 1, that will
+            # eventually contain the result.
+            matrix_temp = np.ones((len(parameter_names),
+                                   len(parameter_names)), 'float64')
+            indices_final = np.zeros(len(parameter_names))
+            indices_initial = np.zeros(len(covnames))
+            # Remove names that are in parameter names but not in covnames, and
+            # set to zero the corresponding columns of the final result.
+            for k in range(len(parameter_names)):
+                if parameter_names[k] in covnames:
+                    indices_final[k] = 1
+            for zeros in np.where(indices_final == 0)[0]:
+                matrix_temp[zeros, :] = 0
+                matrix_temp[:, zeros] = 0
+            # Remove names that are in covnames but not in param_names
+            for h in range(len(covnames)):
+                if covnames[h] in parameter_names:
+                    indices_initial[h] = 1
+            # There, put a place holder number (we are using a pure imaginary
+            # number: i, to avoid any problem) in the initial matrix, so that the
+            # next step only copy the interesting part of the input to the final
+            # matrix.
+            max_value = np.finfo(np.float64).max
+            for zeros in np.where(indices_initial == 0)[0]:
+                matrix[zeros, :] = [max_value for _ in range(
+                    len(matrix[zeros, :]))]
+                matrix[:, zeros] = [max_value for _ in range(
+                    len(matrix[:, zeros]))]
+            # Now put in the temporary matrix, where the 1 were, the interesting
+            # quantities from the input (the one that are not equal to i).
+            matrix_temp[matrix_temp == 1] = matrix[matrix != max_value]
+            matrix = np.copy(matrix_temp)
+            # on all other lines, that contain 0, just use sigma^2
+            for zeros in np.where(indices_final == 0)[0]:
+                matrix[zeros, zeros] = np.array(
+                    data.mcmc_parameters[parameter_names[zeros]]['initial'][3],
+                    'float64')**2
+        else:
+            matrix = np.identity(len(parameter_names), 'float64')
+            for elem in parameter_names:
+                matrix[i][i] = np.array(
+                    data.mcmc_parameters[elem]['initial'][3], 'float64')**2
+                i += 1
     # else, take sigmas^2.
     else:
         matrix = np.identity(len(parameter_names), 'float64')
@@ -296,6 +389,7 @@ def get_covariance_matrix(data, command_line):
             matrix[i][i] = np.array(
                 data.mcmc_parameters[elem]['initial'][3], 'float64')**2
             i += 1
+
 
     # Final print out, the actually used covariance matrix
     sys.stdout.write('\nDeduced starting covariance matrix:\n')
