@@ -570,6 +570,9 @@ def create_parser():
     # -- jumping factor (OPTIONAL)
     runparser.add_argument('-f', help=helpdict['f'], type=float,
                            dest='jumping_factor', default=2.4)
+    # -- fisher (EXPERIMENTAL)
+    runparser.add_argument('--fisher', help='Determine covariance matrix from fisher', type=int,
+                           dest='fisher', default=0)
     # -- configuration file (OPTIONAL)
     runparser.add_argument('--conf', help=helpdict['conf'],
                            type=str, dest='config_file',
