@@ -230,6 +230,7 @@ def get_covariance_matrix(cosmo, data, command_line):
         # Compute inverse of the fisher matrix, catch LinAlgError exception
         fisher_invert_success = 1
         try:
+            print fisher_matrix
             cov_matrix = np.linalg.inv(fisher_matrix)
         except LinAlgError:
             print "Could not find Fisher matrix, need to send some error messages to error management system"
