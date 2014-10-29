@@ -162,7 +162,7 @@ def parse_docstring(docstring, key_symbol="<**>", description_symbol="<++>"):
         msg += " as there are surrounded by '{1}"
         raise ValueError(msg.format(key_symbol, description_symbol))
 
-    helpdict = {k: v for k, v in zip(keys, descriptions)}
+    helpdict = dict(zip(keys, descriptions))
     return helpdict
 
 
