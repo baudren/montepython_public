@@ -124,15 +124,19 @@ def recover_new_experiments(data, command_line, starting_folder):
     modified_command_line.folder = starting_folder
     modified_command_line.param = os.path.join(starting_folder, 'log.param')
 
+    # Go through the file, and stop when you find the good line. The previous
+    # way of doing, to simply initialise another data instance fails when using
+    # Planck. Indeed, clik likelihoods can not be initialised twice.
     print 'Reading the starting folder'
     print '---------------------------'
-    data2 = Data(modified_command_line, data.path)
-    print '---------------------------'
-    print 'Finished loading existing data'
-    print
+    with open(modified_command_line.param, 'r') as init:
+        for line in init:
+            if line.find('data.experiments') != -1:
+                _, experiments = line.split('=')
+                experiments = experiments.strip()
     print 'The likelihood will be computed for:'
     new_experiments = [
-        elem for elem in data.experiments if elem not in data2.experiments]
+        elem for elem in data.experiments if elem not in experiments]
     print ' ->',
     print ', '.join(new_experiments)
 
