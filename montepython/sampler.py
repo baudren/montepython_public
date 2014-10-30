@@ -160,88 +160,111 @@ def get_covariance_matrix(cosmo, data, command_line):
     i = 0
 
     if command_line.fisher:
-        # We will work out the fisher matrix for all the parameters and write it to a file
-        print "Fisher implementation is being tested"
-        fisher_matrix = np.zeros((len(parameter_names), len(parameter_names)), 'float64')
-
         # Let us create a separate copy of data
         from copy import deepcopy
 
         # Do not modify data, instead copy
         temp_data = deepcopy(data)
-        # Set the current values for the temp_data parameters
-        for k,elem in enumerate(parameter_names):
-            print data.mcmc_parameters[elem]
-            print temp_data.mcmc_parameters[elem]
-            temp_data.mcmc_parameters[elem]['current']=data.mcmc_parameters[elem]['initial'][0]
+        done = 0
+        fisher_matrix = np.zeros((len(parameter_names), len(parameter_names)), 'float64')
+        jac_arr = np.zeros(len(parameter_names), 'float64')
 
-        for k,elemk in enumerate(parameter_names):
-            print data.mcmc_parameters[elemk]
-            kdiff = data.mcmc_parameters[elemk]['initial'][0]*0.01
-            if kdiff == 0.0 :
-                kdiff = 0.01
-            for h,elemh in enumerate(parameter_names):
-                hdiff = data.mcmc_parameters[elemh]['initial'][0]*0.01
-                if hdiff == 0.0 :
-                    hdiff = 0.01
-                if k>h :
-                    continue
-                print elemh,elemk
-                if  k!=h :
+        while not done:
+            # We will work out the fisher matrix for all the parameters and write it to a file
+            print "Fisher implementation is being tested"
 
-                    temp_data.mcmc_parameters[elemk]['current'] = data.mcmc_parameters[elemk]['initial'][0]+kdiff
-                    temp_data.mcmc_parameters[elemh]['current'] = data.mcmc_parameters[elemh]['initial'][0]+hdiff
-                    temp_data.update_cosmo_arguments()
-                    loglik_1 = compute_lkl(cosmo,temp_data)
+            # Set the current values for the temp_data parameters
+            for k,elem in enumerate(parameter_names):
+                print data.mcmc_parameters[elem]
+                print temp_data.mcmc_parameters[elem]
+                temp_data.mcmc_parameters[elem]['current']=data.mcmc_parameters[elem]['initial'][0]
 
-                    temp_data.mcmc_parameters[elemk]['current'] = data.mcmc_parameters[elemk]['initial'][0]+kdiff
-                    temp_data.mcmc_parameters[elemh]['current'] = data.mcmc_parameters[elemh]['initial'][0]-hdiff
-                    temp_data.update_cosmo_arguments()
-                    loglik_2 = compute_lkl(cosmo,temp_data)
+            for k,elemk in enumerate(parameter_names):
+                print data.mcmc_parameters[elemk]
+                kdiff = data.mcmc_parameters[elemk]['initial'][0]*0.01
+                if kdiff == 0.0 :
+                    kdiff = 0.01
+                for h,elemh in enumerate(parameter_names):
+                    hdiff = data.mcmc_parameters[elemh]['initial'][0]*0.01
+                    if hdiff == 0.0 :
+                        hdiff = 0.01
+                    if k>h :
+                        continue
+                    print elemh,elemk
+                    if  k!=h :
 
-                    temp_data.mcmc_parameters[elemk]['current'] = data.mcmc_parameters[elemk]['initial'][0]-kdiff
-                    temp_data.mcmc_parameters[elemh]['current'] = data.mcmc_parameters[elemh]['initial'][0]+hdiff
-                    temp_data.update_cosmo_arguments()
-                    loglik_3 = compute_lkl(cosmo,temp_data)
+                        temp_data.mcmc_parameters[elemk]['current'] = data.mcmc_parameters[elemk]['initial'][0]+kdiff
+                        temp_data.mcmc_parameters[elemh]['current'] = data.mcmc_parameters[elemh]['initial'][0]+hdiff
+                        temp_data.update_cosmo_arguments()
+                        loglik_1 = compute_lkl(cosmo,temp_data)
 
-                    temp_data.mcmc_parameters[elemk]['current'] = data.mcmc_parameters[elemk]['initial'][0]-kdiff
-                    temp_data.mcmc_parameters[elemh]['current'] = data.mcmc_parameters[elemh]['initial'][0]-hdiff
-                    temp_data.update_cosmo_arguments()
-                    loglik_4 = compute_lkl(cosmo,temp_data)
+                        temp_data.mcmc_parameters[elemk]['current'] = data.mcmc_parameters[elemk]['initial'][0]+kdiff
+                        temp_data.mcmc_parameters[elemh]['current'] = data.mcmc_parameters[elemh]['initial'][0]-hdiff
+                        temp_data.update_cosmo_arguments()
+                        loglik_2 = compute_lkl(cosmo,temp_data)
 
-                    fisher_matrix[k][h] = -(loglik_1-loglik_2-loglik_3+loglik_4)/(4.*kdiff*hdiff)
-                    fisher_matrix[h][k] = fisher_matrix[k][h]
-                else:
+                        temp_data.mcmc_parameters[elemk]['current'] = data.mcmc_parameters[elemk]['initial'][0]-kdiff
+                        temp_data.mcmc_parameters[elemh]['current'] = data.mcmc_parameters[elemh]['initial'][0]+hdiff
+                        temp_data.update_cosmo_arguments()
+                        loglik_3 = compute_lkl(cosmo,temp_data)
 
-                    temp_data.mcmc_parameters[elemk]['current'] = data.mcmc_parameters[elemk]['initial'][0]+kdiff
-                    temp_data.update_cosmo_arguments()
-                    loglik_1 = compute_lkl(cosmo,temp_data)
+                        temp_data.mcmc_parameters[elemk]['current'] = data.mcmc_parameters[elemk]['initial'][0]-kdiff
+                        temp_data.mcmc_parameters[elemh]['current'] = data.mcmc_parameters[elemh]['initial'][0]-hdiff
+                        temp_data.update_cosmo_arguments()
+                        loglik_4 = compute_lkl(cosmo,temp_data)
 
-                    temp_data.mcmc_parameters[elemk]['current'] = data.mcmc_parameters[elemk]['initial'][0]
-                    temp_data.update_cosmo_arguments()
-                    loglik_2 = compute_lkl(cosmo,temp_data)
+                        fisher_matrix[k][h] = -(loglik_1-loglik_2-loglik_3+loglik_4)/(4.*kdiff*hdiff)
+                        fisher_matrix[h][k] = fisher_matrix[k][h]
+                    else:
 
-                    temp_data.mcmc_parameters[elemk]['current'] = data.mcmc_parameters[elemk]['initial'][0]-kdiff
-                    temp_data.update_cosmo_arguments()
-                    loglik_3 = compute_lkl(cosmo,temp_data)
+                        temp_data.mcmc_parameters[elemk]['current'] = data.mcmc_parameters[elemk]['initial'][0]+kdiff
+                        temp_data.update_cosmo_arguments()
+                        loglik_1 = compute_lkl(cosmo,temp_data)
 
-                    fisher_matrix[k][k] = -(loglik_1-2.*loglik_2+loglik_3)/(kdiff*kdiff)
+                        temp_data.mcmc_parameters[elemk]['current'] = data.mcmc_parameters[elemk]['initial'][0]
+                        temp_data.update_cosmo_arguments()
+                        loglik_2 = compute_lkl(cosmo,temp_data)
 
-        # Compute inverse of the fisher matrix, catch LinAlgError exception
-        fisher_invert_success = 1
-        try:
-            print fisher_matrix
-            cov_matrix = np.linalg.inv(fisher_matrix)
-        except LinAlgError:
-            print "Could not find Fisher matrix, need to send some error messages to error management system"
-            fisher_invert_success = 0
+                        temp_data.mcmc_parameters[elemk]['current'] = data.mcmc_parameters[elemk]['initial'][0]-kdiff
+                        temp_data.update_cosmo_arguments()
+                        loglik_3 = compute_lkl(cosmo,temp_data)
 
-        # Write it to the file
-        if fisher_invert_success :
-            io_mp.write_covariance_matrix(cov_matrix,parameter_names,os.path.join(command_line.folder,
-                    'covariance_fisher.mat'))
+                        fisher_matrix[k][k] = -(loglik_1-2.*loglik_2+loglik_3)/(kdiff*kdiff)
+                        jac_arr[k] = -(loglik_1-loglik_3)/(2.*kdiff)
 
-            command_line.cov = os.path.join(command_line.folder,'covariance_fisher.mat')
+
+            # Compute inverse of the fisher matrix, catch LinAlgError exception
+            fisher_invert_success = 1
+            try:
+                print fisher_matrix
+                cov_matrix = np.linalg.inv(fisher_matrix)
+            except np.linalg.LinAlgError:
+                print("Could not find Fisher matrix, need to send some error messages to error management system, and move out of the loop\n")
+                fisher_invert_success = 0
+                done = 1
+
+            # Write it to the file
+            if fisher_invert_success :
+                io_mp.write_covariance_matrix(cov_matrix,parameter_names,os.path.join(command_line.folder,
+                        'covariance_fisher.mat'))
+
+                command_line.cov = os.path.join(command_line.folder,'covariance_fisher.mat')
+
+                done = 1
+                for h,elem in enumerate(parameter_names):
+                    if cov_matrix[h][h] < 0:
+                        print "Covariance has negative values on diagonal, moving to a better point and repeating Fisher step"
+                        done = 0
+                        break
+                if done == 0:
+                    # Solve for a step
+                    step = np.dot(cov_matrix,jac_arr)
+                    # Now modify data_parameters
+                    print step
+                    for k,elem in enumerate(parameter_names):
+                        data.mcmc_parameters[elem]['initial'][0]=data.mcmc_parameters[elem]['initial'][0]-step[k]
+                        temp_data.mcmc_parameters[elem]['initial'][0]=temp_data.mcmc_parameters[elem]['initial'][0]-step[k]
+                        print "Moved %s to:"%(elem),data.mcmc_parameters[elem]['initial'][0]
 
     # if the user provides a .covmat file or if user asks to compute a fisher matrix
     if command_line.cov is not None:
