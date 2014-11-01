@@ -429,6 +429,9 @@ def create_parser():
         <**>-b<**> : str
             <++>start a new chain from the bestfit file<++> computed with
             analyze.  (*OPT*)<++>
+        <**>--fisher<**> : None
+            <++>Calculates the inverse of the fisher matrix<++> to use as
+            proposal distribution<++>
         <**>--silent<**> : None
             <++>silence the standard output<++> (useful when running on
             clusters)<++>
@@ -570,6 +573,9 @@ def create_parser():
     # -- jumping factor (OPTIONAL)
     runparser.add_argument('-f', help=helpdict['f'], type=float,
                            dest='jumping_factor', default=2.4)
+    # -- fisher (EXPERIMENTAL)
+    runparser.add_argument('--fisher', help=helpdict['fisher'],
+                           action='store_true')
     # -- configuration file (OPTIONAL)
     runparser.add_argument('--conf', help=helpdict['conf'],
                            type=str, dest='config_file',
