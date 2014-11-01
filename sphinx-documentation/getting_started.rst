@@ -155,7 +155,7 @@ will avoid mixing things up. If you are using one anyway, the code
 will warn you that it did not read it: it will always only use the
 :code:`log.param` file.
   
-In the folder :code:`montepyhton`, you can create a folder
+In the folder :code:`montepython`, you can create a folder
 :code:`chains` where you will organize your runs e.g. in the
 following way:
 
@@ -187,9 +187,9 @@ Analyzing chains and plotting
 Once you have accumulated a few chains, you can analyse the run to get
 convergence estimates, best-fit values, minimum credible intervals, a
 covariance matrix  and some plots of the marginalised posterior
-probability. You can run again |MP| with the :code:`-info` prefix
+probability. You can run again |MP| with the :code:`info` prefix
 followed by the name of a directory or of several chains, e.g.
-:code:`-info chains/myrun/` or :code:`-info chains/myrun/2012-10-26*
+:code:`info chains/myrun/` or :code:`info chains/myrun/2012-10-26*
 chains/myrun/2012-10-27*`. There is no need to pass an input file
 with parameter names since they have all been stored in the
 :code:`log.param`.
@@ -228,7 +228,7 @@ When the chains are not very converged and the posterior probability
 has local maxima, the code will fail to compute minimum credible
 intervals and say it in a warning. The two solutions are either to
 re-run and increase the number of samples, or maybe just to decrease
-the number of bins with the :code:`-bins` option.
+the number of bins with the :code:`--bins` option.
 
 
 Global running strategy
@@ -256,7 +256,7 @@ then to launch a new run with high acceptance rate, leading to nice
 plots. Remember that in order to respect strictly markovianity and the
 Metropolis Hastings algorithm, one should not mix up chains produced
 with different covariance matrices: this is easy if one takes
-advantage of the :code:`-info` syntax, for example :code:`-info
+advantage of the :code:`info` syntax, for example :code:`info
 chains/myrun/2012-10-26_10000*`. However mixing runs that started from
 very similar covariance matrices is harmless.
 
@@ -265,7 +265,7 @@ cluster. Each desktop should have a copy of the output folder and with
 the same :code:`log.param` file, and after running the chains can be
 grouped on a single machine and analyse. In this case, take care of
 avoiding that chains are produced with the same name (easy to ensure
-with either the :code:`-N` or :code:`-chain_number` options). This is
+with either the :code:`-N` or :code:`--chain-number` options). This is
 a good occasion to keep the desktops of your department finally busy.
      
 
