@@ -176,10 +176,17 @@ def get_covariance_matrix(cosmo, data, command_line):
         # This dictionary will be updated in case it was too far from the
         # best-fit, and found a non positive-definite symmetric fisher matrix.
         center = {}
-        for elem in parameter_names:
-            temp_data.mcmc_parameters[elem]['current'] = (
-                data.mcmc_parameters[elem]['initial'][0])
-            center[elem] = data.mcmc_parameters[elem]['initial'][0]
+        if not command_line.bf:
+            for elem in parameter_names:
+                temp_data.mcmc_parameters[elem]['current'] = (
+                    data.mcmc_parameters[elem]['initial'][0])
+                center[elem] = data.mcmc_parameters[elem]['initial'][0]
+        else:
+            read_args_from_bestfit(temp_data, command_line.bf)
+            for elem in parameter_names:
+                temp_data.mcmc_parameters[elem]['current'] = (
+                temp_data.mcmc_parameters[elem]['last_accepted'])
+                center[elem] = temp_data.mcmc_parameters[elem]['last_accepted']
 
         # Have a security index that prevents looping indefinitely
         security = 0
