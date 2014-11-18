@@ -1569,6 +1569,8 @@ class Information(object):
             name for index, name in enumerate(self.tex_names) if
             self.ref_names[index] in self.plotted_parameters]
         self.indices = [self.tex_names.index(name) for name in self.info_names]
+        self.tex_names = [name for index, name in enumerate(self.tex_names) if
+            self.ref_names[index] in self.plotted_parameters]
         self.info_names = [name.replace('$', '') for name in self.info_names]
 
         # Define the bestfit array
