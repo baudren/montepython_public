@@ -1011,7 +1011,7 @@ def recover_folder_and_files(files):
     # The following list defines the substring that a chain should contain for
     # the code to recognise it as a proper chain.
     substrings = ['.txt', '__']
-    limit = 600
+    limit = 0
     # If the first element is a folder, grab all chain files inside
     if os.path.isdir(files[0]):
         folder = os.path.normpath(files[0])
@@ -1260,7 +1260,7 @@ def remove_burnin(info):
 
         # ham contains cheese without the burn-in, if there are any points
         # left (more than 5)
-        if np.shape(cheese)[0] > start+5:
+        if np.shape(cheese)[0] > start:
             ham = np.copy(cheese[start::])
 
             # Deal with single file case
