@@ -659,8 +659,8 @@ def compute_posterior(information_instances):
                         info.extent, info.n)
 
     print '-----------------------------------------------'
-    print '--> Saving figures to .{0} files'.format(info.extension)
     if conf.plot:
+        print '--> Saving figures to .{0} files'.format(info.extension)
         plot_name = '-vs-'.join([os.path.split(elem.folder)[-1]
                                 for elem in information_instances])
         if conf.plot_2d:
