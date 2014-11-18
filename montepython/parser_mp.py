@@ -465,6 +465,10 @@ def create_parser():
 
             If you specify several folders (or set of files), a comparison
             will be performed.<++>
+        <**>--minimal<**> : None
+            <++>Use this flag to avoid computing the posterior
+            distribution.<++> This will decrease the time needed for the
+            analysis, especially when analyzing big folders.<++>
         <**>--bins<**> : int
             <++>number of bins in the histograms<++> used to derive posterior
             probabilities and credible intervals (default to 20). Decrease this
@@ -650,6 +654,9 @@ def create_parser():
     # -- folder to analyze
     infoparser.add_argument('files', help=helpdict['files'],
                             nargs='+')
+    # -- to only write the covmat and bestfit, without computing the posterior
+    infoparser.add_argument('--minimal', help=helpdict['minimal'],
+                            action='store_true')
     # -- number of bins (defaulting to 20)
     infoparser.add_argument('--bins', help=helpdict['bins'],
                             type=int, default=20)

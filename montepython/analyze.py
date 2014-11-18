@@ -104,13 +104,14 @@ def analyze(command_line):
         io_mp.write_bestfit_file(bestfit_line, info.backup_names,
                                  info.best_fit_path)
 
-    # Computing 1,2 and 3-sigma errors, and plot. This will create the
-    # triangle and 1d plot by default.
-    compute_posterior(information_instances)
+    if not command_line.minimal:
+        # Computing 1,2 and 3-sigma errors, and plot. This will create the
+        # triangle and 1d plot by default.
+        compute_posterior(information_instances)
 
-    print '--> Writing .info and .tex files'
-    for info in information_instances:
-        info.write_information_files()
+        print '--> Writing .info and .tex files'
+        for info in information_instances:
+            info.write_information_files()
 
 
 def prepare(files, info):
