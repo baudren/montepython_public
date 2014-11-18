@@ -376,10 +376,9 @@ def get_covariance_matrix(cosmo, data, command_line):
     # else, take sigmas^2.
     else:
         matrix = np.identity(len(parameter_names), 'float64')
-        for elem in parameter_names:
-            matrix[i][i] = np.array(
+        for index, elem in enumerate(parameter_names):
+            matrix[index][index] = np.array(
                 data.mcmc_parameters[elem]['initial'][3], 'float64')**2
-            i += 1
 
 
     # Final print out, the actually used covariance matrix
