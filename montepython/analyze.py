@@ -1169,7 +1169,10 @@ def find_maximum_of_likelihood(info):
         cheese = (np.array([float(line.split()[1].strip())
                             for line in open(chain_file, 'r')]))
 
-        min_minus_lkl.append(cheese[:].min())
+        try:
+            min_minus_lkl.append(cheese[:].min())
+        except ValueError:
+            pass
 
     # beware, it is the min because we are talking about
     # '- log likelihood'
