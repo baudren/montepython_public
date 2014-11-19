@@ -894,9 +894,11 @@ class Likelihood_clik(Likelihood):
             self.use_nuisance
         except:
             self.use_nuisance = []
-        self.read_contamination_spectra(data)
 
-        self.nuisance.append(self.use_nuisance)
+        # Add in use_nuisance all the parameters that have non-flat prior
+        for nuisance in self.nuisance:
+            if hasattr(self, '%s_prior_center' % nuisance):
+                self.use_nuisance.append(nuisance)
 
     def loglkl(self, cosmo, data):
 
@@ -904,9 +906,6 @@ class Likelihood_clik(Likelihood):
 
         # get Cl's from the cosmological code
         cl = self.get_cl(cosmo)
-
-        # add contamination spectra multiplied by nuisance parameters
-        cl = self.add_contamination_spectra(cl, data)
 
         # testing for lensing
         if self.lensing:
