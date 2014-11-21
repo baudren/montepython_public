@@ -163,7 +163,8 @@ def get_covariance_matrix(cosmo, data, command_line):
     if command_line.fisher:
         # We will work out the fisher matrix for all the parameters and
         # write it to a file
-        warnings.warn("Fisher implementation is being tested")
+        if not command_line.silent:
+            warnings.warn("Fisher implementation is being tested")
 
         # Let us create a separate copy of data
         from copy import deepcopy
@@ -200,8 +201,9 @@ def get_covariance_matrix(cosmo, data, command_line):
             # Compute inverse of the fisher matrix, catch LinAlgError exception
             fisher_invert_success = True
             try:
-                print("Fisher matrix computed:")
-                print(fisher_matrix)
+                if not command_line.silent:
+                    print("Fisher matrix computed:")
+                    print(fisher_matrix)
                 cov_matrix = np.linalg.inv(fisher_matrix)
             except np.linalg.LinAlgError:
                 raise io_mp.ConfigurationError(
@@ -261,9 +263,10 @@ def get_covariance_matrix(cosmo, data, command_line):
                 i += 1
 
         # First print out
-        print('\nInput covariance matrix:')
-        print(covnames)
-        print(matrix)
+        if not command_line.silent:
+            print('\nInput covariance matrix:')
+            print(covnames)
+            print(matrix)
         # Deal with the all problematic cases.
         # First, adjust the scales between stored parameters and the ones used
         # in mcmc
@@ -285,9 +288,10 @@ def get_covariance_matrix(cosmo, data, command_line):
         matrix = np.dot(invscales.T, np.dot(matrix, invscales))
 
         # Second print out, after having applied the scale factors
-        print('\nFirst treatment (scaling)')
-        print(covnames)
-        print(matrix)
+        if not command_line.silent:
+            print('\nFirst treatment (scaling)')
+            print(covnames)
+            print(matrix)
 
         # Rotate matrix for the parameters to be well ordered, even if some
         # names are missing or some are in extra.
@@ -332,9 +336,10 @@ def get_covariance_matrix(cosmo, data, command_line):
         matrix = np.dot(rot, np.dot(matrix, np.transpose(rot)))
 
         # Third print out
-        print('\nSecond treatment (partial reordering and cleaning)')
-        print(temp_names_2)
-        print(matrix)
+        if not command_line.silent:
+            print('\nSecond treatment (partial reordering and cleaning)')
+            print(temp_names_2)
+            print(matrix)
 
         # Final step, creating a temporary matrix, filled with 1, that will
         # eventually contain the result.
@@ -382,9 +387,10 @@ def get_covariance_matrix(cosmo, data, command_line):
 
 
     # Final print out, the actually used covariance matrix
-    sys.stdout.write('\nDeduced starting covariance matrix:\n')
-    print(parameter_names)
-    print(matrix)
+    if not command_line.silent:
+        sys.stdout.write('\nDeduced starting covariance matrix:\n')
+        print(parameter_names)
+        print(matrix)
 
     #inverse, and diagonalization
     eigv, eigV = np.linalg.eig(np.linalg.inv(matrix))
