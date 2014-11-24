@@ -667,7 +667,7 @@ def compute_posterior(information_instances):
         if conf.plot_2d:
             if len(legends) > 1:
                 fig2d.legend(legends, legend_names, 'upper right',
-                             fontsize=info.fontsize)
+                             prop={'fontsize': info.fontsize})
             fig2d.tight_layout()
             fig2d.savefig(
                 os.path.join(
