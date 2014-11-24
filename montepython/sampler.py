@@ -160,7 +160,7 @@ def get_covariance_matrix(cosmo, data, command_line):
     np.set_printoptions(precision=2, linewidth=150)
     parameter_names = data.get_mcmc_parameters(['varying'])
 
-    if command_line.fisher:
+    if command_line.fisher and not command_line.cov:
         # We will work out the fisher matrix for all the parameters and
         # write it to a file
         if not command_line.silent:
@@ -186,7 +186,7 @@ def get_covariance_matrix(cosmo, data, command_line):
             read_args_from_bestfit(temp_data, command_line.bf)
             for elem in parameter_names:
                 temp_data.mcmc_parameters[elem]['current'] = (
-                temp_data.mcmc_parameters[elem]['last_accepted'])
+                    temp_data.mcmc_parameters[elem]['last_accepted'])
                 center[elem] = temp_data.mcmc_parameters[elem]['last_accepted']
 
         # Have a security index that prevents looping indefinitely

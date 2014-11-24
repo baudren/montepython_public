@@ -659,6 +659,9 @@ def create_parser():
     # -- folder to analyze
     infoparser.add_argument('files', help=helpdict['files'],
                             nargs='+')
+    # Silence the output (no print on the console)
+    infoparser.add_argument('--silent', help=helpdict['silent'],
+                            action='store_true')
     # -- to only write the covmat and bestfit, without computing the posterior
     infoparser.add_argument('--minimal', help=helpdict['minimal'],
                             action='store_true')
