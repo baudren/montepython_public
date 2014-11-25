@@ -666,8 +666,12 @@ def compute_posterior(information_instances):
                                 for elem in information_instances])
         if conf.plot_2d:
             if len(legends) > 1:
-                fig2d.legend(legends, legend_names, 'upper right',
-                             prop={'fontsize': info.fontsize})
+                try:
+                    fig2d.legend(legends, legend_names, 'upper right',
+                                 fontsize=info.legendsize)
+                except TypeError:
+                    fig2d.legend(legends, legend_names, 'upper right',
+                                 prop={'fontsize': info.legendsize})
             fig2d.tight_layout()
             fig2d.savefig(
                 os.path.join(
@@ -1488,6 +1492,10 @@ class Information(object):
         for elem in dir(command_line):
             if elem.find('__') == -1:
                 setattr(self, elem, getattr(command_line, elem))
+
+        # initialize the legend size to be the same as fontsize, but can be
+        # altered in the extra file
+        self.legendsize = self.fontsize
 
         # Read a potential file describing changes to be done for the parameter
         # names, and number of paramaters plotted (can be let empty, all will
