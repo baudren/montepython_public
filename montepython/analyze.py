@@ -378,8 +378,11 @@ def compute_posterior(information_instances):
     # Defined the legends object, which will store the plot style, to display
     # at the level of the figure
     legends = [None for _ in range(len(information_instances))]
-    legend_names = [info.basename.replace('_', ' ')
-                    for info in information_instances]
+    if not conf.legendnames:
+        legend_names = [info.basename.replace('_', ' ')
+                        for info in information_instances]
+    else:
+        legend_names = conf.legendnames
     print '-----------------------------------------------'
     for index, name in enumerate(plotted_parameters):
 
@@ -1496,6 +1499,7 @@ class Information(object):
         # initialize the legend size to be the same as fontsize, but can be
         # altered in the extra file
         self.legendsize = self.fontsize
+        self.legendnames = []
 
         # Read a potential file describing changes to be done for the parameter
         # names, and number of paramaters plotted (can be let empty, all will
