@@ -26,6 +26,7 @@ data.parameters['other']     = [0.1, -1., 1, 0.01, 1, 'nuisance']
 # Derived parameter list
 data.parameters['Omega_Lambda'] = [0,       -1, -1, 0,1,  'derived']
 
+data.cosmo_arguments['N_eff'] = 3.046
 
 #------ Mcmc parameters ----
 # Number of steps taken, by default (overwritten by the -N command)
