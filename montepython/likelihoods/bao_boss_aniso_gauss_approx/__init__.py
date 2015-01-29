@@ -31,7 +31,7 @@ class bao_boss_aniso_gauss_approx(Likelihood):
         i = 0
         with open(os.path.join(self.data_directory, self.file), 'r') as filein:
             for i, line in enumerate(filein):
-                if line.find('#') == -1:
+                if line.strip() and line.find('#') == -1:
                     this_line = line.split()
                     # this_line[0] is some identifier
                     self.z = np.append(self.z, float(this_line[1]))

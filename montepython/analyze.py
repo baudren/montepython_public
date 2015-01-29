@@ -104,13 +104,14 @@ def analyze(command_line):
         io_mp.write_bestfit_file(bestfit_line, info.backup_names,
                                  info.best_fit_path)
 
-    # Computing 1,2 and 3-sigma errors, and plot. This will create the
-    # triangle and 1d plot by default.
-    compute_posterior(information_instances)
+    if not command_line.minimal:
+        # Computing 1,2 and 3-sigma errors, and plot. This will create the
+        # triangle and 1d plot by default.
+        compute_posterior(information_instances)
 
-    print '--> Writing .info and .tex files'
-    for info in information_instances:
-        info.write_information_files()
+        print '--> Writing .info and .tex files'
+        for info in information_instances:
+            info.write_information_files()
 
 
 def prepare(files, info):
@@ -377,8 +378,11 @@ def compute_posterior(information_instances):
     # Defined the legends object, which will store the plot style, to display
     # at the level of the figure
     legends = [None for _ in range(len(information_instances))]
-    legend_names = [info.basename.replace('_', ' ')
-                    for info in information_instances]
+    if not conf.legendnames:
+        legend_names = [info.basename.replace('_', ' ')
+                        for info in information_instances]
+    else:
+        legend_names = conf.legendnames
     print '-----------------------------------------------'
     for index, name in enumerate(plotted_parameters):
 
@@ -659,14 +663,18 @@ def compute_posterior(information_instances):
                         info.extent, info.n)
 
     print '-----------------------------------------------'
-    print '--> Saving figures to .{0} files'.format(info.extension)
     if conf.plot:
+        print '--> Saving figures to .{0} files'.format(info.extension)
         plot_name = '-vs-'.join([os.path.split(elem.folder)[-1]
                                 for elem in information_instances])
         if conf.plot_2d:
             if len(legends) > 1:
-                fig2d.legend(legends, legend_names, 'upper right',
-                             fontsize=info.fontsize)
+                try:
+                    fig2d.legend(legends, legend_names, 'upper right',
+                                 fontsize=info.legendsize)
+                except TypeError:
+                    fig2d.legend(legends, legend_names, 'upper right',
+                                 prop={'fontsize': info.legendsize})
             fig2d.tight_layout()
             fig2d.savefig(
                 os.path.join(
@@ -1011,7 +1019,7 @@ def recover_folder_and_files(files):
     # The following list defines the substring that a chain should contain for
     # the code to recognise it as a proper chain.
     substrings = ['.txt', '__']
-    limit = 600
+    limit = 10
     # If the first element is a folder, grab all chain files inside
     if os.path.isdir(files[0]):
         folder = os.path.normpath(files[0])
@@ -1168,7 +1176,10 @@ def find_maximum_of_likelihood(info):
         cheese = (np.array([float(line.split()[1].strip())
                             for line in open(chain_file, 'r')]))
 
-        min_minus_lkl.append(cheese[:].min())
+        try:
+            min_minus_lkl.append(cheese[:].min())
+        except ValueError:
+            pass
 
     # beware, it is the min because we are talking about
     # '- log likelihood'
@@ -1485,6 +1496,11 @@ class Information(object):
             if elem.find('__') == -1:
                 setattr(self, elem, getattr(command_line, elem))
 
+        # initialize the legend size to be the same as fontsize, but can be
+        # altered in the extra file
+        self.legendsize = self.fontsize
+        self.legendnames = []
+
         # Read a potential file describing changes to be done for the parameter
         # names, and number of paramaters plotted (can be let empty, all will
         # then be plotted), but also the style of the plot. Note that this
@@ -1569,6 +1585,8 @@ class Information(object):
             name for index, name in enumerate(self.tex_names) if
             self.ref_names[index] in self.plotted_parameters]
         self.indices = [self.tex_names.index(name) for name in self.info_names]
+        self.tex_names = [name for index, name in enumerate(self.tex_names) if
+            self.ref_names[index] in self.plotted_parameters]
         self.info_names = [name.replace('$', '') for name in self.info_names]
 
         # Define the bestfit array

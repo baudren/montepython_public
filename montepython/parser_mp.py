@@ -162,7 +162,7 @@ def parse_docstring(docstring, key_symbol="<**>", description_symbol="<++>"):
         msg += " as there are surrounded by '{1}"
         raise ValueError(msg.format(key_symbol, description_symbol))
 
-    helpdict = {k: v for k, v in zip(keys, descriptions)}
+    helpdict = dict(zip(keys, descriptions))
     return helpdict
 
 
@@ -429,6 +429,9 @@ def create_parser():
         <**>-b<**> : str
             <++>start a new chain from the bestfit file<++> computed with
             analyze.  (*OPT*)<++>
+        <**>--fisher<**> : None
+            <++>Calculates the inverse of the fisher matrix<++> to use as
+            proposal distribution<++>
         <**>--silent<**> : None
             <++>silence the standard output<++> (useful when running on
             clusters)<++>
@@ -462,6 +465,10 @@ def create_parser():
 
             If you specify several folders (or set of files), a comparison
             will be performed.<++>
+        <**>--minimal<**> : None
+            <++>Use this flag to avoid computing the posterior
+            distribution.<++> This will decrease the time needed for the
+            analysis, especially when analyzing big folders.<++>
         <**>--bins<**> : int
             <++>number of bins in the histograms<++> used to derive posterior
             probabilities and credible intervals (default to 20). Decrease this
@@ -570,6 +577,9 @@ def create_parser():
     # -- jumping factor (OPTIONAL)
     runparser.add_argument('-f', help=helpdict['f'], type=float,
                            dest='jumping_factor', default=2.4)
+    # -- fisher (EXPERIMENTAL)
+    runparser.add_argument('--fisher', help=helpdict['fisher'],
+                           action='store_true')
     # -- configuration file (OPTIONAL)
     runparser.add_argument('--conf', help=helpdict['conf'],
                            type=str, dest='config_file',
@@ -644,6 +654,9 @@ def create_parser():
     # -- folder to analyze
     infoparser.add_argument('files', help=helpdict['files'],
                             nargs='+')
+    # -- to only write the covmat and bestfit, without computing the posterior
+    infoparser.add_argument('--minimal', help=helpdict['minimal'],
+                            action='store_true')
     # -- number of bins (defaulting to 20)
     infoparser.add_argument('--bins', help=helpdict['bins'],
                             type=int, default=20)

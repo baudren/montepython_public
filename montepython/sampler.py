@@ -2,6 +2,7 @@
 .. module:: sampler
     :synopsis: Generic sampler
 .. moduleauthor:: Benjamin Audren <benjamin.audren@epfl.ch>
+.. moduleauthor:: Surhudm More <>
 
 This module defines one key function, :func:`run`, that distributes the work to
 the desired actual sampler (Metropolis Hastings, or Nested Sampling so far).
@@ -19,8 +20,10 @@ all different sampler methods:
 """
 import numpy as np
 import sys
+import warnings
 
 import io_mp
+import os
 
 
 def run(cosmo, data, command_line):
@@ -130,7 +133,7 @@ def read_args_from_bestfit(data, bestfit):
             print data.mcmc_parameters[elem]['initial'][0]
 
 
-def get_covariance_matrix(data, command_line):
+def get_covariance_matrix(cosmo, data, command_line):
     """
     Compute the covariance matrix, from an input file or from an existing
     matrix.
@@ -156,11 +159,93 @@ def get_covariance_matrix(data, command_line):
     # computation).
     np.set_printoptions(precision=2, linewidth=150)
     parameter_names = data.get_mcmc_parameters(['varying'])
-    i = 0
 
-    # if the user provides a .covmat file
+    if command_line.fisher:
+        # We will work out the fisher matrix for all the parameters and
+        # write it to a file
+        warnings.warn("Fisher implementation is being tested")
+
+        # Let us create a separate copy of data
+        from copy import deepcopy
+        # Do not modify data, instead copy
+        temp_data = deepcopy(data)
+        done = False
+
+        # Create the center dictionary, which will hold the center point
+        # information (or best-fit) TODO
+        # This dictionary will be updated in case it was too far from the
+        # best-fit, and found a non positive-definite symmetric fisher matrix.
+        center = {}
+        if not command_line.bf:
+            for elem in parameter_names:
+                temp_data.mcmc_parameters[elem]['current'] = (
+                    data.mcmc_parameters[elem]['initial'][0])
+                center[elem] = data.mcmc_parameters[elem]['initial'][0]
+        else:
+            read_args_from_bestfit(temp_data, command_line.bf)
+            for elem in parameter_names:
+                temp_data.mcmc_parameters[elem]['current'] = (
+                temp_data.mcmc_parameters[elem]['last_accepted'])
+                center[elem] = temp_data.mcmc_parameters[elem]['last_accepted']
+
+        # Have a security index that prevents looping indefinitely
+        security = 0
+        while not done and security < 10:
+            security += 1
+            # Compute the Fisher matrix and the gradient array at the center
+            # point.
+            fisher_matrix, gradient = compute_fisher(
+                temp_data, cosmo, center, 0.01)
+
+            # Compute inverse of the fisher matrix, catch LinAlgError exception
+            fisher_invert_success = True
+            try:
+                print("Fisher matrix computed:")
+                print(fisher_matrix)
+                cov_matrix = np.linalg.inv(fisher_matrix)
+            except np.linalg.LinAlgError:
+                raise io_mp.ConfigurationError(
+                    "Could not find Fisher matrix, please remove the "
+                    "option --fisher and run with Metropolis-Hastings "
+                    "or another sampling method.")
+                fisher_invert_success = False
+                done = True
+
+            # Write it to the file
+            if fisher_invert_success:
+                io_mp.write_covariance_matrix(
+                    cov_matrix, parameter_names,
+                    os.path.join(command_line.folder, 'covariance_fisher.mat'))
+
+                command_line.cov = os.path.join(
+                    command_line.folder, 'covariance_fisher.mat')
+
+                done = True
+                # Check if the diagonal elements are non-negative
+                for h, elem in enumerate(parameter_names):
+                    if cov_matrix[h][h] < 0:
+                        warnings.warn(
+                            "Covariance has negative values on diagonal, "
+                            "moving to a better point and repeating "
+                            "the Fisher computation")
+                        done = False
+                        break
+
+                if not done:
+                    # Solve for a step
+                    step = np.dot(cov_matrix, gradient)
+                    # Now modify data_parameters TODO HERE update center
+                    for k, elem in enumerate(parameter_names):
+                        data.mcmc_parameters[elem]['initial'][0] = data.mcmc_parameters[elem]['initial'][0]-step[k]
+                        temp_data.mcmc_parameters[elem]['initial'][0] = temp_data.mcmc_parameters[elem]['initial'][0]-step[k]
+                        print "Moved %s to:"%(elem),data.mcmc_parameters[elem]['initial'][0]
+
+    # if the user provides a .covmat file or if user asks to compute a fisher matrix
     if command_line.cov is not None:
+
         cov = open('{0}'.format(command_line.cov), 'r')
+
+        i = 0
         for line in cov:
             if line.find('#') != -1:
                 # Extract the names from the first line
@@ -288,14 +373,13 @@ def get_covariance_matrix(data, command_line):
             matrix[zeros, zeros] = np.array(
                 data.mcmc_parameters[parameter_names[zeros]]['initial'][3],
                 'float64')**2
-
     # else, take sigmas^2.
     else:
         matrix = np.identity(len(parameter_names), 'float64')
-        for elem in parameter_names:
-            matrix[i][i] = np.array(
+        for index, elem in enumerate(parameter_names):
+            matrix[index][index] = np.array(
                 data.mcmc_parameters[elem]['initial'][3], 'float64')**2
-            i += 1
+
 
     # Final print out, the actually used covariance matrix
     sys.stdout.write('\nDeduced starting covariance matrix:\n')
@@ -458,3 +542,88 @@ def compute_lkl(cosmo, data):
                 "are coherent for your tested models")
 
     return loglike
+
+
+def compute_fisher(data, cosmo, center, step_size):
+
+    parameter_names = data.get_mcmc_parameters(['varying'])
+    fisher_matrix = np.zeros(
+        (len(parameter_names), len(parameter_names)), 'float64')
+    # Initialise the gradient field
+    gradient = np.zeros(len(parameter_names), 'float64')
+
+    for k, elem_k in enumerate(parameter_names):
+        kdiff = center[elem_k]*step_size
+        if kdiff == 0.0:
+            kdiff = step_size
+        for h, elem_h in enumerate(parameter_names):
+            hdiff = center[elem_h]*step_size
+            if hdiff == 0.0:
+                hdiff = step_size
+            # Since the matrix is symmetric, we only compute the
+            # elements of one half of it plus the diagonal.
+            if k > h:
+                continue
+            if k != h:
+                fisher_matrix[k][h] = compute_fisher_element(
+                    data, cosmo, center,
+                    (elem_k, kdiff),
+                    (elem_h, hdiff))
+                fisher_matrix[h][k] = fisher_matrix[k][h]
+            else:
+                fisher_matrix[k][k], gradient[k] = compute_fisher_element(
+                    data, cosmo, center,
+                    (elem_k, kdiff))
+
+    return fisher_matrix, gradient
+
+
+def compute_fisher_element(data, cosmo, center, one, two=None):
+
+    # Unwrap
+    name_1, diff_1 = one
+    if two:
+        name_2, diff_2 = two
+        data.mcmc_parameters[name_1]['current'] = (
+            center[name_1]+diff_1)
+        data.mcmc_parameters[name_2]['current'] = (
+            center[name_2]+diff_2)
+        data.update_cosmo_arguments()
+        loglike_1 = compute_lkl(cosmo, data)
+
+        data.mcmc_parameters[name_2]['current'] -= 2*diff_2
+        data.update_cosmo_arguments()
+        loglike_2 = compute_lkl(cosmo, data)
+
+        data.mcmc_parameters[name_1]['current'] -= 2*diff_1
+        data.mcmc_parameters[name_2]['current'] += 2*diff_2
+        data.update_cosmo_arguments()
+        loglike_3 = compute_lkl(cosmo, data)
+
+        data.mcmc_parameters[name_2]['current'] -= 2*diff_2
+        data.update_cosmo_arguments()
+        loglike_4 = compute_lkl(cosmo, data)
+
+        fisher_off_diagonal = -(
+            loglike_1-loglike_2-loglike_3+loglike_4)/(4.*diff_1*diff_2)
+
+        return fisher_off_diagonal
+    # It is otherwise a diagonal component
+    else:
+        data.mcmc_parameters[name_1]['current'] = center[name_1]
+        data.update_cosmo_arguments()
+        loglike_1 = compute_lkl(cosmo, data)
+
+        data.mcmc_parameters[name_1]['current'] += diff_1
+        data.update_cosmo_arguments()
+        loglike_2 = compute_lkl(cosmo, data)
+
+        data.mcmc_parameters[name_1]['current'] -= 2*diff_1
+        data.update_cosmo_arguments()
+        loglike_3 = compute_lkl(cosmo, data)
+
+        fisher_diagonal = -(
+            loglike_2-2.*loglike_1+loglike_3)/(diff_1**2)
+        gradient = -(loglike_2-loglike_3)/(2.*diff_1)
+
+        return fisher_diagonal, gradient
