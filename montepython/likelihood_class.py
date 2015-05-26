@@ -1357,13 +1357,15 @@ class Likelihood_mpk(Likelihood):
             r, Hz = cosmo.z_of_r([self.redshift])
             d_radial = 1/Hz[0]
 
-            # scaling factor = (d_angular**2 * d_radial)^(1/3) relative
-            # to a fiducial model. The values are stored in the .data files for
+            # scaling factor = (d_angular**2 * d_radial)^(1/3) for the
+            # fiducial cosmology used in the data files of the observations
+            # divided by the same quantity for the cosmology we are comparing with. 
+            # The fiducial values are stored in the .data files for
             # each experiment, and are truly in Mpc. Beware for a potential
             # difference with CAMB conventions here.
             scaling = pow(
-                (d_angular/self.d_angular_fid)**2 *
-                (d_radial/self.d_radial_fid), 1./3.)
+                (self.d_angular_fid/d_angular)**2 *
+                (self.d_radial_fid/d_radial), 1./3.)
         else:
             scaling = 1
 
