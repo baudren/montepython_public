@@ -843,7 +843,8 @@ class Likelihood_clik(Likelihood):
                 "and try again.")
         # for lensing, some routines change. Intializing a flag for easier
         # testing of this condition
-        if self.name == 'Planck_lensing':
+        #if self.name == 'Planck_lensing':
+        if 'lensing' in self.name and 'Planck' in self.name:
             self.lensing = True
         else:
             self.lensing = False
@@ -851,7 +852,13 @@ class Likelihood_clik(Likelihood):
         try:
             if self.lensing:
                 self.clik = clik.clik_lensing(self.path_clik)
-                self.l_max = self.clik.get_lmax()
+                try: 
+                    self.l_max = max(self.clik.get_lmax())
+                # following 2 lines for compatibility with lensing likelihoods of 2013 and before
+                # (then, clik.get_lmax() just returns an integer for lensing likelihoods;
+                # this behavior was for clik versions < 10)
+                except:
+                    self.l_max = self.clik.get_lmax()
             else:
                 self.clik = clik.clik(self.path_clik)
                 self.l_max = max(self.clik.get_lmax())
@@ -894,9 +901,11 @@ class Likelihood_clik(Likelihood):
             self.use_nuisance
         except:
             self.use_nuisance = []
-        self.read_contamination_spectra(data)
 
-        self.nuisance.append(self.use_nuisance)
+        # Add in use_nuisance all the parameters that have non-flat prior
+        for nuisance in self.nuisance:
+            if hasattr(self, '%s_prior_center' % nuisance):
+                self.use_nuisance.append(nuisance)
 
     def loglkl(self, cosmo, data):
 
@@ -905,19 +914,21 @@ class Likelihood_clik(Likelihood):
         # get Cl's from the cosmological code
         cl = self.get_cl(cosmo)
 
-        # add contamination spectra multiplied by nuisance parameters
-        cl = self.add_contamination_spectra(cl, data)
-
         # testing for lensing
         if self.lensing:
-            length = 2
+            try:
+                length = len(self.clik.get_lmax())
+                tot = np.zeros(
+                    np.sum(self.clik.get_lmax()) + length +
+                    len(self.clik.get_extra_parameter_names()))
+            # following 3 lines for compatibility with lensing likelihoods of 2013 and before
+            # (then, clik.get_lmax() just returns an integer for lensing likelihoods,
+            # and the length is always 2 for cl['pp'], cl['tt'])
+            except:
+                length = 2
+                tot = np.zeros(2*self.l_max+length + len(self.clik.get_extra_parameter_names()))
         else:
             length = len(self.clik.get_has_cl())
-
-        # allocate array of Cl's and nuisance parameters
-        if self.lensing:
-            tot = np.zeros(2*self.l_max+length)
-        else:
             tot = np.zeros(
                 np.sum(self.clik.get_lmax()) + length +
                 len(self.clik.get_extra_parameter_names()))
@@ -944,13 +955,38 @@ class Likelihood_clik(Likelihood):
                     index += self.clik.get_lmax()[i]+1
 
         else:
-            for i in range(length):
-                for j in range(self.l_max):
-                    if (i == 0):
-                        tot[index+j] = cl['pp'][j]
-                    if (i == 1):
-                        tot[index+j] = cl['tt'][j]
-                index += self.l_max+1
+            try:
+                for i in range(length):
+                    if (self.clik.get_lmax()[i] > -1):
+                        for j in range(self.clik.get_lmax()[i]+1):
+                            if (i == 0):
+                                tot[index+j] = cl['pp'][j]
+                            if (i == 1):
+                                tot[index+j] = cl['tt'][j]
+                            if (i == 2):
+                                tot[index+j] = cl['ee'][j]
+                            if (i == 3):
+                                tot[index+j] = cl['bb'][j]
+                            if (i == 4):
+                                tot[index+j] = cl['te'][j]
+                            if (i == 5):
+                                tot[index+j] = 0 #cl['tb'][j] class does not compute tb
+                            if (i == 6):
+                                tot[index+j] = 0 #cl['eb'][j] class does not compute eb
+
+                        index += self.clik.get_lmax()[i]+1
+
+            # following 8 lines for compatibility with lensing likelihoods of 2013 and before
+            # (then, clik.get_lmax() just returns an integer for lensing likelihoods,
+            # and the length is always 2 for cl['pp'], cl['tt'])
+            except:
+                for i in range(length):
+                    for j in range(self.l_max):
+                        if (i == 0):
+                            tot[index+j] = cl['pp'][j]
+                        if (i == 1):
+                            tot[index+j] = cl['tt'][j]
+                    index += self.l_max+1
 
         # fill with nuisance parameters
         for nuisance in self.clik.get_extra_parameter_names():
@@ -962,10 +998,12 @@ class Likelihood_clik(Likelihood):
                     "the likelihood needs a parameter %s. " % nuisance +
                     "You must pass it through the input file " +
                     "(as a free nuisance parameter or a fixed parameter)")
+            #print "found one nuisance with name",nuisance
             tot[index] = nuisance_value
             index += 1
 
         # compute likelihood
+        #print "lkl:",self.clik(tot)
         lkl = self.clik(tot)[0]
 
         # add prior on nuisance parameters
@@ -1358,13 +1396,15 @@ class Likelihood_mpk(Likelihood):
             r, Hz = cosmo.z_of_r([self.redshift])
             d_radial = 1/Hz[0]
 
-            # scaling factor = (d_angular**2 * d_radial)^(1/3) relative
-            # to a fiducial model. The values are stored in the .data files for
+            # scaling factor = (d_angular**2 * d_radial)^(1/3) for the
+            # fiducial cosmology used in the data files of the observations
+            # divided by the same quantity for the cosmology we are comparing with. 
+            # The fiducial values are stored in the .data files for
             # each experiment, and are truly in Mpc. Beware for a potential
             # difference with CAMB conventions here.
             scaling = pow(
-                (d_angular/self.d_angular_fid)**2 *
-                (d_radial/self.d_radial_fid), 1./3.)
+                (self.d_angular_fid/d_angular)**2 *
+                (self.d_radial_fid/d_radial), 1./3.)
         else:
             scaling = 1
 

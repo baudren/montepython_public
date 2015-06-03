@@ -1,6 +1,5 @@
 from montepython.likelihood_class import Likelihood
 
-
 class Planck_SZ(Likelihood):
 
     # initialization routine
@@ -9,6 +8,7 @@ class Planck_SZ(Likelihood):
         Likelihood.__init__(self, path, data, command_line)
 
         self.need_cosmo_arguments(data, {'output': 'mPk'})
+        self.need_cosmo_arguments(data, {'P_k_max_h/Mpc': '1.'})
 
     # compute likelihood
     def loglkl(self, cosmo, data):

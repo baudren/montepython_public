@@ -235,7 +235,7 @@ def chain(cosmo, data, command_line):
     # Recover the covariance matrix according to the input, if the varying set
     # of parameters is non-zero
     if (data.get_mcmc_parameters(['varying']) != []):
-        sigma_eig, U, C = sampler.get_covariance_matrix(data, command_line)
+        sigma_eig, U, C = sampler.get_covariance_matrix(cosmo, data, command_line)
         if data.jumping_factor == 0:
             warnings.warn(
                 "The jumping factor has been set to 0. The above covariance " +

@@ -39,7 +39,7 @@ class bao_boss(Likelihood):
         # read redshifts and data points
         with open(os.path.join(self.data_directory, self.file), 'r') as filein:
             for line in filein:
-                if line.find('#') == -1:
+                if line.strip() and line.find('#') == -1:
                     # the first entry of the line is the identifier
                     this_line = line.split()
                     # insert into array if this id is not manually excluded

@@ -77,26 +77,26 @@ def run(cosmo, data, command_line):
     new_experiments = recover_new_experiments(
         data, command_line, starting_folder)
     if not new_experiments:
-        # it means that some experiments that were used before are no longer
-        # used. In this case, one should recompute all the likelihoods.
-        new_experiments = data.experiments
+        raise io_mp.ConfigurationError(
+            "You are using Importance Sampling without adding a new "
+            "experiment. This is not what this method is coded for.")
 
     # resetting the needed cosmo arguments, and deleting the dictionary of
     # likelihoods, only if new_experiments is smaller than the old ones.
-    ignore_likelihood = True
-    if set(new_experiments) < set(data.experiments):
-        data.cosmo_arguments = {}
-        data.initialise_likelihoods(new_experiments)
-        ignore_likelihood = False
-    elif set(new_experiments) == set(data.experiments):
-        warnings.warn(
-            "All likelihoods were found to be different than ones from the "
-            "starting folder, or some were not used any longer. The previous "
-            "value of the likelihood will be discarded.")
-    else:
-        io_mp.ConfigurationError(
-            "You probably tried to run Importance Sampling with less "
-            "experiments than what you started with. This is not supported.")
+    ignore_likelihood = False
+
+    # Wipe out the problematic information from previous likelihoods,
+    # namely their desired output
+    data.cosmo_arguments['output'] = ''
+
+    try:
+        del data.cosmo_arguments['l_max_scalars']
+        del data.cosmo_arguments['lensing']
+    except KeyError:
+        pass
+
+    # Initialise the requirements of the new likelihood
+    data.initialise_likelihoods(new_experiments)
 
     # Multiprocessing part, to analyze all the chains in parallel. When not
     # specifying any 'processes' keyword argument to the Pool call, the system
@@ -124,15 +124,19 @@ def recover_new_experiments(data, command_line, starting_folder):
     modified_command_line.folder = starting_folder
     modified_command_line.param = os.path.join(starting_folder, 'log.param')
 
+    # Go through the file, and stop when you find the good line. The previous
+    # way of doing, to simply initialise another data instance fails when using
+    # Planck. Indeed, clik likelihoods can not be initialised twice.
     print 'Reading the starting folder'
     print '---------------------------'
-    data2 = Data(modified_command_line, data.path)
-    print '---------------------------'
-    print 'Finished loading existing data'
-    print
-    print 'The likelihood will be computed for:'
+    with open(modified_command_line.param, 'r') as init:
+        for line in init:
+            if line.find('data.experiments') != -1:
+                _, experiments = line.split('=')
+                experiments = experiments.strip()
+    print 'The likelihood will be computed only for:'
     new_experiments = [
-        elem for elem in data.experiments if elem not in data2.experiments]
+        elem for elem in data.experiments if elem not in experiments]
     print ' ->',
     print ', '.join(new_experiments)
 
