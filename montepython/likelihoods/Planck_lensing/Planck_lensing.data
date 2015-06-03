@@ -5,3 +5,13 @@ Planck_lensing.path_clik = os.path.join(data.path['clik'], '../lensing_likelihoo
 
 # for Planck 2015 release (baseline):
 #Planck_lensing.path_clik = os.path.join(data.path['clik'], '../lensing/smica_g30_ftl_full_pp.clik_lensing')
+
+# note concerning the Planck 2015 likelihood:
+# This likelihood has a nuisance parameter A_planck that should be declared in
+# your input parameter file.
+# Usually this likelihood is used in combination with the highl likelihood,
+# which imposes a gaussian prior on this nuisance parameter.
+# If you run this likelihood alone (without the highl one), you need to
+# impose the gaussian prior here. In that case, uncomment the two lines:
+#Planck_highl.A_planck_prior_center            = 1
+#Planck_highl.A_planck_prior_variance          = 0.0025 
