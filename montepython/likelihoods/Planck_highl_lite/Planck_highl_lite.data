@@ -1,0 +1,3 @@
+Planck_highl_lite.path_clik = os.path.join(data.path['clik'], '../hi_l/plik_lite/plik_lite_v18_TTonly.clik')
+Planck_highl_lite.A_planck_prior_center            = 1  
+Planck_highl_lite.A_planck_prior_variance          = 0.0025
