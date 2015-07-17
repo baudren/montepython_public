@@ -1,10 +1,10 @@
 # Grab the clik version of the Planck lensing likelihood
 
 # for Planck 2013:
-Planck_lensing.path_clik = os.path.join(data.path['clik'], '../lensing_likelihood_v4_ref.clik_lensing')
+#Planck_lensing.path_clik = os.path.join(data.path['clik'], '../lensing_likelihood_v4_ref.clik_lensing')
 
 # for Planck 2015 release (baseline):
-#Planck_lensing.path_clik = os.path.join(data.path['clik'], '../lensing/smica_g30_ftl_full_pp.clik_lensing')
+Planck_lensing.path_clik = os.path.join(data.path['clik'], '../plc_2.0/lensing/smica_g30_ftl_full_pp.clik_lensing')
 
 # note concerning the Planck 2015 likelihood:
 # This likelihood has a nuisance parameter A_planck that should be declared in

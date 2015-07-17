@@ -1,5 +1,12 @@
 #------Experiments to test (separated with commas)-----
 
+########################### WARNING ####################################
+# This file was showing how to run the base model with Planck 2013 data.
+# We leave this file for reference.
+# But please use the file base2015.param for Planck 2015! 
+# The nuisance parameter names and priors have changed!
+########################################################################
+
 data.experiments=['Planck_highl','Planck_lowl','lowlike']
 
 #------ Settings for the over-sampling.

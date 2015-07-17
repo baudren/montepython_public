@@ -1,10 +1,10 @@
 # Grab the clik version of the lowl lieklihood
 
 # for Planck 2013 release:
-Planck_lowl.path_clik = os.path.join(data.path['clik'], '../commander_v4.1_lm49.clik')
+#Planck_lowl.path_clik = os.path.join(data.path['clik'], '../commander_v4.1_lm49.clik')
 
 # for the Planck 2015 release (baseline):
-#Planck_lowl.path_clik = os.path.join(data.path['clik'], '../low_l/bflike/lowl_SMW_70_dx11d_2014_10_03_v5c_Ap.clik')
+Planck_lowl.path_clik = os.path.join(data.path['clik'], '../plc_2.0/low_l/bflike/lowl_SMW_70_dx11d_2014_10_03_v5c_Ap.clik')
 
 # note concerning the Planck 2015 likelihood:
 # This likelihood has a nuisance parameter A_planck that should be declared in
