@@ -350,6 +350,12 @@ def compute_posterior(information_instances):
     num_columns = int(round(math.sqrt(len(plotted_parameters))))
     num_lines = int(math.ceil(len(plotted_parameters)*1.0/num_columns))
 
+    # For special needs, you can impose here a different number of columns and lines in the 1d plot
+    # Here is a commented example:
+    # if (len(plotted_parameters) == 10):
+    #     num_columns = 5
+    #     num_lines = 2
+
     # Create the figures
     # which will be 3*3 inches per subplot, quickly growing!
     if conf.plot:
@@ -1444,7 +1450,7 @@ class Information(object):
         (0.90000, 0.75353, 0.10941, 1.)]
 
     # Define colormaps for the contour plots
-    cmaps = [plt.cm.gray_r, plt.cm.Purples, plt.cm.Reds_r]
+    cmaps = [plt.cm.gray_r, plt.cm.Purples, plt.cm.Reds_r, plt.cm.Greens]
     alphas = [1.0, 0.8, 0.6, 0.4]
 
     def __init__(self, command_line, other=None):

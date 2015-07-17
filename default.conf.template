@@ -22,4 +22,4 @@
 root = '/Path/to/your/codes'
 
 path['cosmo']		= root+'/class'
-path['clik']            = root+'/planck/plc-1.0'
+path['clik']            = root+'/planck/plc-2.0'

@@ -882,6 +882,13 @@ class Likelihood_clik(Likelihood):
 
         self.nuisance = list(self.clik.extra_parameter_names)
 
+        # line added to deal with a bug in planck likelihood release: A_planck called A_Planck in plik_lite
+        if (self.name == 'Planck_highl_lite'):
+            for i in range(len(self.nuisance)):   
+                if (self.nuisance[i] == 'A_Planck'):
+                    self.nuisance[i] = 'A_planck'
+            print "In %s, MontePython corrected nuisance parameter name A_Planck to A_planck" % self.name
+
         # testing if the nuisance parameters are defined. If there is at least
         # one non defined, raise an exception.
         exit_flag = False
@@ -990,6 +997,12 @@ class Likelihood_clik(Likelihood):
 
         # fill with nuisance parameters
         for nuisance in self.clik.get_extra_parameter_names():
+
+            # line added to deal with a bug in planck likelihood release: A_planck called A_Planck in plik_lite
+            if (self.name == 'Planck_highl_lite'):
+                if nuisance == 'A_Planck':
+                    nuisance = 'A_planck'
+
             if nuisance in nuisance_parameter_names:
                 nuisance_value = data.mcmc_parameters[nuisance]['current'] *\
                     data.mcmc_parameters[nuisance]['scale']
