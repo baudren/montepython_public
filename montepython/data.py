@@ -566,7 +566,7 @@ class Data(object):
             flag = False
             # For each one, check if they belong to a likelihood
             for likelihood in self.lkl.itervalues():
-                if elem in likelihood.nuisance:
+                if (elem in likelihood.nuisance) and (index < len(nuisance)):
                     # If yes, store the number of nuisance parameters needed
                     # for this likelihood.
                     flag = True

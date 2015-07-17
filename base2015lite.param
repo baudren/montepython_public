@@ -42,7 +42,7 @@ data.parameters['tau_reio']     = [0.09463,   0.04, None,  0.013,    1, 'cosmo']
 
 # Nuisance parameter list, same call, except the name does not have to be a class name
 
-data.parameters['A_Planck']          = [100.028,   90,  110,  0.25,  0.01,'nuisance']  
+data.parameters['A_planck']          = [100.028,   90,  110,  0.25,  0.01,'nuisance']  
 
 # Derived parameters
 
