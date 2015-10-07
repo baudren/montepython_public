@@ -227,7 +227,8 @@ class Data(object):
                     if line.find('_VERSION_') != -1:
                         self.version = line.split()[-1].replace('"', '')
                         break
-            print 'with CLASS %s' % self.version
+            if not command_line.silent:
+                print 'with CLASS %s' % self.version
             # Git version number and branch
             try:
                 # This nul_file helps to get read of a potential useless error
@@ -323,8 +324,9 @@ class Data(object):
             io_mp.log_parameters(self, command_line)
             self.log_flag = True
 
-        print '\nTesting likelihoods for:\n ->',
-        print ', '.join(self.experiments)+'\n'
+        if not command_line.silent:
+            print '\nTesting likelihoods for:\n ->',
+            print ', '.join(self.experiments)+'\n'
 
         self.initialise_likelihoods(self.experiments)
 

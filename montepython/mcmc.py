@@ -37,12 +37,13 @@ import random as rd
 import numpy as np
 import warnings
 import scipy.linalg as la
+from pprint import pprint
 
 import io_mp
 import sampler
 
 
-def get_new_position(data, eigv, U, k, Cholesky, Inverse_Cholesky, Rotation):
+def get_new_position(data, eigv, U, k, Cholesky, Rotation):
     """
     Obtain a new position in the parameter space from the eigen values of the
     inverse covariance matrix, or from the Cholesky decomposition (original
@@ -143,9 +144,6 @@ def get_new_position(data, eigv, U, k, Cholesky, Inverse_Cholesky, Rotation):
                 break
             else:
                 continue
-        ####################
-        # method fast+sequential
-        #sigmas[i] = rd.gauss(0,1)*data.jumping_factor
     else:
         print('\n\n Jumping method unknown (accepted : ')
         print('global (default), sequential, fast)')
@@ -190,13 +188,12 @@ def get_new_position(data, eigv, U, k, Cholesky, Inverse_Cholesky, Rotation):
     return True
 
 
-
 ######################
 # MCMC CHAIN
 ######################
 def chain(cosmo, data, command_line):
     """
-    Run a Markov chain of fixed length.
+    Run a Markov chain of fixed length with a Metropolis Hastings algorithm.
 
     Main function of this module, this is the actual Markov chain procedure.
     After having selected a starting point in parameter space defining the
@@ -204,7 +201,8 @@ def chain(cosmo, data, command_line):
 
     + choose randomnly a new point following the *proposal density*,
     + compute the cosmological *observables* through the cosmological module,
-    + compute the value of the *likelihoods* of the desired experiments at this point,
+    + compute the value of the *likelihoods* of the desired experiments at this
+      point,
     + *accept/reject* this point given its likelihood compared to the one of
       the last accepted one.
 
@@ -258,12 +256,14 @@ def chain(cosmo, data, command_line):
     # covariance matrix. Return the Cholesky decomposition as a lower
     # triangular matrix
     Cholesky = None
-    Inverse_Cholesky = None
     Rotation = None
     if command_line.jumping == 'fast':
         Cholesky = la.cholesky(C).T
-        Inverse_Cholesky = np.linalg.inv(Cholesky)
         Rotation = np.identity(len(sigma_eig))
+
+    # If the adaptive mode was selected, the original matrix should be stored
+    if command_line.adaptive:
+        original = (sigma_eig, U, C, Cholesky)
 
     # If restart wanted, pick initial value for arguments
     if command_line.restart is not None:
@@ -278,7 +278,7 @@ def chain(cosmo, data, command_line):
     # else), with a 100 tries.
     for i in range(100):
         if get_new_position(data, sigma_eig, U, i,
-                            Cholesky, Inverse_Cholesky, Rotation) is True:
+                            Cholesky, Rotation) is True:
             break
         if i == 99:
             raise io_mp.ConfigurationError(
@@ -303,20 +303,66 @@ def chain(cosmo, data, command_line):
     N = 1   # number of time the system stayed in the current position
 
     # Print on screen the computed parameters
-    io_mp.print_parameters(sys.stdout, data)
+    if not command_line.silent:
+        io_mp.print_parameters(sys.stdout, data)
 
     k = 1
     # Main loop, that goes on while the maximum number of failure is not
     # reached, and while the expected amount of steps (N) is not taken.
     while k <= command_line.N:
 
+        # If the number of steps reaches the number set in the adaptive method,
+        # then the proposal distribution should be adapted.
+        if command_line.adaptive:
+            # Add the folder to the list of files to analyze, and switch on the
+            # options for computing only the covmat
+            try:
+                from mpi4py import MPI
+                comm = MPI.COMM_WORLD
+                rank = comm.Get_rank()
+            except ImportError:
+                raise io_mp.ConfigurationError(
+                    "You need mpi for the adaptive method")
+            if rank == 0:
+                from parser_mp import parse
+                info_command_line = parse(
+                    'info %s --minimal --noplot' % command_line.folder)
+                if not (k-10) % command_line.adaptive and k > 10:
+                    # Launch an analyze
+                    from analyze import analyze
+                    analyze(info_command_line)
+                    # Read the covmat
+                    base = os.path.basename(command_line.folder)
+                    command_line.cov = os.path.join(
+                        command_line.folder, base+'.covmat')
+                    sigma_eig, U, C = sampler.get_covariance_matrix(
+                        cosmo, data, command_line)
+                    if command_line.jumping == 'fast':
+                        Cholesky = la.cholesky(C).T
+                    print 'acceptance rate:', acc/(acc+rej)
+                    print 'original: '
+                    pprint(original[2])
+                    print 'new: '
+                    pprint(C)
+            else:
+                if not k % command_line.adaptive:
+                    base = os.path.basename(command_line.folder)
+                    command_line.cov = os.path.join(
+                        command_line.folder, base+'.covmat')
+                    try:
+                        sigma_eig, U, C = sampler.get_covariance_matrix(
+                            cosmo, data, command_line)
+                        if command_line.jumping == 'fast':
+                            Cholesky = la.cholesky(C).T
+                    except IOError:
+                        pass
+
         # Pick a new position ('current' flag in mcmc_parameters), and compute
         # its likelihood. If get_new_position returns True, it means it did not
         # encounter any boundary problem. Otherwise, just increase the
         # multiplicity of the point and start the loop again
         if get_new_position(
-                data, sigma_eig, U, k, Cholesky,
-                Inverse_Cholesky, Rotation) is True:
+                data, sigma_eig, U, k, Cholesky, Rotation) is True:
             newloglike = sampler.compute_lkl(cosmo, data)
         else:  # reject step
             rej += 1

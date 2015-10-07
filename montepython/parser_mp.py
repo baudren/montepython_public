@@ -60,7 +60,6 @@ class MpArgumentParser(ap.ArgumentParser):
         if not args:
             args = sys.argv[1:]
         if args[0] not in ['-h', '--help', '--version', '-info']:
-            print args[0]
             if args[0].find('-') != -1:
                 msg = "Defaulting to the 'run' command. Please update the"
                 msg += " call of MontePython. For more info, see the help"
@@ -385,6 +384,9 @@ def create_parser():
 
             Note that when running with Importance sampling, you need to
             specify a folder to start from.<++>
+        <**>--adaptive<**> : int
+            <++>adaptive mode for Metropolis Hastings<++> (int, default to 0,
+            i.e. is not set) (*OPT*).<++>
         <**>-f<**> : float
             <++>jumping factor<++> (>= 0, default to 2.4) (*OPT*).
 
@@ -574,6 +576,9 @@ def create_parser():
     runparser.add_argument('-m', '--method', help=helpdict['m'],
                            dest='method', default='MH',
                            choices=['MH', 'NS', 'CH', 'IS', 'Der'])
+    # -- adaptive Metropolis Hastings (OPTIONAL)
+    runparser.add_argument('--adaptive', help=helpdict['adaptive'], type=int,
+                           default=0)
     # -- jumping factor (OPTIONAL)
     runparser.add_argument('-f', help=helpdict['f'], type=float,
                            dest='jumping_factor', default=2.4)
@@ -654,6 +659,9 @@ def create_parser():
     # -- folder to analyze
     infoparser.add_argument('files', help=helpdict['files'],
                             nargs='+')
+    # Silence the output (no print on the console)
+    infoparser.add_argument('--silent', help=helpdict['silent'],
+                            action='store_true')
     # -- to only write the covmat and bestfit, without computing the posterior
     infoparser.add_argument('--minimal', help=helpdict['minimal'],
                             action='store_true')
@@ -745,9 +753,10 @@ def parse(custom_command=''):
             args.folder = os.path.sep.join(
                 args.restart.split(os.path.sep)[:-1])
             args.param = os.path.join(args.folder, 'log.param')
-            warnings.warn(
-                "Restarting from %s." % args.restart +
-                " Using associated log.param.")
+            if not args.silent:
+                warnings.warn(
+                    "Restarting from %s." % args.restart +
+                    " Using associated log.param.")
 
         # Else, the user should provide an output folder
         else:
@@ -768,9 +777,10 @@ def parse(custom_command=''):
                     args.param = os.path.join(
                         args.folder, 'log.param')
                     if old_param is not None:
-                        warnings.warn(
-                            "Appending to an existing folder: using the "
-                            "log.param instead of %s" % old_param)
+                        if not args.silent:
+                            warnings.warn(
+                                "Appending to an existing folder: using the "
+                                "log.param instead of %s" % old_param)
                 else:
                     if args.param is None:
                         raise io_mp.ConfigurationError(
