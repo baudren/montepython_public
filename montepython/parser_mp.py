@@ -384,8 +384,8 @@ def create_parser():
 
             Note that when running with Importance sampling, you need to
             specify a folder to start from.<++>
-        <**>--adaptive<**> : int
-            <++>adaptive mode for Metropolis Hastings<++> (int, default to 0,
+        <**>--update<**> : int
+            <++>update mode for Metropolis Hastings<++> (int, default to 0,
             i.e. is not set) (*OPT*).<++>
         <**>-f<**> : float
             <++>jumping factor<++> (>= 0, default to 2.4) (*OPT*).
@@ -576,8 +576,8 @@ def create_parser():
     runparser.add_argument('-m', '--method', help=helpdict['m'],
                            dest='method', default='MH',
                            choices=['MH', 'NS', 'CH', 'IS', 'Der'])
-    # -- adaptive Metropolis Hastings (OPTIONAL)
-    runparser.add_argument('--adaptive', help=helpdict['adaptive'], type=int,
+    # -- update Metropolis Hastings (OPTIONAL)
+    runparser.add_argument('--update', help=helpdict['update'], type=int,
                            default=0)
     # -- jumping factor (OPTIONAL)
     runparser.add_argument('-f', help=helpdict['f'], type=float,

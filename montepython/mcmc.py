@@ -261,8 +261,8 @@ def chain(cosmo, data, command_line):
         Cholesky = la.cholesky(C).T
         Rotation = np.identity(len(sigma_eig))
 
-    # If the adaptive mode was selected, the original matrix should be stored
-    if command_line.adaptive:
+    # If the update mode was selected, the original matrix should be stored
+    if command_line.update:
         original = (sigma_eig, U, C, Cholesky)
 
     # If restart wanted, pick initial value for arguments
@@ -311,9 +311,9 @@ def chain(cosmo, data, command_line):
     # reached, and while the expected amount of steps (N) is not taken.
     while k <= command_line.N:
 
-        # If the number of steps reaches the number set in the adaptive method,
+        # If the number of steps reaches the number set in the update method,
         # then the proposal distribution should be adapted.
-        if command_line.adaptive:
+        if command_line.update:
             # Add the folder to the list of files to analyze, and switch on the
             # options for computing only the covmat
             try:
@@ -322,31 +322,33 @@ def chain(cosmo, data, command_line):
                 rank = comm.Get_rank()
             except ImportError:
                 raise io_mp.ConfigurationError(
-                    "You need mpi for the adaptive method")
+                    "You need mpi for the update method")
             if rank == 0:
                 from parser_mp import parse
                 info_command_line = parse(
                     'info %s --minimal --noplot' % command_line.folder)
-                if not (k-10) % command_line.adaptive and k > 10:
+                if not (k-10) % command_line.update and k > 10:
                     # Launch an analyze
                     from analyze import analyze
                     analyze(info_command_line)
                     # Read the covmat
-                    base = os.path.basename(command_line.folder)
+                    base = os.path.basename(command_line.folder[:-1])
                     command_line.cov = os.path.join(
                         command_line.folder, base+'.covmat')
                     sigma_eig, U, C = sampler.get_covariance_matrix(
                         cosmo, data, command_line)
                     if command_line.jumping == 'fast':
                         Cholesky = la.cholesky(C).T
-                    print 'acceptance rate:', acc/(acc+rej)
-                    print 'original: '
-                    pprint(original[2])
-                    print 'new: '
-                    pprint(C)
+                    # Debuggung output:
+                    print 'Step ',k,' chain ', rank,': acceptance rate:', acc/(acc+rej)
+                    print 'Step ',k,' chain ', rank,': original: '
+                    print(original[2][[0,1,2,3,4,5],:][:,[0,1,2,3,4,5]])
+                    print 'Step ',k,' chain ', rank,': new: '
+                    print(C[[0,1,2,3,4,5],:][:,[0,1,2,3,4,5]])
+                    # End debugging output
             else:
-                if not k % command_line.adaptive:
-                    base = os.path.basename(command_line.folder)
+                if not k % command_line.update:
+                    base = os.path.basename(command_line.folder[:-1])
                     command_line.cov = os.path.join(
                         command_line.folder, base+'.covmat')
                     try:
@@ -354,7 +356,17 @@ def chain(cosmo, data, command_line):
                             cosmo, data, command_line)
                         if command_line.jumping == 'fast':
                             Cholesky = la.cholesky(C).T
+                        # Debugging output:
+                        print 'Step ',k,' chain ', rank,': acceptance rate:', acc/(acc+rej)
+                        print 'Step ',k,' chain ', rank,': original: '
+                        print(original[2][[0,1,2,3,4,5],:][:,[0,1,2,3,4,5]])
+                        print 'Step ',k,' chain ', rank,': new: '
+                        print(C[[0,1,2,3,4,5],:][:,[0,1,2,3,4,5]])
+                        # End debugging output
                     except IOError:
+                        # Debugging output:
+                        print 'Step ',k,' chain ', rank,': Failed to read ',command_line.cov
+                        # End debugging output
                         pass
 
         # Pick a new position ('current' flag in mcmc_parameters), and compute
