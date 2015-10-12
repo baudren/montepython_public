@@ -86,12 +86,15 @@ def analyze(command_line):
         # all the points computed stacked in one big array.
         convergence(info)
 
-        print '--> Computing covariance matrix'
-        info.covar = compute_covariance_matrix(info)
-
-        # Writing it out in name_of_folder.covmat
-        io_mp.write_covariance_matrix(
-            info.covar, info.backup_names, info.cov_path)
+        # in update mode, no need to compute the covmat when max(R-1) is too big or too small 
+        if command_line.update and (np.amax(info.R) >= 3. or np.amax(info.R) < 0.4):
+            print '--> Not computing covariance matrix'
+        else:
+            print '--> Computing covariance matrix'
+            info.covar = compute_covariance_matrix(info)
+            # Writing it out in name_of_folder.covmat
+            io_mp.write_covariance_matrix(
+                info.covar, info.backup_names, info.cov_path)
 
         # Store an array, sorted_indices, containing the list of indices
         # corresponding to the line with the highest likelihood as the first
@@ -113,6 +116,9 @@ def analyze(command_line):
         for info in information_instances:
             info.write_information_files()
 
+    # in update mode, it is useful to return the max of all (R-1)'s
+    # if command_line.update:
+    #     return np.amax(info.R)
 
 def prepare(files, info):
     """
@@ -273,9 +279,9 @@ def convergence(info):
 
         R[i] = between/within
         if i == 0:
-            print ' -> R is %.6f' % R[i], '\tfor ', info.ref_names[i]
+            print ' -> R-1 is %.6f' % R[i], '\tfor ', info.ref_names[i]
         else:
-            print '         %.6f' % R[i], '\tfor ', info.ref_names[i]
+            print '           %.6f' % R[i], '\tfor ', info.ref_names[i]
 
     # Log finally the total number of steps, and absolute loglikelihood
     with open(info.log_path, 'a') as log:

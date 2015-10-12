@@ -321,8 +321,11 @@ def chain(cosmo, data, command_line):
                 comm = MPI.COMM_WORLD
                 rank = comm.Get_rank()
             except ImportError:
-                raise io_mp.ConfigurationError(
-                    "You need mpi for the update method")
+            #   raise io_mp.ConfigurationError(
+            #        "You need mpi for the update method")
+                # if there is no MPI, set rank to zero to define all chains as "master chains" with covmat calculation    
+                rank = 0
+
             if rank == 0:
                 from parser_mp import parse
                 info_command_line = parse(
@@ -331,8 +334,17 @@ def chain(cosmo, data, command_line):
                     # Launch an analyze
                     from analyze import analyze
                     analyze(info_command_line)
+                    #print "R =", max_R_minus_one
+                    #if max_R_minus_one < 0.4:
+                    #    command_line.update = 0
+                    #    print "command_line.update =", command_line.update
+                    #sys.stdout.flush()
                     # Read the covmat
-                    base = os.path.basename(command_line.folder[:-1])
+                    base = os.path.basename(command_line.folder)
+                    # the previous line fails when "folder" is a string ending with a slash. This issue is cured by the next lines:
+                    if base == '':
+                        base = os.path.basename(command_line.folder[:-1])
+
                     command_line.cov = os.path.join(
                         command_line.folder, base+'.covmat')
                     sigma_eig, U, C = sampler.get_covariance_matrix(
@@ -348,7 +360,11 @@ def chain(cosmo, data, command_line):
                     # End debugging output
             else:
                 if not k % command_line.update:
-                    base = os.path.basename(command_line.folder[:-1])
+                    base = os.path.basename(command_line.folder)
+                    # the previous line fails when "folder" is a string ending with a slash. This issue is cured by the next lines: 
+                    if base == '':
+                        base = os.path.basename(command_line.folder[:-1])
+
                     command_line.cov = os.path.join(
                         command_line.folder, base+'.covmat')
                     try:
