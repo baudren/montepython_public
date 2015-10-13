@@ -86,43 +86,27 @@ def analyze(command_line):
         # all the points computed stacked in one big array.
         convergence(info)
 
-        # in update mode, no need to compute the covmat when max(R-1) is too big or too small
+        # check if analyse() is called directly by the user, or by the mcmc loop during an updating phase
         try:
-            if command_line.update and (np.amax(info.R) >= 3. or np.amax(info.R) < 0.4):
-                print '--> Not computing covariance matrix'
-            else:
+            # command_line.update is defined when called by the mcmc loop
+            command_line.update
+        except:
+            # in case it was not defined (i.e. when analyse() is called directly by user), set it to False
+            command_line.update = 0
+
+        # compute covariance matrix, excepted when we are in update mode and convergence is too bad or too good
+        if command_line.update and (np.amax(info.R) > 3. or np.amax(info.R) < 0.4):
+            print '--> Not computing covariance matrix'
+        else:
+            try:
                 print '--> Computing covariance matrix'
                 info.covar = compute_covariance_matrix(info)
                 # Writing it out in name_of_folder.covmat
                 io_mp.write_covariance_matrix(
                     info.covar, info.backup_names, info.cov_path)
-        except:
-            print '--> Computing covariance matrix'
-            info.covar = compute_covariance_matrix(info)
-            # Writing it out in name_of_folder.covmat
-            io_mp.write_covariance_matrix(
-                info.covar, info.backup_names, info.cov_path)
-        # comment by JL:
-        # The above lines may need to be revisted
-        # if "update" is robust and always set to a default value, then we could write:
-#        if command_line.update:
-#            if np.amax(info.R) < 3. or np.amax(info.R) >= 0.4:
-#                try:
-#                    print '--> Computing covariance matrix'
-#                    info.covar = compute_covariance_matrix(info)
-#                    # Writing it out in name_of_folder.covmat
-#                    io_mp.write_covariance_matrix(
-#                        info.covar, info.backup_names, info.cov_path)
-#                except:
-#                    print '--> Computing covariance matrix failed'
-#                    pass
-#            else:
-#                print '--> Not computing covariance matrix'
-#        else:
-#            info.covar = compute_covariance_matrix(info)
-#            # Writing it out in name_of_folder.covmat
-#            io_mp.write_covariance_matrix(
-#                info.covar, info.backup_names, info.cov_path)
+            except:
+                print '--> Computing covariance matrix failed'
+                pass
 
         # Store an array, sorted_indices, containing the list of indices
         # corresponding to the line with the highest likelihood as the first
@@ -254,6 +238,10 @@ def convergence(info):
     # explored once the chain moved within min_minus_lkl - LOG_LKL_CUTOFF
     print '--> Removing burn-in'
     spam = remove_burnin(info)
+
+    # Remove fraction of the chains
+    if info.keep_fraction < 1:
+        print '--> Keep only last ',100.*info.keep_fraction,' per cent of the chains'
 
     info.remap_parameters(spam)
     # Now that the list spam contains all the different chains removed of
@@ -1544,6 +1532,11 @@ class Information(object):
         if command_line.optional_plot_file:
             plot_file_vars = {'info': self}
             execfile(command_line.optional_plot_file, plot_file_vars)
+
+        # check and store keep_fraction
+        if command_line.keep_fraction<=0 or command_line.keep_fraction>1:
+            raise io_mp.AnalyzeError("after --keep-fraction you should pass a float >0 and <=1")
+        self.keep_fraction = command_line.keep_fraction
 
     def remap_parameters(self, spam):
         """

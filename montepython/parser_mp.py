@@ -526,6 +526,9 @@ def create_parser():
         <**>--legend-style<**> : str
             <++>specify the style of the legend<++>, to choose from `sides` or
             `top`.<++>
+        <**>--keep-fraction<**> : float
+            <++>after burn-in removal, analyse only last fraction of each chain<++>
+            (between 0 and 1, 1 keeps all chains after burn-in removal, 0.5 keeps only second half) (*OPT*)<++>
 
     Returns
     -------
@@ -691,6 +694,9 @@ def create_parser():
     # but takes long, valid options are png and eps)
     infoparser.add_argument('--ext', help=helpdict['ext'],
                             type=str, dest='extension', default='pdf')
+    # -- fraction of chains to be analysed after brun-in removal (defaulting to 1.0)
+    infoparser.add_argument('--keep-fraction', help=helpdict['keep-fraction'],
+                            type=float, dest='keep_fraction', default=1.0)
     # -------------------------------------
     # Further customization
     # -- fontsize of plots (defaulting to 16)
