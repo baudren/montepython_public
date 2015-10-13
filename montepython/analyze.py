@@ -86,7 +86,7 @@ def analyze(command_line):
         # all the points computed stacked in one big array.
         convergence(info)
 
-        # in update mode, no need to compute the covmat when max(R-1) is too big or too small 
+        # in update mode, no need to compute the covmat when max(R-1) is too big or too small
         try:
             if command_line.update and (np.amax(info.R) >= 3. or np.amax(info.R) < 0.4):
                 print '--> Not computing covariance matrix'
@@ -95,13 +95,34 @@ def analyze(command_line):
                 info.covar = compute_covariance_matrix(info)
                 # Writing it out in name_of_folder.covmat
                 io_mp.write_covariance_matrix(
-                    info.covar, info.backup_names, info.cov_path)                
+                    info.covar, info.backup_names, info.cov_path)
         except:
             print '--> Computing covariance matrix'
             info.covar = compute_covariance_matrix(info)
             # Writing it out in name_of_folder.covmat
             io_mp.write_covariance_matrix(
                 info.covar, info.backup_names, info.cov_path)
+        # comment by JL:
+        # The above lines may need to be revisted
+        # if "update" is robust and always set to a default value, then we could write:
+#        if command_line.update:
+#            if np.amax(info.R) < 3. or np.amax(info.R) >= 0.4:
+#                try:
+#                    print '--> Computing covariance matrix'
+#                    info.covar = compute_covariance_matrix(info)
+#                    # Writing it out in name_of_folder.covmat
+#                    io_mp.write_covariance_matrix(
+#                        info.covar, info.backup_names, info.cov_path)
+#                except:
+#                    print '--> Computing covariance matrix failed'
+#                    pass
+#            else:
+#                print '--> Not computing covariance matrix'
+#        else:
+#            info.covar = compute_covariance_matrix(info)
+#            # Writing it out in name_of_folder.covmat
+#            io_mp.write_covariance_matrix(
+#                info.covar, info.backup_names, info.cov_path)
 
         # Store an array, sorted_indices, containing the list of indices
         # corresponding to the line with the highest likelihood as the first

@@ -314,24 +314,31 @@ def chain(cosmo, data, command_line):
         # If the number of steps reaches the number set in the update method,
         # then the proposal distribution should be adapted.
         if command_line.update:
-            # Add the folder to the list of files to analyze, and switch on the
-            # options for computing only the covmat
+
+            # comment by JL: the following bunch of lines should be mnoved out of the loop
             try:
                 from mpi4py import MPI
                 comm = MPI.COMM_WORLD
                 rank = comm.Get_rank()
             except ImportError:
-            #   raise io_mp.ConfigurationError(
-            #        "You need mpi for the update method")
-                # if there is no MPI, set rank to zero to define all chains as "master chains" with covmat calculation    
+                # next two lines: uncomment of you want update to work only with MPI
+                # raise io_mp.ConfigurationError(
+                #    "You need mpi for the update method")
+                # next line: uncomment if you want that without MPI, all chains behave as "master chains" with covmat calculation
                 rank = 0
+
+            # master chain behavior
             if rank == 0:
+                # Add the folder to the list of files to analyze, and switch on the
+                # options for computing only the covmat
                 from parser_mp import parse
                 info_command_line = parse(
                     'info %s --minimal --noplot' % command_line.folder)
                 info_command_line.update = command_line.update
-                if not (k-10) % command_line.update and k > 10:
-                    # Launch an analyze
+                # the +10 below is here to ensure that the fist master update will take place before the first slave updates,
+                # but this is a detail, the code is robust against situations where updating is not possible, so +10 could be omitted
+                if not (k+10) % command_line.update and k > 10:
+                    # Try to launch an analyze
                     try:
                         from analyze import analyze
                         analyze(info_command_line)
@@ -347,7 +354,7 @@ def chain(cosmo, data, command_line):
                             cosmo, data, command_line)
                         if command_line.jumping == 'fast':
                             Cholesky = la.cholesky(C).T
-                        # Debuggung output:
+                        # Debugging output:
                         print 'Step ',k,' chain ', rank,': acceptance rate:', acc/(acc+rej)
                         print 'Step ',k,' chain ', rank,': original: '
                         print(original[2][[0,1,2,3,4,5],:][:,[0,1,2,3,4,5]])
@@ -358,10 +365,12 @@ def chain(cosmo, data, command_line):
                         # Debugging output:
                         print 'Step ',k,' chain ', rank,': Failed to calculate covariant matrix'
                         # End debugging output
+
+            # slave chain behavior
             else:
                 if not k % command_line.update:
                     base = os.path.basename(command_line.folder)
-                    # the previous line fails when "folder" is a string ending with a slash. This issue is cured by the next lines: 
+                    # the previous line fails when "folder" is a string ending with a slash. This issue is cured by the next lines:
                     if base == '':
                         base = os.path.basename(command_line.folder[:-1])
 
