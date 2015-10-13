@@ -87,9 +87,16 @@ def analyze(command_line):
         convergence(info)
 
         # in update mode, no need to compute the covmat when max(R-1) is too big or too small 
-        if command_line.update and (np.amax(info.R) >= 3. or np.amax(info.R) < 0.4):
-            print '--> Not computing covariance matrix'
-        else:
+        try:
+            if command_line.update and (np.amax(info.R) >= 3. or np.amax(info.R) < 0.4):
+                print '--> Not computing covariance matrix'
+            else:
+                print '--> Computing covariance matrix'
+                info.covar = compute_covariance_matrix(info)
+                # Writing it out in name_of_folder.covmat
+                io_mp.write_covariance_matrix(
+                    info.covar, info.backup_names, info.cov_path)                
+        except:
             print '--> Computing covariance matrix'
             info.covar = compute_covariance_matrix(info)
             # Writing it out in name_of_folder.covmat
@@ -115,10 +122,6 @@ def analyze(command_line):
         print '--> Writing .info and .tex files'
         for info in information_instances:
             info.write_information_files()
-
-    # in update mode, it is useful to return the max of all (R-1)'s
-    # if command_line.update:
-    #     return np.amax(info.R)
 
 def prepare(files, info):
     """

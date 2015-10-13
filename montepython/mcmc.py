@@ -325,39 +325,39 @@ def chain(cosmo, data, command_line):
             #        "You need mpi for the update method")
                 # if there is no MPI, set rank to zero to define all chains as "master chains" with covmat calculation    
                 rank = 0
-
             if rank == 0:
                 from parser_mp import parse
                 info_command_line = parse(
                     'info %s --minimal --noplot' % command_line.folder)
+                info_command_line.update = command_line.update
                 if not (k-10) % command_line.update and k > 10:
                     # Launch an analyze
-                    from analyze import analyze
-                    analyze(info_command_line)
-                    #print "R =", max_R_minus_one
-                    #if max_R_minus_one < 0.4:
-                    #    command_line.update = 0
-                    #    print "command_line.update =", command_line.update
-                    #sys.stdout.flush()
-                    # Read the covmat
-                    base = os.path.basename(command_line.folder)
-                    # the previous line fails when "folder" is a string ending with a slash. This issue is cured by the next lines:
-                    if base == '':
-                        base = os.path.basename(command_line.folder[:-1])
+                    try:
+                        from analyze import analyze
+                        analyze(info_command_line)
+                        # Read the covmat
+                        base = os.path.basename(command_line.folder)
+                        # the previous line fails when "folder" is a string ending with a slash. This issue is cured by the next lines:
+                        if base == '':
+                            base = os.path.basename(command_line.folder[:-1])
 
-                    command_line.cov = os.path.join(
-                        command_line.folder, base+'.covmat')
-                    sigma_eig, U, C = sampler.get_covariance_matrix(
-                        cosmo, data, command_line)
-                    if command_line.jumping == 'fast':
-                        Cholesky = la.cholesky(C).T
-                    # Debuggung output:
-                    print 'Step ',k,' chain ', rank,': acceptance rate:', acc/(acc+rej)
-                    print 'Step ',k,' chain ', rank,': original: '
-                    print(original[2][[0,1,2,3,4,5],:][:,[0,1,2,3,4,5]])
-                    print 'Step ',k,' chain ', rank,': new: '
-                    print(C[[0,1,2,3,4,5],:][:,[0,1,2,3,4,5]])
-                    # End debugging output
+                        command_line.cov = os.path.join(
+                            command_line.folder, base+'.covmat')
+                        sigma_eig, U, C = sampler.get_covariance_matrix(
+                            cosmo, data, command_line)
+                        if command_line.jumping == 'fast':
+                            Cholesky = la.cholesky(C).T
+                        # Debuggung output:
+                        print 'Step ',k,' chain ', rank,': acceptance rate:', acc/(acc+rej)
+                        print 'Step ',k,' chain ', rank,': original: '
+                        print(original[2][[0,1,2,3,4,5],:][:,[0,1,2,3,4,5]])
+                        print 'Step ',k,' chain ', rank,': new: '
+                        print(C[[0,1,2,3,4,5],:][:,[0,1,2,3,4,5]])
+                        # End debugging output
+                    except:
+                        # Debugging output:
+                        print 'Step ',k,' chain ', rank,': Failed to calculate covariant matrix'
+                        # End debugging output
             else:
                 if not k % command_line.update:
                     base = os.path.basename(command_line.folder)
