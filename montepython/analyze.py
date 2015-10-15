@@ -129,7 +129,7 @@ def analyze(command_line):
         for info in information_instances:
             info.write_information_files()
 
-    # when called by MCMC in update mode, return R values so that they can be written for information in the chains 
+    # when called by MCMC in update mode, return R values so that they can be written for information in the chains
     if command_line.update:
         return info.R
 
@@ -239,13 +239,11 @@ def convergence(info):
     # Restarting the circling through files, this time removing the burnin,
     # given the maximum of likelihood previously found and the global variable
     # LOG_LKL_CUTOFF. spam now contains all the accepted points that were
-    # explored once the chain moved within min_minus_lkl - LOG_LKL_CUTOFF
+    # explored once the chain moved within min_minus_lkl - LOG_LKL_CUTOFF.
+    # If the user asks for a keep_fraction <1, this is also the place where
+    # a fraction (1-keep_fraction) is removed at the beginning of each chain.
     print '--> Removing burn-in'
     spam = remove_burnin(info)
-
-    # Remove fraction of the chains
-    if info.keep_fraction < 1:
-        print '--> Keep only last ',100.*info.keep_fraction,' per cent of the chains'
 
     info.remap_parameters(spam)
     # Now that the list spam contains all the different chains removed of
@@ -291,7 +289,7 @@ def convergence(info):
             between += total[j+1]*(mean[j+1, i]-mean[0, i])**2
         within /= total[0]
         between /= (total[0]-1)
-    
+
         R[i] = between/within
         if i == 0:
             print ' -> R-1 is %.6f' % R[i], '\tfor ', info.ref_names[i]
@@ -1201,11 +1199,11 @@ def find_maximum_of_likelihood(info):
         # This could potentially be faster with pandas, but is already quite
         # fast
         #
-        # This would read the chains including comment lines: 
+        # This would read the chains including comment lines:
         #cheese = (np.array([float(line.split()[1].strip())
         #                    for line in open(chain_file, 'r')]))
         #
-        # This reads the chains excluding comment lines: 
+        # This reads the chains excluding comment lines:
         with open(chain_file, 'r') as f:
             cheese = (np.array([float(line.split()[1].strip())
                                 for line in ifilterfalse(iscomment,f)]))
@@ -1305,9 +1303,14 @@ def remove_burnin(info):
         try:
             while cheese[start, 1] > info.min_minus_lkl+LOG_LKL_CUTOFF:
                 start += 1
-            print ': Removed {0}\t points of burn-in'.format(start)
+            burnin = start
+            if info.keep_fraction < 1:
+                start = start + (1-info.keep_fraction)*(line_count - start)
+            print ': Removed %d points of burn-in and first %.0f percent, keep %d steps' % (burnin, 100.*(1-info.keep_fraction), (line_count-start))
+
         except IndexError:
             print ': Removed everything: chain not converged'
+
 
         # ham contains cheese without the burn-in, if there are any points
         # left (more than 5)
