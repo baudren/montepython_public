@@ -261,9 +261,9 @@ def chain(cosmo, data, command_line):
         Cholesky = la.cholesky(C).T
         Rotation = np.identity(len(sigma_eig))
 
-    # If the update mode was selected, the original matrix should be stored
+    # If the update mode was selected, the previous (or original) matrix should be stored
     if command_line.update:
-        original = (sigma_eig, U, C, Cholesky)
+        previous = (sigma_eig, U, C, Cholesky)
 
     # If restart wanted, pick initial value for arguments
     if command_line.restart is not None:
@@ -341,13 +341,12 @@ def chain(cosmo, data, command_line):
                     # Try to launch an analyze
                     try:
                         from analyze import analyze
-                        analyze(info_command_line)
+                        R_minus_one = analyze(info_command_line)
                         # Read the covmat
                         base = os.path.basename(command_line.folder)
                         # the previous line fails when "folder" is a string ending with a slash. This issue is cured by the next lines:
                         if base == '':
                             base = os.path.basename(command_line.folder[:-1])
-
                         command_line.cov = os.path.join(
                             command_line.folder, base+'.covmat')
                         sigma_eig, U, C = sampler.get_covariance_matrix(
@@ -355,12 +354,22 @@ def chain(cosmo, data, command_line):
                         if command_line.jumping == 'fast':
                             Cholesky = la.cholesky(C).T
                         # Debugging output:
-                        print 'Step ',k,' chain ', rank,': acceptance rate:', acc/(acc+rej)
-                        print 'Step ',k,' chain ', rank,': original: '
-                        print(original[2][[0,1,2,3,4,5],:][:,[0,1,2,3,4,5]])
-                        print 'Step ',k,' chain ', rank,': new: '
-                        print(C[[0,1,2,3,4,5],:][:,[0,1,2,3,4,5]])
+                        #print 'Step ',k,' chain ', rank,': acceptance rate:', acc/(acc+rej)
+                        #print 'Step ',k,' chain ', rank,': previous: '
+                        #print(previous[2][[0,1,2,3,4,5],:][:,[0,1,2,3,4,5]])
+                        #print 'Step ',k,' chain ', rank,': new: '
+                        #print(C[[0,1,2,3,4,5],:][:,[0,1,2,3,4,5]])
                         # End debugging output
+                        #print "C[0,0], previous[0,0] =", C[0,0], previous[2][0,0]
+                        #
+                        # Test here whether the covariance matrix has really changed
+                        # We should in principle test all terms, but testing the first one should suffice
+                        if not C[0,0] == previous[2][0,0]:
+                            data.out.write('# Step %d: update proposal with R-1 = %s \n' % (k, str(R_minus_one)))
+                            previous = (sigma_eig, U, C, Cholesky)
+                            if not command_line.silent:
+                                print '# Step %d: update proposal with R-1 = %s \n' % (k, str(R_minus_one))
+
                     except:
                         # Debugging output:
                         print 'Step ',k,' chain ', rank,': Failed to calculate covariant matrix'
@@ -382,12 +391,22 @@ def chain(cosmo, data, command_line):
                         if command_line.jumping == 'fast':
                             Cholesky = la.cholesky(C).T
                         # Debugging output:
-                        print 'Step ',k,' chain ', rank,': acceptance rate:', acc/(acc+rej)
-                        print 'Step ',k,' chain ', rank,': original: '
-                        print(original[2][[0,1,2,3,4,5],:][:,[0,1,2,3,4,5]])
-                        print 'Step ',k,' chain ', rank,': new: '
-                        print(C[[0,1,2,3,4,5],:][:,[0,1,2,3,4,5]])
+                        #print 'Step ',k,' chain ', rank,': acceptance rate:', acc/(acc+rej)
+                        #print 'Step ',k,' chain ', rank,': previous: '
+                        #print(previous[2][[0,1,2,3,4,5],:][:,[0,1,2,3,4,5]])
+                        #print 'Step ',k,' chain ', rank,': new: '
+                        #print(C[[0,1,2,3,4,5],:][:,[0,1,2,3,4,5]])
                         # End debugging output
+                        #print "C[0,0], previous[2][0,0] =", C[0,0], previous[2][0,0]
+                        #
+                        # Test here whether the covariance matrix has really changed
+                        # We should in principle test all terms, but testing the first one should suffice
+                        if not C[0,0] == previous[2][0,0]:
+                            data.out.write('# Step %d update proposed \n' % k)
+                            previous = (sigma_eig, U, C, Cholesky)
+                            if not command_line.silent:
+                                print '# Step %d: update proposal with R-1 = %s \n' % (k, str(R_minus_one))
+
                     except IOError:
                         # Debugging output:
                         print 'Step ',k,' chain ', rank,': Failed to read ',command_line.cov
