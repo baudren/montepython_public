@@ -29,6 +29,7 @@ import matplotlib.pyplot as plt
 import warnings
 import importlib
 import io_mp
+from itertools import ifilterfalse
 
 # Defined to remove the burnin for all the points that were produced before the
 # first time where -log-likelihood <= min-minus-log-likelihood+LOG_LKL_CUTOFF
@@ -128,6 +129,10 @@ def analyze(command_line):
         for info in information_instances:
             info.write_information_files()
 
+    # when called by MCMC in update mode, return R values so that they can be written for information in the chains 
+    if command_line.update:
+        return info.R
+
 def prepare(files, info):
     """
     Scan the whole input folder, and include all chains in it.
@@ -223,7 +228,6 @@ def convergence(info):
     """
     # Recovering parameter names and scales, creating tex names,
     extract_parameter_names(info)
-
     # Now that the number of parameters is known, the array containing bounds
     # can be initialised
     info.bounds = np.zeros((len(info.ref_names), len(info.levels), 2))
@@ -281,14 +285,13 @@ def convergence(info):
     # chains should count more
     within = 0
     between = 0
-
     for i in xrange(np.shape(mean)[1]):
         for j in xrange(len(spam)):
             within += total[j+1]*var[j+1, i]
             between += total[j+1]*(mean[j+1, i]-mean[0, i])**2
         within /= total[0]
         between /= (total[0]-1)
-
+    
         R[i] = between/within
         if i == 0:
             print ' -> R-1 is %.6f' % R[i], '\tfor ', info.ref_names[i]
@@ -1197,14 +1200,20 @@ def find_maximum_of_likelihood(info):
         # file chain_file being scanned.
         # This could potentially be faster with pandas, but is already quite
         # fast
-        cheese = (np.array([float(line.split()[1].strip())
-                            for line in open(chain_file, 'r')]))
+        #
+        # This would read the chains including comment lines: 
+        #cheese = (np.array([float(line.split()[1].strip())
+        #                    for line in open(chain_file, 'r')]))
+        #
+        # This reads the chains excluding comment lines: 
+        with open(chain_file, 'r') as f:
+            cheese = (np.array([float(line.split()[1].strip())
+                                for line in ifilterfalse(iscomment,f)]))
 
         try:
             min_minus_lkl.append(cheese[:].min())
         except ValueError:
             pass
-
     # beware, it is the min because we are talking about
     # '- log likelihood'
     # Selecting only the true maximum.
@@ -1254,8 +1263,15 @@ def remove_burnin(info):
                 empty_length, total_length-empty_length)
         # cheese will brutally contain everything in the chain chain_file being
         # scanned
-        cheese = (np.array([[float(elem) for elem in line.split()]
-                            for line in open(chain_file, 'r')]))
+        #
+        # This would read the chains including comment lines:
+        #cheese = (np.array([[float(elem) for elem in line.split()]
+        #                    for line in open(chain_file, 'r')]))
+        #
+        # This read the chains excluding comment lines:
+        with open(chain_file, 'r') as f:
+            cheese = (np.array([[float(elem) for elem in line.split()]
+                                for line in ifilterfalse(iscomment,f)]))
         # If the file contains a broken line with a different number of
         # elements, the previous array generation might fail, and will not have
         # the correct shape. Hence the following command will fail. To avoid
@@ -1445,6 +1461,11 @@ def store_contour_coordinates(info, name1, name2, contours):
                         break
         plot_file.write("\n\n")
 
+def iscomment(s):
+    """
+    Define what we call a comment in MontePython chain files
+    """
+    return s.startswith('#')
 
 class Information(object):
     """
