@@ -385,8 +385,9 @@ def create_parser():
             Note that when running with Importance sampling, you need to
             specify a folder to start from.<++>
         <**>--update<**> : int
-            <++>update mode for Metropolis Hastings<++> (int, default to 0,
-            i.e. is not set) (*OPT*).<++>
+            <++>update frequency for Metropolis Hastings.<++>
+            If greater than zero, number of steps after which the proposal covariance
+            matrix is updated automatically (*OPT*).<++>
         <**>-f<**> : float
             <++>jumping factor<++> (>= 0, default to 2.4) (*OPT*).
 
@@ -461,14 +462,14 @@ def create_parser():
               available.
 
         <**>files<**> : string/list of strings
-            <++>You can specify either single files, or a complete folder<++>,
+            <++>you can specify either single files, or a complete folder<++>,
             for example :code:`info chains/my-run/2012-10-26*`, or :code:`info
             chains/my-run`.
 
             If you specify several folders (or set of files), a comparison
             will be performed.<++>
         <**>--minimal<**> : None
-            <++>Use this flag to avoid computing the posterior
+            <++>use this flag to avoid computing the posterior
             distribution.<++> This will decrease the time needed for the
             analysis, especially when analyzing big folders.<++>
         <**>--bins<**> : int
@@ -526,9 +527,14 @@ def create_parser():
         <**>--legend-style<**> : str
             <++>specify the style of the legend<++>, to choose from `sides` or
             `top`.<++>
+        <**>--keep-non-markovian<**> : bool
+            <++>Use this flag to keep the non-markovian part of the chains produced
+            at the beginning of runs with --update mode<++>
+            This option is only relevant when the chains were produced with --update (*OPT*) (flag)<++>
         <**>--keep-fraction<**> : float
-            <++>after burn-in removal, analyse only last fraction of each chain<++>
-            (between 0 and 1, 1 keeps all chains after burn-in removal, 0.5 keeps only second half) (*OPT*)<++>
+            <++>after burn-in removal, analyze only last fraction of each chain.<++>
+            (between 0 and 1). Normally one would not use this for runs with --update mode,
+            unless --keep-non-markovian is switched on (*OPT*)<++>
 
     Returns
     -------
@@ -573,7 +579,7 @@ def create_parser():
                            type=existing_file, dest='cov')
     # -- jumping method (OPTIONAL)
     runparser.add_argument('-j', '--jumping', help=helpdict['j'],
-                           dest='jumping', default='global',
+                           dest='jumping', default='fast',
                            choices=['global', 'sequential', 'fast'])
     # -- sampling method (OPTIONAL)
     runparser.add_argument('-m', '--method', help=helpdict['m'],
@@ -694,7 +700,10 @@ def create_parser():
     # but takes long, valid options are png and eps)
     infoparser.add_argument('--ext', help=helpdict['ext'],
                             type=str, dest='extension', default='pdf')
-    # -- fraction of chains to be analysed after brun-in removal (defaulting to 1.0)
+    # -- only analyze the markovian part of the chains
+    infoparser.add_argument('--keep-non-markovian', help=helpdict['keep-non-markovian'],
+                            dest='markovian', action='store_false')
+    # -- fraction of chains to be analyzed after burn-in removal (defaulting to 1.0)
     infoparser.add_argument('--keep-fraction', help=helpdict['keep-fraction'],
                             type=float, dest='keep_fraction', default=1.0)
     # -------------------------------------

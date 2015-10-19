@@ -51,7 +51,7 @@ def get_new_position(data, eigv, U, k, Cholesky, Rotation):
     cosmological parameters <http://arxiv.org/abs/1304.4473>`_ )
 
     The three different jumping options, decided when starting a run with the
-    flag **-j**  are **global** (by default), **sequential** and **fast** (see
+    flag **-j**  are **global**, **sequential** and **fast** (by default) (see
     :mod:`parser_mp` for reference).
 
     .. warning::
@@ -146,7 +146,7 @@ def get_new_position(data, eigv, U, k, Cholesky, Rotation):
                 continue
     else:
         print('\n\n Jumping method unknown (accepted : ')
-        print('global (default), sequential, fast)')
+        print('global, sequential, fast (default))')
 
     # Fill in the new vector
     if data.jumping in ['global', 'sequential']:
@@ -306,6 +306,18 @@ def chain(cosmo, data, command_line):
     if not command_line.silent:
         io_mp.print_parameters(sys.stdout, data)
 
+    # check for MPI
+    try:
+        from mpi4py import MPI
+        comm = MPI.COMM_WORLD
+        rank = comm.Get_rank()
+    except ImportError:
+        # next two lines: uncomment of you want update to work only with MPI
+        # raise io_mp.ConfigurationError(
+        #    "You need mpi for the update method")
+        # next line: uncomment if you want that without MPI, all chains behave as "master chains" with covmat calculation
+        rank = 0
+
     k = 1
     # Main loop, that goes on while the maximum number of failure is not
     # reached, and while the expected amount of steps (N) is not taken.
@@ -315,25 +327,13 @@ def chain(cosmo, data, command_line):
         # then the proposal distribution should be adapted.
         if command_line.update:
 
-            # comment by JL: the following bunch of lines should be mnoved out of the loop
-            try:
-                from mpi4py import MPI
-                comm = MPI.COMM_WORLD
-                rank = comm.Get_rank()
-            except ImportError:
-                # next two lines: uncomment of you want update to work only with MPI
-                # raise io_mp.ConfigurationError(
-                #    "You need mpi for the update method")
-                # next line: uncomment if you want that without MPI, all chains behave as "master chains" with covmat calculation
-                rank = 0
-
             # master chain behavior
             if rank == 0:
                 # Add the folder to the list of files to analyze, and switch on the
                 # options for computing only the covmat
                 from parser_mp import parse
                 info_command_line = parse(
-                    'info %s --minimal --noplot' % command_line.folder)
+                    'info %s --minimal --noplot --keep-fraction 0.5' % command_line.folder)
                 info_command_line.update = command_line.update
                 # the +10 below is here to ensure that the fist master update will take place before the first slave updates,
                 # but this is a detail, the code is robust against situations where updating is not possible, so +10 could be omitted
@@ -365,10 +365,10 @@ def chain(cosmo, data, command_line):
                         # Test here whether the covariance matrix has really changed
                         # We should in principle test all terms, but testing the first one should suffice
                         if not C[0,0] == previous[2][0,0]:
-                            data.out.write('# Step %d: update proposal with R-1 = %s \n' % (k, str(R_minus_one)))
+                            data.out.write('# After %d accepted steps: update proposal with R-1 = %s \n' % (int(acc), str(R_minus_one)))
                             previous = (sigma_eig, U, C, Cholesky)
                             if not command_line.silent:
-                                print '# Step %d: update proposal with R-1 = %s \n' % (k, str(R_minus_one))
+                                print '# After %d accepted steps: update proposal with R-1 = %s \n' % (int(acc), str(R_minus_one))
 
                     except:
                         # Debugging output:
@@ -402,10 +402,10 @@ def chain(cosmo, data, command_line):
                         # Test here whether the covariance matrix has really changed
                         # We should in principle test all terms, but testing the first one should suffice
                         if not C[0,0] == previous[2][0,0]:
-                            data.out.write('# Step %d update proposed \n' % k)
+                            data.out.write('# After %d accepted steps: update proposal \n' % int(acc))
                             previous = (sigma_eig, U, C, Cholesky)
                             if not command_line.silent:
-                                print '# Step %d: update proposal with R-1 = %s \n' % (k, str(R_minus_one))
+                                print '# After %d accepted steps: update proposal \n' % int(acc)
 
                     except IOError:
                         # Debugging output:

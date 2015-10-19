@@ -30,6 +30,7 @@ import warnings
 import importlib
 import io_mp
 from itertools import ifilterfalse
+from itertools import ifilter
 
 # Defined to remove the burnin for all the points that were produced before the
 # first time where -log-likelihood <= min-minus-log-likelihood+LOG_LKL_CUTOFF
@@ -87,12 +88,12 @@ def analyze(command_line):
         # all the points computed stacked in one big array.
         convergence(info)
 
-        # check if analyse() is called directly by the user, or by the mcmc loop during an updating phase
+        # check if analyze() is called directly by the user, or by the mcmc loop during an updating phase
         try:
             # command_line.update is defined when called by the mcmc loop
             command_line.update
         except:
-            # in case it was not defined (i.e. when analyse() is called directly by user), set it to False
+            # in case it was not defined (i.e. when analyze() is called directly by user), set it to False
             command_line.update = 0
 
         # compute covariance matrix, excepted when we are in update mode and convergence is too bad or too good
@@ -243,7 +244,7 @@ def convergence(info):
     # If the user asks for a keep_fraction <1, this is also the place where
     # a fraction (1-keep_fraction) is removed at the beginning of each chain.
     print '--> Removing burn-in'
-    spam = remove_burnin(info)
+    spam = remove_bad_points(info)
 
     info.remap_parameters(spam)
     # Now that the list spam contains all the different chains removed of
@@ -1226,9 +1227,9 @@ def find_maximum_of_likelihood(info):
     info.min_minus_lkl = min_minus_lkl
 
 
-def remove_burnin(info):
+def remove_bad_points(info):
     """
-    Create an array with all the points from the chains, after burnin
+    Create an array with all the points from the chains, after removing non-markovian, burn-in and fixed fraction
 
     """
     # spam will brutally contain all the chains with sufficient number of
@@ -1298,15 +1299,47 @@ def remove_burnin(info):
         steps += number_of_steps
         accepted_steps += line_count
 
-        # Removing burn-in
-        start = 0
+        # check if analyze() is called directly by the user, or by the mcmc loop during an updating phase
         try:
+            # command_line.update is defined when called by the mcmc loop
+            info.update
+        except:
+            # in case it was not defined (i.e. when analyze() is called directly by user), set it to False
+            info.update = 0
+
+        # Removing non-markovian part, burn-in, and fraction= (1 - keep-fraction)
+        start = 0
+        markovian=0
+        try:
+            # Read all comments in chains about times when proposal was updated
+            # The last of these comments gives the number of lines to be skipped in the files
+            if info.markovian and not info.update:
+                with open(chain_file, 'r') as f:
+                    for line in ifilter(iscomment,f):
+                        start = int(line.split()[2])
+                markovian = start
+
+            # Remove burn-in, defined as all points until the likelhood reaches min_minus_lkl+LOG_LKL_CUTOFF
             while cheese[start, 1] > info.min_minus_lkl+LOG_LKL_CUTOFF:
                 start += 1
-            burnin = start
+            burnin = start-markovian
+
+            # Remove fixed fraction as requested by user (usually not useful if non-markovian is also removed)
             if info.keep_fraction < 1:
                 start = start + (1-info.keep_fraction)*(line_count - start)
-            print ': Removed %d points of burn-in and first %.0f percent, keep %d steps' % (burnin, 100.*(1-info.keep_fraction), (line_count-start))
+
+            print ": Removed",
+            if info.markovian:
+                print "%d non-markovian points," % markovian,
+            print "%d points of burn-in," % burnin,
+            if info.keep_fraction < 1:
+                print "and first %.0f percent," % (100.*(1-info.keep_fraction)),
+            print "keep %d steps" % (line_count-start)
+
+            # JL debug
+            if markovian > 0:
+                print "first chain line taken in consideration:"
+                print cheese[markovian]
 
         except IndexError:
             print ': Removed everything: chain not converged'
