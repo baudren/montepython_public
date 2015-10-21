@@ -358,7 +358,6 @@ def create_parser():
 
             Note that the list of parameters in the input covariance matrix and
             in the run do not necessarily coincide.<++>
-
         <**>-j<**> : str
             <++>jumping method<++> (`global` (default), `sequential` or `fast`)
             (*OPT*).
@@ -397,7 +396,7 @@ def create_parser():
             typical jump will have an amplitude given by sigma times this
             factor.
 
-            The default is the famous factor 2.4, found by **TO CHECK** Dunkley
+            The default is the famous factor 2.4, advertised by Dunkley
             et al. to be an optimal trade-off between high acceptance rate and
             high correlation of chain elements, at least for multivariate
             gaussian posterior probabilities. It can be a good idea to reduce
