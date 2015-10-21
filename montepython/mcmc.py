@@ -353,27 +353,18 @@ def chain(cosmo, data, command_line):
                             cosmo, data, command_line)
                         if command_line.jumping == 'fast':
                             Cholesky = la.cholesky(C).T
-                        # Debugging output:
-                        #print 'Step ',k,' chain ', rank,': acceptance rate:', acc/(acc+rej)
-                        #print 'Step ',k,' chain ', rank,': previous: '
-                        #print(previous[2][[0,1,2,3,4,5],:][:,[0,1,2,3,4,5]])
-                        #print 'Step ',k,' chain ', rank,': new: '
-                        #print(C[[0,1,2,3,4,5],:][:,[0,1,2,3,4,5]])
-                        # End debugging output
-                        #print "C[0,0], previous[0,0] =", C[0,0], previous[2][0,0]
-                        #
                         # Test here whether the covariance matrix has really changed
                         # We should in principle test all terms, but testing the first one should suffice
                         if not C[0,0] == previous[2][0,0]:
                             data.out.write('# After %d accepted steps: update proposal with R-1 = %s \n' % (int(acc), str(R_minus_one)))
                             previous = (sigma_eig, U, C, Cholesky)
                             if not command_line.silent:
-                                print '# After %d accepted steps: update proposal with R-1 = %s \n' % (int(acc), str(R_minus_one))
+                                print 'After %d accepted steps: update proposal with R-1 = %s \n' % (int(acc), str(R_minus_one))
 
                     except:
-                        # Debugging output:
-                        print 'Step ',k,' chain ', rank,': Failed to calculate covariant matrix'
-                        # End debugging output
+                        if not command_line.silent:
+                            print 'Step ',k,' chain ', rank,': Failed to calculate covariant matrix'
+                        pass
 
             # slave chain behavior
             else:
@@ -390,27 +381,17 @@ def chain(cosmo, data, command_line):
                             cosmo, data, command_line)
                         if command_line.jumping == 'fast':
                             Cholesky = la.cholesky(C).T
-                        # Debugging output:
-                        #print 'Step ',k,' chain ', rank,': acceptance rate:', acc/(acc+rej)
-                        #print 'Step ',k,' chain ', rank,': previous: '
-                        #print(previous[2][[0,1,2,3,4,5],:][:,[0,1,2,3,4,5]])
-                        #print 'Step ',k,' chain ', rank,': new: '
-                        #print(C[[0,1,2,3,4,5],:][:,[0,1,2,3,4,5]])
-                        # End debugging output
-                        #print "C[0,0], previous[2][0,0] =", C[0,0], previous[2][0,0]
-                        #
                         # Test here whether the covariance matrix has really changed
                         # We should in principle test all terms, but testing the first one should suffice
                         if not C[0,0] == previous[2][0,0]:
                             data.out.write('# After %d accepted steps: update proposal \n' % int(acc))
                             previous = (sigma_eig, U, C, Cholesky)
                             if not command_line.silent:
-                                print '# After %d accepted steps: update proposal \n' % int(acc)
+                                print 'After %d accepted steps: update proposal \n' % int(acc)
 
                     except IOError:
-                        # Debugging output:
-                        print 'Step ',k,' chain ', rank,': Failed to read ',command_line.cov
-                        # End debugging output
+                        if not command_line.silent:
+                            print 'Step ',k,' chain ', rank,': Failed to read ',command_line.cov
                         pass
 
         # Pick a new position ('current' flag in mcmc_parameters), and compute
