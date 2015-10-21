@@ -37,7 +37,8 @@ def initialise(custom_command=''):
         path['root'], 'VERSION')
     with open(version_path, 'r') as version_file:
         version = version_file.readline()
-    print('Running Monte Python v%s' % version)
+    if not command_line.silent:
+        print('Running Monte Python v%s' % version)
 
     # If the info flag was used, read a potential chain (or set of chains) to
     # be analysed with default procedure. If the argument is a .info file, then

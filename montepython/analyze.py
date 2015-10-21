@@ -29,6 +29,8 @@ import matplotlib.pyplot as plt
 import warnings
 import importlib
 import io_mp
+from itertools import ifilterfalse
+from itertools import ifilter
 
 # Defined to remove the burnin for all the points that were produced before the
 # first time where -log-likelihood <= min-minus-log-likelihood+LOG_LKL_CUTOFF
@@ -86,12 +88,28 @@ def analyze(command_line):
         # all the points computed stacked in one big array.
         convergence(info)
 
-        print '--> Computing covariance matrix'
-        info.covar = compute_covariance_matrix(info)
+        # check if analyze() is called directly by the user, or by the mcmc loop during an updating phase
+        try:
+            # command_line.update is defined when called by the mcmc loop
+            command_line.update
+        except:
+            # in case it was not defined (i.e. when analyze() is called directly by user), set it to False
+            command_line.update = 0
 
-        # Writing it out in name_of_folder.covmat
-        io_mp.write_covariance_matrix(
-            info.covar, info.backup_names, info.cov_path)
+        # compute covariance matrix, excepted when we are in update mode and convergence is too bad or too good
+        if command_line.update and (np.amax(info.R) > 3. or np.amax(info.R) < 0.4):
+            print '--> Not computing covariance matrix'
+        else:
+            try:
+                if command_line.want_covmat:
+                    print '--> Computing covariance matrix'
+                    info.covar = compute_covariance_matrix(info)
+                    # Writing it out in name_of_folder.covmat
+                    io_mp.write_covariance_matrix(
+                        info.covar, info.backup_names, info.cov_path)
+            except:
+                print '--> Computing covariance matrix failed'
+                pass
 
         # Store an array, sorted_indices, containing the list of indices
         # corresponding to the line with the highest likelihood as the first
@@ -113,6 +131,9 @@ def analyze(command_line):
         for info in information_instances:
             info.write_information_files()
 
+    # when called by MCMC in update mode, return R values so that they can be written for information in the chains
+    if command_line.update:
+        return info.R
 
 def prepare(files, info):
     """
@@ -209,7 +230,6 @@ def convergence(info):
     """
     # Recovering parameter names and scales, creating tex names,
     extract_parameter_names(info)
-
     # Now that the number of parameters is known, the array containing bounds
     # can be initialised
     info.bounds = np.zeros((len(info.ref_names), len(info.levels), 2))
@@ -221,9 +241,11 @@ def convergence(info):
     # Restarting the circling through files, this time removing the burnin,
     # given the maximum of likelihood previously found and the global variable
     # LOG_LKL_CUTOFF. spam now contains all the accepted points that were
-    # explored once the chain moved within min_minus_lkl - LOG_LKL_CUTOFF
+    # explored once the chain moved within min_minus_lkl - LOG_LKL_CUTOFF.
+    # If the user asks for a keep_fraction <1, this is also the place where
+    # a fraction (1-keep_fraction) is removed at the beginning of each chain.
     print '--> Removing burn-in'
-    spam = remove_burnin(info)
+    spam = remove_bad_points(info)
 
     info.remap_parameters(spam)
     # Now that the list spam contains all the different chains removed of
@@ -263,7 +285,6 @@ def convergence(info):
     # chains should count more
     within = 0
     between = 0
-
     for i in xrange(np.shape(mean)[1]):
         for j in xrange(len(spam)):
             within += total[j+1]*var[j+1, i]
@@ -273,9 +294,9 @@ def convergence(info):
 
         R[i] = between/within
         if i == 0:
-            print ' -> R is %.6f' % R[i], '\tfor ', info.ref_names[i]
+            print ' -> R-1 is %.6f' % R[i], '\tfor ', info.ref_names[i]
         else:
-            print '         %.6f' % R[i], '\tfor ', info.ref_names[i]
+            print '           %.6f' % R[i], '\tfor ', info.ref_names[i]
 
     # Log finally the total number of steps, and absolute loglikelihood
     with open(info.log_path, 'a') as log:
@@ -1179,14 +1200,20 @@ def find_maximum_of_likelihood(info):
         # file chain_file being scanned.
         # This could potentially be faster with pandas, but is already quite
         # fast
-        cheese = (np.array([float(line.split()[1].strip())
-                            for line in open(chain_file, 'r')]))
+        #
+        # This would read the chains including comment lines:
+        #cheese = (np.array([float(line.split()[1].strip())
+        #                    for line in open(chain_file, 'r')]))
+        #
+        # This reads the chains excluding comment lines:
+        with open(chain_file, 'r') as f:
+            cheese = (np.array([float(line.split()[1].strip())
+                                for line in ifilterfalse(iscomment,f)]))
 
         try:
             min_minus_lkl.append(cheese[:].min())
         except ValueError:
             pass
-
     # beware, it is the min because we are talking about
     # '- log likelihood'
     # Selecting only the true maximum.
@@ -1201,9 +1228,9 @@ def find_maximum_of_likelihood(info):
     info.min_minus_lkl = min_minus_lkl
 
 
-def remove_burnin(info):
+def remove_bad_points(info):
     """
-    Create an array with all the points from the chains, after burnin
+    Create an array with all the points from the chains, after removing non-markovian, burn-in and fixed fraction
 
     """
     # spam will brutally contain all the chains with sufficient number of
@@ -1236,8 +1263,15 @@ def remove_burnin(info):
                 empty_length, total_length-empty_length)
         # cheese will brutally contain everything in the chain chain_file being
         # scanned
-        cheese = (np.array([[float(elem) for elem in line.split()]
-                            for line in open(chain_file, 'r')]))
+        #
+        # This would read the chains including comment lines:
+        #cheese = (np.array([[float(elem) for elem in line.split()]
+        #                    for line in open(chain_file, 'r')]))
+        #
+        # This read the chains excluding comment lines:
+        with open(chain_file, 'r') as f:
+            cheese = (np.array([[float(elem) for elem in line.split()]
+                                for line in ifilterfalse(iscomment,f)]))
         # If the file contains a broken line with a different number of
         # elements, the previous array generation might fail, and will not have
         # the correct shape. Hence the following command will fail. To avoid
@@ -1266,14 +1300,51 @@ def remove_burnin(info):
         steps += number_of_steps
         accepted_steps += line_count
 
-        # Removing burn-in
-        start = 0
+        # check if analyze() is called directly by the user, or by the mcmc loop during an updating phase
         try:
+            # command_line.update is defined when called by the mcmc loop
+            info.update
+        except:
+            # in case it was not defined (i.e. when analyze() is called directly by user), set it to False
+            info.update = 0
+
+        # Removing non-markovian part, burn-in, and fraction= (1 - keep-fraction)
+        start = 0
+        markovian=0
+        try:
+            # Read all comments in chains about times when proposal was updated
+            # The last of these comments gives the number of lines to be skipped in the files
+            if info.markovian and not info.update:
+                with open(chain_file, 'r') as f:
+                    for line in ifilter(iscomment,f):
+                        start = int(line.split()[2])
+                markovian = start
+
+            # Remove burn-in, defined as all points until the likelhood reaches min_minus_lkl+LOG_LKL_CUTOFF
             while cheese[start, 1] > info.min_minus_lkl+LOG_LKL_CUTOFF:
                 start += 1
-            print ': Removed {0}\t points of burn-in'.format(start)
+            burnin = start-markovian
+
+            # Remove fixed fraction as requested by user (usually not useful if non-markovian is also removed)
+            if info.keep_fraction < 1:
+                start = start + (1-info.keep_fraction)*(line_count - start)
+
+            print ": Removed",
+            if info.markovian:
+                print "%d non-markovian points," % markovian,
+            print "%d points of burn-in," % burnin,
+            if info.keep_fraction < 1:
+                print "and first %.0f percent," % (100.*(1-info.keep_fraction)),
+            print "keep %d steps" % (line_count-start)
+
+            # JL debug
+            if markovian > 0:
+                print "first chain line taken in consideration:"
+                print cheese[markovian]
+
         except IndexError:
             print ': Removed everything: chain not converged'
+
 
         # ham contains cheese without the burn-in, if there are any points
         # left (more than 5)
@@ -1427,6 +1498,11 @@ def store_contour_coordinates(info, name1, name2, contours):
                         break
         plot_file.write("\n\n")
 
+def iscomment(s):
+    """
+    Define what we call a comment in MontePython chain files
+    """
+    return s.startswith('#')
 
 class Information(object):
     """
@@ -1514,6 +1590,11 @@ class Information(object):
         if command_line.optional_plot_file:
             plot_file_vars = {'info': self}
             execfile(command_line.optional_plot_file, plot_file_vars)
+
+        # check and store keep_fraction
+        if command_line.keep_fraction<=0 or command_line.keep_fraction>1:
+            raise io_mp.AnalyzeError("after --keep-fraction you should pass a float >0 and <=1")
+        self.keep_fraction = command_line.keep_fraction
 
     def remap_parameters(self, spam):
         """

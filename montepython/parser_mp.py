@@ -60,7 +60,6 @@ class MpArgumentParser(ap.ArgumentParser):
         if not args:
             args = sys.argv[1:]
         if args[0] not in ['-h', '--help', '--version', '-info']:
-            print args[0]
             if args[0].find('-') != -1:
                 msg = "Defaulting to the 'run' command. Please update the"
                 msg += " call of MontePython. For more info, see the help"
@@ -359,7 +358,6 @@ def create_parser():
 
             Note that the list of parameters in the input covariance matrix and
             in the run do not necessarily coincide.<++>
-
         <**>-j<**> : str
             <++>jumping method<++> (`global` (default), `sequential` or `fast`)
             (*OPT*).
@@ -385,6 +383,10 @@ def create_parser():
 
             Note that when running with Importance sampling, you need to
             specify a folder to start from.<++>
+        <**>--update<**> : int
+            <++>update frequency for Metropolis Hastings.<++>
+            If greater than zero, number of steps after which the proposal covariance
+            matrix is updated automatically (*OPT*).<++>
         <**>-f<**> : float
             <++>jumping factor<++> (>= 0, default to 2.4) (*OPT*).
 
@@ -394,7 +396,7 @@ def create_parser():
             typical jump will have an amplitude given by sigma times this
             factor.
 
-            The default is the famous factor 2.4, found by **TO CHECK** Dunkley
+            The default is the famous factor 2.4, advertised by Dunkley
             et al. to be an optimal trade-off between high acceptance rate and
             high correlation of chain elements, at least for multivariate
             gaussian posterior probabilities. It can be a good idea to reduce
@@ -459,14 +461,14 @@ def create_parser():
               available.
 
         <**>files<**> : string/list of strings
-            <++>You can specify either single files, or a complete folder<++>,
+            <++>you can specify either single files, or a complete folder<++>,
             for example :code:`info chains/my-run/2012-10-26*`, or :code:`info
             chains/my-run`.
 
             If you specify several folders (or set of files), a comparison
             will be performed.<++>
         <**>--minimal<**> : None
-            <++>Use this flag to avoid computing the posterior
+            <++>use this flag to avoid computing the posterior
             distribution.<++> This will decrease the time needed for the
             analysis, especially when analyzing big folders.<++>
         <**>--bins<**> : int
@@ -524,6 +526,16 @@ def create_parser():
         <**>--legend-style<**> : str
             <++>specify the style of the legend<++>, to choose from `sides` or
             `top`.<++>
+        <**>--keep-non-markovian<**> : bool
+            <++>Use this flag to keep the non-markovian part of the chains produced
+            at the beginning of runs with --update mode<++>
+            This option is only relevant when the chains were produced with --update (*OPT*) (flag)<++>
+        <**>--keep-fraction<**> : float
+            <++>after burn-in removal, analyze only last fraction of each chain.<++>
+            (between 0 and 1). Normally one would not use this for runs with --update mode,
+            unless --keep-non-markovian is switched on (*OPT*)<++>
+        <**>--want-covmat<**> : bool
+            <++>calculate the covariant matrix when analyzing the chains.<++> Warning: this will interfere with ongoing runs utilizing update mode (*OPT*) (flag)<++>
 
     Returns
     -------
@@ -568,12 +580,15 @@ def create_parser():
                            type=existing_file, dest='cov')
     # -- jumping method (OPTIONAL)
     runparser.add_argument('-j', '--jumping', help=helpdict['j'],
-                           dest='jumping', default='global',
+                           dest='jumping', default='fast',
                            choices=['global', 'sequential', 'fast'])
     # -- sampling method (OPTIONAL)
     runparser.add_argument('-m', '--method', help=helpdict['m'],
                            dest='method', default='MH',
                            choices=['MH', 'NS', 'CH', 'IS', 'Der'])
+    # -- update Metropolis Hastings (OPTIONAL)
+    runparser.add_argument('--update', help=helpdict['update'], type=int,
+                           default=0)
     # -- jumping factor (OPTIONAL)
     runparser.add_argument('-f', help=helpdict['f'], type=float,
                            dest='jumping_factor', default=2.4)
@@ -654,6 +669,9 @@ def create_parser():
     # -- folder to analyze
     infoparser.add_argument('files', help=helpdict['files'],
                             nargs='+')
+    # Silence the output (no print on the console)
+    infoparser.add_argument('--silent', help=helpdict['silent'],
+                            action='store_true')
     # -- to only write the covmat and bestfit, without computing the posterior
     infoparser.add_argument('--minimal', help=helpdict['minimal'],
                             action='store_true')
@@ -683,6 +701,15 @@ def create_parser():
     # but takes long, valid options are png and eps)
     infoparser.add_argument('--ext', help=helpdict['ext'],
                             type=str, dest='extension', default='pdf')
+    # -- only analyze the markovian part of the chains
+    infoparser.add_argument('--keep-non-markovian', help=helpdict['keep-non-markovian'],
+                            dest='markovian', action='store_false')
+    # -- fraction of chains to be analyzed after burn-in removal (defaulting to 1.0)
+    infoparser.add_argument('--keep-fraction', help=helpdict['keep-fraction'],
+                            type=float, dest='keep_fraction', default=1.0)
+    # -- calculate the covariant matrix when analyzing the chains
+    infoparser.add_argument('--want-covmat', help=helpdict['want-covmat'],
+                            dest='want_covmat', action='store_true')
     # -------------------------------------
     # Further customization
     # -- fontsize of plots (defaulting to 16)
@@ -745,9 +772,10 @@ def parse(custom_command=''):
             args.folder = os.path.sep.join(
                 args.restart.split(os.path.sep)[:-1])
             args.param = os.path.join(args.folder, 'log.param')
-            warnings.warn(
-                "Restarting from %s." % args.restart +
-                " Using associated log.param.")
+            if not args.silent:
+                warnings.warn(
+                    "Restarting from %s." % args.restart +
+                    " Using associated log.param.")
 
         # Else, the user should provide an output folder
         else:
@@ -768,9 +796,10 @@ def parse(custom_command=''):
                     args.param = os.path.join(
                         args.folder, 'log.param')
                     if old_param is not None:
-                        warnings.warn(
-                            "Appending to an existing folder: using the "
-                            "log.param instead of %s" % old_param)
+                        if not args.silent:
+                            warnings.warn(
+                                "Appending to an existing folder: using the "
+                                "log.param instead of %s" % old_param)
                 else:
                     if args.param is None:
                         raise io_mp.ConfigurationError(
