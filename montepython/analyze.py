@@ -101,11 +101,12 @@ def analyze(command_line):
             print '--> Not computing covariance matrix'
         else:
             try:
-                print '--> Computing covariance matrix'
-                info.covar = compute_covariance_matrix(info)
-                # Writing it out in name_of_folder.covmat
-                io_mp.write_covariance_matrix(
-                    info.covar, info.backup_names, info.cov_path)
+                if command_line.want_covmat:
+                    print '--> Computing covariance matrix'
+                    info.covar = compute_covariance_matrix(info)
+                    # Writing it out in name_of_folder.covmat
+                    io_mp.write_covariance_matrix(
+                        info.covar, info.backup_names, info.cov_path)
             except:
                 print '--> Computing covariance matrix failed'
                 pass

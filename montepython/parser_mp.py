@@ -535,6 +535,8 @@ def create_parser():
             <++>after burn-in removal, analyze only last fraction of each chain.<++>
             (between 0 and 1). Normally one would not use this for runs with --update mode,
             unless --keep-non-markovian is switched on (*OPT*)<++>
+        <**>--want-covmat<**> : bool
+            <++>calculate the covariant matrix when analyzing the chains.<++> Warning: this will interfere with ongoing runs utilizing update mode (*OPT*) (flag)<++>
 
     Returns
     -------
@@ -706,6 +708,9 @@ def create_parser():
     # -- fraction of chains to be analyzed after burn-in removal (defaulting to 1.0)
     infoparser.add_argument('--keep-fraction', help=helpdict['keep-fraction'],
                             type=float, dest='keep_fraction', default=1.0)
+    # -- calculate the covariant matrix when analyzing the chains
+    infoparser.add_argument('--want-covmat', help=helpdict['want-covmat'],
+                            dest='want_covmat', action='store_true')
     # -------------------------------------
     # Further customization
     # -- fontsize of plots (defaulting to 16)

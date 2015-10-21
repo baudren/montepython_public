@@ -333,7 +333,7 @@ def chain(cosmo, data, command_line):
                 # options for computing only the covmat
                 from parser_mp import parse
                 info_command_line = parse(
-                    'info %s --minimal --noplot --keep-fraction 0.5' % command_line.folder)
+                    'info %s --minimal --noplot --keep-fraction 0.5 --want-covmat' % command_line.folder)
                 info_command_line.update = command_line.update
                 # the +10 below is here to ensure that the fist master update will take place before the first slave updates,
                 # but this is a detail, the code is robust against situations where updating is not possible, so +10 could be omitted
