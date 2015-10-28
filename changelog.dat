@@ -1,3 +1,25 @@
+v2.2.1  + to avoid I/O bug, only max(R-1) written in chains during update
+---------------------------------------------------------------------
+v2.2.0  + Automatic update of the proposal density's covariance matrix, with
+          or without MPI (for usage, see the description of option
+          "--update UPDATE" in "run --help").
+        + When analyse run, keep only the markovian part of the chains,
+          unless you use the flag "--keep-non-markovian" in order to get
+          better (but slightly biased) statistics.
+        + When analyse run, new covmat is not computed anymore by default
+          (to avoid interfering with possible on-going run in update mode).
+          New covmat calculation can be forced with flag --want-covmat
+----------------------------------------------------------------------
+v2.1.4  + Points to Planck 2015 likelihoods (default TT, TTTEEE, lite)
+        + New example files base2015*.param for Planck 2015
+----------------------------------------------------------------------
+v2.1.3  + Added SDSS LRG4 data (sdss_lrgDR4)
+        + Additional functionality to compute and use fisher matrix
+        + Added a --minimal flag for info to only compute covmat/bestfit
+        + Corrected the sigma8 likelihoods: minimum requirement k_max>=1h/Mpc
+----------------------------------------------------------------------
+v2.1.2  + Fixed the ReadTheDocs website.
+----------------------------------------------------------------------
 v2.1.1: + Implemented a new observable, cosmic clocks, that measure the Hubble
 	  rate at different redshifts. Full information can be found in
 	  data/cosmic_clocks/README.txt (credits Licia Verde)

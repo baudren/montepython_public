@@ -356,10 +356,10 @@ def chain(cosmo, data, command_line):
                         # Test here whether the covariance matrix has really changed
                         # We should in principle test all terms, but testing the first one should suffice
                         if not C[0,0] == previous[2][0,0]:
-                            data.out.write('# After %d accepted steps: update proposal with R-1 = %s \n' % (int(acc), str(R_minus_one)))
+                            data.out.write('# After %d accepted steps: update proposal with max(R-1) = %f \n' % (int(acc), max(R_minus_one)))
                             previous = (sigma_eig, U, C, Cholesky)
                             if not command_line.silent:
-                                print 'After %d accepted steps: update proposal with R-1 = %s \n' % (int(acc), str(R_minus_one))
+                                print 'After %d accepted steps: update proposal with max(R-1) = %f \n' % (int(acc), max(R_minus_one))
 
                     except:
                         if not command_line.silent:

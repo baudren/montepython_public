@@ -6,7 +6,7 @@
 Welcome to Monte Python's documentation!
 ========================================
 
-The main page lives `here <http://www.montepython.net/>`_, from which
+The main page lives `here <http://baudren.github.io/montepython.html>`_, from which
 you can download the code, see the changelog. The Github page is available
 `there <https://github.com/baudren/montepython_public/>`_.
 
@@ -49,4 +49,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
