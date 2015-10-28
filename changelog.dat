@@ -1,3 +1,5 @@
+v2.2.1  + to avoid I/O bug, only max(R-1) written in chains during update
+---------------------------------------------------------------------
 v2.2.0  + Automatic update of the proposal density's covariance matrix, with
           or without MPI (for usage, see the description of option
           "--update UPDATE" in "run --help").
