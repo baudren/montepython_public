@@ -1337,11 +1337,6 @@ def remove_bad_points(info):
                 print "and first %.0f percent," % (100.*(1-info.keep_fraction)),
             print "keep %d steps" % (line_count-start)
 
-            # JL debug
-            if markovian > 0:
-                print "first chain line taken in consideration:"
-                print cheese[markovian]
-
         except IndexError:
             print ': Removed everything: chain not converged'
 
