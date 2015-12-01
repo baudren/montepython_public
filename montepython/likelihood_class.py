@@ -1071,9 +1071,18 @@ class Likelihood_mock_cmb(Likelihood):
         ###########
         # Read data
         ###########
+        try:
+            self.Bmodes
+        except:
+            self.Bmodes = False
+
+        if self.Bmodes:
+            numCls = 4
+        else:
+            numCls = 3
 
         # If the file exists, initialize the fiducial values
-        self.Cl_fid = np.zeros((3, self.l_max+1), 'float64')
+        self.Cl_fid = np.zeros((numCls, self.l_max+1), 'float64')
         self.fid_values_exist = False
         if os.path.exists(os.path.join(
                 self.data_directory, self.fiducial_file)):
@@ -1090,6 +1099,13 @@ class Likelihood_mock_cmb(Likelihood):
                 self.Cl_fid[0, ll] = float(line.split()[1])
                 self.Cl_fid[1, ll] = float(line.split()[2])
                 self.Cl_fid[2, ll] = float(line.split()[3])
+                if self.Bmodes:
+                    try:
+                        self.Cl_fid[3, ll] = float(line.split()[4])
+                    except:
+                        raise io_mp.LikelihoodError(
+                            "The fiducial model does not have enough columns.")
+
                 line = fid_file.readline()
 
         # Else the file will be created in the loglkl() function.
@@ -1125,6 +1141,8 @@ class Likelihood_mock_cmb(Likelihood):
                 fid_file.write("%.8g  " % (cl['tt'][l]+self.noise_T[l]))
                 fid_file.write("%.8g  " % (cl['ee'][l]+self.noise_P[l]))
                 fid_file.write("%.8g  " % cl['te'][l])
+                if self.Bmodes:
+                    fid_file.write("%.8g  " % (cl['bb'][l]+self.noise_P[l]))
                 fid_file.write("\n")
             print '\n\n'
             warnings.warn(
@@ -1136,30 +1154,52 @@ class Likelihood_mock_cmb(Likelihood):
 
         chi2 = 0
 
-        Cov_obs = np.zeros((2, 2), 'float64')
-        Cov_the = np.zeros((2, 2), 'float64')
-        Cov_mix = np.zeros((2, 2), 'float64')
+        if self.Bmodes:
+            num_modes=3
+        else:
+            num_modes=2
+
+        Cov_obs = np.zeros((num_modes, num_modes), 'float64')
+        Cov_the = np.zeros((num_modes, num_modes), 'float64')
+        Cov_mix = np.zeros((num_modes, num_modes), 'float64')
 
         for l in range(self.l_min, self.l_max+1):
 
-            Cov_obs = np.array([
-                [self.Cl_fid[0, l], self.Cl_fid[2, l]],
-                [self.Cl_fid[2, l], self.Cl_fid[1, l]]])
-            Cov_the = np.array([
-                [cl['tt'][l]+self.noise_T[l], cl['te'][l]],
-                [cl['te'][l], cl['ee'][l]+self.noise_P[l]]])
+            #Cov_obs[0,0] = self.Cl_fid[0, l]
+            #Cov_obs[1,0] = self.Cl_fid[2, l]
+            #Cov_obs[0,1] = Cov_obs[1,0]
+            #Cov_obs[1,1] = self.Cl_fid[1, l]
+            #if self.Bmodes:
+            #    Cov_obs[2,2] = self.Cl_fid[3, l]
+
+            if self.Bmodes:
+                Cov_obs = np.array([
+                    [self.Cl_fid[0, l], self.Cl_fid[2, l], 0],
+                    [self.Cl_fid[2, l], self.Cl_fid[1, l], 0],
+                    [0, 0, self.Cl_fid[3, l]]])
+                Cov_the = np.array([
+                    [cl['tt'][l]+self.noise_T[l], cl['te'][l], 0],
+                    [cl['te'][l], cl['ee'][l]+self.noise_P[l], 0],
+                    [0, 0, cl['bb'][l]+self.noise_P[l]]])
+            else:
+                Cov_obs = np.array([
+                    [self.Cl_fid[0, l], self.Cl_fid[2, l]],
+                    [self.Cl_fid[2, l], self.Cl_fid[1, l]]])
+                Cov_the = np.array([
+                    [cl['tt'][l]+self.noise_T[l], cl['te'][l]],
+                    [cl['te'][l], cl['ee'][l]+self.noise_P[l]]])
 
             det_obs = np.linalg.det(Cov_obs)
             det_the = np.linalg.det(Cov_the)
             det_mix = 0.
 
-            for i in range(2):
+            for i in range(num_modes):
                 Cov_mix = np.copy(Cov_the)
                 Cov_mix[:, i] = Cov_obs[:, i]
                 det_mix += np.linalg.det(Cov_mix)
 
             chi2 += (2.*l+1.)*self.f_sky *\
-                (det_mix/det_the + math.log(det_the/det_obs) - 2)
+                (det_mix/det_the + math.log(det_the/det_obs) - num_modes)
 
         return -chi2/2
 
