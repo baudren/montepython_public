@@ -302,9 +302,14 @@ def chain(cosmo, data, command_line):
     acc, rej = 0.0, 0.0  # acceptance and rejection number count
     N = 1   # number of time the system stayed in the current position
 
-    # Print on screen the computed parameters
-    if not command_line.silent:
-        io_mp.print_parameters(sys.stdout, data)
+    # define path and covmat
+    input_covmat = command_line.cov
+    base = os.path.basename(command_line.folder)
+    # the previous line fails when "folder" is a string ending with a slash. This issue is cured by the next lines:
+    if base == '':
+        base = os.path.basename(command_line.folder[:-1])
+        command_line.cov = os.path.join(
+            command_line.folder, base+'.covmat')
 
     # check for MPI
     try:
@@ -317,6 +322,10 @@ def chain(cosmo, data, command_line):
         #    "You need mpi for the update method")
         # next line: uncomment if you want that without MPI, all chains behave as "master chains" with covmat calculation
         rank = 0
+
+    # Print on screen the computed parameters
+    if not command_line.silent and rank == 0:
+        io_mp.print_parameters(sys.stdout, data)
 
     k = 1
     # Main loop, that goes on while the maximum number of failure is not
@@ -335,20 +344,21 @@ def chain(cosmo, data, command_line):
                 info_command_line = parse(
                     'info %s --minimal --noplot --keep-fraction 0.5 --want-covmat' % command_line.folder)
                 info_command_line.update = command_line.update
-                # the +10 below is here to ensure that the fist master update will take place before the first slave updates,
+                # the +10 below is here to ensure that the first master update will take place before the first slave updates,
                 # but this is a detail, the code is robust against situations where updating is not possible, so +10 could be omitted
                 if not (k+10) % command_line.update and k > 10:
                     # Try to launch an analyze
                     try:
                         from analyze import analyze
                         R_minus_one = analyze(info_command_line)
+                    except:
+                        if not command_line.silent:
+                            print 'Step ',k,' chain ', rank,': Failed to calculate covariant matrix'
+                        pass
+
+                if not (k-1) % command_line.update:
+                    try:
                         # Read the covmat
-                        base = os.path.basename(command_line.folder)
-                        # the previous line fails when "folder" is a string ending with a slash. This issue is cured by the next lines:
-                        if base == '':
-                            base = os.path.basename(command_line.folder[:-1])
-                        command_line.cov = os.path.join(
-                            command_line.folder, base+'.covmat')
                         sigma_eig, U, C = sampler.get_covariance_matrix(
                             cosmo, data, command_line)
                         if command_line.jumping == 'fast':
@@ -356,17 +366,25 @@ def chain(cosmo, data, command_line):
                         # Test here whether the covariance matrix has really changed
                         # We should in principle test all terms, but testing the first one should suffice
                         if not C[0,0] == previous[2][0,0]:
-                            data.out.write('# After %d accepted steps: update proposal with max(R-1) = %f \n' % (int(acc), max(R_minus_one)))
                             previous = (sigma_eig, U, C, Cholesky)
-                            try:
-                                if stop-after-update:
+                            if k == 1:
+                                if not command_line.silent:
+                                    if not input_covmat == None:
+                                        warnings.warn('Appending to an existing folder: using %s instead of %s. '
+                                                      'If new input covmat is desired, please delete previous covmat.' % (command_line.cov, input_covmat))
+                                    else:
+                                        warnings.warn('Appending to an existing folder: using %s. '
+                                                  'If no starting covmat is desired, please delete previous covmat.' % command_line.cov)
+                            else:
+                                data.out.write('# After %d accepted steps: update proposal with max(R-1) = %f \n' % (int(acc), max(R_minus_one)))
+                                if not command_line.silent:
                                     print 'After %d accepted steps: update proposal with max(R-1) = %f \n' % (int(acc), max(R_minus_one))
-                                    print 'Covariant matrix updated - stopping run'
-                                    k = command_line.N
-                            except:
-                                pass
-                            if not command_line.silent:
-                                print 'After %d accepted steps: update proposal with max(R-1) = %f \n' % (int(acc), max(R_minus_one))
+                                try:
+                                    if stop-after-update:
+                                        k = command_line.N
+                                        print 'Covariant matrix updated - stopping run'
+                                except:
+                                    pass
 
                     except:
                         if not command_line.silent:
@@ -375,14 +393,7 @@ def chain(cosmo, data, command_line):
 
             # slave chain behavior
             else:
-                if not k % command_line.update:
-                    base = os.path.basename(command_line.folder)
-                    # the previous line fails when "folder" is a string ending with a slash. This issue is cured by the next lines:
-                    if base == '':
-                        base = os.path.basename(command_line.folder[:-1])
-
-                    command_line.cov = os.path.join(
-                        command_line.folder, base+'.covmat')
+                if not (k-1) % command_line.update:
                     try:
                         sigma_eig, U, C = sampler.get_covariance_matrix(
                             cosmo, data, command_line)
@@ -390,17 +401,17 @@ def chain(cosmo, data, command_line):
                             Cholesky = la.cholesky(C).T
                         # Test here whether the covariance matrix has really changed
                         # We should in principle test all terms, but testing the first one should suffice
-                        if not C[0,0] == previous[2][0,0]:
+                        if not C[0,0] == previous[2][0,0] and not k == 1:
                             data.out.write('# After %d accepted steps: update proposal \n' % int(acc))
-                            previous = (sigma_eig, U, C, Cholesky)
+                            if not command_line.silent:
+                                print 'After %d accepted steps: update proposal \n' % int(acc)
                             try:
                                 if stop_after_update:
-                                    print 'After %d accepted steps: update proposal with max(R-1) = %f \n' % (int(acc), max(R_minus_one))
-                                    print 'Covariant matrix updated - stopping run'
                                     k = command_line.N
+                                    print 'Covariant matrix updated - stopping run'
                             except:
-                                if not command_line.silent:
-                                    print 'After %d accepted steps: update proposal \n' % int(acc)
+                                pass
+                        previous = (sigma_eig, U, C, Cholesky)
 
                     except IOError:
                         if not command_line.silent:
