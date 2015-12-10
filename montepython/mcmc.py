@@ -358,6 +358,13 @@ def chain(cosmo, data, command_line):
                         if not C[0,0] == previous[2][0,0]:
                             data.out.write('# After %d accepted steps: update proposal with max(R-1) = %f \n' % (int(acc), max(R_minus_one)))
                             previous = (sigma_eig, U, C, Cholesky)
+                            try:
+                                if stop-after-update:
+                                    print 'After %d accepted steps: update proposal with max(R-1) = %f \n' % (int(acc), max(R_minus_one))
+                                    print 'Covariant matrix updated - stopping run'
+                                    k = command_line.N
+                            except:
+                                pass
                             if not command_line.silent:
                                 print 'After %d accepted steps: update proposal with max(R-1) = %f \n' % (int(acc), max(R_minus_one))
 
@@ -386,8 +393,14 @@ def chain(cosmo, data, command_line):
                         if not C[0,0] == previous[2][0,0]:
                             data.out.write('# After %d accepted steps: update proposal \n' % int(acc))
                             previous = (sigma_eig, U, C, Cholesky)
-                            if not command_line.silent:
-                                print 'After %d accepted steps: update proposal \n' % int(acc)
+                            try:
+                                if stop_after_update:
+                                    print 'After %d accepted steps: update proposal with max(R-1) = %f \n' % (int(acc), max(R_minus_one))
+                                    print 'Covariant matrix updated - stopping run'
+                                    k = command_line.N
+                            except:
+                                if not command_line.silent:
+                                    print 'After %d accepted steps: update proposal \n' % int(acc)
 
                     except IOError:
                         if not command_line.silent:
