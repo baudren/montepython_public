@@ -160,6 +160,19 @@ def get_covariance_matrix(cosmo, data, command_line):
     np.set_printoptions(precision=2, linewidth=150)
     parameter_names = data.get_mcmc_parameters(['varying'])
 
+    # Silence output for slaves
+    try:
+        if command_line.rank:
+            command_line.silent = True
+    except:
+        pass
+    # Silence output for update mode
+    try:
+        if command_line.quiet:
+            command_line.silent = True
+    except:
+        pass
+
     if command_line.fisher and not command_line.cov:
         # We will work out the fisher matrix for all the parameters and
         # write it to a file

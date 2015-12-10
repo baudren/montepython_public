@@ -230,6 +230,18 @@ def chain(cosmo, data, command_line):
     if not command_line.silent:
         outputs.append(sys.stdout)
 
+    # check for MPI
+    try:
+        from mpi4py import MPI
+        comm = MPI.COMM_WORLD
+        command_line.rank = comm.Get_rank()
+    except ImportError:
+        # next two lines: uncomment of you want update to work only with MPI
+        # raise io_mp.ConfigurationError(
+        #    "You need mpi for the update method")
+        # next line: uncomment if you want that without MPI, all chains behave as "master chains" with covmat calculation
+        command_line.rank = 0
+
     # Recover the covariance matrix according to the input, if the varying set
     # of parameters is non-zero
     if (data.get_mcmc_parameters(['varying']) != []):
@@ -311,20 +323,8 @@ def chain(cosmo, data, command_line):
         command_line.cov = os.path.join(
             command_line.folder, base+'.covmat')
 
-    # check for MPI
-    try:
-        from mpi4py import MPI
-        comm = MPI.COMM_WORLD
-        rank = comm.Get_rank()
-    except ImportError:
-        # next two lines: uncomment of you want update to work only with MPI
-        # raise io_mp.ConfigurationError(
-        #    "You need mpi for the update method")
-        # next line: uncomment if you want that without MPI, all chains behave as "master chains" with covmat calculation
-        rank = 0
-
     # Print on screen the computed parameters
-    if not command_line.silent and rank == 0:
+    if not command_line.silent and not command_line.rank:
         io_mp.print_parameters(sys.stdout, data)
 
     k = 1
@@ -337,7 +337,7 @@ def chain(cosmo, data, command_line):
         if command_line.update:
 
             # master chain behavior
-            if rank == 0:
+            if not command_line.rank:
                 # Add the folder to the list of files to analyze, and switch on the
                 # options for computing only the covmat
                 from parser_mp import parse
@@ -353,7 +353,7 @@ def chain(cosmo, data, command_line):
                         R_minus_one = analyze(info_command_line)
                     except:
                         if not command_line.silent:
-                            print 'Step ',k,' chain ', rank,': Failed to calculate covariant matrix'
+                            print 'Step ',k,' chain ', command_line.rank,': Failed to calculate covariant matrix'
                         pass
 
                 if not (k-1) % command_line.update:
@@ -370,11 +370,15 @@ def chain(cosmo, data, command_line):
                             if k == 1:
                                 if not command_line.silent:
                                     if not input_covmat == None:
-                                        warnings.warn('Appending to an existing folder: using %s instead of %s. '
-                                                      'If new input covmat is desired, please delete previous covmat.' % (command_line.cov, input_covmat))
+                                        warnings.warn(
+                                            'Appending to an existing folder: using %s instead of %s. '
+                                            'If new input covmat is desired, please delete previous covmat.'
+                                            % (command_line.cov, input_covmat))
                                     else:
-                                        warnings.warn('Appending to an existing folder: using %s. '
-                                                  'If no starting covmat is desired, please delete previous covmat.' % command_line.cov)
+                                        warnings.warn(
+                                            'Appending to an existing folder: using %s. '
+                                            'If no starting covmat is desired, please delete previous covmat.'
+                                            % command_line.cov)
                             else:
                                 data.out.write('# After %d accepted steps: update proposal with max(R-1) = %f \n' % (int(acc), max(R_minus_one)))
                                 if not command_line.silent:
@@ -388,8 +392,10 @@ def chain(cosmo, data, command_line):
 
                     except:
                         if not command_line.silent:
-                            print 'Step ',k,' chain ', rank,': Failed to calculate covariant matrix'
+                            print 'Step ',k,' chain ', command_line.rank,': Failed to calculate covariant matrix'
                         pass
+
+                    command_line.quiet = True
 
             # slave chain behavior
             else:
@@ -415,7 +421,7 @@ def chain(cosmo, data, command_line):
 
                     except IOError:
                         if not command_line.silent:
-                            print 'Step ',k,' chain ', rank,': Failed to read ',command_line.cov
+                            print 'Step ',k,' chain ', command_line.rank,': Failed to read ',command_line.cov
                         pass
 
         # Pick a new position ('current' flag in mcmc_parameters), and compute

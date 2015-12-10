@@ -770,6 +770,9 @@ def minimum_credible_intervals(info):
                 warnings.warn(
                     "could not derive minimum credible intervals " +
                     "for this multimodal posterior")
+                warnings.warn(
+                    "please try running longer chains or reducing " +
+                    "the number of bins with --bins BINS (default: 20)")
                 failed = True
                 break
             top = (np.sum(histogram[indices]) -
@@ -1336,11 +1339,6 @@ def remove_bad_points(info):
             if info.keep_fraction < 1:
                 print "and first %.0f percent," % (100.*(1-info.keep_fraction)),
             print "keep %d steps" % (line_count-start)
-
-            # JL debug
-            if markovian > 0:
-                print "first chain line taken in consideration:"
-                print cheese[markovian]
 
         except IndexError:
             print ': Removed everything: chain not converged'

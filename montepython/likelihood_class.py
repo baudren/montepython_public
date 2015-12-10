@@ -1147,7 +1147,7 @@ class Likelihood_mock_cmb(Likelihood):
             print '\n\n'
             warnings.warn(
                 "Writing fiducial model in %s, for %s likelihood" % (
-                    self.data_directory+self.fiducial_file, self.name))
+                    self.data_directory+'/'+self.fiducial_file, self.name))
             return 1j
 
         # compute likelihood
