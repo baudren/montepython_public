@@ -770,6 +770,15 @@ def parse(custom_command=''):
     else:
         args = parser.safe_parse_args(custom_command.split(' '))
 
+    # check for MPI
+    try:
+        from mpi4py import MPI
+        comm = MPI.COMM_WORLD
+        rank = comm.Get_rank()
+    except ImportError:
+        # set all chains to master if no MPI
+        rank = 0
+
     # Some check to perform when running the MCMC chains is requested
     if args.subparser_name == "run":
 
@@ -803,7 +812,7 @@ def parse(custom_command=''):
                     args.param = os.path.join(
                         args.folder, 'log.param')
                     if old_param is not None:
-                        if not args.silent:
+                        if not args.silent and not rank:
                             warnings.warn(
                                 "Appending to an existing folder: using the "
                                 "log.param instead of %s" % old_param)

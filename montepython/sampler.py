@@ -160,18 +160,11 @@ def get_covariance_matrix(cosmo, data, command_line):
     np.set_printoptions(precision=2, linewidth=150)
     parameter_names = data.get_mcmc_parameters(['varying'])
 
-    # Silence output for slaves
+    # Define quiet setting if not previously defined
     try:
-        if command_line.rank:
-            command_line.silent = True
+        command_line.quiet
     except:
-        pass
-    # Silence output for update mode
-    try:
-        if command_line.quiet:
-            command_line.silent = True
-    except:
-        pass
+        command_line.quiet = False
 
     if command_line.fisher and not command_line.cov:
         # We will work out the fisher matrix for all the parameters and
@@ -276,7 +269,7 @@ def get_covariance_matrix(cosmo, data, command_line):
                 i += 1
 
         # First print out
-        if not command_line.silent:
+        if not command_line.silent and not command_line.quiet:
             print('\nInput covariance matrix:')
             print(covnames)
             print(matrix)
@@ -301,7 +294,7 @@ def get_covariance_matrix(cosmo, data, command_line):
         matrix = np.dot(invscales.T, np.dot(matrix, invscales))
 
         # Second print out, after having applied the scale factors
-        if not command_line.silent:
+        if not command_line.silent and not command_line.quiet:
             print('\nFirst treatment (scaling)')
             print(covnames)
             print(matrix)
@@ -349,7 +342,7 @@ def get_covariance_matrix(cosmo, data, command_line):
         matrix = np.dot(rot, np.dot(matrix, np.transpose(rot)))
 
         # Third print out
-        if not command_line.silent:
+        if not command_line.silent and not command_line.quiet:
             print('\nSecond treatment (partial reordering and cleaning)')
             print(temp_names_2)
             print(matrix)
@@ -400,7 +393,7 @@ def get_covariance_matrix(cosmo, data, command_line):
 
 
     # Final print out, the actually used covariance matrix
-    if not command_line.silent:
+    if not command_line.silent and not command_line.quiet:
         sys.stdout.write('\nDeduced starting covariance matrix:\n')
         print(parameter_names)
         print(matrix)

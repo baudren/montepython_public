@@ -234,13 +234,13 @@ def chain(cosmo, data, command_line):
     try:
         from mpi4py import MPI
         comm = MPI.COMM_WORLD
-        command_line.rank = comm.Get_rank()
+        rank = comm.Get_rank()
+        # suppress duplicate output from slaves
+        if rank:
+            command_line.quiet = True
     except ImportError:
-        # next two lines: uncomment of you want update to work only with MPI
-        # raise io_mp.ConfigurationError(
-        #    "You need mpi for the update method")
-        # next line: uncomment if you want that without MPI, all chains behave as "master chains" with covmat calculation
-        command_line.rank = 0
+        # set all chains to master if no MPI
+        rank = 0
 
     # Recover the covariance matrix according to the input, if the varying set
     # of parameters is non-zero
@@ -324,8 +324,11 @@ def chain(cosmo, data, command_line):
             command_line.folder, base+'.covmat')
 
     # Print on screen the computed parameters
-    if not command_line.silent and not command_line.rank:
+    if not command_line.silent and not command_line.quiet:
         io_mp.print_parameters(sys.stdout, data)
+
+    # Suppress non-informative output after initializing
+    command_line.quiet = True
 
     k = 1
     # Main loop, that goes on while the maximum number of failure is not
@@ -337,7 +340,7 @@ def chain(cosmo, data, command_line):
         if command_line.update:
 
             # master chain behavior
-            if not command_line.rank:
+            if not rank:
                 # Add the folder to the list of files to analyze, and switch on the
                 # options for computing only the covmat
                 from parser_mp import parse
@@ -353,7 +356,7 @@ def chain(cosmo, data, command_line):
                         R_minus_one = analyze(info_command_line)
                     except:
                         if not command_line.silent:
-                            print 'Step ',k,' chain ', command_line.rank,': Failed to calculate covariant matrix'
+                            print 'Step ',k,' chain ', rank,': Failed to calculate covariant matrix'
                         pass
 
                 if not (k-1) % command_line.update:
@@ -391,8 +394,6 @@ def chain(cosmo, data, command_line):
                                     pass
 
                     except:
-                        if not command_line.silent:
-                            print 'Step ',k,' chain ', command_line.rank,': Failed to calculate covariant matrix'
                         pass
 
                     command_line.quiet = True
@@ -420,8 +421,6 @@ def chain(cosmo, data, command_line):
                         previous = (sigma_eig, U, C, Cholesky)
 
                     except IOError:
-                        if not command_line.silent:
-                            print 'Step ',k,' chain ', command_line.rank,': Failed to read ',command_line.cov
                         pass
 
         # Pick a new position ('current' flag in mcmc_parameters), and compute
