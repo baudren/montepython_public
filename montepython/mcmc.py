@@ -320,8 +320,8 @@ def chain(cosmo, data, command_line):
     # the previous line fails when "folder" is a string ending with a slash. This issue is cured by the next lines:
     if base == '':
         base = os.path.basename(command_line.folder[:-1])
-        command_line.cov = os.path.join(
-            command_line.folder, base+'.covmat')
+    command_line.cov = os.path.join(
+        command_line.folder, base+'.covmat')
 
     # Print on screen the computed parameters
     if not command_line.silent and not command_line.quiet:
