@@ -96,6 +96,9 @@ def extend_chain(data, cosmo, command_line, target_folder, chain_name,
     with open(input_path, 'r') as input_chain:
         with open(output_path, 'w') as output_chain:
             for line in input_chain:
+                if line[0] == '#':
+                    output_chain.write(line)
+                    continue
                 params = line.split()
                 # recover the likelihood of this point
                 loglike = -float(params[1])
