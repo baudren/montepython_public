@@ -215,6 +215,15 @@ class Data(object):
         else:
             self.cosmological_module_name = None
 
+        # check for MPI
+        try:
+            from mpi4py import MPI
+            comm = MPI.COMM_WORLD
+            rank = comm.Get_rank()
+        except ImportError:
+            # set all chains to master if no MPI
+            rank = 0
+
         # Recover the cosmological code version (and git hash if relevant).
         # To implement a new cosmological code, please add another case to the
         # test below.
@@ -227,7 +236,7 @@ class Data(object):
                     if line.find('_VERSION_') != -1:
                         self.version = line.split()[-1].replace('"', '')
                         break
-            if not command_line.silent:
+            if not command_line.silent and not rank:
                 print 'with CLASS %s' % self.version
             # Git version number and branch
             try:
@@ -324,7 +333,7 @@ class Data(object):
             io_mp.log_parameters(self, command_line)
             self.log_flag = True
 
-        if not command_line.silent:
+        if not command_line.silent and not rank:
             print '\nTesting likelihoods for:\n ->',
             print ', '.join(self.experiments)+'\n'
 

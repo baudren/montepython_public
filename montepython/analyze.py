@@ -770,6 +770,9 @@ def minimum_credible_intervals(info):
                 warnings.warn(
                     "could not derive minimum credible intervals " +
                     "for this multimodal posterior")
+                warnings.warn(
+                    "please try running longer chains or reducing " +
+                    "the number of bins with --bins BINS (default: 20)")
                 failed = True
                 break
             top = (np.sum(histogram[indices]) -
@@ -811,10 +814,13 @@ def minimum_credible_intervals(info):
                 warnings.warn(
                     "the loop to check for sigma deviations was " +
                     "taking too long to converge")
+                failed = True
                 break
 
         # min
-        if indices[0] > 0:
+        if failed:
+            bounds[j][0] = np.nan
+        elif indices[0] > 0:
             bounds[j][0] = bincenters[indices[0]] - delta*(histogram[indices[0]]-water_level)/(histogram[indices[0]]-histogram[indices[0]-1])
         else:
             if (left_edge > water_level):
@@ -823,7 +829,9 @@ def minimum_credible_intervals(info):
                 bounds[j][0] = bincenters[indices[0]] - 0.5*delta*(histogram[indices[0]]-water_level)/(histogram[indices[0]]-left_edge)
 
         # max
-        if indices[-1] < (len(histogram)-1):
+        if failed:
+            bounds[j][1] = np.nan
+        elif indices[-1] < (len(histogram)-1):
             bounds[j][1] = bincenters[indices[-1]] + delta*(histogram[indices[-1]]-water_level)/(histogram[indices[-1]]-histogram[indices[-1]+1])
         else:
             if (right_edge > water_level):
