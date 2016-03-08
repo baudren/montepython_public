@@ -55,9 +55,9 @@ CFHTLens_correlation.ah_factor = 0.873
 # Uncomment this line to use the theoretical error nuisance parameter
 # CFHTLens_correlation.use_nuisance = ['epsilon']
 
-# precision of the halofit method (defaults to 0)
+# Nonlinear corrections
 CFHTLens_correlation.use_halofit = True
-# CFHTLens_correlation.nonlinear_method = 1
+
 CFHTLens_correlation.coefficient_f_nu = 0
 CFHTLens_correlation.theoretical_error = 0
 # noise computation

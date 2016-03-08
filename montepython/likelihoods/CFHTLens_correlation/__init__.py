@@ -13,7 +13,6 @@
 
 from montepython.likelihood_class import Likelihood
 import io_mp
-import time
 
 import scipy.integrate
 from scipy import interpolate as itp
