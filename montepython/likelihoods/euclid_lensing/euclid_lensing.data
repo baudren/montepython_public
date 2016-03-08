@@ -4,20 +4,20 @@ euclid_lensing.fiducial_file  = "euclid_lensing_fiducial.dat"
 # Uncomment this line to use the theoretical error nuisance parameter
 #euclid_lensing.use_nuisance = ['epsilon']
 # number of l values used to compute C_l
-euclid_lensing.nlmax = 39		
+euclid_lensing.nlmax = 39
 # logarithmic l step for C_l
-euclid_lensing.dlnl  = 0.2		
+euclid_lensing.dlnl  = 0.2
 # number of discrete z values in selection function file
-euclid_lensing.nzmax = 151		
+euclid_lensing.nzmax = 151
 
 # number of bins of the survey
 euclid_lensing.nbin  = 5
 # maximum redshift covered by survey
-euclid_lensing.zmax  = 3.		
+euclid_lensing.zmax  = 3.
 # sky coverage
-euclid_lensing.fsky  = 0.375		
+euclid_lensing.fsky  = 0.375
 # precision with which bin edges are computed
-euclid_lensing.dz    = 0.01		
+euclid_lensing.dz    = 0.01
 
 # k_max in 1/Mpc
 euclid_lensing.k_max  = 40
@@ -28,4 +28,4 @@ euclid_lensing.theoretical_error = 0
 # noise computation
 euclid_lensing.rms_shear = 0.30
 # number of galaxies per square arcminutes
-euclid_lensing.gal_per_sqarcmn = 30	
+euclid_lensing.gal_per_sqarcmn = 30
