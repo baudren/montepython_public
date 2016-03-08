@@ -1,10 +1,15 @@
 ##############################################################
 # likelihood for the CFHTLens correlation function           #
 ##############################################################
-# Set up by Antonio J. Cuesta, by adapting
-# Benjamin Audren's likelihood euclid_lensing and
-# Adam Moss's cosmomc likelihood for weak lensing.
-# Modified, optimised and vectorized by Julien Lesgourgues
+#
+# Set up by Antonio J. Cuesta and J. Lesgourgues, by adapting
+# Benjamin Audren's Monte Python likelihood euclid_lensing and
+# Adam J Moss's CosmoMC likelihood for weak lensing
+# (adapted itself from JL's CosmoMC likelihood for the COSMOS)
+#
+# Designed for using data from Heymans et al. 1303.1808
+#
+##############################################################
 
 from montepython.likelihood_class import Likelihood
 import io_mp
