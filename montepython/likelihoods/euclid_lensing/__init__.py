@@ -1,3 +1,13 @@
+########################################################
+# Euclid_lensing likelihood
+########################################################
+# written by Benjamin Audren
+# (adapted from J Lesgourgues's COSMOS likelihood for CosmoMC)
+#
+# Modified by S. Clesse in March 2016 to add an optional form of n(z)
+# motivated by ground based exp. (Van Waerbeke et al., 2013)
+# See google doc document prepared by the Euclid IST - Splinter 2
+
 from montepython.likelihood_class import Likelihood
 import io_mp
 
@@ -22,6 +32,10 @@ class euclid_lensing(Likelihood):
         # Force the cosmological module to store Pk for k up to an arbitrary
         # number
         self.need_cosmo_arguments(data, {'P_k_max_1/Mpc': self.k_max})
+
+        # Compute non-linear power spectrum if requested
+        if (self.use_halofit):
+            self.need_cosmo_arguments(data, {'non linear':'halofit'})
 
         # Define array of l values, and initialize them
         # It is a logspace
@@ -120,6 +134,9 @@ class euclid_lensing(Likelihood):
 
         If the array flag is set to True, z is then interpretated as an array,
         and not as a single value.
+
+        Modified by S. Clesse in March 2016 to add an optional form of n(z) motivated by ground based exp. (Van Waerbeke et al., 2013)
+        See google doc document prepared by the Euclid IST - Splinter 2
         """
 
         zmean = 0.9
@@ -127,8 +144,11 @@ class euclid_lensing(Likelihood):
 
         if not array:
             galaxy_dist = z**2*math.exp(-(z/z0)**(1.5))
-        else:
+        elif self.nofz_method==1:
             return z**2*np.exp(-(z/z0)**(1.5))
+        else:
+            return self.a1*np.exp(-(z-0.7)**2/self.b1**2.)+self.c1*np.exp(-(z-1.2)**2/self.d1**2.)
+
 
         return galaxy_dist
 
