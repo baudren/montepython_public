@@ -25,7 +25,10 @@ CFHTLens_correlation.zmax = 3.52
 
 # Use angular mask (to cut non-linear scales)
 CFHTLens_correlation.use_cut_theta = True
+# if True, select a cut scheme:
+#CFHTLens_correlation.cutvalues_file = "CFHTLENS/cut_values_none.dat"
 CFHTLens_correlation.cutvalues_file = "CFHTLENS/cut_values_conservative.dat"
+#CFHTLens_correlation.cutvalues_file = "CFHTLENS/cut_values_ultra_conservative.dat"
 
 # maximum l for C_l
 CFHTLens_correlation.lmax = 50000
@@ -47,6 +50,7 @@ CFHTLens_correlation.dx_threshold = 0.4
 # CFHTLens_correlation.dz = 0.01 (not used)
 
 # k_max in h/Mpc
+# (should be increase if you use less conservative cut scheme)
 CFHTLens_correlation.k_max_h_by_Mpc = 50.0
 
 # Anderson-Hartlap factor
