@@ -348,6 +348,9 @@ class Data(object):
             io_mp.log_cosmo_arguments(self, command_line)
             io_mp.log_default_configuration(self, command_line)
 
+        # Log plotting parameter names file for compatibility with GetDist
+        io_mp.log_parameter_names(self, command_line)
+
     def fill_mcmc_parameters(self):
         """
         Initializes the ordered dictionary :attr:`mcmc_parameters` from

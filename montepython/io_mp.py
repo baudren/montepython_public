@@ -120,6 +120,29 @@ def log_default_configuration(data, command_line):
     log.close()
 
 
+def log_parameter_names(data, command_line):
+    """
+    Log the parameter names to <date_today>_<N>_.paramnames for GetDist compatibility.
+    """
+    number = command_line.N
+    # If N was not provided, assumes N is 10 (default value)
+    if not number:
+        number = data.N
+    outname_base = '{0}_{1}_'.format(date.today(), number)
+    log = open(os.path.join(command_line.folder, outname_base+'.paramnames'), 'w')
+    # Create list of varying and derived parameters
+    param = data.get_mcmc_parameters(['varying'])
+    for elem in data.get_mcmc_parameters(['derived']):
+        param.append(elem)
+    for name in param:
+        # Use get_tex_name to convert parameter name to tex name
+        tex_name = get_tex_name(name, data.mcmc_parameters[name]['scale'])
+        # Remove illegal symbols
+        tex_name = re.sub('[$*&]', '', tex_name)
+        name = re.sub('[$*&]', '', name)
+        log.write("%s \t %s \n" % (name, tex_name))
+    log.close()
+
 def print_parameters(out, data):
     """
     Will print the parameter names. In the code, :code:`out` is simply the
