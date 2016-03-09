@@ -2,7 +2,7 @@
 # Euclid_lensing likelihood
 ########################################################
 # written by Benjamin Audren
-# (adapted from J Lesgourgues's COSMOS likelihood for CosmoMC)
+# (adapted from J Lesgourgues's old COSMOS likelihood for CosmoMC)
 #
 # Modified by S. Clesse in March 2016 to add an optional form of n(z)
 # motivated by ground based exp. (Van Waerbeke et al., 2013)
@@ -10,14 +10,13 @@
 
 from montepython.likelihood_class import Likelihood
 import io_mp
-#import time
+import time
 
 import scipy.integrate
 from scipy import interpolate as itp
 import os
 import numpy as np
 import math
-# Adapted from Julien Lesgourgues
 
 
 class euclid_lensing(Likelihood):
@@ -27,11 +26,9 @@ class euclid_lensing(Likelihood):
         Likelihood.__init__(self, path, data, command_line)
 
         # Force the cosmological module to store Pk for redshifts up to
-        # max(self.z)
+        # max(self.z) and for k up to k_max
         self.need_cosmo_arguments(data, {'output': 'mPk'})
         self.need_cosmo_arguments(data, {'z_max_pk': self.zmax})
-        # Force the cosmological module to store Pk for k up to an arbitrary
-        # number
         self.need_cosmo_arguments(data, {'P_k_max_h/Mpc': self.k_max_h_by_Mpc})
 
         # Compute non-linear power spectrum if requested
@@ -40,7 +37,11 @@ class euclid_lensing(Likelihood):
 
         # Define array of l values, and initialize them
         # It is a logspace
-        self.l = np.exp(self.dlnl*np.arange(self.nlmax))
+        # find nlmax in order to reach lmax with logarithmic steps dlnl
+        self.nlmax = np.int(np.log(self.lmax/self.lmin)/self.dlnl)+1
+        # redefine slightly dlnl so that the last point is always exactly lmax
+        self.dlnl = np.log(self.lmax/self.lmin)/(self.nlmax-1)
+        self.l = self.lmin*np.exp(self.dlnl*np.arange(self.nlmax))
 
         ########################################################
         # Find distribution of dn_dz (not normalized) in each bin
@@ -181,7 +182,7 @@ class euclid_lensing(Likelihood):
 
     def loglkl(self, cosmo, data):
 
-        #start = time.time()
+        start = time.time()
 
         # One wants to obtain here the relation between z and r, this is done
         # by asking the cosmological module with the function z_of_r
@@ -469,7 +470,7 @@ class euclid_lensing(Likelihood):
             chi2 += epsilon**2
 
 
-        #end = time.time()
-        #print "Time in s:",end-start
+        end = time.time()
+        print "Time in s:",end-start
 
         return -chi2/2.

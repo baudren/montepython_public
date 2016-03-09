@@ -5,10 +5,11 @@
 euclid_lensing.data_directory = data.path['data']
 euclid_lensing.fiducial_file  = "euclid_lensing_fiducial.dat"
 
-# number of l values used to compute C_l
-euclid_lensing.nlmax = 39
-# logarithmic l step for C_l
-euclid_lensing.dlnl  = 0.2
+# min, max and stepsize of l values used to compute C_l
+euclid_lensing.lmin = 5
+euclid_lensing.lmax = 5000
+euclid_lensing.dlnl = 0.2
+
 # number of discrete z values in selection function file
 euclid_lensing.nzmax = 151
 
