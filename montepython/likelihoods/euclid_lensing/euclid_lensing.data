@@ -21,8 +21,9 @@ euclid_lensing.fsky  = 0.375
 # precision with which bin edges are computed
 euclid_lensing.dz    = 0.01
 
-# k_max in 1/Mpc
-euclid_lensing.k_max = 40.
+# (k_min, k_max) in h/Mpc
+euclid_lensing.k_min_h_by_Mpc = 0.001
+euclid_lensing.k_max_h_by_Mpc = 0.5
 # this k_max could be very high (e.g. 40) if you use a theoretical_error > 0
 
 # non-linear correction

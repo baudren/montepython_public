@@ -10,7 +10,7 @@
 
 from montepython.likelihood_class import Likelihood
 import io_mp
-import time
+#import time
 
 import scipy.integrate
 from scipy import interpolate as itp
@@ -32,7 +32,7 @@ class euclid_lensing(Likelihood):
         self.need_cosmo_arguments(data, {'z_max_pk': self.zmax})
         # Force the cosmological module to store Pk for k up to an arbitrary
         # number
-        self.need_cosmo_arguments(data, {'P_k_max_1/Mpc': self.k_max})
+        self.need_cosmo_arguments(data, {'P_k_max_h/Mpc': self.k_max_h_by_Mpc})
 
         # Compute non-linear power spectrum if requested
         if (self.use_halofit):
@@ -181,7 +181,7 @@ class euclid_lensing(Likelihood):
 
     def loglkl(self, cosmo, data):
 
-        start = time.time()
+        #start = time.time()
 
         # One wants to obtain here the relation between z and r, this is done
         # by asking the cosmological module with the function z_of_r
@@ -208,14 +208,25 @@ class euclid_lensing(Likelihood):
                 g[nr, Bin] *= 2.*self.r[nr]*(1.+self.z[nr])
 
         # Get power spectrum P(k=l/r,z(r)) from cosmological module
+        kmin_in_inv_Mpc = self.k_min_h_by_Mpc * cosmo.h()
+        kmax_in_inv_Mpc = self.k_max_h_by_Mpc * cosmo.h()
         pk = np.zeros((self.nlmax, self.nzmax), 'float64')
         for index_l in xrange(self.nlmax):
             for index_z in xrange(1, self.nzmax):
-                if (self.l[index_l]/self.r[index_z] > self.k_max):
-                    raise io_mp.LikelihoodError(
-                        "you should increase euclid_lensing.k_max up to at least %g" % (self.l[index_l]/self.r[index_z]))
-                pk[index_l, index_z] = cosmo.pk(
-                    self.l[index_l]/self.r[index_z], self.z[index_z])
+
+        # These lines would return an error when you ask for P(k,z) out of computed range
+        #        if (self.l[index_l]/self.r[index_z] > self.k_max):
+        #            raise io_mp.LikelihoodError(
+        #                "you should increase euclid_lensing.k_max up to at least %g" % (self.l[index_l]/self.r[index_z]))
+        #        pk[index_l, index_z] = cosmo.pk(
+        #            self.l[index_l]/self.r[index_z], self.z[index_z])
+
+        # These lines set P(k,z) to zero out of [k_min, k_max] range
+                k_in_inv_Mpc =  self.l[index_l]/self.r[index_z]
+                if (k_in_inv_Mpc < kmin_in_inv_Mpc) or (k_in_inv_Mpc > kmax_in_inv_Mpc):
+                    pk[index_l, index_z] = 0.
+                else:
+                    pk[index_l, index_z] = cosmo.pk(self.l[index_l]/self.r[index_z], self.z[index_z])
 
         # Recover the non_linear scale computed by halofit. If no scale was
         # affected, set the scale to one, and make sure that the nuisance
@@ -458,7 +469,7 @@ class euclid_lensing(Likelihood):
             chi2 += epsilon**2
 
 
-        end = time.time()
-        print "Time in s:",end-start
+        #end = time.time()
+        #print "Time in s:",end-start
 
         return -chi2/2.

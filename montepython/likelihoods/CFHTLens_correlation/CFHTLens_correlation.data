@@ -50,7 +50,7 @@ CFHTLens_correlation.dx_threshold = 0.4
 # CFHTLens_correlation.dz = 0.01 (not used)
 
 # k_max in h/Mpc
-# (should be increase if you use less conservative cut scheme)
+# (should be increased when using less conservative cut scheme)
 CFHTLens_correlation.k_max_h_by_Mpc = 50.0
 
 # Anderson-Hartlap factor
