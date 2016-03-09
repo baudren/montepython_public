@@ -46,8 +46,8 @@ CFHTLens_correlation.dx_threshold = 0.4
 # precision with which bin edges are computed
 # CFHTLens_correlation.dz = 0.01 (not used)
 
-# k_max in 1/Mpc
-CFHTLens_correlation.k_max = 100.0
+# k_max in h/Mpc
+CFHTLens_correlation.k_max_h_by_Mpc = 50.0
 
 # Anderson-Hartlap factor
 CFHTLens_correlation.ah_factor = 0.873

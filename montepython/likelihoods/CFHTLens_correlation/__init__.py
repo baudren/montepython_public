@@ -31,7 +31,7 @@ class CFHTLens_correlation(Likelihood):
         # max(self.z) and for k up to k_max
         self.need_cosmo_arguments(data, {'output': 'mPk'})
         self.need_cosmo_arguments(data, {'z_max_pk': self.zmax})
-        self.need_cosmo_arguments(data, {'P_k_max_1/Mpc': self.k_max})
+        self.need_cosmo_arguments(data, {'P_k_max_h/Mpc': self.k_max_h_by_Mpc})
 
         # Compute non-linear power spectrum if requested
         if (self.use_halofit):
@@ -284,6 +284,7 @@ class CFHTLens_correlation(Likelihood):
                 self.g[nr, Bin] *= 2.*self.r[nr]*(1.+self.z_p[nr])
 
         # Get power spectrum P(k=l/r,z(r)) from cosmological module
+        kmax_in_inv_Mpc = self.k_max_h_by_Mpc * cosmo.h()
         for index_l in xrange(self.nlmax):
             for index_z in xrange(1, self.nzmax):
 #                if (self.l[index_l]/self.r[index_z] > self.k_max):
@@ -292,11 +293,11 @@ class CFHTLens_correlation(Likelihood):
 #                        " to at least %g" % (self.l[index_l]/self.r[index_z]))
 #                self.pk[index_l, index_z] = cosmo.pk(
 #                    self.l[index_l]/self.r[index_z], self.z_p[index_z])
-                if (self.l[index_l]/self.r[index_z] > self.k_max):
+                k_in_inv_Mpc =  self.l[index_l]/self.r[index_z]
+                if (k_in_inv_Mpc > kmax_in_inv_Mpc):
                     self.pk[index_l, index_z] = 0.0
                 else:
-                    self.pk[index_l, index_z] = cosmo.pk(
-                        self.l[index_l]/self.r[index_z], self.z_p[index_z])
+                    self.pk[index_l, index_z] = cosmo.pk(k_in_inv_Mpc, self.z_p[index_z])
 
         # Recover the non_linear scale computed by halofit. If no scale was
         # affected, set the scale to one, and make sure that the nuisance
