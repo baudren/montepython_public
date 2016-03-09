@@ -1,5 +1,16 @@
+########################################################
+# Euclid_lensing likelihood
+########################################################
+# written by Benjamin Audren
+# (adapted from J Lesgourgues's COSMOS likelihood for CosmoMC)
+#
+# Modified by S. Clesse in March 2016 to add an optional form of n(z)
+# motivated by ground based exp. (Van Waerbeke et al., 2013)
+# See google doc document prepared by the Euclid IST - Splinter 2
+
 from montepython.likelihood_class import Likelihood
 import io_mp
+#import time
 
 import scipy.integrate
 from scipy import interpolate as itp
@@ -21,7 +32,11 @@ class euclid_lensing(Likelihood):
         self.need_cosmo_arguments(data, {'z_max_pk': self.zmax})
         # Force the cosmological module to store Pk for k up to an arbitrary
         # number
-        self.need_cosmo_arguments(data, {'P_k_max_1/Mpc': self.k_max})
+        self.need_cosmo_arguments(data, {'P_k_max_h/Mpc': self.k_max_h_by_Mpc})
+
+        # Compute non-linear power spectrum if requested
+        if (self.use_halofit):
+            self.need_cosmo_arguments(data, {'non linear':'halofit'})
 
         # Define array of l values, and initialize them
         # It is a logspace
@@ -120,6 +135,9 @@ class euclid_lensing(Likelihood):
 
         If the array flag is set to True, z is then interpretated as an array,
         and not as a single value.
+
+        Modified by S. Clesse in March 2016 to add an optional form of n(z) motivated by ground based exp. (Van Waerbeke et al., 2013)
+        See google doc document prepared by the Euclid IST - Splinter 2
         """
 
         zmean = 0.9
@@ -127,8 +145,11 @@ class euclid_lensing(Likelihood):
 
         if not array:
             galaxy_dist = z**2*math.exp(-(z/z0)**(1.5))
-        else:
+        elif self.nofz_method==1:
             return z**2*np.exp(-(z/z0)**(1.5))
+        else:
+            return self.a1*np.exp(-(z-0.7)**2/self.b1**2.)+self.c1*np.exp(-(z-1.2)**2/self.d1**2.)
+
 
         return galaxy_dist
 
@@ -160,6 +181,8 @@ class euclid_lensing(Likelihood):
 
     def loglkl(self, cosmo, data):
 
+        #start = time.time()
+
         # One wants to obtain here the relation between z and r, this is done
         # by asking the cosmological module with the function z_of_r
         self.r = np.zeros(self.nzmax, 'float64')
@@ -185,15 +208,25 @@ class euclid_lensing(Likelihood):
                 g[nr, Bin] *= 2.*self.r[nr]*(1.+self.z[nr])
 
         # Get power spectrum P(k=l/r,z(r)) from cosmological module
+        kmin_in_inv_Mpc = self.k_min_h_by_Mpc * cosmo.h()
+        kmax_in_inv_Mpc = self.k_max_h_by_Mpc * cosmo.h()
         pk = np.zeros((self.nlmax, self.nzmax), 'float64')
         for index_l in xrange(self.nlmax):
             for index_z in xrange(1, self.nzmax):
-                if (self.l[index_l]/self.r[index_z] > self.k_max):
-                    raise io_mp.LikelihoodError(
-                        "you should increase euclid_lensing.k_max up to at"
-                        "least %g" % self.l[index_l]/self.r[index_z])
-                pk[index_l, index_z] = cosmo.pk(
-                    self.l[index_l]/self.r[index_z], self.z[index_z])
+
+        # These lines would return an error when you ask for P(k,z) out of computed range
+        #        if (self.l[index_l]/self.r[index_z] > self.k_max):
+        #            raise io_mp.LikelihoodError(
+        #                "you should increase euclid_lensing.k_max up to at least %g" % (self.l[index_l]/self.r[index_z]))
+        #        pk[index_l, index_z] = cosmo.pk(
+        #            self.l[index_l]/self.r[index_z], self.z[index_z])
+
+        # These lines set P(k,z) to zero out of [k_min, k_max] range
+                k_in_inv_Mpc =  self.l[index_l]/self.r[index_z]
+                if (k_in_inv_Mpc < kmin_in_inv_Mpc) or (k_in_inv_Mpc > kmax_in_inv_Mpc):
+                    pk[index_l, index_z] = 0.
+                else:
+                    pk[index_l, index_z] = cosmo.pk(self.l[index_l]/self.r[index_z], self.z[index_z])
 
         # Recover the non_linear scale computed by halofit. If no scale was
         # affected, set the scale to one, and make sure that the nuisance
@@ -434,4 +467,9 @@ class euclid_lensing(Likelihood):
             epsilon = data.mcmc_parameters['epsilon']['current'] * \
                 data.mcmc_parameters['epsilon']['scale']
             chi2 += epsilon**2
+
+
+        #end = time.time()
+        #print "Time in s:",end-start
+
         return -chi2/2.

@@ -1,31 +1,52 @@
+# File update by S. Clesse to fit with Euclid specifications used by the WP6-Forecasts working group
+# and IST-Forecasting subgroup on Weak-Lensing
+# Those specifications can be found in the googledoc document prepared by the Euclid IST - Splinter Group 2
+
 euclid_lensing.data_directory = data.path['data']
 euclid_lensing.fiducial_file  = "euclid_lensing_fiducial.dat"
 
-# Uncomment this line to use the theoretical error nuisance parameter
-#euclid_lensing.use_nuisance = ['epsilon']
 # number of l values used to compute C_l
-euclid_lensing.nlmax = 39		
+euclid_lensing.nlmax = 39
 # logarithmic l step for C_l
-euclid_lensing.dlnl  = 0.2		
+euclid_lensing.dlnl  = 0.2
 # number of discrete z values in selection function file
-euclid_lensing.nzmax = 151		
+euclid_lensing.nzmax = 151
 
 # number of bins of the survey
-euclid_lensing.nbin  = 5
+euclid_lensing.nbin  = 10
 # maximum redshift covered by survey
-euclid_lensing.zmax  = 3.		
+euclid_lensing.zmax  = 2.5
 # sky coverage
-euclid_lensing.fsky  = 0.375		
+euclid_lensing.fsky  = 0.375
 # precision with which bin edges are computed
-euclid_lensing.dz    = 0.01		
+euclid_lensing.dz    = 0.01
 
-# k_max in 1/Mpc
-euclid_lensing.k_max  = 40
+# (k_min, k_max) in h/Mpc
+euclid_lensing.k_min_h_by_Mpc = 0.001
+euclid_lensing.k_max_h_by_Mpc = 0.5
+# this k_max could be very high (e.g. 40) if you use a theoretical_error > 0
 
-# precision of the halofit method (defaults to 0)
-euclid_lensing.coefficient_f_nu = 0
+# non-linear correction
+euclid_lensing.use_halofit = False
+
+# Uncomment this line to use the theoretical error nuisance parameter of 1210.2194
+#euclid_lensing.use_nuisance = ['epsilon']
+# theoretical error parameters of 1210.2194
 euclid_lensing.theoretical_error = 0
+euclid_lensing.coefficient_f_nu = 0
+
 # noise computation
-euclid_lensing.rms_shear = 0.30
+euclid_lensing.rms_shear = 0.22
 # number of galaxies per square arcminutes
-euclid_lensing.gal_per_sqarcmn = 30	
+euclid_lensing.gal_per_sqarcmn = 30
+
+# method for the computation of n(z):
+# 1 is the standard method
+# 2 gives n(z) from ground-based observations
+# for method 2:  n(z) = a1*exp(- (z-0.7)**2/b1**2) + c1*exp(-(z-1.2)**2/d1**1)
+# from CFHTLens, van Waerbeke et al, 2013
+euclid_lensing.nofz_method = 1
+euclid_lensing.d1 = 0.46
+euclid_lensing.a1 = 1.50
+euclid_lensing.b1 = 0.32
+euclid_lensing.c1 = 0.20
