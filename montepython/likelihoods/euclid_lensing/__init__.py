@@ -10,6 +10,7 @@
 
 from montepython.likelihood_class import Likelihood
 import io_mp
+import time
 
 import scipy.integrate
 from scipy import interpolate as itp
@@ -180,6 +181,8 @@ class euclid_lensing(Likelihood):
 
     def loglkl(self, cosmo, data):
 
+        start = time.time()
+
         # One wants to obtain here the relation between z and r, this is done
         # by asking the cosmological module with the function z_of_r
         self.r = np.zeros(self.nzmax, 'float64')
@@ -210,8 +213,7 @@ class euclid_lensing(Likelihood):
             for index_z in xrange(1, self.nzmax):
                 if (self.l[index_l]/self.r[index_z] > self.k_max):
                     raise io_mp.LikelihoodError(
-                        "you should increase euclid_lensing.k_max up to at"
-                        "least %g" % self.l[index_l]/self.r[index_z])
+                        "you should increase euclid_lensing.k_max up to at least %g" % (self.l[index_l]/self.r[index_z]))
                 pk[index_l, index_z] = cosmo.pk(
                     self.l[index_l]/self.r[index_z], self.z[index_z])
 
@@ -454,4 +456,9 @@ class euclid_lensing(Likelihood):
             epsilon = data.mcmc_parameters['epsilon']['current'] * \
                 data.mcmc_parameters['epsilon']['scale']
             chi2 += epsilon**2
+
+
+        end = time.time()
+        print "Time in s:",end-start
+
         return -chi2/2.

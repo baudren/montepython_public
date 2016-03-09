@@ -5,8 +5,6 @@
 euclid_lensing.data_directory = data.path['data']
 euclid_lensing.fiducial_file  = "euclid_lensing_fiducial.dat"
 
-# Uncomment this line to use the theoretical error nuisance parameter
-#euclid_lensing.use_nuisance = ['epsilon']
 # number of l values used to compute C_l
 euclid_lensing.nlmax = 39
 # logarithmic l step for C_l
@@ -25,19 +23,26 @@ euclid_lensing.dz    = 0.01
 
 # k_max in 1/Mpc
 euclid_lensing.k_max = 40.
+# this k_max could be very high (e.g. 40) if you use a theoretical_error > 0
 
 # non-linear correction
-euclid_lensing.use_halofit = True
+euclid_lensing.use_halofit = False
 
-euclid_lensing.coefficient_f_nu = 0
+# Uncomment this line to use the theoretical error nuisance parameter of 1210.2194
+#euclid_lensing.use_nuisance = ['epsilon']
+# theoretical error parameters of 1210.2194
 euclid_lensing.theoretical_error = 0
+euclid_lensing.coefficient_f_nu = 0
+
 # noise computation
 euclid_lensing.rms_shear = 0.22
 # number of galaxies per square arcminutes
 euclid_lensing.gal_per_sqarcmn = 30
 
-# method for the computation of n(z):  1 is the standard method, 2 gives n(z) from ground-based observations
-# For method 2:  n(z) = a1*exp(- (z-0.7)**2/b1**2) + c1*exp(-(z-1.2)**2/d1**1)
+# method for the computation of n(z):
+# 1 is the standard method
+# 2 gives n(z) from ground-based observations
+# for method 2:  n(z) = a1*exp(- (z-0.7)**2/b1**2) + c1*exp(-(z-1.2)**2/d1**1)
 # from CFHTLens, van Waerbeke et al, 2013
 euclid_lensing.nofz_method = 1
 euclid_lensing.d1 = 0.46
