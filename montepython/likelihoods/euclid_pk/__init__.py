@@ -4,7 +4,6 @@ import numpy as np
 from numpy import newaxis as na
 from math import exp, log, pi, log10
 
-
 class euclid_pk(Likelihood):
 
     def __init__(self, path, data, command_line):
@@ -208,11 +207,15 @@ class euclid_pk(Likelihood):
             for index_z in xrange(2*self.nbin+1):
                 self.k[index_k,index_z,:] = np.sqrt((1.-mu[:]**2)*self.D_A_fid[index_z]**2/D_A[index_z]**2 + mu[:]**2*H[index_z]**2/self.H_fid[index_z]**2 )*self.k_fid[index_k]
 
-
         # Recover the non-linear power spectrum from the cosmological module on all
         # the z_boundaries, to compute afterwards beta. This is pk_nl_th from the
         # notes.
         pk_nl_th = np.zeros((self.k_size,2*self.nbin+1,self.mu_size),'float64')
+
+        # The next line is the bottleneck.
+        # TODO: the likelihood could be sped up if this could be vectorised, either here,
+        # or inside classy where there are three loops in the function get_pk
+        # (maybe with a different strategy for the arguments of the function)
         pk_nl_th = cosmo.get_pk(self.k,self.z,self.k_size,2*self.nbin+1,self.mu_size)
 
         # Recover the non_linear scale computed by halofit. If no scale was
