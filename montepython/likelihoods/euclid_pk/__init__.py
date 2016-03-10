@@ -54,16 +54,28 @@ class euclid_pk(Likelihood):
         ################
 
         self.n_g = np.zeros(self.nbin, 'float64')
-        self.n_g = np.array([6844.945, 7129.45,
-                             7249.912, 7261.722,
-                             7203.825, 7103.047,
-                             6977.571, 6839.546,
-                             6696.957, 5496.988,
-                             4459.240, 3577.143,
-                             2838.767, 2229.282,
-                             1732.706, 1333.091])
 
-        self.n_g = self.n_g * self.efficiency * 41253.
+        # obsolete settings from 2012
+        #self.n_g = np.array([6844.945, 7129.45,
+        #                     7249.912, 7261.722,
+        #                     7203.825, 7103.047,
+        #                     6977.571, 6839.546,
+        #                     6696.957, 5496.988,
+        #                     4459.240, 3577.143,
+        #                     2838.767, 2229.282,
+        #                     1732.706, 1333.091])
+        #self.n_g = self.n_g * self.efficiency * 41253.
+
+        # euclid 2016 settings
+        self.n_g = np.array([2434.280, 4364.812,
+                             4728.559, 4825.798,
+                             4728.797, 4507.625,
+                             4269.851, 3720.657,
+                             3104.309, 2308.975,
+                             1514.831, 1474.707,
+                             893.716, 497.613])
+
+        self.n_g = self.n_g * self.fsky * 41253 #sky coverage in deg ^2
 
         # If the file exists, initialize the fiducial values, the spectrum will
         # be read first, with k_size values of k and nbin values of z. Then,

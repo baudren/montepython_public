@@ -1,29 +1,36 @@
+# File update by M. Archidiacono to fit with Euclid specifications
+# used by the WP6-Forecasts working group
+# and IST-Forecasting subgroup on galaxy clustering
+# Those specifications can be found in the googledoc document
+# prepared by the Euclid IST - Splinter Group 3
+
 euclid_pk.data_directory = data.path['data']
-euclid_pk.fiducial_file  = "Euclid_fiducial_pk_ncdm_6.dat"
+euclid_pk.fiducial_file  = "euclid_pk_fiducial.dat"
 
 # Uncomment the line with epsilon to use the theoretical error
 euclid_pk.use_nuisance = ['P_shot']
 #euclid_pk.use_nuisance = ['P_shot','epsilon']
 
 # number of bins of the survey
-euclid_pk.nbin  = 16
+euclid_pk.nbin  = 14
 # range of redshifts covered by survey.
-euclid_pk.zmin = 0.5
+euclid_pk.zmin = 0.7
 euclid_pk.zmax  = 2.0
 # sky coverage
-euclid_pk.fsky  = 0.375
+euclid_pk.fsky  = 0.3636
 # precision on the mu variable
 euclid_pk.mu_size = 9
 
+# number of equally spaced bins in log(k) space
 euclid_pk.k_size = 100
 
 # integration boundaries for k (in 1/Mpc)
-euclid_pk.kmin = 0.001 
-euclid_pk.kmax = 0.6
+euclid_pk.kmin = 0.001
+euclid_pk.kmax = 0.2
 
 # precision of the halofit method (set to zero by default)
 euclid_pk.theoretical_error = 0
 euclid_pk.coefficient_f_nu = 0
 
-# efficiency
-euclid_pk.efficiency = 0.25
+# efficiency (not used in current version)
+#euclid_pk.efficiency = 1.0
