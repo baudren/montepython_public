@@ -1,12 +1,24 @@
+########################################################
+# Euclid_lensing likelihood
+########################################################
+# written by Benjamin Audren
+# (adapted from J Lesgourgues's old COSMOS likelihood for CosmoMC)
+#
+# Modified by S. Clesse in March 2016 to add an optional form of n(z)
+# motivated by ground based exp. (Van Waerbeke et al., 2013)
+# See google doc document prepared by the Euclid IST - Splinter 2
+#
+# Modified by J. Lesgourgues in March 2016 to vectorise and speed up
+
 from montepython.likelihood_class import Likelihood
 import io_mp
+#import time
 
 import scipy.integrate
 from scipy import interpolate as itp
 import os
 import numpy as np
 import math
-# Adapted from Julien Lesgourgues
 
 
 class euclid_lensing(Likelihood):
@@ -16,16 +28,22 @@ class euclid_lensing(Likelihood):
         Likelihood.__init__(self, path, data, command_line)
 
         # Force the cosmological module to store Pk for redshifts up to
-        # max(self.z)
+        # max(self.z) and for k up to k_max
         self.need_cosmo_arguments(data, {'output': 'mPk'})
         self.need_cosmo_arguments(data, {'z_max_pk': self.zmax})
-        # Force the cosmological module to store Pk for k up to an arbitrary
-        # number
-        self.need_cosmo_arguments(data, {'P_k_max_1/Mpc': self.k_max})
+        self.need_cosmo_arguments(data, {'P_k_max_h/Mpc': self.k_max_h_by_Mpc})
+
+        # Compute non-linear power spectrum if requested
+        if (self.use_halofit):
+            self.need_cosmo_arguments(data, {'non linear':'halofit'})
 
         # Define array of l values, and initialize them
         # It is a logspace
-        self.l = np.exp(self.dlnl*np.arange(self.nlmax))
+        # find nlmax in order to reach lmax with logarithmic steps dlnl
+        self.nlmax = np.int(np.log(self.lmax/self.lmin)/self.dlnl)+1
+        # redefine slightly dlnl so that the last point is always exactly lmax
+        self.dlnl = np.log(self.lmax/self.lmin)/(self.nlmax-1)
+        self.l = self.lmin*np.exp(self.dlnl*np.arange(self.nlmax))
 
         ########################################################
         # Find distribution of dn_dz (not normalized) in each bin
@@ -120,6 +138,9 @@ class euclid_lensing(Likelihood):
 
         If the array flag is set to True, z is then interpretated as an array,
         and not as a single value.
+
+        Modified by S. Clesse in March 2016 to add an optional form of n(z) motivated by ground based exp. (Van Waerbeke et al., 2013)
+        See google doc document prepared by the Euclid IST - Splinter 2
         """
 
         zmean = 0.9
@@ -127,8 +148,11 @@ class euclid_lensing(Likelihood):
 
         if not array:
             galaxy_dist = z**2*math.exp(-(z/z0)**(1.5))
-        else:
+        elif self.nofz_method==1:
             return z**2*np.exp(-(z/z0)**(1.5))
+        else:
+            return self.a1*np.exp(-(z-0.7)**2/self.b1**2.)+self.c1*np.exp(-(z-1.2)**2/self.d1**2.)
+
 
         return galaxy_dist
 
@@ -160,6 +184,8 @@ class euclid_lensing(Likelihood):
 
     def loglkl(self, cosmo, data):
 
+        #start = time.time()
+
         # One wants to obtain here the relation between z and r, this is done
         # by asking the cosmological module with the function z_of_r
         self.r = np.zeros(self.nzmax, 'float64')
@@ -185,15 +211,25 @@ class euclid_lensing(Likelihood):
                 g[nr, Bin] *= 2.*self.r[nr]*(1.+self.z[nr])
 
         # Get power spectrum P(k=l/r,z(r)) from cosmological module
+        kmin_in_inv_Mpc = self.k_min_h_by_Mpc * cosmo.h()
+        kmax_in_inv_Mpc = self.k_max_h_by_Mpc * cosmo.h()
         pk = np.zeros((self.nlmax, self.nzmax), 'float64')
         for index_l in xrange(self.nlmax):
             for index_z in xrange(1, self.nzmax):
-                if (self.l[index_l]/self.r[index_z] > self.k_max):
-                    raise io_mp.LikelihoodError(
-                        "you should increase euclid_lensing.k_max up to at"
-                        "least %g" % self.l[index_l]/self.r[index_z])
-                pk[index_l, index_z] = cosmo.pk(
-                    self.l[index_l]/self.r[index_z], self.z[index_z])
+
+        # These lines would return an error when you ask for P(k,z) out of computed range
+        #        if (self.l[index_l]/self.r[index_z] > self.k_max):
+        #            raise io_mp.LikelihoodError(
+        #                "you should increase euclid_lensing.k_max up to at least %g" % (self.l[index_l]/self.r[index_z]))
+        #        pk[index_l, index_z] = cosmo.pk(
+        #            self.l[index_l]/self.r[index_z], self.z[index_z])
+
+        # These lines set P(k,z) to zero out of [k_min, k_max] range
+                k_in_inv_Mpc =  self.l[index_l]/self.r[index_z]
+                if (k_in_inv_Mpc < kmin_in_inv_Mpc) or (k_in_inv_Mpc > kmax_in_inv_Mpc):
+                    pk[index_l, index_z] = 0.
+                else:
+                    pk[index_l, index_z] = cosmo.pk(self.l[index_l]/self.r[index_z], self.z[index_z])
 
         # Recover the non_linear scale computed by halofit. If no scale was
         # affected, set the scale to one, and make sure that the nuisance
@@ -246,7 +282,7 @@ class euclid_lensing(Likelihood):
 
             # find Cl_integrand = (g(r) / r)**2 * P(l/r,z(r))
             for Bin1 in xrange(self.nbin):
-                for Bin2 in xrange(self.nbin):
+                for Bin2 in xrange(Bin1,self.nbin):
                     Cl_integrand[1:, Bin1, Bin2] = g[1:, Bin1]*g[1:, Bin2]/(
                         self.r[1:]**2)*pk[nl, 1:]
                     if self.theoretical_error != 0:
@@ -260,7 +296,7 @@ class euclid_lensing(Likelihood):
             # It it then multiplied by 9/16*Omega_m**2 to be in units of Mpc**4
             # and then by (h/2997.9)**4 to be dimensionless
             for Bin1 in xrange(self.nbin):
-                for Bin2 in xrange(self.nbin):
+                for Bin2 in xrange(Bin1,self.nbin):
                     Cl[nl, Bin1, Bin2] = np.sum(0.5*(
                         Cl_integrand[1:, Bin1, Bin2] +
                         Cl_integrand[:-1, Bin1, Bin2])*(
@@ -359,20 +395,25 @@ class euclid_lensing(Likelihood):
                     Cov_error[:, Bin2, Bin1] = Cov_error[:, Bin1, Bin2]
 
         chi2 = 0.
+
+        # chi2 computation in presence of theoretical error
+        # (in absence of it, computation more straightforward, see below)
         # TODO parallelize this
-        for index, ell in enumerate(ells):
+        if (self.theoretical_error > 0):
 
-            det_theory = np.linalg.det(Cov_theory[index, :, :])
-            det_observ = np.linalg.det(Cov_observ[index, :, :])
+            for index, ell in enumerate(ells):
 
-            if (self.theoretical_error > 0):
+                det_theory = np.linalg.det(Cov_theory[index, :, :])
+                det_observ = np.linalg.det(Cov_observ[index, :, :])
+
                 det_cross_err = 0
                 for i in range(self.nbin):
                     newCov = np.copy(Cov_theory)
                     newCov[:, i] = Cov_error[:, i]
                     det_cross_err += np.linalg.det(newCov)
 
-                # Newton method
+                # Newton method to minimise chi2 over nuisance parameter epsilon_l
+                # (only when using theoretical error scheme of 1210.2194)
                 # Find starting point for the method:
                 start = 0
                 step = 0.001*det_theory/det_cross_err
@@ -406,7 +447,7 @@ class euclid_lensing(Likelihood):
                     epsilon_l = vector[1] - first_d/second_d
                     error = abs(function_vector[1] - old_chi2)
                     old_chi2 = function_vector[1]
-            # End Newton
+                # End Newton
 
                 Cov_theory_plus_error = Cov_theory + epsilon_l * Cov_error
                 det_theory_plus_error = np.linalg.det(Cov_theory_plus_error)
@@ -419,14 +460,27 @@ class euclid_lensing(Likelihood):
 
                 chi2 += (2.*ell+1.)*self.fsky*(det_theory_plus_error_cross_obs/det_theory_plus_error + math.log(det_theory_plus_error/det_observ) - self.nbin ) + dof*epsilon_l**2
 
-            else:
-                det_cross = 0.
-                for i in xrange(self.nbin):
-                    newCov = np.copy(Cov_theory[index, :, :])
-                    newCov[:, i] = Cov_observ[index, :, i]
-                    det_cross += np.linalg.det(newCov)
 
-                chi2 += (2.*ell+1.)*self.fsky*(det_cross/det_theory + math.log(det_theory/det_observ) - self.nbin)
+        # chi2 computation in absence of theoretical error (vectorized)
+        else:
+
+            det_theory = np.zeros(len(ells), 'float64')
+            det_observ = np.zeros(len(ells), 'float64')
+            det_cross_term = np.zeros((self.nbin, len(ells)), 'float64')
+            det_cross = np.zeros(len(ells), 'float64')
+
+            det_theory[:] = np.linalg.det(Cov_theory[:, :, :])
+            det_observ[:] = np.linalg.det(Cov_observ[:, :, :])
+
+            for i in xrange(self.nbin):
+                newCov = np.copy(Cov_theory)
+                newCov[:,:, i] = Cov_observ[:,:, i]
+                det_cross_term[i,:] = np.linalg.det(newCov[:,:,:])
+
+            det_cross = np.sum(det_cross_term,axis=0)
+
+            for index, ell in enumerate(ells):
+                chi2 += (2.*ell+1.)*self.fsky*(det_cross[index]/det_theory[index] + math.log(det_theory[index]/det_observ[index]) - self.nbin)
 
         # Finally adding a gaussian prior on the epsilon nuisance parameter, if
         # present
@@ -434,4 +488,8 @@ class euclid_lensing(Likelihood):
             epsilon = data.mcmc_parameters['epsilon']['current'] * \
                 data.mcmc_parameters['epsilon']['scale']
             chi2 += epsilon**2
+
+        #end = time.time()
+        #print "Time in s:",end-start
+
         return -chi2/2.

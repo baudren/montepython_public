@@ -32,12 +32,21 @@ def initialise(custom_command=''):
     # Recovering the local configuration
     path = recover_local_path(command_line)
 
+    # check for MPI
+    try:
+        from mpi4py import MPI
+        comm = MPI.COMM_WORLD
+        rank = comm.Get_rank()
+    except ImportError:
+        # set all chains to master if no MPI
+        rank = 0
+
     # Recover Monte Python's version number
     version_path = os.path.join(
         path['root'], 'VERSION')
     with open(version_path, 'r') as version_file:
         version = version_file.readline()
-    if not command_line.silent:
+    if not command_line.silent and not rank:
         print('Running Monte Python v%s' % version)
 
     # If the info flag was used, read a potential chain (or set of chains) to

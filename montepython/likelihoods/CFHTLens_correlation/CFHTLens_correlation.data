@@ -1,0 +1,76 @@
+##############################################################
+# data and precision parameters for the CFHTLens correlation #
+# function's likelihood (from Heymans et al. 1303.1808)      #
+##############################################################
+
+CFHTLens_correlation.data_directory = data.path['data']
+
+# number of tomographic redshift bins of the survey
+CFHTLens_correlation.nbin = 6
+# number of angular bins in which xipm is measured
+CFHTLens_correlation.ntheta = 5
+
+# Measurements (xi+,xi-) and covariance matrix
+CFHTLens_correlation.xipm_file = "CFHTLENS/cfhtlens_xipm_6bin_blu.dat"
+CFHTLens_correlation.covmat_file = "CFHTLENS/covariance_matrix_blu.dat"
+
+# Selection function file
+CFHTLens_correlation.window_file = ["CFHTLENS/nofz_%dblu.hist" % (i + 1) for i in range(self.nbin)]
+# number of discrete z values in selection function file
+CFHTLens_correlation.nzmax = 72
+# maximum redshift covered by survey
+CFHTLens_correlation.zmax = 3.52
+# sky coverage
+# CFHTLens_correlation.fsky = 0.375 (not used)
+
+# Use angular mask (to cut non-linear scales)
+CFHTLens_correlation.use_cut_theta = True
+# if True, select a cut scheme:
+#CFHTLens_correlation.cutvalues_file = "CFHTLENS/cut_values_none.dat"
+CFHTLens_correlation.cutvalues_file = "CFHTLENS/cut_values_conservative.dat"
+#CFHTLens_correlation.cutvalues_file = "CFHTLENS/cut_values_ultra_conservative.dat"
+
+# maximum l for C_l
+CFHTLens_correlation.lmax = 50000
+# logarithmic l step for C_l
+CFHTLens_correlation.dlnl = 0.4
+
+# parameters controlling the precision of the integral
+# for the correlation function (int l C_l J(x))
+# through the stepsize of x == l * theta
+# (this also controls the speed of the likelihood,
+# since this integral is the bottleneck)
+CFHTLens_correlation.xmax = 50.
+CFHTLens_correlation.dx_below_threshold = 0.05
+CFHTLens_correlation.dx_above_threshold = 0.15
+CFHTLens_correlation.dx_threshold = 0.4
+
+
+# precision with which bin edges are computed
+# CFHTLens_correlation.dz = 0.01 (not used)
+
+# k_max in h/Mpc
+# (should be increased when using less conservative cut scheme)
+CFHTLens_correlation.k_max_h_by_Mpc = 50.0
+
+# Anderson-Hartlap factor
+CFHTLens_correlation.ah_factor = 0.873
+
+# Uncomment this line to use the theoretical error nuisance parameter
+# CFHTLens_correlation.use_nuisance = ['epsilon']
+
+# Nonlinear corrections
+CFHTLens_correlation.use_halofit = True
+
+CFHTLens_correlation.coefficient_f_nu = 0
+CFHTLens_correlation.theoretical_error = 0
+# noise computation
+CFHTLens_correlation.rms_shear = 0.0
+# number of galaxies per square arcminutes
+CFHTLens_correlation.gal_per_sqarcmn = 30
+
+# precision of the Bessel integration
+# CFHTLens_correlation.nz_wl = 95 (not used)
+CFHTLens_correlation.dlntheta = 0.25
+CFHTLens_correlation.dx = 0.02
+CFHTLens_correlation.xstop = 200.0

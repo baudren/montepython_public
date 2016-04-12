@@ -451,6 +451,9 @@ def create_parser():
         <**>--IS-starting-folder<**> : str
             <++>Perform Importance Sampling from this folder or set of
             chains<++> (*OPT*)<++>
+        <**>--stop-after-update<**> : bool
+            <++>When using update mode, stop run after updating the covariant matrix.<++>
+            Useful if you want to change settings after the first guess (*OPT*) (flag)<++>
 
         For Nested Sampling and Cosmo Hammer arguments, see
         :mod:`nested_sampling` and :mod:`cosmo_hammer`.
@@ -535,7 +538,8 @@ def create_parser():
             (between 0 and 1). Normally one would not use this for runs with --update mode,
             unless --keep-non-markovian is switched on (*OPT*)<++>
         <**>--want-covmat<**> : bool
-            <++>calculate the covariant matrix when analyzing the chains.<++> Warning: this will interfere with ongoing runs utilizing update mode (*OPT*) (flag)<++>
+            <++>calculate the covariant matrix when analyzing the chains.<++>
+            Warning: this will interfere with ongoing runs utilizing update mode (*OPT*) (flag)<++>
 
     Returns
     -------
@@ -601,6 +605,9 @@ def create_parser():
                            default='default.conf')
     # -- arbitrary numbering of an output chain (OPTIONAL)
     runparser.add_argument('--chain-number', help=helpdict['chain-number'])
+    # -- stop run after first successful update using --update (EXPERIMENTAL)
+    runparser.add_argument('--stop-after-update', help=helpdict['stop-after-update'],
+                           dest='stop_after_update', action='store_true')
 
     ###############
     # MCMC restart from chain or best fit file
@@ -763,6 +770,15 @@ def parse(custom_command=''):
     else:
         args = parser.safe_parse_args(custom_command.split(' '))
 
+    # check for MPI
+    try:
+        from mpi4py import MPI
+        comm = MPI.COMM_WORLD
+        rank = comm.Get_rank()
+    except ImportError:
+        # set all chains to master if no MPI
+        rank = 0
+
     # Some check to perform when running the MCMC chains is requested
     if args.subparser_name == "run":
 
@@ -796,7 +812,7 @@ def parse(custom_command=''):
                     args.param = os.path.join(
                         args.folder, 'log.param')
                     if old_param is not None:
-                        if not args.silent:
+                        if not args.silent and not rank:
                             warnings.warn(
                                 "Appending to an existing folder: using the "
                                 "log.param instead of %s" % old_param)

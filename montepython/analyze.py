@@ -617,12 +617,20 @@ def compute_posterior(information_instances):
                         # Benabed). Note that only the 1 and 2 sigma contours are
                         # displayed (due to the line with info.levels[:2])
                         try:
-                            contours = ax2dsub.contourf(
-                                info.y_centers, info.x_centers, info.n,
-                                extent=info.extent, levels=ctr_level(
-                                    info.n, info.levels[:2]),
-                                zorder=4, cmap=info.cmaps[info.id],
-                                alpha=info.alphas[info.id])
+                            if info.contours_only:
+                                contours = ax2dsub.contour(
+                                    info.y_centers, info.x_centers, info.n,
+                                    extent=info.extent, levels=ctr_level(
+                                        info.n, info.levels[:2]),
+                                    zorder=4, colors=info.cm[info.id],
+                                    linewidths=info.line_width)
+                            else:
+                                contours = ax2dsub.contourf(
+                                    info.y_centers, info.x_centers, info.n,
+                                    extent=info.extent, levels=ctr_level(
+                                        info.n, info.levels[:2]),
+                                    zorder=4, cmap=info.cmaps[info.id],
+                                    alpha=info.alphas[info.id])
                         except Warning:
                             warnings.warn(
                                 "The routine could not find the contour of the " +
@@ -675,7 +683,7 @@ def compute_posterior(information_instances):
                     # store the coordinates of the points for further
                     # plotting.
                     store_contour_coordinates(
-                        conf, standard_name, second_standard_name, contours)
+                        conf, standard_name, second_standard_name, cotours)
 
                     for info in information_instances:
                         if not info.ignore_param and info.has_second_param:
@@ -770,6 +778,9 @@ def minimum_credible_intervals(info):
                 warnings.warn(
                     "could not derive minimum credible intervals " +
                     "for this multimodal posterior")
+                warnings.warn(
+                    "please try running longer chains or reducing " +
+                    "the number of bins with --bins BINS (default: 20)")
                 failed = True
                 break
             top = (np.sum(histogram[indices]) -
@@ -811,10 +822,13 @@ def minimum_credible_intervals(info):
                 warnings.warn(
                     "the loop to check for sigma deviations was " +
                     "taking too long to converge")
+                failed = True
                 break
 
         # min
-        if indices[0] > 0:
+        if failed:
+            bounds[j][0] = np.nan
+        elif indices[0] > 0:
             bounds[j][0] = bincenters[indices[0]] - delta*(histogram[indices[0]]-water_level)/(histogram[indices[0]]-histogram[indices[0]-1])
         else:
             if (left_edge > water_level):
@@ -823,7 +837,9 @@ def minimum_credible_intervals(info):
                 bounds[j][0] = bincenters[indices[0]] - 0.5*delta*(histogram[indices[0]]-water_level)/(histogram[indices[0]]-left_edge)
 
         # max
-        if indices[-1] < (len(histogram)-1):
+        if failed:
+            bounds[j][1] = np.nan
+        elif indices[-1] < (len(histogram)-1):
             bounds[j][1] = bincenters[indices[-1]] + delta*(histogram[indices[-1]]-water_level)/(histogram[indices[-1]]-histogram[indices[-1]+1])
         else:
             if (right_edge > water_level):
@@ -1336,11 +1352,6 @@ def remove_bad_points(info):
             if info.keep_fraction < 1:
                 print "and first %.0f percent," % (100.*(1-info.keep_fraction)),
             print "keep %d steps" % (line_count-start)
-
-            # JL debug
-            if markovian > 0:
-                print "first chain line taken in consideration:"
-                print cheese[markovian]
 
         except IndexError:
             print ': Removed everything: chain not converged'
