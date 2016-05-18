@@ -1087,12 +1087,20 @@ class Likelihood_mock_cmb(Likelihood):
         # needed by the window function
         self.need_cosmo_arguments(data, {'l_max_scalars': self.l_max})
 
-        # implementation of default settings for flags describing the likelihood:
+        ###########################################################################
+        # implementation of default settings for flags describing the likelihood: #
+        ###########################################################################
+
         # - ignore B modes by default:
         try:
             self.Bmodes
         except:
             self.Bmodes = False
+        # - do not use delensing by default:
+        try:
+            self.delensing
+        except:
+            self.delensing = False
         # - do not include lensing extraction by default:
         try:
             self.LensingExtraction
@@ -1108,6 +1116,36 @@ class Likelihood_mock_cmb(Likelihood):
             self.unlensed_clTTTEEE
         except:
             self.unlensed_clTTTEEE = False
+
+        ##############################################
+        # Delensing noise: implemented by  S. Clesse #
+        ##############################################
+
+        if self.delensing:
+
+            try:
+                self.delensing_file
+            except:
+                raise io_mp.LikelihoodError("For delensing, you must provide delensing_file")
+
+            self.noise_delensing = np.zeros(self.l_max+1)
+            if os.path.exists(os.path.join(self.data_directory, self.delensing_file)):
+                delensing_file = open(os.path.join(
+                    self.data_directory, self.delensing_file), 'r')
+                line = delensing_file.readline()
+                while line.find('#') != -1:
+                    line = delensing_file.readline()
+
+                for l in range(self.l_min, self.l_max+1):
+                    ll = int(float(line.split()[0]))
+                    if l != ll:
+                        raise io_mp.LikelihoodError("Mismatch between required values of l in the code and in the delensing file")
+                    self.noise_delensing[ll] = float(line.split()[3])/(ll*(ll+1)/2./math.pi)
+                    # change 3 to 4 in the above line for CMBxCIB delensing
+                    line = delensing_file.readline()
+
+            else:
+                raise io_mp.LikelihoodError("Could not find file ",self.delensing_file)
 
         ###############################################################
         # Read data for TT, EE, TE, [eventually BB or phi-phi, phi-T] #
@@ -1149,12 +1187,14 @@ class Likelihood_mock_cmb(Likelihood):
                     line = fid_file.readline()
                 for l in range(self.l_min, self.l_max+1):
                     ll = int(float(line.split()[0]))
+                    if l != ll:
+                        raise io_mp.LikelihoodError("Mismatch between required values of l in the code and in the delensing file")
                     # this lines assumes that Nldd is stored in the
                     # 4th column (can be customised)
                     self.Nldd[ll] = float(line.split()[3])/(l*(l+1.)/2./math.pi)
                     line = fid_file.readline()
             else:
-                raise io_mp.LikelihoodError("Could not find file",self.temporary_Nldd_file)
+                raise io_mp.LikelihoodError("Could not find file ",self.temporary_Nldd_file)
 
         # deal with fiducial model:
         # If the file exists, initialize the fiducial values
@@ -1205,6 +1245,10 @@ class Likelihood_mock_cmb(Likelihood):
             print "  Bmodes is True"
         else:
             print "  Bmodes is False"
+        if self.delensing:
+            print "  delensing is True"
+        else:
+            print "  delensing is False"
         if self.LensingExtraction:
             print "  LensingExtraction is True"
         else:
@@ -1221,10 +1265,25 @@ class Likelihood_mock_cmb(Likelihood):
     def loglkl(self, cosmo, data):
 
         # get Cl's from the cosmological code (returned in muK**2 units)
+
+        # if we want unlensed Cl's
         if self.unlensed_clTTTEEE:
             cl = self.get_unlensed_cl(cosmo)
+            # exception: for non-delensed B modes we need the lensed BB spectrum
+            # (this case is usually not useful/relevant)
+            if self.Bmodes and (not self.delensing):
+                    cl_lensed = self.get_cl(cosmo)
+                    for l in range(self.lmax+1):
+                        cl[l]['bb']=cl_lensed[l]['bb']
+
+        # if we want lensed Cl's
         else:
             cl = self.get_cl(cosmo)
+            # exception: for delensed B modes we need the unlensed spectrum
+            if self.Bmodes and self.delensing:
+                cl_unlensed = self.get_unlensed_cl(cosmo)
+                for l in range(self.lmax+1):
+                        cl[l]['bb']=cl_unlensed[l]['bb']
 
         # get likelihood
         lkl = self.compute_lkl(cl, cosmo, data)
@@ -1250,7 +1309,11 @@ class Likelihood_mock_cmb(Likelihood):
                 fid_file.write("%.8g  " % (cl['ee'][l]+self.noise_P[l]))
                 fid_file.write("%.8g  " % cl['te'][l])
                 if self.Bmodes:
-                    fid_file.write("%.8g  " % (cl['bb'][l]+self.noise_P[l]))
+                    # next three lines added by S. Clesse for delensing
+                    if self.delensing:
+                        fid_file.write("%.8g  " % (cl['bb'][l]+self.noise_P[l]+self.noise_delensing[l]))
+                    else:
+                        fid_file.write("%.8g  " % (cl['bb'][l]+self.noise_P[l]))
                 if self.LensingExtraction:
                     # we want to store clDD = l(l+1) clpp
                     # and ClTD = sqrt(l(l+1)) Cltp
@@ -1295,10 +1358,17 @@ class Likelihood_mock_cmb(Likelihood):
                     [self.Cl_fid[0, l], self.Cl_fid[2, l], 0],
                     [self.Cl_fid[2, l], self.Cl_fid[1, l], 0],
                     [0, 0, self.Cl_fid[3, l]]])
-                Cov_the = np.array([
-                    [cl['tt'][l]+self.noise_T[l], cl['te'][l], 0],
-                    [cl['te'][l], cl['ee'][l]+self.noise_P[l], 0],
-                    [0, 0, cl['bb'][l]+self.noise_P[l]]])
+                # next 5 lines added by S. Clesse for delensing
+                if self.delensing:
+                    Cov_the = np.array([
+                        [cl['tt'][l]+self.noise_T[l], cl['te'][l], 0],
+                        [cl['te'][l], cl['ee'][l]+self.noise_P[l], 0],
+                        [0, 0, cl['bb'][l]+self.noise_P[l]+self.noise_delensing[l]]])
+                else:
+                    Cov_the = np.array([
+                        [cl['tt'][l]+self.noise_T[l], cl['te'][l], 0],
+                        [cl['te'][l], cl['ee'][l]+self.noise_P[l], 0],
+                        [0, 0, cl['bb'][l]+self.noise_P[l]]])
 
             # case with lensing
             # note that the likelihood is base on ClDD (deflection spectrum)
