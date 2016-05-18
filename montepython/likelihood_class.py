@@ -852,7 +852,7 @@ class Likelihood_clik(Likelihood):
         try:
             if self.lensing:
                 self.clik = clik.clik_lensing(self.path_clik)
-                try: 
+                try:
                     self.l_max = max(self.clik.get_lmax())
                 # following 2 lines for compatibility with lensing likelihoods of 2013 and before
                 # (then, clik.get_lmax() just returns an integer for lensing likelihoods;
@@ -884,7 +884,7 @@ class Likelihood_clik(Likelihood):
 
         # line added to deal with a bug in planck likelihood release: A_planck called A_Planck in plik_lite
         if (self.name == 'Planck_highl_lite'):
-            for i in range(len(self.nuisance)):   
+            for i in range(len(self.nuisance)):
                 if (self.nuisance[i] == 'A_Planck'):
                     self.nuisance[i] = 'A_planck'
             print "In %s, MontePython corrected nuisance parameter name A_Planck to A_planck" % self.name
@@ -1068,19 +1068,64 @@ class Likelihood_mock_cmb(Likelihood):
         # needed by the window function
         self.need_cosmo_arguments(data, {'l_max_scalars': self.l_max})
 
-        ###########
-        # Read data
-        ###########
+        ###############################################################
+        # Read data for TT, EE, TE, [eventually BB or phi-phi, phi-T] #
+        ###############################################################
+
+        # default:
+        numCls = 3
+
+        # deal with BB:
         try:
             self.Bmodes
         except:
             self.Bmodes = False
 
         if self.Bmodes:
-            numCls = 4
-        else:
-            numCls = 3
+            self.index_B = numCls
+            numCls += 1
 
+        # deal with pp, pT (p = CMB lensing potential):
+        try:
+            self.LensingExtraction
+        except:
+            self.LensingExtraction = False
+
+        if self.LensingExtraction:
+            self.index_pp = numCls
+            numCls += 1
+            self.index_tp = numCls
+            numCls += 1
+
+            # provide a file containing NlDD (noise for the extracted
+            # deflection field spectrum) This option is temporary
+            # because at some point this module will compute NlDD
+            # itself, when logging the fiducial model spectrum.
+            try:
+                self.temporary_Nldd_file
+            except:
+                raise io_mp.LikelihoodError("For lensing extraction, you must provide a temporary_Nldd_file")
+
+            # read the NlDD file
+            self.Nldd = np.zeros(self.l_max+1, 'float64')
+
+            if os.path.exists(os.path.join(self.data_directory, self.temporary_Nldd_file)):
+                fid_file = open(os.path.join(self.data_directory, self.temporary_Nldd_file), 'r')
+                line = fid_file.readline()
+                while line.find('#') != -1:
+                    line = fid_file.readline()
+                while (line.find('\n') != -1 and len(line) == 1):
+                    line = fid_file.readline()
+                for l in range(self.l_min, self.l_max+1):
+                    ll = int(float(line.split()[0]))
+                    # this lines assumes that Nldd is stored in the
+                    # 4th column (can be customised)
+                    self.Nldd[ll] = float(line.split()[3])/(l*(l+1.)/2./math.pi)
+                    line = fid_file.readline()
+            else:
+                raise io_mp.LikelihoodError("Could not find file",self.temporary_Nldd_file)
+
+        # deal with fiducial model:
         # If the file exists, initialize the fiducial values
         self.Cl_fid = np.zeros((numCls, self.l_max+1), 'float64')
         self.fid_values_exist = False
@@ -1099,9 +1144,18 @@ class Likelihood_mock_cmb(Likelihood):
                 self.Cl_fid[0, ll] = float(line.split()[1])
                 self.Cl_fid[1, ll] = float(line.split()[2])
                 self.Cl_fid[2, ll] = float(line.split()[3])
+                # read BB:
                 if self.Bmodes:
                     try:
-                        self.Cl_fid[3, ll] = float(line.split()[4])
+                        self.Cl_fid[self.index_B, ll] = float(line.split()[self.index_B+1])
+                    except:
+                        raise io_mp.LikelihoodError(
+                            "The fiducial model does not have enough columns.")
+                # read DD, TD (D = deflection field):
+                if self.LensingExtraction:
+                    try:
+                        self.Cl_fid[self.index_pp, ll] = float(line.split()[self.index_pp+1])
+                        self.Cl_fid[self.index_tp, ll] = float(line.split()[self.index_tp+1])
                     except:
                         raise io_mp.LikelihoodError(
                             "The fiducial model does not have enough columns.")
@@ -1143,6 +1197,11 @@ class Likelihood_mock_cmb(Likelihood):
                 fid_file.write("%.8g  " % cl['te'][l])
                 if self.Bmodes:
                     fid_file.write("%.8g  " % (cl['bb'][l]+self.noise_P[l]))
+                if self.LensingExtraction:
+                    # we want to store clDD = l(l+1) clpp
+                    # and ClTD = sqrt(l(l+1)) Cltp
+                    fid_file.write("%.8g  " % (l*(l+1.)*cl['pp'][l] + self.Nldd[l]))
+                    fid_file.write("%.8g  " % (math.sqrt(l*(l+1.))*cl['tp'][l]))
                 fid_file.write("\n")
             print '\n\n'
             warnings.warn(
@@ -1154,10 +1213,18 @@ class Likelihood_mock_cmb(Likelihood):
 
         chi2 = 0
 
+        # cound number of modes.
+        # number of modes is different form number of spectra
+        # modes = T,E,[B],[D=deflection]
+        # spectra = TT,EE,TE,[BB],[DD,TD]
+        # default:
+        num_modes=2
+        # add B mode:
         if self.Bmodes:
-            num_modes=3
-        else:
-            num_modes=2
+            num_modes += 1
+        # add D mode:
+        if self.LensingExtraction:
+            num_modes += 1
 
         Cov_obs = np.zeros((num_modes, num_modes), 'float64')
         Cov_the = np.zeros((num_modes, num_modes), 'float64')
@@ -1165,14 +1232,11 @@ class Likelihood_mock_cmb(Likelihood):
 
         for l in range(self.l_min, self.l_max+1):
 
-            #Cov_obs[0,0] = self.Cl_fid[0, l]
-            #Cov_obs[1,0] = self.Cl_fid[2, l]
-            #Cov_obs[0,1] = Cov_obs[1,0]
-            #Cov_obs[1,1] = self.Cl_fid[1, l]
-            #if self.Bmodes:
-            #    Cov_obs[2,2] = self.Cl_fid[3, l]
+            if self.Bmodes and self.LensingExtraction:
+                raise io_mp.LikelihoodError("We have implemented a version of the liklihood with B modes, a version with lensing extraction, but not yet a version with both at the same time. You can implement it.")
 
-            if self.Bmodes:
+            # case with B modes:
+            elif self.Bmodes:
                 Cov_obs = np.array([
                     [self.Cl_fid[0, l], self.Cl_fid[2, l], 0],
                     [self.Cl_fid[2, l], self.Cl_fid[1, l], 0],
@@ -1181,6 +1245,34 @@ class Likelihood_mock_cmb(Likelihood):
                     [cl['tt'][l]+self.noise_T[l], cl['te'][l], 0],
                     [cl['te'][l], cl['ee'][l]+self.noise_P[l], 0],
                     [0, 0, cl['bb'][l]+self.noise_P[l]]])
+
+            # case with lensing
+            # note that the likelihood is base on ClDD (deflection spectrum)
+            # rather than Clpp (lensing potential spectrum)
+            # But the Bolztmann code input is Clpp
+            # So we make the conversion using ClDD = l*(l+1.)*Clpp
+            # So we make the conversion using ClTD = sqrt(l*(l+1.))*Cltp
+            elif self.LensingExtraction:
+
+                    cldd_fid = self.Cl_fid[self.index_pp, l]
+                    cldd = l*(l+1.)*cl['pp'][l]
+                    if self.neglect_TD:
+                        cltd_fid = 0.
+                        cltd = 0.
+                    else:
+                        cltd_fid = self.Cl_fid[self.index_tp, l]
+                        cltd = math.sqrt(l*(l+1.))*cl['tp'][l]
+
+                Cov_obs = np.array([
+                    [self.Cl_fid[0, l], self.Cl_fid[2, l], 0.*self.Cl_fid[self.index_tp, l]],
+                    [self.Cl_fid[2, l], self.Cl_fid[1, l], 0],
+                    [cltd_fid, 0, cldd_fid]])
+                Cov_the = np.array([
+                    [cl['tt'][l]+self.noise_T[l], cl['te'][l], 0.*math.sqrt(l*(l+1.))*cl['tp'][l]],
+                    [cl['te'][l], cl['ee'][l]+self.noise_P[l], 0],
+                    [cltd, 0, cldd+self.Nldd[l]]])
+
+            # case without B modes nor lensing:
             else:
                 Cov_obs = np.array([
                     [self.Cl_fid[0, l], self.Cl_fid[2, l]],
@@ -1189,10 +1281,14 @@ class Likelihood_mock_cmb(Likelihood):
                     [cl['tt'][l]+self.noise_T[l], cl['te'][l]],
                     [cl['te'][l], cl['ee'][l]+self.noise_P[l]]])
 
+            # get determinant of observational and theoretical covariance matrices
             det_obs = np.linalg.det(Cov_obs)
             det_the = np.linalg.det(Cov_the)
-            det_mix = 0.
 
+            # get determinant of mixed matrix (= sum of N theoretical
+            # matrices with, in each of them, the nth column replaced
+            # by that of the observational matrix)
+            det_mix = 0.
             for i in range(num_modes):
                 Cov_mix = np.copy(Cov_the)
                 Cov_mix[:, i] = Cov_obs[:, i]
@@ -1451,7 +1547,7 @@ class Likelihood_mpk(Likelihood):
 
             # scaling factor = (d_angular**2 * d_radial)^(1/3) for the
             # fiducial cosmology used in the data files of the observations
-            # divided by the same quantity for the cosmology we are comparing with. 
+            # divided by the same quantity for the cosmology we are comparing with.
             # The fiducial values are stored in the .data files for
             # each experiment, and are truly in Mpc. Beware for a potential
             # difference with CAMB conventions here.
