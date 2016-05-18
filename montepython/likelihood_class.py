@@ -196,6 +196,25 @@ class Likelihood(object):
 
         return cl
 
+    def get_unlensed_cl(self, cosmo, l_max=-1):
+        """
+        Return the :math:`C_{\ell}` from the cosmological code in
+        :math:`\mu {\\rm K}^2`
+
+        """
+        # get C_l^XX from the cosmological code
+        cl = cosmo.raw_cl(l_max)
+
+        # convert dimensionless C_l's to C_l in muK**2
+        T = cosmo.T_cmb()
+        for key in cl.iterkeys():
+            # All quantities need to be multiplied by this factor, except the
+            # phi-phi term, that is already dimensionless
+            if key not in ['pp', 'ell']:
+                cl[key] *= (T*1.e6)**2
+
+        return cl
+
     def need_cosmo_arguments(self, data, dictionary):
         """
         Ensure that the arguments of dictionary are defined to the correct
@@ -1068,6 +1087,28 @@ class Likelihood_mock_cmb(Likelihood):
         # needed by the window function
         self.need_cosmo_arguments(data, {'l_max_scalars': self.l_max})
 
+        # implementation of default settings for flags describing the likelihood:
+        # - ignore B modes by default:
+        try:
+            self.Bmodes
+        except:
+            self.Bmodes = False
+        # - do not include lensing extraction by default:
+        try:
+            self.LensingExtraction
+        except:
+            self.LensingExtraction = False
+        # - neglect TD correlation by default:
+        try:
+            self.neglect_TD
+        except:
+            self.neglect_TD = True
+        # - use lthe lensed TT, TE, EE by default:
+        try:
+            self.unlensed_clTTTEEE
+        except:
+            self.unlensed_clTTTEEE = False
+
         ###############################################################
         # Read data for TT, EE, TE, [eventually BB or phi-phi, phi-T] #
         ###############################################################
@@ -1076,21 +1117,11 @@ class Likelihood_mock_cmb(Likelihood):
         numCls = 3
 
         # deal with BB:
-        try:
-            self.Bmodes
-        except:
-            self.Bmodes = False
-
         if self.Bmodes:
             self.index_B = numCls
             numCls += 1
 
         # deal with pp, pT (p = CMB lensing potential):
-        try:
-            self.LensingExtraction
-        except:
-            self.LensingExtraction = False
-
         if self.LensingExtraction:
             self.index_pp = numCls
             numCls += 1
@@ -1164,13 +1195,36 @@ class Likelihood_mock_cmb(Likelihood):
 
         # Else the file will be created in the loglkl() function.
 
+        # Explicitly display the flags to be sure that likelihood does what you expect:
+        print "Initialised likelihood_mock_cmb with following options:"
+        if self.unlensed_clTTTEEE:
+            print "  unlensed_clTTTEEE is True"
+        else:
+            print "  unlensed_clTTTEEE is False"
+        if self.Bmodes:
+            print "  Bmodes is True"
+        else:
+            print "  Bmodes is False"
+        if self.LensingExtraction:
+            print "  LensingExtraction is True"
+        else:
+            print "  LensingExtraction is False"
+        if self.neglect_TD:
+            print "  neglect_TD is True"
+        else:
+            print "  neglect_TD is False"
+        print ""
+
         # end of initialisation
         return
 
     def loglkl(self, cosmo, data):
 
         # get Cl's from the cosmological code (returned in muK**2 units)
-        cl = self.get_cl(cosmo)
+        if self.unlensed_clTTTEEE:
+            cl = self.get_unlensed_cl(cosmo)
+        else:
+            cl = self.get_cl(cosmo)
 
         # get likelihood
         lkl = self.compute_lkl(cl, cosmo, data)
@@ -1254,14 +1308,14 @@ class Likelihood_mock_cmb(Likelihood):
             # So we make the conversion using ClTD = sqrt(l*(l+1.))*Cltp
             elif self.LensingExtraction:
 
-                    cldd_fid = self.Cl_fid[self.index_pp, l]
-                    cldd = l*(l+1.)*cl['pp'][l]
-                    if self.neglect_TD:
-                        cltd_fid = 0.
-                        cltd = 0.
-                    else:
-                        cltd_fid = self.Cl_fid[self.index_tp, l]
-                        cltd = math.sqrt(l*(l+1.))*cl['tp'][l]
+                cldd_fid = self.Cl_fid[self.index_pp, l]
+                cldd = l*(l+1.)*cl['pp'][l]
+                if self.neglect_TD:
+                    cltd_fid = 0.
+                    cltd = 0.
+                else:
+                    cltd_fid = self.Cl_fid[self.index_tp, l]
+                    cltd = math.sqrt(l*(l+1.))*cl['tp'][l]
 
                 Cov_obs = np.array([
                     [self.Cl_fid[0, l], self.Cl_fid[2, l], 0.*self.Cl_fid[self.index_tp, l]],
