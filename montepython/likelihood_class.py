@@ -84,8 +84,7 @@ class Likelihood(object):
         # If at least one is missing, raise an exception.
         if error_flag:
             raise io_mp.LikelihoodError(
-                "Check your nuisance parameter list for your set of"
-                "experiments")
+                "Check your nuisance parameter list for your set of experiments")
 
         # Append to the log.param the value used (WARNING: so far no comparison
         # is done to ensure that the experiments share the same parameters)
