@@ -9,7 +9,7 @@ Python has a very nice way of handling errors in the execution.
 Instead of a segmentation fault as in C, when the code breaks, you
 have access to the whole stack of actions that lead to the error. This
 helps you pin-point which function was called, which line was
-responsible for the error. 
+responsible for the error.
 
 It can however be lengthy, and to help everyone reading it, a
 messaging system was implemented in Monte Python. After a blank line,
@@ -28,7 +28,7 @@ organised as follows:
 .. code::
 
     data.experiments = ['experiment1', 'experiment2', ...]
-    
+
     data.parameters['cosmo_name']       = [mean, min, max, sigma, scale, 'cosmo']
     ...
 
@@ -51,12 +51,12 @@ with the name of one of the several sub-directories in the
 
 In :attr:`data.parameters`, you can list all the cosmo and nuisance
 parameter that you want to vary in the Markov chains. For each of them
-you must give an array with six elements, in this order: 
+you must give an array with six elements, in this order:
 
     * **mean value** (your guess for the best fitting value, from
       which the first jump will start)
-    * **minimum value** (set to `-1` or `None` for unbounded prior edge), 
-    * **maximum value** (set to `-1` or `None` for unbounded prior edge), 
+    * **minimum value** (set to `-1` or `None` for unbounded prior edge),
+    * **maximum value** (set to `-1` or `None` for unbounded prior edge),
     * **sigma** (your guess for the standard deviation of the
       posterior of this parameter, its square will be used as the
       variance of the proposal density when there is no covariance
@@ -64,7 +64,7 @@ you must give an array with six elements, in this order:
     * **scale** (most of the time, it will be 1, but occasionnaly you
       can use a rescaling factor for convenience, for instance {\tt
       1.e-9} if you are dealing with :math:`A_s` or :code:`0.01` if
-      you are dealing with :math:`\omega_b`) 
+      you are dealing with :math:`\omega_b`)
     * **role** (:code:`cosmo` for MCMC parameters used by the Boltzmann
       code, :code:`nuisance` for MCMC parameters used only by the
       likelihoods, and :code:`derived` for parameters not directly varied by
@@ -85,9 +85,9 @@ or
 
 .. code::
 
-    data.cosmo_arguments['Y_He']      = 'BBN'    
+    data.cosmo_arguments['Y_He']      = 'BBN'
     data.cosmo_arguments['sBBN file'] = data.path['cosmo']+'/bbn/sBBN.dat'
-  
+
 All elements you input with a :code:`cosmo`, :code:`derived` or
 :code:`cosmo_arguments` role will be interpreted by the cosmological
 code (only |CLASS| so far). They are not coded anywhere inside |MP|.
@@ -99,8 +99,8 @@ only need to write these parameters in the input parameter file. Also,
 |CLASS| is able to interpret input parameters from a |CLASS| input
 file with a layer of simple logic, allowing to specify different
 parameter combinations.  Parameters passed from the parameter file of
-|MP| go through the same layer of logic. 
-  
+|MP| go through the same layer of logic.
+
 If a :code:`cosmo`, :code:`derived` or :code:`cosmo_arguments`
 parameter is not understood by the Boltzmann code, |MP| will stop
 and return an explicit error message. A similar error will occur if
@@ -120,7 +120,7 @@ such mappings are already implemented, allowing you for instance to
 use :code:`'Omega_Lambda'`, :code:`'ln10^{10}A_s'` or
 :code:`'exp_m_2_tau_As'` in your chains. Looking at these examples,
 the user can easily write new ones even without knowing python.
-  
+
 The last two lines of the input parameter file are the number of steps
 you want your chain to contain (:code:`data.N`) and the number of
 accepted steps the system should wait before writing it down to a file
@@ -128,7 +128,7 @@ accepted steps the system should wait before writing it down to a file
 number here, e.g. :code:`data.write_step = 5` or :code:`10`. The
 reason for not setting this parameter to one is just to save a bit of
 time in writing on the disk.
- 
+
 In general, you will want to specify the number of steps in the
 command line, with the option :code:`-N` (see section~\ref{commands}).
 This will overwrite the value passed in the input parameter file. The
@@ -154,7 +154,7 @@ to specify a parameter file: the code will use it automatically. This
 will avoid mixing things up. If you are using one anyway, the code
 will warn you that it did not read it: it will always only use the
 :code:`log.param` file.
-  
+
 In the folder :code:`montepython`, you can create a folder
 :code:`chains` where you will organize your runs e.g. in the
 following way:
@@ -165,20 +165,24 @@ following way:
     montepython/chains/set_of_experiments1/model2
     ...
     montepython/chains/set_of_experiments2/model1
-    montepython/chains/set_of_experiments2/model2    
+    montepython/chains/set_of_experiments2/model2
     ...
-  
+
 The minimum amount of command lines for running |MP| is an input file,
 an output directory and a configuration file: if you have already
 edited :code:`defaut.conf` or copied it to your own
 :code:`my-machine.conf`, you may already try a mini-run with the
-command 
+command
 
 .. code::
 
-    montepython]$ montepython/MontePython.py -conf my-machine.conf -p example.param -o test
+    montepython]$ montepython/MontePython.py --conf my-machine.conf -p example.param -o test
 
+If your configuration file is called :code:`defaut.conf`, you may even omit it (it is the default) and write only
 
+.. code::
+
+    montepython]$ montepython/MontePython.py -p example.param -o test
 
 Analyzing chains and plotting
 -----------------------------
@@ -222,7 +226,7 @@ The 1D posteriors and 2D posterior contours are plotted in
 :code:`chains/myrun/plots/myrun_1D.pdf` and
 :code:`chains/myrun/plots/myrun_triangle.pdf`. You will find in the
 :doc:`parser_mp` documentation a list of commands to customize the
-plots. 
+plots.
 
 When the chains are not very converged and the posterior probability
 has local maxima, the code will fail to compute minimum credible
@@ -233,7 +237,7 @@ the number of bins with the :code:`--bins` option.
 
 Global running strategy
 -----------------------
-     
+
 In the current version of |MP|, we deliberately  choose not to use MPI
 communication between instances of the code. Indeed the use of MPI
 usually makes the installation step more complicated, and the gain is,
@@ -267,7 +271,7 @@ grouped on a single machine and analyse. In this case, take care of
 avoiding that chains are produced with the same name (easy to ensure
 with either the :code:`-N` or :code:`--chain-number` options). This is
 a good occasion to keep the desktops of your department finally busy.
-     
+
 
 .. |CLASS| replace:: *Class*
 .. |MP| replace:: *Monte Python*
