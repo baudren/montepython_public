@@ -1139,7 +1139,7 @@ class Likelihood_mock_cmb(Likelihood):
                     ll = int(float(line.split()[0]))
                     if l != ll:
                         raise io_mp.LikelihoodError("Mismatch between required values of l in the code and in the delensing file")
-                    self.noise_delensing[ll] = float(line.split()[3])/(ll*(ll+1)/2./math.pi)
+                    self.noise_delensing[ll] = float(line.split()[2])/(ll*(ll+1)/2./math.pi)
                     # change 3 to 4 in the above line for CMBxCIB delensing
                     line = delensing_file.readline()
 
