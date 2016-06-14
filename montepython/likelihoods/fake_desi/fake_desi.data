@@ -1,0 +1,14 @@
+# DESI data
+fake_desi.data_directory      = data.path['data']
+fake_desi.fiducial_file       = 'fake_desi.txt'
+fake_desi.exclude             = []
+
+# where is the file containing all relative 1-sigma errors?
+fake_desi.sensitivity         = 'bao_desi_sensitivity.txt'
+# what is the type of measurement?
+# (D_V/rs=3, Dv/Mpc=4, DA/rs=5, c/Hrs=6, rs/D_v=7)
+fake_desi.error_type          = 5
+# which column in the file contains the relative error in %? (starting from 0=z)
+fake_desi.error_column        = 1
+
+fake_desi.nickname = 'DESI'
