@@ -12,7 +12,7 @@ class euclid_pk(Likelihood):
 
         self.need_cosmo_arguments(data, {'output': 'mPk'})
         self.need_cosmo_arguments(data, {'z_max_pk': self.zmax})
-        self.need_cosmo_arguments(data, {'P_k_max_1/Mpc': 1.5*self.kmax})
+        self.need_cosmo_arguments(data, {'P_k_max_h/Mpc': 1.9*self.kmax})
 
         #################
         # find number of galaxies for each mean redshift value
