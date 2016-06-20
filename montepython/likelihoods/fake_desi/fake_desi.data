@@ -1,6 +1,6 @@
 # DESI data
 fake_desi.data_directory      = data.path['data']
-fake_desi.fiducial_file       = 'fake_desi.txt'
+fake_desi.fiducial_file       = 'fake_desi_fiducial.dat'
 fake_desi.exclude             = []
 
 # where is the file containing all relative 1-sigma errors?
