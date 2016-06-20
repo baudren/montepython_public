@@ -19,7 +19,7 @@ from scipy import interpolate as itp
 import os
 import numpy as np
 import math
-
+import warnings
 
 class euclid_lensing(Likelihood):
 
@@ -329,9 +329,10 @@ class euclid_lensing(Likelihood):
                     for Bin1 in range(self.nbin):
                         for Bin2 in range(self.nbin):
                             fid_file.write("%.8g\n" % Cl[nl, Bin1, Bin2])
-            print '\n\n /|\    Writing fiducial model in {0}'.format(
-                fid_file_path)
-            print '/_o_\ for {0} likelihood'.format(self.name)
+            print '\n'
+            warnings.warn(
+                "Writing fiducial model in %s, for %s likelihood\n" % (
+                    self.data_directory+'/'+self.fiducial_file, self.name))
             return 1j
 
         # Now that the fiducial model is stored, we add the El to both Cl and

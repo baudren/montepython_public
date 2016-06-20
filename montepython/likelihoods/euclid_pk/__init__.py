@@ -1,6 +1,7 @@
 from montepython.likelihood_class import Likelihood
 import os
 import numpy as np
+import warnings
 from numpy import newaxis as na
 from math import exp, log, pi, log10
 
@@ -168,9 +169,10 @@ class euclid_pk(Likelihood):
                     fid_file.write('%.8g %.8g\n' % (H[index_z], D_A[index_z]))
                 for index_z in xrange(self.nbin):
                     fid_file.write('%.8g\n' % sigma_r[index_z])
-            print '\n\n /|\  Writing fiducial model in {0}'.format(
-                fid_file_path)
-            print '/_o_\ for {0} likelihood'.format(self.name)
+            print '\n'
+            warnings.warn(
+                "Writing fiducial model in %s, for %s likelihood\n" % (
+                    self.data_directory+'/'+self.fiducial_file, self.name))
             return 1j
 
         # NOTE: Many following loops will be hidden in a very specific numpy

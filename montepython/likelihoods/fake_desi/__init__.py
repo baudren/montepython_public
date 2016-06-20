@@ -131,9 +131,9 @@ class fake_desi(Likelihood):
         # Exit after writing fiducial file
         # (return an imaginary number to let the sampler know that fiducial models were just created)
         if self.fid_values_exist is False:
-            print '\n\n'
+            print '\n'
             warnings.warn(
-                "Writing fiducial model in %s, for %s likelihood" % (
+                "Writing fiducial model in %s, for %s likelihood\n" % (
                     self.data_directory+'/'+self.fiducial_file, self.name))
             return 1j
 

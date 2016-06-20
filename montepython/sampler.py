@@ -545,13 +545,20 @@ def compute_lkl(cosmo, data):
     if flag_wrote_fiducial > 0:
         if flag_wrote_fiducial == len(data.lkl):
             raise io_mp.FiducialModelWritten(
-                "Fiducial file(s) was(were) created, please start a new chain")
+                "This is not an error but a normal abort, because " +
+                "fiducial file(s) was(were) created. " +
+                "You may now start a new run. ")
         else:
             raise io_mp.FiducialModelWritten(
-                "Some previously non-existing fiducial files were created, " +
-                "but potentially not all of them. Please check now manually" +
-                " on the headers, of the corresponding that all parameters " +
-                "are coherent for your tested models")
+                "This is not an error but a normal abort, because " +
+                "fiducial file(s) was(were) created. " +
+                "However, be careful !!! Some previously non-existing " +
+                "fiducial files were created, but potentially not all of them. " +
+                "Some older fiducial files will keep being used. If you have doubts, " +
+                "you are advised to check manually in the headers of the " +
+                "corresponding files that all fiducial parameters are consistent "+
+                "with each other. If everything looks fine, "
+                "you may now start a new run.")
 
     return loglike
 

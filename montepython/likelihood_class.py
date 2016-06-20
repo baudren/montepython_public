@@ -1319,9 +1319,9 @@ class Likelihood_mock_cmb(Likelihood):
                     fid_file.write("%.8g  " % (l*(l+1.)*cl['pp'][l] + self.Nldd[l]))
                     fid_file.write("%.8g  " % (math.sqrt(l*(l+1.))*cl['tp'][l]))
                 fid_file.write("\n")
-            print '\n\n'
+            print '\n'
             warnings.warn(
-                "Writing fiducial model in %s, for %s likelihood" % (
+                "Writing fiducial model in %s, for %s likelihood\n" % (
                     self.data_directory+'/'+self.fiducial_file, self.name))
             return 1j
 
