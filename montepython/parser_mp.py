@@ -540,6 +540,12 @@ def create_parser():
         <**>--want-covmat<**> : bool
             <++>calculate the covariant matrix when analyzing the chains.<++>
             Warning: this will interfere with ongoing runs utilizing update mode (*OPT*) (flag)<++>
+        <**>--gaussian-smoothing<**> : float
+            <++>width of gaussian smoothing for plotting posteriors<++>,
+            in units of bin size, increase for smoother data<++>
+        <**>--interpolation-smoothing<**> : float
+            <++>interpolation factor for plotting posteriors<++>,
+            1 means no interpolation, increase for smoother curves<++>
 
     Returns
     -------
@@ -741,6 +747,15 @@ def create_parser():
     infoparser.add_argument('--legend-style', help=helpdict['legend-style'],
                             type=str, choices=['sides', 'top'],
                             default='sides')
+    # -- width of gaussian smoothing for plotting posteriors,
+    # in units of bin size, increase for smoother data.
+    infoparser.add_argument('--gaussian-smoothing', help=helpdict['gaussian-smoothing'],
+                            type=float, default=1.)
+    # interpolation factor for plotting posteriors, 1 means no interpolation,
+    # increase for smoother curves (it means that extra bins are created
+    # and interpolated between computed bins)
+    infoparser.add_argument('--interpolation-smoothing', help=helpdict['interpolation-smoothing'],
+                            type=int, default=4)
 
     return parser
 

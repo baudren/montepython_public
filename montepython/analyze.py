@@ -31,6 +31,7 @@ import importlib
 import io_mp
 from itertools import ifilterfalse
 from itertools import ifilter
+import scipy.ndimage
 
 # Defined to remove the burnin for all the points that were produced before the
 # first time where -log-likelihood <= min-minus-log-likelihood+LOG_LKL_CUTOFF
@@ -447,7 +448,7 @@ def compute_posterior(information_instances):
             if not info.ignore_param:
                 info.hist, info.bin_edges = np.histogram(
                     info.chain[:, info.native_index+2], bins=info.bins,
-                    weights=info.chain[:, 0], normed=False)
+                    weights=info.chain[:, 0], normed=False, density=False)
                 info.bincenters = 0.5*(info.bin_edges[1:]+info.bin_edges[:-1])
 
                 # interpolated histogram (if available)
@@ -463,9 +464,15 @@ def compute_posterior(information_instances):
         # plotting
         for info in information_instances:
             if not info.ignore_param:
+                # factor by which the grid has been made thinner (10 means 10 times more bins)
+                interpolation_factor = float(len(info.interp_grid))/float(len(info.bincenters))
+                # factor for gaussian smoothing
+                sigma = interpolation_factor*info.gaussian_smoothing
+
                 if conf.plot_2d:
                     plot = ax2d.plot(
-                        info.interp_grid, info.interp_hist,
+                        info.interp_grid,
+                        scipy.ndimage.filters.gaussian_filter(info.interp_hist,sigma),
                         linewidth=info.line_width, ls='-')
                     legends[info.id] = plot[0]
                     ax2d.set_xticks(info.ticks[info.native_index])
@@ -522,7 +529,8 @@ def compute_posterior(information_instances):
                                0, 1.05])
 
                     ax1d.plot(
-                        info.interp_grid, info.interp_hist,
+                        info.interp_grid,
+                        scipy.ndimage.filters.gaussian_filter(info.interp_hist,sigma),
                         lw=info.line_width, ls='-')
 
         # mean likelihood (optional, if comparison, it will not be printed)
@@ -541,6 +549,7 @@ def compute_posterior(information_instances):
                             normed=False,
                             weights=np.exp(
                                 conf.min_minus_lkl-info.chain[:, 1])*info.chain[:, 0])
+
                         lkl_mean /= lkl_mean.max()
                         interp_lkl_mean, interp_grid = cubic_interpolation(
                             info, lkl_mean, info.bincenters)
@@ -617,16 +626,28 @@ def compute_posterior(information_instances):
                         # Benabed). Note that only the 1 and 2 sigma contours are
                         # displayed (due to the line with info.levels[:2])
                         try:
+                            #width of gaussian smoothing:
+                            sigma = info.interpolation_smoothing*info.gaussian_smoothing
                             if info.contours_only:
+                                # TODO: we should not only interpolate between bin centers, but also extrapolate between side bine centers and bin edges
                                 contours = ax2dsub.contour(
-                                    info.y_centers, info.x_centers, info.n,
+                                    scipy.ndimage.zoom(info.y_centers,info.interpolation_smoothing, mode='reflect'),
+                                    scipy.ndimage.zoom(info.x_centers,info.interpolation_smoothing, mode='reflect'),
+                                    scipy.ndimage.filters.gaussian_filter(
+                                        scipy.ndimage.zoom(info.n,info.interpolation_smoothing),
+                                        [sigma,sigma]),
                                     extent=info.extent, levels=ctr_level(
                                         info.n, info.levels[:2]),
                                     zorder=4, colors=info.cm[info.id],
                                     linewidths=info.line_width)
                             else:
+                                # TODO: we should not only interpolate between bin centers, but also extrapolate between side bine centers and bin edges
                                 contours = ax2dsub.contourf(
-                                    info.y_centers, info.x_centers, info.n,
+                                    scipy.ndimage.zoom(info.y_centers,info.interpolation_smoothing, mode='reflect'),
+                                    scipy.ndimage.zoom(info.x_centers,info.interpolation_smoothing, mode='reflect'),
+                                    scipy.ndimage.filters.gaussian_filter(
+                                        scipy.ndimage.zoom(info.n,info.interpolation_smoothing),
+                                        [sigma,sigma], mode='reflect'),
                                     extent=info.extent, levels=ctr_level(
                                         info.n, info.levels[:2]),
                                     zorder=4, cmap=info.cmaps[info.id],
@@ -741,7 +762,6 @@ def ctr_level(histogram2d, lvl, infinite=False):
     if not infinite:
         return clist[1:]
     return clist
-
 
 def minimum_credible_intervals(info):
     """
@@ -873,10 +893,25 @@ def cubic_interpolation(info, hist, bincenters):
 
     """
     if info.has_interpolate_module:
-        interp_grid = np.linspace(
-            bincenters[0], bincenters[-1], len(bincenters)*10)
-        from scipy.interpolate import interp1d
-        f = interp1d(bincenters, hist, kind='cubic')
+
+        # Get a finer interpolated grid.
+        # The bin width will be reduced here by exactly 10
+        # (this factor 10 is hard-coded but it could be promoted as input parameter)
+
+        # If possible, try interpolation between bin centers and extrapolation up to side bin edges
+        try:
+            binwidth = bincenters[1]-bincenters[0]
+            interp_grid = np.linspace(bincenters[0]-0.5*binwidth, bincenters[-1]+0.5*binwidth, len(bincenters)*10+1)
+            from scipy.interpolate import UnivariateSpline
+            f = UnivariateSpline(bincenters, hist,
+                                 bbox=[interp_grid[0],interp_grid[-1]])
+
+        # if it does not work, simple interpolation between bin centers
+        except:
+            interp_grid = np.linspace(bincenters[0], bincenters[-1], (len(bincenters)-1)*10+1)
+            from scipy.interpolate import interp1d
+            f = interp1d(bincenters, hist,kind='cubic')
+
         interp_hist = f(interp_grid)
         return interp_hist, interp_grid
     else:
