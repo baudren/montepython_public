@@ -37,7 +37,7 @@ import scipy.ndimage
 # first time where -log-likelihood <= min-minus-log-likelihood+LOG_LKL_CUTOFF
 LOG_LKL_CUTOFF = 3
 
-NUM_COLORS = 4
+NUM_COLORS = 6
 
 
 def analyze(command_line):
@@ -519,6 +519,17 @@ def compute_posterior(information_instances):
                             info.bounds[info.native_index, 0, -1],
                             info.bounds[info.native_index, 0, 0]),
                         fontsize=info.fontsize)
+
+                    # JL: example of customisation commands
+                    # (in this example: change label and plot vertical lines)
+                    # At some point these types of commands will be made available from
+                    # the customisation input files in plot_file/
+                    #ax1d.set_title(r'$M_{\nu}  (eV)$',fontsize=info.fontsize)
+                    #ax1d.axvline(x=0.058536,linestyle='-',color='k')
+                    #ax1d.axvline(x=0.098993,linestyle='-',color='k')
+                    #ax1d.axvline(x=0.06,linestyle='--',color='k')
+                    #ax1d.axvline(x=0.10,linestyle='--',color='k')
+
                     ax1d.set_xticks(info.ticks[info.native_index])
                     ax1d.set_xticklabels(
                         ['%.{0}g'.format(info.decimal) % s
@@ -530,7 +541,10 @@ def compute_posterior(information_instances):
 
                     ax1d.plot(
                         info.interp_grid,
+                        # gaussian filtered 1d posterior:
                         scipy.ndimage.filters.gaussian_filter(info.interp_hist,sigma),
+                        # raw 1d posterior:
+                        #info.interp_hist,
                         lw=info.line_width, ls='-')
 
         # mean likelihood (optional, if comparison, it will not be printed)
@@ -902,7 +916,17 @@ def cubic_interpolation(info, hist, bincenters):
         try:
             binwidth = bincenters[1]-bincenters[0]
             interp_grid = np.linspace(bincenters[0]-0.5*binwidth, bincenters[-1]+0.5*binwidth, len(bincenters)*10+1)
+
             from scipy.interpolate import UnivariateSpline
+
+            # we could do the gaussian smoothing here, before the interpolation, or
+            # we could do it later after the interpolation. These lines are commented because
+            # it is usually better to do it later.
+            #hist_smooth = scipy.ndimage.filters.gaussian_filter(hist,info.gaussian_smoothing)
+            #f = UnivariateSpline(bincenters, hist_smooth,
+            #                     bbox=[interp_grid[0],interp_grid[-1]])
+
+            # prepare the interpolation (before gaussian smoothing that will be done later):
             f = UnivariateSpline(bincenters, hist,
                                  bbox=[interp_grid[0],interp_grid[-1]])
 
@@ -912,7 +936,12 @@ def cubic_interpolation(info, hist, bincenters):
             from scipy.interpolate import interp1d
             f = interp1d(bincenters, hist,kind='cubic')
 
+        # do the interpolation
         interp_hist = f(interp_grid)
+
+        # re-normalise the curve
+        interp_hist = interp_hist / interp_hist.max()
+
         return interp_hist, interp_grid
     else:
         return hist, bincenters
@@ -1565,15 +1594,11 @@ class Information(object):
     # be harcoded
     # Note that, as with the other customisation options, you can specify new
     # values for this in the extra plot_file.
-    cm = [
-        (0.,      0.,      0.,      1.),
-        (0.30235, 0.15039, 0.74804, 1.),
-        (0.99843, 0.25392, 0.14765, 1.),
-        (0.90000, 0.75353, 0.10941, 1.)]
+    cm = ['k','purple','r','g','darkorange','b']
 
     # Define colormaps for the contour plots
-    cmaps = [plt.cm.gray_r, plt.cm.Purples, plt.cm.Reds_r, plt.cm.Greens]
-    alphas = [1.0, 0.8, 0.6, 0.4]
+    cmaps = [plt.cm.gray_r, plt.cm.Purples, plt.cm.Reds_r, plt.cm.Greens, plt.cm.Oranges, plt.cm.Blues]
+    alphas = [1.0, 0.8, 0.6, 0.4,0.3,0.2]
 
     def __init__(self, command_line, other=None):
         """
