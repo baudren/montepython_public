@@ -1,0 +1,7 @@
+# Values for Hubble Space Telescope (following Astro-ph/1103.2976)
+BK14priors.use_nuisance = ['BBbetadust', 'BBbetasync']
+
+BK14priors.mean_BBbetadust = 1.59
+BK14priors.sigma_BBbetadust = 0.11
+BK14priors.mean_BBbetasync = -3.1
+BK14priors.sigma_BBbetasync = 0.3
