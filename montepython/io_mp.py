@@ -310,7 +310,7 @@ def get_tex_name(name, number=1):
     if name.find("$") != -1:
         return name
     tex_greek = ['omega', 'tau', 'alpha', 'beta', 'delta', 'nu',
-                 'Omega', 'Lambda', 'lambda', 'Delta', 'mu', 'sigma', 'gamma']
+                 'Omega', 'Lambda', 'lambda', 'Delta', 'mu', 'sigma', 'gamma', 'theta']
     for elem in tex_greek:
         if elem in name:
             position = name.find(elem)

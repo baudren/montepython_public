@@ -932,6 +932,7 @@ def cubic_interpolation(info, hist, bincenters):
 
         # if it does not work, simple interpolation between bin centers
         except:
+            print "For 1d: using simplest scheme with no extrapolation at boundaries"
             interp_grid = np.linspace(bincenters[0], bincenters[-1], (len(bincenters)-1)*10+1)
             from scipy.interpolate import interp1d
             f = interp1d(bincenters, hist,kind='cubic')
