@@ -420,7 +420,7 @@ def chain(cosmo, data, command_line):
                                 pass
                         previous = (sigma_eig, U, C, Cholesky)
 
-                    except IOError:
+                    except:
                         pass
 
         # Pick a new position ('current' flag in mcmc_parameters), and compute
