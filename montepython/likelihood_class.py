@@ -1823,7 +1823,7 @@ class Likelihood_sn(Likelihood):
         with open(settings_path, 'r') as config:
             for line in config:
                 # Dismiss empty lines and commented lines
-                if line and line.find('#') == -1:
+                if line and line.find('#') == -1 and line not in ['\n', '\r\n']:
                     lhs, rhs = [elem.strip() for elem in line.split('=')]
                     # lhs will always be a string, so set the attribute to this
                     # likelihood. The right hand side requires more work.

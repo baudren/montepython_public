@@ -1,0 +1,8 @@
+# this file describes the BK14 data folder
+BK14.do_nonlinear = True
+BK14.data_directory = os.path.join(data.path['data'], 'BK14')
+BK14.settings = 'BK14_dust.dataset'
+BK14.use_nuisance = ['BBdust', 'BBsync','BBalphadust', 'BBbetadust', 'BBTdust', 'BBalphasync', 'BBbetasync', 'BBdustsynccorr', 'EEtoBB_dust', 'EEtoBB_sync']
+# All possible maps:  BK14_95_E BK14_95_B BK14_150_E BK14_150_B W023_E W023_B P030_E P030_B W033_E W033_B P044_E P044_B P070_E P070_B P100_E P100_B P143_E P143_B P217_E P217_B P353_E P353_B
+#BK14.map_names_used = 'BK14_95_B'
+BK14.map_names_used = 'BK14_95_B BK14_150_B W023_B P030_B W033_B P044_B P070_B P100_B P143_B P217_B P353_B'
