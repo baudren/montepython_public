@@ -750,7 +750,7 @@ def create_parser():
     # -- width of gaussian smoothing for plotting posteriors,
     # in units of bin size, increase for smoother data.
     infoparser.add_argument('--gaussian-smoothing', help=helpdict['gaussian-smoothing'],
-                            type=float, default=1.)
+                            type=float, default=0.5)
     # interpolation factor for plotting posteriors, 1 means no interpolation,
     # increase for smoother curves (it means that extra bins are created
     # and interpolated between computed bins)

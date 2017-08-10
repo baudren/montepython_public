@@ -446,35 +446,60 @@ def compute_posterior(information_instances):
         print ' -> Computing histograms for ', name
         for info in information_instances:
             if not info.ignore_param:
+
+                # 1D posterior normalised to P_max=1 (first step)
+                #
+                # simply the histogram from the chains, with few bins
+                #
                 info.hist, info.bin_edges = np.histogram(
                     info.chain[:, info.native_index+2], bins=info.bins,
                     weights=info.chain[:, 0], normed=False, density=False)
-                info.bincenters = 0.5*(info.bin_edges[1:]+info.bin_edges[:-1])
-
                 info.hist = info.hist/info.hist.max()
 
-                # interpolated histogram (if available)
+                info.bincenters = 0.5*(info.bin_edges[1:]+info.bin_edges[:-1])
+
+                # 1D posterior normalised to P_max=1 (second step)
+                #
+                # returns a histogram still normalised to one, but with a ten times finer sampling;
+                # >> first, tries a method with spline interpolation between bin centers and extrapolation at the edges
+                # >> if it fails, a simpler and more robust method of linear interpolation between bin centers is used
+                # >> if the interpolation module is not installed, this step keeps the same posterior
+                #
                 info.interp_hist, info.interp_grid = cubic_interpolation(
                     info, info.hist, info.bincenters)
 
                 # minimum credible interval (method by Jan Haman). Fails for
-                # multimodal histograms #FIXME
+                # multimodal histograms
                 bounds = minimum_credible_intervals(info)
                 info.bounds[info.native_index] = bounds
 
         # plotting
         for info in information_instances:
             if not info.ignore_param:
+
+                # 1D posterior normalised to P_max=1 (third step, used only for plotting)
+                #
+                # apply gaussian smoothing
+                #
                 # factor by which the grid has been made thinner (10 means 10 times more bins)
                 interpolation_factor = float(len(info.interp_grid))/float(len(info.bincenters))
                 # factor for gaussian smoothing
                 sigma = interpolation_factor*info.gaussian_smoothing
+                # smooth
+                smoothed_interp_hist = scipy.ndimage.filters.gaussian_filter(info.interp_hist,sigma)
+                # re-normalised
+                smoothed_interp_hist = smoothed_interp_hist/smoothed_interp_hist.max()
 
                 if conf.plot_2d:
+
+                    ##################################################
+                    # plot 1D posterior in diagonal of triangle plot #
+                    ##################################################
                     plot = ax2d.plot(
                         info.interp_grid,
-                        scipy.ndimage.filters.gaussian_filter(info.interp_hist,sigma),
+                        smoothed_interp_hist,
                         linewidth=info.line_width, ls='-')
+
                     legends[info.id] = plot[0]
                     ax2d.set_xticks(info.ticks[info.native_index])
                     if conf.legend_style == 'top':
@@ -540,9 +565,9 @@ def compute_posterior(information_instances):
                                info.x_range[info.native_index][1],
                                0, 1.05])
 
-                    smoothed_interp_hist = scipy.ndimage.filters.gaussian_filter(info.interp_hist,sigma)
-                    smoothed_interp_hist = smoothed_interp_hist/smoothed_interp_hist.max()
-
+                    ##################################################
+                    # plot 1D posterior in 1D plot                   #
+                    ##################################################
                     ax1d.plot(
                         info.interp_grid,
                         # gaussian filtered 1d posterior:
@@ -561,23 +586,52 @@ def compute_posterior(information_instances):
             for info in information_instances:
                 if not info.ignore_param:
                     try:
+
+                        # 1D mean likelihood normalised to P_max=1 (first step)
+                        #
+                        # simply the histogram from the chains, weighted by mutiplicity*likelihood
+                        #
                         lkl_mean, _ = np.histogram(
                             info.chain[:, info.native_index+2],
                             bins=info.bin_edges,
                             normed=False,
                             weights=np.exp(
                                 conf.min_minus_lkl-info.chain[:, 1])*info.chain[:, 0])
-
-
                         lkl_mean /= lkl_mean.max()
+
+                        # 1D mean likelihood normalised to P_max=1 (second step)
+                        #
+                        # returns a histogram still normalised to one, but with a ten times finer sampling;
+                        # >> first, tries a method with spline interpolation between bin centers and extrapolation at the edges
+                        # >> if it fails, a simpler and more robust method of linear interpolation between bin centers is used
+                        # >> if the interpolation module is not installed, this step keeps the same posterior
+                        #
                         interp_lkl_mean, interp_grid = cubic_interpolation(
                             info, lkl_mean, info.bincenters)
+
+                        # 1D mean likelihood normalised to P_max=1 (third step, used only for plotting)
+                        #
+                        # apply gaussian smoothing
+                        #
+                        # smooth
+                        smoothed_interp_lkl_mean = scipy.ndimage.filters.gaussian_filter(interp_lkl_mean,sigma)
+                        # re-normalised
+                        smoothed_interp_lkl_mean = smoothed_interp_lkl_mean/smoothed_interp_lkl_mean.max()
+
+                        ########################################################
+                        # plot 1D mean likelihood in diagonal of triangle plot #
+                        ########################################################
                         if conf.plot_2d:
-                            ax2d.plot(interp_grid, interp_lkl_mean,
+                            ax2d.plot(interp_grid, smoothed_interp_lkl_mean,
                                       ls='--', lw=conf.line_width)
+
+                        ########################################################
+                        # plot 1D mean likelihood in 1D plot                   #
+                        ########################################################
                         if conf.plot:
-                            ax1d.plot(interp_grid, interp_lkl_mean,
+                            ax1d.plot(interp_grid, smoothed_interp_lkl_mean,
                                       ls='--', lw=conf.line_width)
+
                     except:
                         print 'could not find likelihood contour for ',
                         print info.ref_parameters[info.native_index]
@@ -627,12 +681,18 @@ def compute_posterior(information_instances):
                     (index)*len(plotted_parameters)+second_index+1)
                 for info in information_instances:
                     if info.has_second_param:
+
+                        # 2D likelihood (first step)
+                        #
+                        # simply the histogram from the chains, with few bins only
+                        #
                         info.n, info.xedges, info.yedges = np.histogram2d(
                             info.chain[:, info.native_index+2],
                             info.chain[:, info.native_second_index+2],
                             weights=info.chain[:, 0],
                             bins=(info.bins, info.bins),
                             normed=False)
+
                         info.extent = [
                             info.x_range[info.native_second_index][0],
                             info.x_range[info.native_second_index][1],
@@ -641,36 +701,55 @@ def compute_posterior(information_instances):
                         info.x_centers = 0.5*(info.xedges[1:]+info.xedges[:-1])
                         info.y_centers = 0.5*(info.yedges[1:]+info.yedges[:-1])
 
+                        # 2D likelihood (second step)
+                        #
+                        # like for 1D, interpolate to get a finer grid
+                        # TODO: we should not only interpolate between bin centers, but also extrapolate between side bin centers and bin edges
+                        #
+                        interp_y_centers = scipy.ndimage.zoom(info.y_centers,info.interpolation_smoothing, mode='reflect')
+                        interp_x_centers = scipy.ndimage.zoom(info.x_centers,info.interpolation_smoothing, mode='reflect')
+                        interp_likelihood = scipy.ndimage.zoom(info.n,info.interpolation_smoothing, mode='reflect')
+
+                        # 2D likelihood (third step)
+                        #
+                        # gaussian smoothing
+                        #
+                        sigma = info.interpolation_smoothing*info.gaussian_smoothing
+                        interp_smoothed_likelihood = scipy.ndimage.filters.gaussian_filter(interp_likelihood,[sigma,sigma], mode='reflect')
+
                         # plotting contours, using the ctr_level method (from Karim
                         # Benabed). Note that only the 1 and 2 sigma contours are
                         # displayed (due to the line with info.levels[:2])
                         try:
-                            #width of gaussian smoothing:
-                            sigma = info.interpolation_smoothing*info.gaussian_smoothing
+
+                            ###########################
+                            # plot 2D contours        #
+                            ###########################
                             if info.contours_only:
-                                # TODO: we should not only interpolate between bin centers, but also extrapolate between side bine centers and bin edges
                                 contours = ax2dsub.contour(
-                                    scipy.ndimage.zoom(info.y_centers,info.interpolation_smoothing, mode='reflect'),
-                                    scipy.ndimage.zoom(info.x_centers,info.interpolation_smoothing, mode='reflect'),
-                                    scipy.ndimage.filters.gaussian_filter(
-                                        scipy.ndimage.zoom(info.n,info.interpolation_smoothing),
-                                        [sigma,sigma]),
+                                    interp_y_centers,
+                                    interp_x_centers,
+                                    interp_smoothed_likelihood,
                                     extent=info.extent, levels=ctr_level(
-                                        info.n, info.levels[:2]),
+                                        interp_smoothed_likelihood,
+                                        info.levels[:2]),
                                     zorder=4, colors=info.cm[info.id],
                                     linewidths=info.line_width)
+
+                            ###########################
+                            # plot 2D filled contours #
+                            ###########################
                             else:
-                                # TODO: we should not only interpolate between bin centers, but also extrapolate between side bine centers and bin edges
                                 contours = ax2dsub.contourf(
-                                    scipy.ndimage.zoom(info.y_centers,info.interpolation_smoothing, mode='reflect'),
-                                    scipy.ndimage.zoom(info.x_centers,info.interpolation_smoothing, mode='reflect'),
-                                    scipy.ndimage.filters.gaussian_filter(
-                                        scipy.ndimage.zoom(info.n,info.interpolation_smoothing),
-                                        [sigma,sigma], mode='reflect'),
+                                    interp_y_centers,
+                                    interp_x_centers,
+                                    interp_smoothed_likelihood,
                                     extent=info.extent, levels=ctr_level(
-                                        info.n, info.levels[:2]),
+                                        interp_smoothed_likelihood,
+                                        info.levels[:2]),
                                     zorder=4, cmap=info.cmaps[info.id],
                                     alpha=info.alphas[info.id])
+
                         except Warning:
                             warnings.warn(
                                 "The routine could not find the contour of the " +
@@ -917,36 +996,40 @@ def cubic_interpolation(info, hist, bincenters):
         # The bin width will be reduced here by exactly 10
         # (this factor 10 is hard-coded but it could be promoted as input parameter)
 
-        # If possible, try interpolation between bin centers and extrapolation up to side bin edges
+        # If possible, work on log(Like) iinstead of Like, and try interpolation between bin centers + extrapolation up to side bin edges
         try:
+            from scipy.interpolate import UnivariateSpline
+
+            # test that all elements are strictly positive, otherwise we could not take the log, and we must switch to the robust method
+            for elem in hist:
+                if elem <= 0.:
+                    raise exception()
+
+            # define finer grid
             binwidth = bincenters[1]-bincenters[0]
             interp_grid = np.linspace(bincenters[0]-0.5*binwidth, bincenters[-1]+0.5*binwidth, len(bincenters)*10+1)
 
-            from scipy.interpolate import UnivariateSpline
-
-            # we could do the gaussian smoothing here, before the interpolation, or
-            # we could do it later after the interpolation. These lines are commented because
-            # it is usually better to do it later.
-            #hist_smooth = scipy.ndimage.filters.gaussian_filter(hist,info.gaussian_smoothing)
-            #f = UnivariateSpline(bincenters, hist_smooth,
-            #                     bbox=[interp_grid[0],interp_grid[-1]])
-
-            # prepare the interpolation (before gaussian smoothing that will be done later):
-            f = UnivariateSpline(bincenters, hist,
+            # prepare the interpolation on log(Like) (before gaussian smoothing that will be done later):
+            ln_hist = np.log(hist)
+            f = UnivariateSpline(bincenters, ln_hist,
                                  s=0,
                                  bbox=[interp_grid[0],interp_grid[-1]])
 
-        # if it does not work, simple interpolation between bin centers
+            # do the interpolation
+            interp_hist = f(interp_grid)
+
+            # go back from ln_Like to Like
+            interp_hist = np.exp(interp_hist)
+
+        # if it does not work, simple robust linear interpolation between bin centers, which can never fail, nor create artefacts
         except:
-            print "For 1d: using simplest scheme with no extrapolation at boundaries"
+            print "Warning: this probability had to be interpolated using a simplified scheme, with no spline nor extrapolation at boundaries"
             interp_grid = np.linspace(bincenters[0], bincenters[-1], (len(bincenters)-1)*10+1)
             from scipy.interpolate import interp1d
-            f = interp1d(bincenters, hist,kind='cubic')
+            f = interp1d(bincenters, hist,kind='linear')#kind='cubic')
+            interp_hist = f(interp_grid)
 
-        # do the interpolation
-        interp_hist = f(interp_grid)
-
-        # re-normalise the curve
+        # re-normalise the interpolated curve
         interp_hist = interp_hist / interp_hist.max()
 
         return interp_hist, interp_grid
