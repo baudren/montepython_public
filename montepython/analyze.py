@@ -369,7 +369,10 @@ def compute_posterior(information_instances):
             " wrong parameters names in the '--extra' file.")
     # Find the appropriate number of columns and lines for the 1d posterior
     # plot
-    num_columns = int(round(math.sqrt(len(plotted_parameters))))
+    if  conf.num_columns_1d == None:
+        num_columns = int(round(math.sqrt(len(plotted_parameters))))
+    else:
+        num_columns = conf.num_columns_1d
     num_lines = int(math.ceil(len(plotted_parameters)*1.0/num_columns))
 
     # For special needs, you can impose here a different number of columns and lines in the 1d plot
@@ -587,6 +590,7 @@ def compute_posterior(information_instances):
                     #    info.bincenters,
                     #    info.hist,
                     #    'ro')
+
 
         # mean likelihood (optional, if comparison, it will not be printed)
         # The color cycle has to be reset, before
@@ -848,12 +852,24 @@ def compute_posterior(information_instances):
                         plot_name, info.extension)),
                 bbox_inches=0, )
         if conf.plot:
+            if len(legends) > 1:
+                # no space left: add legend to thr right
+                if len(plotted_parameters)<num_columns*num_lines:
+                    fig1d.legend(legends, legend_names,
+                                 loc= ((num_columns-0.9)/num_columns,0.1/num_columns),
+                                 fontsize=info.legendsize)
+                # space left in lower right part: add legend there
+                else:
+                    fig1d.legend(legends, legend_names,
+                                 loc= 'center right',
+                                 bbox_to_anchor = (1.2,0.5),
+                                 fontsize=info.legendsize)
             fig1d.tight_layout()
             fig1d.savefig(
                 os.path.join(
                     conf.folder, 'plots', '{0}_1d.{1}'.format(
                         plot_name, info.extension)),
-                bbox_inches=0)
+                bbox_inches='tight')
 
 
 def ctr_level(histogram2d, lvl, infinite=False):
