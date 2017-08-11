@@ -533,7 +533,7 @@ def compute_posterior(information_instances):
                                0, 1.05])
 
                 if conf.plot:
-                     if conf.no_title_1d:
+                    if conf.short_title_1d:
                         ax1d.set_title(
                             '%s'.format(info.decimal) % (
                                     info.tex_names[info.native_index]),
