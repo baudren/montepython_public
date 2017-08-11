@@ -425,11 +425,9 @@ def compute_posterior(information_instances):
                 len(plotted_parameters),
                 index*(len(plotted_parameters)+1)+1,
                 yticks=[])
-            ax2d.set_color_cycle(conf.cm)
         if conf.plot:
             ax1d = fig1d.add_subplot(
                 num_lines, num_columns, index+1, yticks=[])
-            ax1d.set_color_cycle(conf.cm)
 
         # check for each instance if the name is part of the list of plotted
         # parameters, and if yes, store the native_index. If not, store a flag
@@ -501,7 +499,9 @@ def compute_posterior(information_instances):
                     plot = ax2d.plot(
                         info.interp_grid,
                         smoothed_interp_hist,
-                        linewidth=info.line_width, ls='-')
+                        linewidth=info.line_width, ls='-',
+                        color = info.cmaps[info.id](0.5),
+                        alpha = info.alphas[info.id])
 
                     legends[info.id] = plot[0]
                     ax2d.set_xticks(info.ticks[info.native_index])
@@ -583,7 +583,9 @@ def compute_posterior(information_instances):
                         smoothed_interp_hist,
                         # raw 1d posterior:
                         #info.interp_hist,
-                        lw=info.line_width, ls='-')
+                        lw=info.line_width, ls='-',
+                        color = info.cmaps[info.id](0.5),
+                        alpha = info.alphas[info.id])
                     # uncopmment if you want to see the raw point sfrom the histogram
                     # (to check whether the inteprolation and smoothing generated artefacts)
                     #ax1d.plot(
@@ -591,13 +593,6 @@ def compute_posterior(information_instances):
                     #    info.hist,
                     #    'ro')
 
-
-        # mean likelihood (optional, if comparison, it will not be printed)
-        # The color cycle has to be reset, before
-        if conf.plot_2d:
-            ax2d.set_color_cycle(conf.cm)
-        if conf.plot:
-            ax1d.set_color_cycle(conf.cm)
         if conf.mean_likelihood:
             for info in information_instances:
                 if not info.ignore_param:
@@ -639,14 +634,18 @@ def compute_posterior(information_instances):
                         ########################################################
                         if conf.plot_2d:
                             ax2d.plot(interp_grid, smoothed_interp_lkl_mean,
-                                      ls='--', lw=conf.line_width)
+                                      ls='--', lw=conf.line_width,
+                                      color = info.cmaps[info.id](0.5),
+                                      alpha = info.alphas[info.id])
 
                         ########################################################
                         # plot 1D mean likelihood in 1D plot                   #
                         ########################################################
                         if conf.plot:
                             ax1d.plot(interp_grid, smoothed_interp_lkl_mean,
-                                      ls='--', lw=conf.line_width)
+                                      ls='--', lw=conf.line_width,
+                                      color = info.cmaps[info.id](0.5),
+                                      alpha = info.alphas[info.id])
 
                     except:
                         print 'could not find likelihood contour for ',
@@ -749,7 +748,9 @@ def compute_posterior(information_instances):
                                     extent=info.extent, levels=ctr_level(
                                         interp_smoothed_likelihood,
                                         info.levels[:2]),
-                                    zorder=4, colors=info.cm[info.id],
+                                    zorder=4,
+                                    colors = info.cmaps[info.id](0.5),
+                                    alpha = info.alphas[info.id],
                                     linewidths=info.line_width)
 
                             ###########################
@@ -763,7 +764,8 @@ def compute_posterior(information_instances):
                                     extent=info.extent, levels=ctr_level(
                                         interp_smoothed_likelihood,
                                         info.levels[:2]),
-                                    zorder=4, cmap=info.cmaps[info.id],
+                                    zorder=4,
+                                    cmap=info.cmaps[info.id],
                                     alpha=info.alphas[info.id])
 
                         except Warning:
@@ -1707,12 +1709,12 @@ class Information(object):
     # Flag checking the absence or presence of the interp1d function
     has_interpolate_module = False
 
-    # Global colormap for the 1d plots. Colours will get chosen from this.
+    # Obsolete: Global colormap for the 1d plots. Colours will get chosen from this.
     # Some old versions of matplotlib do not have CMRmap, so the colours will
     # be harcoded
     # Note that, as with the other customisation options, you can specify new
     # values for this in the extra plot_file.
-    cm = ['k','purple','r','g','darkorange','b']
+    #cm = ['k','purple','r','g','darkorange','b']
 
     # Define colormaps for the contour plots
     cmaps = [plt.cm.gray_r, plt.cm.Purples, plt.cm.Reds_r, plt.cm.Greens, plt.cm.Oranges, plt.cm.Blues]
