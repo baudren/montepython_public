@@ -483,6 +483,8 @@ def create_parser():
             plotting marginalised 1D posteriors, the code also shows the mean
             likelihood per bin with dashed lines; this flag switches off the
             dashed lines.<++>
+        <**>--no-title-1d<**> : None
+            <++>no 1D plot title<++>. Remove mean and confidence limits above each 1D plot.<++>
         <**>--extra<**> : str
             <++>extra file to customize the output plots<++>. You can actually
             set all the possible options in this file, including line-width,
@@ -694,6 +696,9 @@ def create_parser():
     # -- to remove the mean-likelihood line
     infoparser.add_argument('--no-mean', help=helpdict['no-mean'],
                             dest='mean_likelihood', action='store_false')
+    # -- to remove the mean and 68% limits on top of each 1D plot
+    infoparser.add_argument('--no-title-1d', help=helpdict['no-title-1d'],
+                            dest='no_title_1d', action='store_true')
     # -- possible plot file describing custom commands
     infoparser.add_argument('--extra', help=helpdict['extra'],
                             dest='optional_plot_file', default='')

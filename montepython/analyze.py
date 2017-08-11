@@ -533,18 +533,24 @@ def compute_posterior(information_instances):
                                0, 1.05])
 
                 if conf.plot:
-                    # Note the use of double curly brackets {{ }} to produce
-                    # the desired LaTeX output. This is necessary because the
-                    # format function would otherwise understand single
-                    # brackets as fields.
-                    ax1d.set_title(
-                        '%s=$%.{0}g^{{+%.{0}g}}_{{%.{0}g}}$'.format(
-                            info.decimal) % (
-                            info.tex_names[info.native_index],
-                            info.mean[info.native_index],
-                            info.bounds[info.native_index, 0, -1],
-                            info.bounds[info.native_index, 0, 0]),
-                        fontsize=info.fontsize)
+                     if conf.no_title_1d:
+                        ax1d.set_title(
+                            '%s'.format(info.decimal) % (
+                                    info.tex_names[info.native_index]),
+                            fontsize=info.fontsize)
+                    else:
+                        # Note the use of double curly brackets {{ }} to produce
+                        # the desired LaTeX output. This is necessary because the
+                        # format function would otherwise understand single
+                        # brackets as fields.
+                        ax1d.set_title(
+                            '%s=$%.{0}g^{{+%.{0}g}}_{{%.{0}g}}$'.format(
+                                info.decimal) % (
+                                    info.tex_names[info.native_index],
+                                    info.mean[info.native_index],
+                                    info.bounds[info.native_index, 0, -1],
+                                    info.bounds[info.native_index, 0, 0]),
+                            fontsize=info.fontsize)
 
                     # JL: example of customisation commands
                     # (in this example: change label and plot vertical lines)
@@ -575,6 +581,12 @@ def compute_posterior(information_instances):
                         # raw 1d posterior:
                         #info.interp_hist,
                         lw=info.line_width, ls='-')
+                    # uncopmment if you want to see the raw point sfrom the histogram
+                    # (to check whether the inteprolation and smoothing generated artefacts)
+                    #ax1d.plot(
+                    #    info.bincenters,
+                    #    info.hist,
+                    #    'ro')
 
         # mean likelihood (optional, if comparison, it will not be printed)
         # The color cycle has to be reset, before
