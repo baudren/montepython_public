@@ -529,6 +529,7 @@ def compute_posterior(information_instances):
                                 ['%.{0}g'.format(info.decimal) % s
                                  for s in info.ticks[info.native_index]],
                                 fontsize=info.ticksize)
+                            ax2d.tick_params('x',direction='inout')
                             ax2d.set_xlabel(
                                 info.tex_names[info.native_index],
                                 fontsize=info.fontsize)
@@ -779,6 +780,8 @@ def compute_posterior(information_instances):
                                     info.plotted_parameters[info.native_second_index]))
 
                         ax2dsub.set_xticks(info.ticks[info.native_second_index])
+                        ax2dsub.set_yticks(info.ticks[info.native_index])
+                        ax2dsub.tick_params('both',direction='inout',top=True,bottom=True,left=True,right=True)
                         if index == len(plotted_parameters)-1:
                             ax2dsub.set_xticklabels(
                                 ['%.{0}g'.format(info.decimal) % s for s in
@@ -842,20 +845,35 @@ def compute_posterior(information_instances):
         print '--> Saving figures to .{0} files'.format(info.extension)
         plot_name = '-vs-'.join([os.path.split(elem.folder)[-1]
                                 for elem in information_instances])
+
         if conf.plot_2d:
+            # Legend of triangle plot
             if len(legends) > 1:
+                # Create a virtual subplot in the top right corner,
+                # just to be able to anchor the legend nicely
+                ax2d = fig2d.add_subplot(
+                    len(plotted_parameters),
+                    len(plotted_parameters),
+                    len(plotted_parameters),
+                    )
+                ax2d.axis('off')
                 try:
-                    fig2d.legend(legends, legend_names, 'upper right',
+                    ax2d.legend(legends, legend_names,
+                                 loc='upper right',
+                                 borderaxespad=0.,
                                  fontsize=info.legendsize)
                 except TypeError:
-                    fig2d.legend(legends, legend_names, 'upper right',
+                    ax2d.legend(legends, legend_names,
+                                 loc='upper right',
+                                 borderaxespad=0.,
                                  prop={'fontsize': info.legendsize})
-            fig2d.tight_layout()
+            fig2d.subplots_adjust(wspace=0, hspace=0)
             fig2d.savefig(
                 os.path.join(
                     conf.folder, 'plots', '{0}_triangle.{1}'.format(
                         plot_name, info.extension)),
-                bbox_inches=0, )
+                bbox_inches='tight')
+        # Legend of 1D plot
         if conf.plot:
             if len(legends) > 1:
                 # no space left: add legend to thr right
