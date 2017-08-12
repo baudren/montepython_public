@@ -765,7 +765,8 @@ def compute_posterior(information_instances):
                                     interp_y_centers,
                                     interp_x_centers,
                                     interp_smoothed_likelihood,
-                                    extent=info.extent, levels=ctr_level(
+                                    extent=info.extent,
+                                    levels=ctr_level(
                                         interp_smoothed_likelihood,
                                         info.levels[:2]),
                                     zorder=4,
@@ -848,7 +849,7 @@ def compute_posterior(information_instances):
 
         if conf.plot_2d:
             # Legend of triangle plot
-            if len(legends) > 1:
+            if ((conf.plot_legend_2d == None) and (len(legends) > 1)) or (conf.plot_legend_2d == True):
                 # Create a virtual subplot in the top right corner,
                 # just to be able to anchor the legend nicely
                 ax2d = fig2d.add_subplot(
@@ -875,7 +876,7 @@ def compute_posterior(information_instances):
                 bbox_inches='tight')
         # Legend of 1D plot
         if conf.plot:
-            if len(legends) > 1:
+            if ((conf.plot_legend_1d == None) and (len(legends) > 1)) or (conf.plot_legend_1d == True):
                 # no space left: add legend to thr right
                 if len(plotted_parameters)<num_columns*num_lines:
                     fig1d.legend(legends, legend_names,
@@ -1791,14 +1792,15 @@ class Information(object):
             if elem.find('__') == -1:
                 setattr(self, elem, getattr(command_line, elem))
 
+        # initialise the legend flags
+        self.plot_legend_1d = None
+        self.plot_legend_2d = None
+
         # initialize the legend size to be the same as fontsize, but can be
         # altered in the extra file
         self.legendsize = self.fontsize
         self.legendnames = []
 
-
-#JL test
-        #cmaps = [plt.cm.gray_r, plt.cm.Purples, plt.cm.Reds_r, plt.cm.Greens, plt.cm.Oranges, plt.cm.Blues]
         cmaps = [plt.cm.Reds, plt.cm.Blues, plt.cm.Greens, plt.cm.Purples, plt.cm.Oranges, plt.cm.Greys]
 
         # Read a potential file describing changes to be done for the parameter
