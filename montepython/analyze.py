@@ -500,7 +500,10 @@ def compute_posterior(information_instances):
                         info.interp_grid,
                         smoothed_interp_hist,
                         linewidth=info.line_width, ls='-',
-                        color = info.cmaps[info.id](0.5),
+                        color = info.cmaps[info.id](0.66),
+                        # the 0.66 adjusts the color of the lines to those of the 68% contours.
+                        # you could use 0.33 to get the color of the 95% contours,
+                        # or 0.5 to get something in between.
                         alpha = info.alphas[info.id])
 
                     legends[info.id] = plot[0]
@@ -1716,9 +1719,9 @@ class Information(object):
     # values for this in the extra plot_file.
     #cm = ['k','purple','r','g','darkorange','b']
 
-    # Define colormaps for the contour plots
-    cmaps = [plt.cm.gray_r, plt.cm.Purples, plt.cm.Reds_r, plt.cm.Greens, plt.cm.Oranges, plt.cm.Blues]
-    alphas = [1.0, 0.8, 0.6, 0.4,0.3,0.2]
+    # Define default colormaps and transparencies for the contour plots
+    cmaps = [plt.cm.Reds, plt.cm.Blues, plt.cm.Greens, plt.cm.Greys, plt.cm.Purples, plt.cm.Oranges]
+    alphas = [1.0, 0.9, 0.8, 0.7, 0.6, 0.5]
 
     def __init__(self, command_line, other=None):
         """
@@ -1752,6 +1755,7 @@ class Information(object):
         name, and the value its scale.
 
         """
+
         # Assign a unique id to this instance
         self.id = self._ids.next()
 
@@ -1774,12 +1778,17 @@ class Information(object):
         self.legendsize = self.fontsize
         self.legendnames = []
 
+
+#JL test
+        #cmaps = [plt.cm.gray_r, plt.cm.Purples, plt.cm.Reds_r, plt.cm.Greens, plt.cm.Oranges, plt.cm.Blues]
+        cmaps = [plt.cm.Reds, plt.cm.Blues, plt.cm.Greens, plt.cm.Purples, plt.cm.Oranges, plt.cm.Greys]
+
         # Read a potential file describing changes to be done for the parameter
         # names, and number of paramaters plotted (can be let empty, all will
         # then be plotted), but also the style of the plot. Note that this
         # overrides the command line options
         if command_line.optional_plot_file:
-            plot_file_vars = {'info': self}
+            plot_file_vars = {'info': self,'plt': plt}
             execfile(command_line.optional_plot_file, plot_file_vars)
 
         # check and store keep_fraction
