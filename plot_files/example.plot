@@ -30,12 +30,13 @@ info.plot_legend_2d = False
 # the directories to analyse.
 info.legendnames = ['Hubble']
 
-# use this to customise thew sequence of colors.
-# Any matplotlib colormap is allowed, common ones are
-# Greys,Purples,Blues,Greens,Oranges,Reds,
-# but there are many others!
+# If you want to change the order of colors
 # (same order as for legendnames)
-info.cmaps = [plt.cm.Greens, plt.cm.Oranges, plt.cm.Blues]
+info.MP_color_cycle = [info.MP_color['Green'], info.MP_color['Orange'], info.MP_color['Blue']]
+
+# You may actually even redefine the colors
+# (each pair stands for [95% contour color,68% contour color]
+# info.MP_color = {'Red':['#E37C80','#CE121F'],'Blue':['#7A98F6','#1157EF'],'Green':['#88B27A','#297C09'],'Orange':['#F3BE82','#ED920F'],'Grey':['#ABABAB','#737373'],'Purple':['#B87294','#88004C']}
 
 # adjust the transparency of the lines and filled contours
 # (same order as for legendnames)
