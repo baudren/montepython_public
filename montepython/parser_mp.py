@@ -454,6 +454,9 @@ def create_parser():
         <**>--stop-after-update<**> : bool
             <++>When using update mode, stop run after updating the covariant matrix.<++>
             Useful if you want to change settings after the first guess (*OPT*) (flag)<++>
+        <**>--display-each-chi2<**> : bool
+            <++>Shows the effective chi2 from each likelihood and the total.<++>
+            Useful e.g. if you run at the bestfit point with -f 0 (flag)<++>
 
         For Nested Sampling and Cosmo Hammer arguments, see
         :mod:`nested_sampling` and :mod:`cosmo_hammer`.
@@ -618,6 +621,9 @@ def create_parser():
     # -- stop run after first successful update using --update (EXPERIMENTAL)
     runparser.add_argument('--stop-after-update', help=helpdict['stop-after-update'],
                            dest='stop_after_update', action='store_true')
+    # display option
+    runparser.add_argument('--display-each-chi2', help=helpdict['display-each-chi2'],
+                           dest='display_each_chi2', action='store_true')
 
     ###############
     # MCMC restart from chain or best fit file
