@@ -701,10 +701,11 @@ def compute_posterior(information_instances):
                     len(plotted_parameters),
                     (index)*len(plotted_parameters)+second_index+1)
 
-                ax2dsub.axis([info.x_range[info.native_second_index][0],
-                              info.x_range[info.native_second_index][1],
-                              info.x_range[info.native_index][0],
-                              info.x_range[info.native_index][1]])
+                if info.has_second_param:
+                    ax2dsub.axis([info.x_range[info.native_second_index][0],
+                                  info.x_range[info.native_second_index][1],
+                                  info.x_range[info.native_index][0],
+                                  info.x_range[info.native_index][1]])
 
                 for info in information_instances:
                     if info.has_second_param:
