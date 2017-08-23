@@ -42,6 +42,11 @@ info.MP_color_cycle = [info.MP_color['Green'], info.MP_color['Orange'], info.MP_
 # (same order as for legendnames)
 info.alphas = [1.0, 0.8, 0.6, 0.4, 0.2]
 
+# add list of python scripts for customisation of 1d or 2d plots,
+# that are executed before plotting the probability lines or contours
+info.custom1d = []
+info.custom2d = ['add_h_contour.py','add_sigma8_Omegam_contour.py']
+
 # use this to customise the ticks.
 # you can write any plain python here, it will be executed as extra
 # lines of codes, but only at a precise point in the initialisation of the

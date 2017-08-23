@@ -558,16 +558,6 @@ def compute_posterior(information_instances):
                                     info.bounds[info.native_index, 0, 0]),
                             fontsize=info.fontsize)
 
-                    # JL: example of customisation commands
-                    # (in this example: change label and plot vertical lines)
-                    # At some point these types of commands will be made available from
-                    # the customisation input files in plot_file/
-                    #ax1d.set_title(r'$M_{\nu}  (eV)$',fontsize=info.fontsize)
-                    #ax1d.axvline(x=0.058536,linestyle='-',color='k')
-                    #ax1d.axvline(x=0.098993,linestyle='-',color='k')
-                    #ax1d.axvline(x=0.06,linestyle='--',color='k')
-                    #ax1d.axvline(x=0.10,linestyle='--',color='k')
-
                     ax1d.set_xticks(info.ticks[info.native_index])
                     ax1d.set_xticklabels(
                         ['%.{0}g'.format(info.decimal) % s
@@ -576,6 +566,11 @@ def compute_posterior(information_instances):
                     ax1d.axis([info.x_range[info.native_index][0],
                                info.x_range[info.native_index][1],
                                0, 1.05])
+
+                    # Execute some customisation scripts for the 1d plots
+                    if (info.custom1d != []):
+                        for elem in info.custom1d:
+                            execfile('plot_files/'+elem)
 
                     ##################################################
                     # plot 1D posterior in 1D plot                   #
@@ -633,6 +628,11 @@ def compute_posterior(information_instances):
                         smoothed_interp_lkl_mean = scipy.ndimage.filters.gaussian_filter(interp_lkl_mean,sigma)
                         # re-normalised
                         smoothed_interp_lkl_mean = smoothed_interp_lkl_mean/smoothed_interp_lkl_mean.max()
+
+                        # Execute some customisation scripts for the 1d plots
+                        if (info.custom1d != []):
+                            for elem in info.custom1d:
+                                execfile('plot_files/'+elem)
 
                         ########################################################
                         # plot 1D mean likelihood in diagonal of triangle plot #
@@ -695,10 +695,17 @@ def compute_posterior(information_instances):
                             info.has_second_param = False
                     else:
                         info.has_second_param = False
+
                 ax2dsub = fig2d.add_subplot(
                     len(plotted_parameters),
                     len(plotted_parameters),
                     (index)*len(plotted_parameters)+second_index+1)
+
+                ax2dsub.axis([info.x_range[info.native_second_index][0],
+                              info.x_range[info.native_second_index][1],
+                              info.x_range[info.native_index][0],
+                              info.x_range[info.native_index][1]])
+
                 for info in information_instances:
                     if info.has_second_param:
 
@@ -737,32 +744,10 @@ def compute_posterior(information_instances):
                         sigma = info.interpolation_smoothing*info.gaussian_smoothing
                         interp_smoothed_likelihood = scipy.ndimage.filters.gaussian_filter(interp_likelihood,[sigma,sigma], mode='reflect')
 
-
-                        #### TODO
-                        # a new color cheme:
-                        # predefined MPcolors={'Red':[#EEEEE,#EEEEE],...
-                        # colors = [MPcolors['Red'], ...
-                        # users pass lists
-                        #
-                        # some new options
-                        # info.extra_plotting_2d_1param = {'H0':'customisation_file', ...
-                        # info.extra_plotting_2d_2params = { 'H_0,Omega_m':''customisation_file',...
-                        #
-                        # put set_xlim and set_ylim for each ax2dsub plot
-                        # after checking how it is done for ax2d (1D)
-                        #
-                        #print name,second_name
-                        #if second_name == 'H_0':
-                        #    x = [70,72]
-                        #    y1 = info.extent[2] #info.xedges[0]
-                        #    y2 = info.extent[3] #info.xedges[-1]
-                        #    print x,y1,y2
-                        #    print info.extent
-                        #    ax2dsub.fill_between(x,y1,y2)
-                        #    ax2dsub.set_xlim(info.extent[0],info.extent[1])
-                        #    ax2dsub.set_ylim(info.extent[2],info.extent[3])
-                            #trans = mtransforms.blended_transform_factory(ax2dsub.transData, ax2dsub.transAxes)
-                            #ax2dsub.fill_between(x,0,1,transform=tran)
+                        # Execute some customisation scripts for the 2d contour plots
+                        if (info.custom2d != []):
+                           for elem in info.custom2d:
+                               execfile('plot_files/'+elem)
 
                         # plotting contours, using the ctr_level method (from Karim
                         # Benabed). Note that only the 1 and 2 sigma contours are
@@ -1857,6 +1842,10 @@ class Information(object):
         # altered in the extra file
         self.legendsize = self.fontsize
         self.legendnames = []
+
+        # initialize the customisation script flags
+        self.custom1d = []
+        self.custom2d = []
 
         # Read a potential file describing changes to be done for the parameter
         # names, and number of paramaters plotted (can be let empty, all will
