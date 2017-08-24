@@ -518,13 +518,13 @@ def compute_lkl(cosmo, data):
         # Otherwise, take the existing value
         else:
             value = likelihood.backup_value
-        if command_line.display_each_chi2:
+        if data.command_line.display_each_chi2:
             print "-> for ",likelihood.name,":  loglkl=",value,",  chi2eff=",-2.*value
         loglike += value
         # In case the fiducial file was written, store this information
         if value == 1j:
             flag_wrote_fiducial += 1
-    if command_line.display_each_chi2:
+    if data.command_line.display_each_chi2:
             print "-> Total:  loglkl=",loglike,",  chi2eff=",-2.*loglike
 
     # Compute the derived parameters if relevant
