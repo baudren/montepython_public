@@ -706,6 +706,10 @@ def compute_posterior(information_instances):
                                   info.x_range[info.native_second_index][1],
                                   info.x_range[info.native_index][0],
                                   info.x_range[info.native_index][1]])
+                else:
+                    # when the second parameter is absent, empty square with no ticks:
+                    ax2dsub.set_xticks([])
+                    ax2dsub.set_yticks([])
 
                 for info in information_instances:
                     if info.has_second_param:
