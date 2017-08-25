@@ -1582,7 +1582,7 @@ def remove_bad_points(info):
 
             # Remove fixed fraction as requested by user (usually not useful if non-markovian is also removed)
             if info.keep_fraction < 1:
-                start = start + (1-info.keep_fraction)*(line_count - start)
+                start = start + int((1.-info.keep_fraction)*(line_count - start))
 
             print ": Removed",
             if info.markovian:
@@ -1599,7 +1599,7 @@ def remove_bad_points(info):
         # ham contains cheese without the burn-in, if there are any points
         # left (more than 5)
         if np.shape(cheese)[0] > start+5:
-            ham = np.copy(cheese[start::])
+            ham = np.copy(cheese[int(start)::])
 
             # Deal with single file case
             if len(info.files) == 1:
