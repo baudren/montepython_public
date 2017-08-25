@@ -860,7 +860,7 @@ def compute_posterior(information_instances):
                     # store the coordinates of the points for further
                     # plotting.
                     store_contour_coordinates(
-                        conf, standard_name, second_standard_name, cotours)
+                        conf, standard_name, second_standard_name, contours)
 
                     for info in information_instances:
                         if not info.ignore_param and info.has_second_param:

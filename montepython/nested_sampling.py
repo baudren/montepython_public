@@ -338,6 +338,15 @@ def from_NS_output_to_chains(folder):
         if pre in line:
             if line.strip()[0] == '#':
                 continue
+
+            # These lines allow MultiNest to deal with fixed nuisance parameters 
+            sigma = float(line.split(',')[3].strip())
+            if sigma == 0.0:
+                #If derived parameter, keep it, else discard it:                                 
+                paramtype = line.split(',')[5].strip()[1:-2]
+                if paramtype != 'derived':
+                    continue
+
             param_name = line.split('=')[0][line.find(pre)+len(pre):
                                             line.find(pos)]
             param_name = param_name.replace('"','').replace("'",'').strip()
