@@ -883,7 +883,8 @@ class Likelihood_clik(Likelihood):
         except clik.lkl.CError:
             raise io_mp.LikelihoodError(
                 "The path to the .clik file for the likelihood "
-                "%s was not found where indicated." % self.name +
+                "%s was not found where indicated:\n%s\n"
+                % (self.name,self.path_clik) +
                 " Note that the default path to search for it is"
                 " one directory above the path['clik'] field. You"
                 " can change this behaviour in all the "
