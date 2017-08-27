@@ -1426,9 +1426,11 @@ def extract_parameter_names(info):
                         ref_names.append(name)
                         # Take care of the scales
                         scale = array[4]
+                        rescale = 1.
                         if name in info.new_scales.iterkeys():
                             scale = info.new_scales[name]
-                        scales.append(scale)
+                            rescale = info.new_scales[name]/array[4]
+                        scales.append(rescale)
 
                         # Given the scale, decide for the pretty tex name
                         number = 1./scale
