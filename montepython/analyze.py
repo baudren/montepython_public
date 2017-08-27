@@ -1441,8 +1441,6 @@ def extract_parameter_names(info):
     info.boundaries = boundaries
     info.backup_names = backup_names
     info.scales = scales
-    print info.scales
-    exit()
     # Beware, the following two numbers are different. The first is the total
     # number of parameters stored in the chain, whereas the second is for
     # plotting purpose only.
