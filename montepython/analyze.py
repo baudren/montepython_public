@@ -441,9 +441,22 @@ def compute_posterior(information_instances):
             except ValueError:
                 info.ignore_param = True
 
-        adjust_ticks(name, information_instances)
+        # The limits might have been enforced by the user
+        if name in conf.force_limits.iterkeys():
+            x_span = conf.force_limits[name][1]-conf.force_limits[name][0]
+            tick_min = conf.force_limits[name][0] +0.1*x_span
+            tick_max = conf.force_limits[name][1] -0.1*x_span
+            ticks = np.linspace(tick_min,
+                                tick_max,
+                                info.ticknumber)
+            for info in information_instances:
+                if not info.ignore_param:
+                    info.x_range[info.native_index] = conf.force_limits[name]
+                    info.ticks[info.native_index] = ticks
+        # otherwise, find them automatically
+        else:
+            adjust_ticks(name, information_instances)
 
-        # normalized histogram
         print ' -> Computing histograms for ', name
         for info in information_instances:
             if not info.ignore_param:
@@ -701,18 +714,13 @@ def compute_posterior(information_instances):
                     len(plotted_parameters),
                     (index)*len(plotted_parameters)+second_index+1)
 
-                if info.has_second_param:
-                    ax2dsub.axis([info.x_range[info.native_second_index][0],
-                                  info.x_range[info.native_second_index][1],
-                                  info.x_range[info.native_index][0],
-                                  info.x_range[info.native_index][1]])
-                else:
-                    # when the second parameter is absent, empty square with no ticks:
-                    ax2dsub.set_xticks([])
-                    ax2dsub.set_yticks([])
-
                 for info in information_instances:
                     if info.has_second_param:
+
+                        ax2dsub.axis([info.x_range[info.native_second_index][0],
+                                      info.x_range[info.native_second_index][1],
+                                      info.x_range[info.native_index][0],
+                                      info.x_range[info.native_index][1]])
 
                         # 2D likelihood (first step)
                         #
@@ -1433,6 +1441,8 @@ def extract_parameter_names(info):
     info.boundaries = boundaries
     info.backup_names = backup_names
     info.scales = scales
+    print info.scales
+    exit()
     # Beware, the following two numbers are different. The first is the total
     # number of parameters stored in the chain, whereas the second is for
     # plotting purpose only.
@@ -1700,6 +1710,7 @@ def adjust_ticks(param, information_instances):
     # The new x_range and tick should min/max all the existing ones
     new_x_range = np.array(
         [min([e[0] for e in x_ranges]), max([e[1] for e in x_ranges])])
+
     temp_ticks = np.array(
         [min([e[0] for e in ticks]), max([e[-1] for e in ticks])])
 
@@ -1851,6 +1862,9 @@ class Information(object):
         # initialize the customisation script flags
         self.custom1d = []
         self.custom2d = []
+
+        # initialise the dictionary enmforcing limit
+        self.force_limits = {}
 
         # Read a potential file describing changes to be done for the parameter
         # names, and number of paramaters plotted (can be let empty, all will
