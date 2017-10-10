@@ -599,7 +599,7 @@ def compute_posterior(information_instances):
                         # the [1] picks up the color of the 68% contours
                         # with [0] you would get that of the 95% contours
                         alpha = info.alphas[info.id])
-                    # uncopmment if you want to see the raw point sfrom the histogram
+                    # uncomment if you want to see the raw points from the histogram
                     # (to check whether the inteprolation and smoothing generated artefacts)
                     #ax1d.plot(
                     #    info.bincenters,
@@ -1083,51 +1083,73 @@ def cubic_interpolation(info, hist, bincenters):
     Small routine to accomodate the absence of the interpolate module
 
     """
-    if info.has_interpolate_module:
 
-        # Get a finer interpolated grid.
-        # The bin width will be reduced here by exactly 10
-        # (this factor 10 is hard-coded but it could be promoted as input parameter)
+    # test that all elements are strictly positive, otherwise we could not take the log, and we must switch to the robust method
+    #for elem in hist:
+    #    if elem <= 0.:
+    #        raise exception()
 
-        # If possible, work on log(Like) iinstead of Like, and try interpolation between bin centers + extrapolation up to side bin edges
-        try:
-            from scipy.interpolate import UnivariateSpline
+    # define a finer grid on a wider range (assuming that the following method is fine both for inter- and extra-polation)
+    left = max(info.boundaries[info.native_index][0],bincenters[0]-2.5*(bincenters[1]-bincenters[0]))
+    right = min(info.boundaries[info.native_index][1],bincenters[-1]+2.5*(bincenters[-1]-bincenters[-2]))
+    interp_grid = np.linspace(left, right, (len(bincenters)+4)*10+1)
 
-            # test that all elements are strictly positive, otherwise we could not take the log, and we must switch to the robust method
-            for elem in hist:
-                if elem <= 0.:
-                    raise exception()
+    # prepare the interpolation on log(Like):
+    ln_hist = np.log(hist)
 
-            # define finer grid
-            binwidth = bincenters[1]-bincenters[0]
-            interp_grid = np.linspace(bincenters[0]-0.5*binwidth, bincenters[-1]+0.5*binwidth, len(bincenters)*10+1)
+    # prepare to interpolate and extrapolate:
+    if info.posterior_smoothing == 0:
+        f = scipy.interpolate.interp1d(bincenters, ln_hist, kind='linear', fill_value='extrapolate')
+    elif info.posterior_smoothing == 1:
+        f = scipy.interpolate.interp1d(bincenters, ln_hist, kind='cubic', fill_value='extrapolate')
+    elif info.posterior_smoothing >= 2:
+        f = np.poly1d(np.polyfit(bincenters,ln_hist,info.posterior_smoothing))
+    else:
+        raise io_mp.AnalyzeError(
+            "You passed --posterior-smoothing %d, this value is not understood"%polynomial_fit_order)
 
-            # prepare the interpolation on log(Like) (before gaussian smoothing that will be done later):
-            ln_hist = np.log(hist)
-            f = UnivariateSpline(bincenters, ln_hist,
-                                 s=0,
-                                 bbox=[interp_grid[0],interp_grid[-1]])
-
-            # do the interpolation
-            interp_hist = f(interp_grid)
-
-            # go back from ln_Like to Like
-            interp_hist = np.exp(interp_hist)
-
-        # if it does not work, simple robust linear interpolation between bin centers, which can never fail, nor create artefacts
-        except:
-            print "Warning: this probability had to be interpolated using a simplified scheme, with no spline nor extrapolation at boundaries"
-            interp_grid = np.linspace(bincenters[0], bincenters[-1], (len(bincenters)-1)*10+1)
-            from scipy.interpolate import interp1d
-            f = interp1d(bincenters, hist,kind='linear')#kind='cubic')
-            interp_hist = f(interp_grid)
-
+    try:
+        # try to interpolate and extrapolate:
+        interp_hist = f(interp_grid)
+        # go back from ln_Like to Like
+        interp_hist = np.exp(interp_hist)
         # re-normalise the interpolated curve
         interp_hist = interp_hist / interp_hist.max()
-
         return interp_hist, interp_grid
-    else:
-        return hist, bincenters
+    except:
+        warnings.warn(
+            'An interpolation+extrapolation of a 1d posterior failed, consider updating your numpy and/or scipy version. The posterior will not look nice on the edges.')
+
+        # define a finer grid but not a wider one
+        left = max(info.boundaries[info.native_index][0],bincenters[0])
+        right = min(info.boundaries[info.native_index][1],bincenters[-1])
+        interp_grid = np.linspace(left, right, len(bincenters)*10+1)
+
+        # prepare the interpolation on log(Like):
+        ln_hist = np.log(hist)
+
+        # prepare to interpolate only:
+        if info.posterior_smoothing == 0:
+            f = scipy.interpolate.interp1d(bincenters, ln_hist, kind='linear')
+        elif info.posterior_smoothing == 1:
+            f = scipy.interpolate.interp1d(bincenters, ln_hist, kind='cubic')
+        elif info.posterior_smoothing >= 2:
+            f = np.poly1d(np.polyfit(bincenters,ln_hist,polynomial_fit_order))
+        else:
+            raise io_mp.AnalyzeError(
+                "You passed --posterior-smoothing %d, this value is not understood"%polynomial_fit_order)
+
+        try:
+            interp_hist = f(interp_grid)
+            # go back from ln_Like to Like
+            interp_hist = np.exp(interp_hist)
+            # re-normalise the interpolated curve
+            interp_hist = interp_hist / interp_hist.max()
+            return interp_hist, interp_grid
+
+        except:
+            # do nothing (raw histogram)
+            return hist, bincenters
 
 
 def write_histogram(hist_file_name, x_centers, hist):

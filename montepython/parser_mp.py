@@ -553,6 +553,9 @@ def create_parser():
         <**>--interpolation-smoothing<**> : float
             <++>interpolation factor for plotting posteriors<++>,
             1 means no interpolation, increase for smoother curves<++>
+        <**>--posterior-smoothing<**> : int
+            <++>smoothing scheme for 1d posteriors<++>,
+            0 means no smoothing, 1 means cubic interpolation, higher means fitting ln(L) with polynomial of order n<++>
 
     Returns
     -------
@@ -772,6 +775,9 @@ def create_parser():
     # and interpolated between computed bins)
     infoparser.add_argument('--interpolation-smoothing', help=helpdict['interpolation-smoothing'],
                             type=int, default=4)
+
+    infoparser.add_argument('--posterior-smoothing', help=helpdict['posterior-smoothing'],
+                            type=int, default=5)
 
     return parser
 
