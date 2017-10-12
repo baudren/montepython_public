@@ -651,6 +651,12 @@ def compute_posterior(information_instances):
                         # plot 1D mean likelihood in diagonal of triangle plot #
                         ########################################################
                         if conf.plot_2d:
+                            # raw mean likelihoods:
+                            #ax2d.plot(info.bincenter, lkl_mean,
+                            #          ls='--', lw=conf.line_width,
+                            #          color = info.MP_color_cycle[info.id][1],
+                            #          alpha = info.alphas[info.id])
+                            # smoothed and interpolated mean likelihoods:
                             ax2d.plot(interp_grid, smoothed_interp_lkl_mean,
                                       ls='--', lw=conf.line_width,
                                       color = info.MP_color_cycle[info.id][1],
@@ -660,6 +666,12 @@ def compute_posterior(information_instances):
                         # plot 1D mean likelihood in 1D plot                   #
                         ########################################################
                         if conf.plot:
+                            # raw mean likelihoods:
+                            #ax1d.plot(info.bincenters, lkl_mean,
+                            #          ls='--', lw=conf.line_width,
+                            #          color = info.MP_color_cycle[info.id][1],
+                            #          alpha = info.alphas[info.id])
+                            # smoothed and interpolated mean likelihoods:
                             ax1d.plot(interp_grid, smoothed_interp_lkl_mean,
                                       ls='--', lw=conf.line_width,
                                       color = info.MP_color_cycle[info.id][1],
@@ -1084,73 +1096,112 @@ def cubic_interpolation(info, hist, bincenters):
 
     """
 
-    # test that all elements are strictly positive, otherwise we could not take the log, and we must switch to the robust method
-    #for elem in hist:
-    #    if elem <= 0.:
-    #        raise exception()
-
-    # define a finer grid on a wider range (assuming that the following method is fine both for inter- and extra-polation)
-    left = max(info.boundaries[info.native_index][0],bincenters[0]-2.5*(bincenters[1]-bincenters[0]))
-    right = min(info.boundaries[info.native_index][1],bincenters[-1]+2.5*(bincenters[-1]-bincenters[-2]))
-    interp_grid = np.linspace(left, right, (len(bincenters)+4)*10+1)
-
-    # prepare the interpolation on log(Like):
-    ln_hist = np.log(hist)
-
-    # prepare to interpolate and extrapolate:
-    if info.posterior_smoothing == 0:
-        f = scipy.interpolate.interp1d(bincenters, ln_hist, kind='linear', fill_value='extrapolate')
-    elif info.posterior_smoothing == 1:
-        f = scipy.interpolate.interp1d(bincenters, ln_hist, kind='cubic', fill_value='extrapolate')
-    elif info.posterior_smoothing >= 2:
-        f = np.poly1d(np.polyfit(bincenters,ln_hist,info.posterior_smoothing))
-    else:
-        raise io_mp.AnalyzeError(
-            "You passed --posterior-smoothing %d, this value is not understood"%polynomial_fit_order)
-
+    # we start from a try becuase if anything goes wrong, we want to return the raw histogram rather than nothing
     try:
-        # try to interpolate and extrapolate:
-        interp_hist = f(interp_grid)
-        # go back from ln_Like to Like
-        interp_hist = np.exp(interp_hist)
-        # re-normalise the interpolated curve
-        interp_hist = interp_hist / interp_hist.max()
-        return interp_hist, interp_grid
-    except:
-        warnings.warn(
-            'An interpolation+extrapolation of a 1d posterior failed, consider updating your numpy and/or scipy version. The posterior will not look nice on the edges.')
 
-        # define a finer grid but not a wider one
-        left = max(info.boundaries[info.native_index][0],bincenters[0])
-        right = min(info.boundaries[info.native_index][1],bincenters[-1])
-        interp_grid = np.linspace(left, right, len(bincenters)*10+1)
+        # test that all elements are strictly positive, otherwise we could not take the log, and we must switch to the robust method
+        for i,elem in enumerate(hist):
+            if elem == 0.:
+                hist[i] = 1.e-99
+            elif elem <0:
+                print hist[i]
+                raise exception()
+
+        # One of our methods (using polyfit) does assume that the input histogram has a maximum value of 1.
+        # If in a future version this is not guaranteedanymore, we should renormalise it here.
+        # This is important for computing weights and thresholds.
+
+        # The threshold below which the likelihood will be
+        # approximated as zero is hard-codeed here (could become an
+        # input parameter but that would not clearly be useful).:
+        threshold = 1.e-3
 
         # prepare the interpolation on log(Like):
         ln_hist = np.log(hist)
 
-        # prepare to interpolate only:
-        if info.posterior_smoothing == 0:
-            f = scipy.interpolate.interp1d(bincenters, ln_hist, kind='linear')
-        elif info.posterior_smoothing == 1:
-            f = scipy.interpolate.interp1d(bincenters, ln_hist, kind='cubic')
-        elif info.posterior_smoothing >= 2:
-            f = np.poly1d(np.polyfit(bincenters,ln_hist,polynomial_fit_order))
-        else:
+        # define a finer grid on a wider range (assuming that the following method is fine both for inter- and extra-polation)
+        left = max(info.boundaries[info.native_index][0],bincenters[0]-2.5*(bincenters[1]-bincenters[0]))
+        right = min(info.boundaries[info.native_index][1],bincenters[-1]+2.5*(bincenters[-1]-bincenters[-2]))
+        interp_grid = np.linspace(left, right, (len(bincenters)+4)*10+1)
+
+        ######################################
+        # polynomial fit method (default):   #
+        #####################################W
+        if info.posterior_smoothing >= 2:
+            # the points in the histogram with a very low likelihood (i.e. hist[i]<<1 hist is normalised to a maximum of one)
+            # have a lot of Poisson noise and are unreliable. However, if we do nothing, they may dominate the outcome of the fitted polynomial.
+            # Hence we can:
+            # 1) give them less weight (weight = sqrt(hist) seems to work well)
+            # 2) cut them at some threshold value and base the fit only on higher points
+            # 3) both
+            # the one working best seems to be 2). We also wrote 1) below, but copmmented out.
+
+            # method 1):
+            #f = np.poly1d(np.polyfit(bincenters,ln_hist,info.posterior_smoothing,w=np.sqrt(hist)))
+            #interp_hist = f(interp_grid)
+
+            # method 2):
+            # find index values such that hist is negligble everywhere excepted in hist[sub_indices[0]], hist[sub_indices[-1]]
+            sub_indices = [i for i,elem in enumerate(hist) if elem > threshold]
+            # The interpolation is done precisely in this range: hist[sub_indices[0]] < x < hist[sub_indices[-1]]
+            g = np.poly1d(np.polyfit(bincenters[sub_indices],ln_hist[sub_indices],info.posterior_smoothing)) #,w=np.sqrt(hist[sub_indices])))
+            # The extrapolation is done in a range including one more bin on each side, excepted when the boundarty is hit
+            extrapolation_range_left = [info.boundaries[info.native_index][0] if sub_indices[0] == 0 else bincenters[sub_indices[0]-1]]
+            extrapolation_range_right = [info.boundaries[info.native_index][1] if sub_indices[-1] == len(hist)-1 else bincenters[sub_indices[-1]+1]]
+            # outisde of this range, log(L) is brutally set to a negligible value,e, log(1.e-10)
+            interp_hist = [g(elem) if (elem > extrapolation_range_left and elem < extrapolation_range_right) else np.log(1.e-10) for elem in interp_grid]
+
+        elif info.posterior_smoothing<0:
             raise io_mp.AnalyzeError(
-                "You passed --posterior-smoothing %d, this value is not understood"%polynomial_fit_order)
+                "You passed --posterior-smoothing %d, this value is not understood"%info.posterior_smoothing)
 
-        try:
-            interp_hist = f(interp_grid)
-            # go back from ln_Like to Like
-            interp_hist = np.exp(interp_hist)
-            # re-normalise the interpolated curve
-            interp_hist = interp_hist / interp_hist.max()
-            return interp_hist, interp_grid
+        ############################################################
+        # other methods:                                           #
+        # - linear inter/extra-polation if posterior_smoothing = 0 #
+        # - cubic inter/extra-polation if posterior_smoothing = 0  #
+        ############################################################
+        else:
 
-        except:
-            # do nothing (raw histogram)
-            return hist, bincenters
+            # try first inter/extra-polation
+            try:
+                # prepare to interpolate and extrapolate:
+                if info.posterior_smoothing == 0:
+                    f = scipy.interpolate.interp1d(bincenters, ln_hist, kind='linear', fill_value='extrapolate')
+                else:
+                    f = scipy.interpolate.interp1d(bincenters, ln_hist, kind='cubic', fill_value='extrapolate')
+                interp_hist = f(interp_grid)
 
+            # failure probably caused by old scipy not having the fill_value='extrapolate' argument. Then, only interpoolate.
+            except:
+                # define a finer grid but not a wider one
+                left = max(info.boundaries[info.native_index][0],bincenters[0])
+                right = min(info.boundaries[info.native_index][1],bincenters[-1])
+                interp_grid = np.linspace(left, right, len(bincenters)*10+1)
+                # prepare to interpolate only:
+                if info.posterior_smoothing == 0:
+                    f = scipy.interpolate.interp1d(bincenters, ln_hist, kind='linear')
+                else:
+                    f = scipy.interpolate.interp1d(bincenters, ln_hist, kind='cubic')
+                interp_hist = f(interp_grid)
+
+        # final steps used b y all methods
+
+        # go back from ln_Like to Like
+        interp_hist = np.exp(interp_hist)
+
+        # re-normalise the interpolated curve
+        interp_hist = interp_hist / interp_hist.max()
+
+        return interp_hist, interp_grid
+
+    except:
+        # we will end up here if anything went wrong before
+        # do nothing (raw histogram)
+        warnings.warn(
+                    "The 1D posterior could not be processed normally, probably" +
+                    "due to incomplete or obsolete numpy and/or scipy versions." +
+                    "So the raw histograms will be plotted.")
+        return hist, bincenters
 
 def write_histogram(hist_file_name, x_centers, hist):
     """
