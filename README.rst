@@ -1,5 +1,5 @@
 ===========================================================
-Monte Python, a Monte Carlo Markov Chain code (with Class!)
+[Archived] Please see the maintained Monte Python v3.0: https://github.com/brinckmann/montepython_public
 ===========================================================
 
 :Author: Benjamin Audren <benjamin.audren@epfl.ch>
